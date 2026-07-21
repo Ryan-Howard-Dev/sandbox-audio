@@ -58,6 +58,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: |
+            export SANDBOX_ANDROID_E2E=true
             npm run build:android:apk
             chmod +x scripts/android-smoke-e2e.sh
             SKIP_BUILD=1 scripts/android-smoke-e2e.sh
@@ -91,6 +92,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: |
+            export SANDBOX_ANDROID_E2E=true
             npm run build:android:apk
             chmod +x scripts/android-playback-e2e.sh
             SKIP_BUILD=1 scripts/android-playback-e2e.sh
