@@ -1,4 +1,0 @@
-overall=PASS
-detail=mode=file dur=127
-play=PASS
-snippet=PASS
