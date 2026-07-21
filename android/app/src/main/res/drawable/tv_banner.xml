@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android TV banner: 320×180 dp. Dark void + orange accent mark. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#07080C"
+        android:pathData="M0,0h320v180H0z" />
+    <path
+        android:fillColor="#1E2130"
+        android:pathData="M16,16h288v148a12,12 0,0 1,-12 12H28a12,12 0,0 1,-12 -12V16z" />
+    <path
+        android:fillColor="#C2410C"
+        android:pathData="M48,54c0,-6.627 5.373,-12 12,-12h44c6.627,0 12,5.373 12,12v72c0,6.627 -5.373,12 -12,12H60c-6.627,0 -12,-5.373 -12,-12V54z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M72,78c-4.418,0 -8,3.582 -8,8s3.582,8 8,8 8,-3.582 8,-8 -3.582,-8 -8,-8zM72,102c-8.837,0 -16,7.163 -16,16h32c0,-8.837 -7.163,-16 -16,-16z" />
+    <path
+        android:fillColor="#F0F0F0"
+        android:pathData="M128,62h112v12H128zM128,86h88v10H128zM128,108h96v8H128z" />
+    <path
+        android:fillColor="#C2410C"
+        android:pathData="M128,130h64v6H128z" />
+</vector>

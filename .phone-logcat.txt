@@ -1,0 +1,649 @@
+--------- beginning of system
+06-17 14:08:18.040 13819 13819 V Configuration: Updating configuration, locales updated from [] to [en_TH]
+06-17 14:08:18.167 13819 13819 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:-1
+06-17 14:08:18.185 13819 20227 I DisplayManager: Choreographer implicitly registered for the refresh rate.
+06-17 14:08:18.188 13819 13819 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+06-17 14:08:18.211 13819 13819 D OplusPredictiveBackController: should not HookOnBackInvokedCallbackEnabled for application rd.sheepskin.sandboxmusic.MainActivity@deb527b sdk: 36
+06-17 14:08:18.340 13819 13819 I Quality : InflateViewInfo:116470468,androidx.coordinatorlayout.widget.CoordinatorLayout
+06-17 14:08:18.342 13819 20241 D OplusInputMethodUtil: init sDebug to false, init sDebugIme to false, init sAlwaysOn to false
+06-17 14:08:18.343 13819 20241 D OplusInputMethodUtil: updateDebugToClass InputMethodManager.DEBUG = false
+06-17 14:08:18.343 13819 20241 D OplusInputMethodUtil: updateDebugToClass ImeFocusController.DEBUG = false
+06-17 14:08:18.343 13819 20241 D OplusInputMethodUtil: updateDebugToClass OnBackInvokedDispatcher.DEBUG = false
+06-17 14:08:18.343 13819 20241 D OplusInputMethodUtil: updateDebugToClass InsetsController.DEBUG = false
+06-17 14:08:18.343 13819 20241 D OplusInputMethodUtil: updateDebugToClass BaseInputConnection.DEBUG = false
+06-17 14:08:18.462 13819 13819 D ActivityThread: ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity} checkFinished=false 2
+06-17 14:08:18.462 13819 13819 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+06-17 14:08:18.497 13819 13819 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+06-17 14:08:18.511 13819 13819 D VRI[MainActivity]: relayoutWindow result, sizeChanged:true, surfaceControlChanged:true, transformHintChanged:false, mSurfaceSize:Point(1440, 3168), mLastSurfaceSize:Point(0, 0), mWidth:-1, mHeight:-1, requestedWidth:1440, requestedHeight:3168, transformHint:0, installOrientation:0, displayRotation:0, isSurfaceValid:true, attr.flag:-2122252032, tmpFrames:ClientWindowFrames{frame=[0,0][1440,3168] display=[0,0][1440,3168] parentFrame=[0,0][0,0]}, relayoutResult:3, relayoutAsync:false, mSyncSeqId:0
+06-17 14:08:18.511 13819 13819 W VRI[MainActivity]: updateBlastSurfaceIfNeeded, surfaceSize:Point(1440, 3168), lastSurfaceSize:Point(0, 0), format:-1, blastBufferQueue:null
+06-17 14:08:18.558 13819 13819 W VRI[MainActivity]: handleResized, msg:, frameChanged:false, configChanged:false, displayChanged:false, attachedFrameChanged:false, compatScaleChanged:false, pendingDragResizing=false
+06-17 14:08:26.327 13819 13819 D OplusInputMethodManagerInternal: get inputMethodManager extension: com.android.internal.view.IInputMethodManager$Stub$Proxy@4eece0b
+06-17 14:08:29.906 13819 13819 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+06-17 14:08:29.915 13819 13819 W VRI[MainActivity]: handleResized, msg:, frameChanged:true, configChanged:true, displayChanged:false, attachedFrameChanged:false, compatScaleChanged:false, pendingDragResizing=false
+06-17 14:08:29.917 13819 13819 D VRI[MainActivity]: relayoutWindow result, sizeChanged:true, surfaceControlChanged:false, transformHintChanged:true, mSurfaceSize:Point(3168, 1440), mLastSurfaceSize:Point(1440, 3168), mWidth:1440, mHeight:3168, requestedWidth:3168, requestedHeight:1440, transformHint:7, installOrientation:0, displayRotation:3, isSurfaceValid:true, attr.flag:-2122252032, tmpFrames:ClientWindowFrames{frame=[0,0][3168,1440] display=[0,0][3168,1440] parentFrame=[0,0][3168,1440]}, relayoutResult:0, relayoutAsync:true, mSyncSeqId:0
+06-17 14:08:29.917 13819 13819 W VRI[MainActivity]: updateBlastSurfaceIfNeeded, surfaceSize:Point(3168, 1440), lastSurfaceSize:Point(1440, 3168), format:-1, blastBufferQueue:android.graphics.BLASTBufferQueue@ba3fe7
+06-17 14:08:30.147 13819 13819 W VRI[MainActivity]: handleResized abandoned!
+06-17 14:08:30.486 13819 13819 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+06-17 14:08:30.489 13819 13819 W VRI[MainActivity]: handleResized, msg:, frameChanged:true, configChanged:true, displayChanged:false, attachedFrameChanged:false, compatScaleChanged:false, pendingDragResizing=false
+06-17 14:08:30.491 13819 13819 D VRI[MainActivity]: relayoutWindow result, sizeChanged:true, surfaceControlChanged:false, transformHintChanged:true, mSurfaceSize:Point(1440, 3168), mLastSurfaceSize:Point(3168, 1440), mWidth:3168, mHeight:1440, requestedWidth:1440, requestedHeight:3168, transformHint:0, installOrientation:0, displayRotation:0, isSurfaceValid:true, attr.flag:-2122252032, tmpFrames:ClientWindowFrames{frame=[0,0][1440,3168] display=[0,0][1440,3168] parentFrame=[0,0][1440,3168]}, relayoutResult:0, relayoutAsync:true, mSyncSeqId:0
+06-17 14:08:30.491 13819 13819 W VRI[MainActivity]: updateBlastSurfaceIfNeeded, surfaceSize:Point(1440, 3168), lastSurfaceSize:Point(3168, 1440), format:-1, blastBufferQueue:android.graphics.BLASTBufferQueue@ba3fe7
+06-17 14:08:31.446 13819 13819 W VRI[MainActivity]: handleResized abandoned!
+06-17 14:08:36.446 13819 13819 D InsetsController: Setting requestedVisibleTypes to -1 (was -9)
+06-17 14:08:36.467 13819 13819 W VRI[MainActivity]: handleResized abandoned!
+06-17 14:08:36.535 13819 13819 W VRI[MainActivity]: handleResized abandoned!
+06-17 14:08:36.550 13819 13819 W VRI[MainActivity]: handleResized abandoned!
+06-17 14:08:39.073 13819 13819 D InsetsController: Setting requestedVisibleTypes to -9 (was -1)
+06-17 14:08:39.091 13819 13819 W VRI[MainActivity]: handleResized abandoned!
+06-17 14:08:39.340 13819 13819 W VRI[MainActivity]: handleResized abandoned!
+06-17 14:08:39.344 13819 13819 W VRI[MainActivity]: handleResized abandoned!
+--------- beginning of main
+06-17 14:10:06.792 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:06.796 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403628, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:06.796 13819 20282 V Capacitor: callback: 122403628, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:06.798 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:07.192 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:07.193 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403629, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:07.193 13819 20282 V Capacitor: callback: 122403629, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:07.196 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:07.593 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:07.593 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403630, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:07.593 13819 20282 V Capacitor: callback: 122403630, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:07.598 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:07.995 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:07.996 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403631, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:07.996 13819 20282 V Capacitor: callback: 122403631, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:08.001 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:08.393 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:08.394 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403632, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:08.394 13819 20282 V Capacitor: callback: 122403632, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:08.400 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:08.796 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:08.796 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403633, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:08.796 13819 20282 V Capacitor: callback: 122403633, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:08.803 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:09.193 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:09.193 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403634, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:09.193 13819 20282 V Capacitor: callback: 122403634, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:09.200 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:09.593 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:09.593 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403635, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:09.593 13819 20282 V Capacitor: callback: 122403635, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:09.596 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:09.993 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403636, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:09.994 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:09.994 13819 20282 V Capacitor: callback: 122403636, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:09.997 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:10.392 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:10.393 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403637, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:10.393 13819 20282 V Capacitor: callback: 122403637, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:10.398 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:10.794 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:10.795 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403638, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:10.795 13819 20282 V Capacitor: callback: 122403638, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:10.803 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:11.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:11.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403639, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:11.195 13819 20282 V Capacitor: callback: 122403639, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:11.200 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:11.594 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:11.596 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403640, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:11.596 13819 20282 V Capacitor: callback: 122403640, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:11.601 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:11.993 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403641, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:11.993 13819 20282 V Capacitor: callback: 122403641, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:11.993 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:11.996 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:12.394 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:12.394 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403642, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:12.395 13819 20282 V Capacitor: callback: 122403642, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:12.401 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:12.794 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:12.794 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403643, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:12.795 13819 20282 V Capacitor: callback: 122403643, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:12.806 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:13.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403644, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:13.196 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:13.197 13819 20282 V Capacitor: callback: 122403644, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:13.207 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:13.593 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:13.594 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403645, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:13.595 13819 20282 V Capacitor: callback: 122403645, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:13.601 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:13.996 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403646, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:13.996 13819 20282 V Capacitor: callback: 122403646, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:13.997 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:14.006 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:14.394 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403647, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:14.394 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:14.394 13819 20282 V Capacitor: callback: 122403647, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:14.400 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:14.794 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403648, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:14.795 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:14.796 13819 20282 V Capacitor: callback: 122403648, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:14.801 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:15.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:15.196 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403649, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:15.196 13819 20282 V Capacitor: callback: 122403649, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:15.208 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:15.594 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403650, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:15.595 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:15.596 13819 20282 V Capacitor: callback: 122403650, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:15.604 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:15.994 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:15.994 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403651, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:15.995 13819 20282 V Capacitor: callback: 122403651, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:16.003 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:16.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403652, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:16.395 13819 20282 V Capacitor: callback: 122403652, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:16.395 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:16.406 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:16.795 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403653, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:16.795 13819 20282 V Capacitor: callback: 122403653, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:16.796 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:16.806 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:17.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403654, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:17.196 13819 20282 V Capacitor: callback: 122403654, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:17.198 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:17.205 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:17.595 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:17.596 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403655, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:17.596 13819 20282 V Capacitor: callback: 122403655, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:17.604 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:17.995 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403656, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:17.996 13819 20282 V Capacitor: callback: 122403656, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:17.996 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:18.004 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:18.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403657, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:18.395 13819 20282 V Capacitor: callback: 122403657, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:18.399 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:18.407 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:18.794 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403658, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:18.794 13819 20282 V Capacitor: callback: 122403658, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:18.794 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:18.803 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:19.194 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:19.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403659, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:19.196 13819 20282 V Capacitor: callback: 122403659, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:19.225 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:19.594 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:19.595 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403660, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:19.596 13819 20282 V Capacitor: callback: 122403660, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:19.604 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:19.995 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:19.996 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403661, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:19.997 13819 20282 V Capacitor: callback: 122403661, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:20.005 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:20.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403662, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:20.396 13819 20282 V Capacitor: callback: 122403662, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:20.396 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:20.403 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:20.795 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403663, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:20.796 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:20.796 13819 20282 V Capacitor: callback: 122403663, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:20.803 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:21.193 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:21.193 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403664, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:21.193 13819 20282 V Capacitor: callback: 122403664, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:21.198 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:21.595 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403665, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:21.596 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:21.596 13819 20282 V Capacitor: callback: 122403665, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:21.607 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:21.995 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403666, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:21.995 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:21.996 13819 20282 V Capacitor: callback: 122403666, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:22.007 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:22.393 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:22.394 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403667, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:22.395 13819 20282 V Capacitor: callback: 122403667, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:22.406 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:22.795 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:22.798 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403668, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:22.799 13819 20282 V Capacitor: callback: 122403668, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:22.808 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:23.196 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403669, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:23.196 13819 20282 V Capacitor: callback: 122403669, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:23.196 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:23.206 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:23.595 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403670, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:23.595 13819 20282 V Capacitor: callback: 122403670, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:23.596 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:23.602 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:23.995 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403671, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:23.996 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:23.996 13819 20282 V Capacitor: callback: 122403671, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:24.004 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:24.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403672, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:24.396 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:24.396 13819 20282 V Capacitor: callback: 122403672, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:24.404 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:24.794 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403673, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:24.795 13819 20282 V Capacitor: callback: 122403673, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:24.795 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:24.807 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:25.194 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:25.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403674, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:25.195 13819 20282 V Capacitor: callback: 122403674, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:25.207 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:25.595 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:25.596 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403675, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:25.596 13819 20282 V Capacitor: callback: 122403675, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:25.605 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:25.995 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403676, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:25.995 13819 20282 V Capacitor: callback: 122403676, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:25.996 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:26.006 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:26.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403677, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:26.396 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:26.396 13819 20282 V Capacitor: callback: 122403677, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:26.406 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:26.796 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403678, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:26.797 13819 20282 V Capacitor: callback: 122403678, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:26.797 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:26.805 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:27.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403679, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:27.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:27.196 13819 20282 V Capacitor: callback: 122403679, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:27.202 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:27.594 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:27.594 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403680, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:27.595 13819 20282 V Capacitor: callback: 122403680, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:27.607 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:27.993 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:27.994 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403681, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:27.994 13819 20282 V Capacitor: callback: 122403681, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:28.000 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:28.394 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403682, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:28.394 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:28.394 13819 20282 V Capacitor: callback: 122403682, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:28.404 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:28.794 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:28.794 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403683, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:28.794 13819 20282 V Capacitor: callback: 122403683, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:28.805 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:29.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403684, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:29.195 13819 20282 V Capacitor: callback: 122403684, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:29.196 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:29.205 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:29.595 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403685, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:29.596 13819 20282 V Capacitor: callback: 122403685, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:29.597 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:29.602 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:29.993 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403686, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:29.994 13819 20282 V Capacitor: callback: 122403686, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:29.995 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:30.001 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:30.396 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:30.396 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403687, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:30.396 13819 20282 V Capacitor: callback: 122403687, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:30.407 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:30.794 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:30.795 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403688, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:30.795 13819 20282 V Capacitor: callback: 122403688, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:30.804 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:31.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403689, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:31.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:31.196 13819 20282 V Capacitor: callback: 122403689, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:31.206 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:31.562 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.563 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.563 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.590 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.590 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.590 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.592 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.592 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.592 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:31.593 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403690, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:31.593 13819 20282 V Capacitor: callback: 122403690, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:31.593 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.594 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.594 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:31.595 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.595 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.596 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.597 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.597 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.598 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.599 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.600 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.600 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.600 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.601 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.602 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.603 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.603 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.604 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.604 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.605 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.606 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.606 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:31.992 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:31.992 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403691, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:31.993 13819 20282 V Capacitor: callback: 122403691, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:31.994 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:32.396 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:32.399 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403692, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:32.399 13819 20282 V Capacitor: callback: 122403692, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:32.406 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:32.795 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:32.800 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403693, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:32.800 13819 20282 V Capacitor: callback: 122403693, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:32.806 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:33.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:33.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403694, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:33.195 13819 20282 V Capacitor: callback: 122403694, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:33.200 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:33.594 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:33.596 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403695, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:33.598 13819 20282 V Capacitor: callback: 122403695, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:33.605 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:33.993 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403696, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:33.994 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:33.994 13819 20282 V Capacitor: callback: 122403696, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:33.999 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:34.394 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:34.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403697, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:34.395 13819 20282 V Capacitor: callback: 122403697, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:34.401 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:34.794 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403698, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:34.796 13819 20282 V Capacitor: callback: 122403698, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:34.796 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:34.802 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:35.194 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:35.194 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403699, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:35.195 13819 20282 V Capacitor: callback: 122403699, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:35.205 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:35.593 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:35.593 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403700, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:35.593 13819 20282 V Capacitor: callback: 122403700, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:35.600 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:35.996 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403701, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:35.996 13819 20282 V Capacitor: callback: 122403701, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:35.996 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:36.002 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:36.393 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:36.394 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403702, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:36.394 13819 20282 V Capacitor: callback: 122403702, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:36.400 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:36.799 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:36.799 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403703, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:36.800 13819 20282 V Capacitor: callback: 122403703, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:36.805 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:37.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403704, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:37.196 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:37.197 13819 20282 V Capacitor: callback: 122403704, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:37.203 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:37.595 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:37.597 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403705, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:37.598 13819 20282 V Capacitor: callback: 122403705, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:37.605 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:37.994 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403706, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:37.995 13819 20282 V Capacitor: callback: 122403706, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:37.995 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:38.002 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:38.395 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:38.398 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403707, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:38.398 13819 20282 V Capacitor: callback: 122403707, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:38.408 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:38.795 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:38.795 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403708, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:38.796 13819 20282 V Capacitor: callback: 122403708, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:38.803 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:39.193 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403709, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:39.194 13819 20282 V Capacitor: callback: 122403709, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:39.194 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:39.198 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:39.594 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403710, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:39.594 13819 20282 V Capacitor: callback: 122403710, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:39.594 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:39.601 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:39.995 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:39.998 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403711, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:40.000 13819 20282 V Capacitor: callback: 122403711, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:40.006 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:40.394 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:40.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403712, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:40.395 13819 20282 V Capacitor: callback: 122403712, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:40.400 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:40.560 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.561 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.561 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.565 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.566 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.566 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.568 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.568 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.570 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.570 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.571 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.572 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.572 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.573 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.573 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.575 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.575 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.576 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.576 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.576 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.578 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.578 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.579 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.579 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.581 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.581 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.581 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.583 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.583 13819 20307 I OplusCameraManagerGlobal: setClientInfo, packageName: rd.sheepskin.sandboxmusic, uid: 10445, pid: 13819
+06-17 14:10:40.794 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403713, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:40.794 13819 20282 V Capacitor: callback: 122403713, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:40.796 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:40.806 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:41.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:41.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403714, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:41.196 13819 20282 V Capacitor: callback: 122403714, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:41.204 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:41.594 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403715, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:41.595 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:41.595 13819 20282 V Capacitor: callback: 122403715, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:41.604 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:41.994 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403716, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:41.995 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:41.996 13819 20282 V Capacitor: callback: 122403716, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:42.003 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:42.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403717, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:42.396 13819 20282 V Capacitor: callback: 122403717, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:42.396 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:42.404 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:42.796 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:42.796 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403718, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:42.796 13819 20282 V Capacitor: callback: 122403718, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:42.805 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:43.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:43.196 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403719, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:43.196 13819 20282 V Capacitor: callback: 122403719, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:43.202 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:43.594 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:43.594 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403720, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:43.594 13819 20282 V Capacitor: callback: 122403720, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:43.598 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:43.994 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403721, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:43.994 13819 20282 V Capacitor: callback: 122403721, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:43.995 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:44.005 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:44.397 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403722, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:44.397 13819 20282 V Capacitor: callback: 122403722, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:44.397 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:44.407 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:44.794 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:44.794 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403723, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:44.795 13819 20282 V Capacitor: callback: 122403723, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:44.801 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:45.194 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:45.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403724, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:45.195 13819 20282 V Capacitor: callback: 122403724, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:45.207 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:45.594 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403725, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:45.594 13819 20282 V Capacitor: callback: 122403725, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:45.596 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:45.605 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:45.994 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:45.995 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403726, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:45.995 13819 20282 V Capacitor: callback: 122403726, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:46.005 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:46.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403727, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:46.395 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:46.396 13819 20282 V Capacitor: callback: 122403727, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:46.404 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:46.795 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:46.795 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403728, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:46.795 13819 20282 V Capacitor: callback: 122403728, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:46.804 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:47.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403729, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:47.195 13819 20282 V Capacitor: callback: 122403729, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:47.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:47.206 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:47.593 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403730, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:47.594 13819 20282 V Capacitor: callback: 122403730, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:47.594 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:47.598 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:47.994 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403731, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:47.995 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:47.995 13819 20282 V Capacitor: callback: 122403731, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:48.007 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:48.395 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:48.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403732, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:48.396 13819 20282 V Capacitor: callback: 122403732, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:48.403 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:48.794 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403733, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:48.795 13819 20282 V Capacitor: callback: 122403733, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:48.796 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:48.802 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:49.194 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403734, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:49.195 13819 20282 V Capacitor: callback: 122403734, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:49.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:49.227 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:49.596 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403735, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:49.596 13819 20282 V Capacitor: callback: 122403735, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:49.596 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:49.604 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:49.994 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403736, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:49.995 13819 20282 V Capacitor: callback: 122403736, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:49.995 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:50.003 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:50.394 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403737, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:50.395 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:50.395 13819 20282 V Capacitor: callback: 122403737, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:50.404 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:50.794 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403738, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:50.795 13819 20282 V Capacitor: callback: 122403738, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:50.796 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:50.805 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:51.194 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:51.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403739, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:51.195 13819 20282 V Capacitor: callback: 122403739, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:51.205 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:51.594 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:51.594 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403740, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:51.595 13819 20282 V Capacitor: callback: 122403740, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:51.603 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:51.994 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403741, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:51.995 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:51.995 13819 20282 V Capacitor: callback: 122403741, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:52.003 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:52.394 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403742, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:52.394 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:52.394 13819 20282 V Capacitor: callback: 122403742, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:52.402 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:52.795 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403743, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:52.796 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:52.797 13819 20282 V Capacitor: callback: 122403743, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:52.805 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:53.194 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403744, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:53.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:53.195 13819 20282 V Capacitor: callback: 122403744, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:53.205 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:53.595 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403745, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:53.595 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:53.596 13819 20282 V Capacitor: callback: 122403745, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:53.604 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:53.996 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:53.998 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403746, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:53.998 13819 20282 V Capacitor: callback: 122403746, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:54.007 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:54.394 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:54.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403747, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:54.396 13819 20282 V Capacitor: callback: 122403747, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:54.405 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:54.797 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403748, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:54.797 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:54.797 13819 20282 V Capacitor: callback: 122403748, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:54.808 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:55.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:55.195 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403749, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:55.196 13819 20282 V Capacitor: callback: 122403749, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:55.206 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:55.595 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403750, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:55.595 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:55.596 13819 20282 V Capacitor: callback: 122403750, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:55.603 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:55.995 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403751, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:55.996 13819 20282 V Capacitor: callback: 122403751, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:55.996 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:56.005 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:56.394 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:56.394 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403752, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:56.394 13819 20282 V Capacitor: callback: 122403752, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:56.402 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:56.794 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:56.796 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403753, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:56.797 13819 20282 V Capacitor: callback: 122403753, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:56.805 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:57.194 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403754, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:57.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:57.195 13819 20282 V Capacitor: callback: 122403754, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:57.203 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:57.594 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:57.595 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403755, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:57.595 13819 20282 V Capacitor: callback: 122403755, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:57.605 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:57.995 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403756, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:57.996 13819 20282 V Capacitor: callback: 122403756, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:57.996 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:58.003 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:58.395 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403757, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:58.395 13819 20282 V Capacitor: callback: 122403757, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:58.395 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:58.402 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:58.795 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:58.796 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403758, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:58.796 13819 20282 V Capacitor: callback: 122403758, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:58.801 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:59.194 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403759, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:59.195 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:59.196 13819 20282 V Capacitor: callback: 122403759, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:59.204 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:59.594 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:59.595 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403760, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:59.595 13819 20282 V Capacitor: callback: 122403760, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:59.604 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:10:59.993 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403761, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:10:59.994 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:10:59.994 13819 20282 V Capacitor: callback: 122403761, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:10:59.998 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:11:00.393 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403762, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:11:00.393 13819 20282 V Capacitor: callback: 122403762, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:11:00.393 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:11:00.399 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:11:00.793 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:11:00.794 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403763, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:11:00.794 13819 20282 V Capacitor: callback: 122403763, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:11:00.801 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:11:01.196 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403764, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:11:01.196 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:11:01.196 13819 20282 V Capacitor: callback: 122403764, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:11:01.207 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:11:01.594 13819 13819 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:11:01.595 13819 20282 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 122403765, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:11:01.596 13819 20282 V Capacitor: callback: 122403765, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:11:01.605 13819 13819 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}

@@ -1,0 +1,874 @@
+--------- beginning of main
+06-17 14:38:25.767  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=153,avg=153,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=298,debug=0,region=12,ttf=8103(02:15:03),ui_ttf=6991(01:56:31)
+06-17 14:38:25.767  1433  1441 I android.system.suspend-service: WakeLockInfo{name:PowerManagerService.Display, totalTime:211356878, isActive:1, activeTime:2035936, isKernelWakelock:0, pid:3480}
+06-17 14:38:25.767  1433  1441 I android.system.suspend-service: WakeLockInfo{name:PowerManager.SuspendLockout, totalTime:210472987, isActive:1, activeTime:2035936, isKernelWakelock:0, pid:3480}
+06-17 14:38:25.767  1927 12751 I [UAH_CLIENT]: UahRelease, handle:419778
+06-17 14:38:25.776  3480  4824 I Osense-PsiDetector: 3016,512,380,5631,94,430,542,2188,3060,857,1798,0,12,10777
+06-17 14:38:25.777  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=4}]
+06-17 14:38:25.777 27029 27071 I metis_v2_OsenseCallBack: memLevel: 4
+06-17 14:38:25.778  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_LEAK, bundle: Bundle[{memLevel=4}]
+06-17 14:38:25.800  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175974, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:25.800  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:25.800  9623 12253 V Capacitor: callback: 76175974, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:25.807  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:26.011  3274  3274 I OplusTouchDaemon: ts_run_service: shellback temperature updated 32 (32600)
+06-17 14:38:26.037  1858 21547 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+06-17 14:38:26.037  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-17 14:38:26.037  3084  3084 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+06-17 14:38:26.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1361)(cct,lux,ir)[5300.00, 20.84, 0.000000](rgbc)[763.66, 581.50, 361.57, 1508.14](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:26.180  1851 17912 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[13224, 0, 300000, 368, 139]
+06-17 14:38:26.180  1851 17912 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[2, 1, 2, 1, 3]
+06-17 14:38:26.199  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:26.200  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175975, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:26.200  9623 12253 V Capacitor: callback: 76175975, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:26.203  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:26.302  3480  4315 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+06-17 14:38:26.404  3480  4824 I Osense-PsiDetector: 3013,439,382,5631,94,430,542,2192,3130,873,1852,0,12,10777
+06-17 14:38:26.404  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=3}]
+06-17 14:38:26.406  5717  5717 D VendorWifiService: onEvent event:9,action:1
+06-17 14:38:26.410  3480  4584 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=2
+06-17 14:38:26.411  3480  4584 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+06-17 14:38:26.421  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:26.421  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9272, identity:qcom-perfd
+06-17 14:38:26.422  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:26.437  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:26.440  1927 12753 I [UAH_CLIENT]: UahRelease, handle:419779
+06-17 14:38:26.491  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:26.503  3480  4315 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 748.4/567.0/361.6/1493.1, R/G/B: 28.0/27.0/24.0, bri 36.0, lux: 18.808617, cct: 5300.0, ir: 0.062846, conf: 2, cnt: 0
+06-17 14:38:26.508  3480  4824 I Osense-PsiDetector: 3012,418,382,5631,94,430,543,2193,3150,873,1872,0,12,10780
+06-17 14:38:26.571  1871  2342 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 69999 us
+06-17 14:38:26.599  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175976, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:26.600  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:26.600  9623 12253 V Capacitor: callback: 76175976, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:26.606  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:26.613 27029 27071 I metis_v2_OsenseCallBack: memLevel: 0
+06-17 14:38:26.688  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:26.701  1851 17756 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 20.1,cct 5300.0,brl/algo/ir 36.0/2.0/0.0,pwm/dc 0.0/0.0,rgbc 763.663940/581.504089/361.568909/1493.055054,ts 952228380583186,cnt 1364,flag 0
+06-17 14:38:26.725  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:26.768  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=153,avg=153,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=299,debug=0,region=12,ttf=8102(02:15:02),ui_ttf=6990(01:56:30)
+06-17 14:38:26.781  3480  6040 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 2.012943 ave enviroment lux is 18.938478 luxForNit 43.66335demarcationPoint200.0 result is false
+06-17 14:38:26.781  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 5300.0 nearestMaxValue:5300.0 secondNearestValue: 5300.0
+06-17 14:38:26.781  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 19.003408 nearestMaxValue:19.003408 secondNearestValue: 19.003408
+06-17 14:38:26.824 27029 27071 I metis_v2_OsenseCallBack: memLevel: 4
+06-17 14:38:26.827  3480  4824 I Osense-PsiDetector: 3011,353,382,5631,94,430,543,2194,3213,873,1935,0,12,10779
+06-17 14:38:26.828  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=4}]
+06-17 14:38:26.831  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_LEAK, bundle: Bundle[{memLevel=4}]
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: write /dev/memcg/memory.force_shrink_file failed
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: java.io.IOException: write failed: EBUSY (Device or resource busy)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at libcore.io.IoBridge.write(IoBridge.java:651)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at java.io.FileOutputStream.write(FileOutputStream.java:436)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.writeBytes(StreamEncoder.java:233)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.implFlushBuffer(StreamEncoder.java:309)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.implFlush(StreamEncoder.java:313)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.flush(StreamEncoder.java:153)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at java.io.OutputStreamWriter.flush(OutputStreamWriter.java:248)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at com.android.server.oplus.osense.utils.OsenseCommonUtils.writeFile(OsenseCommonUtils.java:163)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at com.android.server.am.OplusOsenseCompressAction.doGlobalShrink(OplusOsenseCompressAction.java:1805)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at com.android.server.am.OplusOsenseCompressAction.-$$Nest$mdoGlobalShrink(Unknown Source:0)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at com.android.server.am.OplusOsenseCompressAction$CompressHandler.handleMessage(OplusOsenseCompressAction.java:1270)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at android.os.Handler.dispatchMessage(Handler.java:116)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at android.os.Looper.loopOnce(Looper.java:306)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at android.os.Looper.loop(Looper.java:416)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: Caused by: android.system.ErrnoException: write failed: EBUSY (Device or resource busy)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at libcore.io.Linux.writeBytes(Native Method)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at libcore.io.Linux.write(Linux.java:338)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at libcore.io.ForwardingOs.write(ForwardingOs.java:954)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at libcore.io.BlockGuardOs.write(BlockGuardOs.java:448)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	at libcore.io.IoBridge.write(IoBridge.java:646)
+06-17 14:38:26.833  3480  4186 E OsenseCommonUtils: 	... 14 more
+06-17 14:38:26.939 18122 18734 E msys    : E[N mns:DGWClient]_OnDiskCacheGetData(1091)=>Start post callback cache refresh DNS resolution
+06-17 14:38:26.940  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-17 14:38:26.941 18122 18738 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-17 14:38:26.943 18122 18734 E msys    : E[N mns:DGWClient]_OnDiskCacheGetData(1091)=>Start post callback cache refresh DNS resolution
+06-17 14:38:26.946  5566  5859 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=4, uid=10526
+06-17 14:38:26.946  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-17 14:38:26.947 18122 18736 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-17 14:38:26.947 18122 18734 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-17 14:38:26.948 18122 18734 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-17 14:38:27.000  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175977, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:27.000  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:27.001  9623 12253 V Capacitor: callback: 76175977, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:27.009  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:27.101  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1366)(cct,lux,ir)[5300.00, 20.85, 0.000000](rgbc)[763.66, 566.97, 361.57, 1493.06](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:27.172  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:27.172  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9273, identity:qcom-perfd
+06-17 14:38:27.173  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:27.191  1927 12760 I [UAH_CLIENT]: UahRelease, handle:419780
+06-17 14:38:27.210  1843  1843 D healthd : system healthd: battery l=82 v=4179 t=32.6 h=2 st=2 c=-153 fc=5400000 cc=924 chg=u
+06-17 14:38:27.212  1960  1960 D ChargerInfo: getInfo: type: 0x1, update: 1
+06-17 14:38:27.212  1960  1973 D ChargerInfo: chargerInfoUpdateThread: update start
+06-17 14:38:27.214  1960  1973 D ChargerInfo: wlsAdapterPower: path(/sys/class/oplus_chg/wireless/max_w_power): not exist
+06-17 14:38:27.214  1960  1973 D ChargerInfo: unknown: path(/sys/class/oplus_chg/ac/online) and backupPath(/sys/class/power_supply/ac/online) not exist
+06-17 14:38:27.215  1960  1973 D ChargerInfo: get_ui_charge_icon_type: [0 0] [0 0] 1
+06-17 14:38:27.215  1960  1973 D ChargerInfo: unknown: path(/sys/class/oplus_chg/ac/online) and backupPath(/sys/class/power_supply/ac/online) not exist
+06-17 14:38:27.215  1960  1973 D ChargerInfo: cpaPower:2500 isChargeOnline:1 isSupportRetentionTopic:0
+06-17 14:38:27.215  1960  1973 E ChargerInfo: SingleHyperPath not found
+06-17 14:38:27.215  1960  1973 D ChargerInfo: chargerInfoUpdateThread: update end
+06-17 14:38:27.215  1960  1973 D ChargerInfo: chargerInfoUpdateThread: update wait
+06-17 14:38:27.215  1960  1960 D ChargerInfo: wlsAdapterPower: path(/sys/class/oplus_chg/wireless/max_w_power): not exist
+06-17 14:38:27.215  1960  1960 D ChargerInfo: getInfo: {"Update":{"batteryFcc":4226,"batteryRm":3312,"bddLeakCurr":0,"bmsStatus":0,"bypassChgStatus":2,"chargeTimeRemaining":117,"cpaPower":2,"enableTx":"disable","fastCharge":0,"isSupportSpeedCharge":0,"notifyCode":0,"otgOnline":1,"ppsChargePower":0,"ppsCharging":0,"shortCHwStatus":0,"shortIcOtpStatus":0,"uiIconType":0,"uiPower":0,"usbStatus":0,"wlsAdapterPower":0}}
+06-17 14:38:27.216  3480  9558 D OplusWifiService: notifyBatteryInfoChanged: feature not supported
+06-17 14:38:27.400  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:27.401  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175978, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:27.401  9623 12253 V Capacitor: callback: 76175978, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:27.405  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:27.440  1851 26736 I sensors-hal: handle_sns_std_sensor_event:72, rotv_sample: ts=952228951142300, x = 0.019715, y=-0.013829, z = -0.909318, w = 0.415404, acc = -1.000000
+06-17 14:38:27.452 27029 27071 I metis_v2_OsenseCallBack: memLevel: 0
+06-17 14:38:27.453  3480  4824 I Osense-PsiDetector: 3037,391,364,5631,94,430,543,2179,3214,830,1979,0,12,10779
+06-17 14:38:27.453  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=3}]
+06-17 14:38:27.453 27029 27071 I metis_v2_OsenseCallBack: memLevel: 3
+06-17 14:38:27.515  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:27.560  3480  4824 I Osense-PsiDetector: 3037,369,364,5631,94,430,543,2179,3235,830,2000,0,12,10779
+06-17 14:38:27.664 27029 27071 I metis_v2_OsenseCallBack: memLevel: 0
+06-17 14:38:27.727  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:27.769  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=153,avg=153,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=300,debug=0,region=12,ttf=8101(02:15:01),ui_ttf=6989(01:56:29)
+06-17 14:38:27.799  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175979, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:27.799  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:27.800  9623 12253 V Capacitor: callback: 76175979, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:27.806  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:27.872 27029 27071 I metis_v2_OsenseCallBack: memLevel: 4
+06-17 14:38:27.873  3480  4824 I Osense-PsiDetector: 3036,305,364,5631,94,430,543,2180,3298,832,2061,0,12,10777
+06-17 14:38:27.873  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=4}]
+06-17 14:38:27.876  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_LEAK, bundle: Bundle[{memLevel=4}]
+06-17 14:38:28.042  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-17 14:38:28.042  3084  3084 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+06-17 14:38:28.042  1858 21547 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+06-17 14:38:28.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1371)(cct,lux,ir)[5300.00, 20.46, 0.000000](rgbc)[748.39, 566.97, 346.50, 1477.97](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:28.199  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:28.199  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175980, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:28.200  9623 12253 V Capacitor: callback: 76175980, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:28.206  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:28.346  1851 14865 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=952230018329592 ns; value = [-0.228945, 0.421080, 9.849746], status=3
+06-17 14:38:28.498  3480  4824 I Osense-PsiDetector: 3042,312,347,5631,94,430,543,2167,3308,795,2107,0,12,10777
+06-17 14:38:28.499  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=3}]
+06-17 14:38:28.539  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:28.598  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:28.599  3480  4824 I Osense-PsiDetector: 3045,342,342,5631,94,430,543,2163,3283,782,2095,0,12,10777
+06-17 14:38:28.600  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175981, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:28.601  9623 12253 V Capacitor: callback: 76175981, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:28.604  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:28.702  1851 17756 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 20.5,cct 5300.0,brl/algo/ir 36.0/2.0/0.0,pwm/dc 0.0/0.0,rgbc 748.390686/566.966492/346.503510/1477.973755,ts 952230380596884,cnt 1374,flag 0
+06-17 14:38:28.702  3480  4315 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+06-17 14:38:28.729  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:28.771  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=153,avg=153,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=301,debug=0,region=12,ttf=8100(02:15:00),ui_ttf=6988(01:56:28)
+06-17 14:38:28.902  3480  4315 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 748.4/567.0/346.5/1478.0, R/G/B: 28.0/27.0/24.0, bri 36.0, lux: 18.613827, cct: 5300.0, ir: 0.063509, conf: 2, cnt: 0
+06-17 14:38:28.912  3480  4824 I Osense-PsiDetector: 3050,386,332,5631,95,430,543,2153,3248,761,2082,0,12,10777
+06-17 14:38:28.913  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=4}]
+06-17 14:38:28.916  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_LEAK, bundle: Bundle[{memLevel=4}]
+06-17 14:38:29.000  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175982, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:29.000  9623 12253 V Capacitor: callback: 76175982, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:29.000  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:29.006  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:29.101  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1376)(cct,lux,ir)[5300.00, 21.18, 0.000000](rgbc)[748.39, 566.97, 346.50, 1493.06](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:29.205  1851 17912 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[-6460, 0, 150000, 457, 209]
+06-17 14:38:29.205  1851 17912 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[2, 2, 4, 2, 3]
+--------- beginning of system
+06-17 14:38:29.371  1434 12737 I keystore2: system/security/keystore2/watchdog/src/lib.rs:377 - Watchdog thread idle -> terminating. Have a great day.
+06-17 14:38:29.400  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175983, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:29.400  9623 12253 V Capacitor: callback: 76175983, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:29.400  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:29.407  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:29.423  5717  5717 D VendorWifiService: onEvent event:9,action:1
+06-17 14:38:29.424  3480  4584 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(system_server) ==
+06-17 14:38:29.424  3480  4584 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=1
+06-17 14:38:29.424  3480  4584 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+06-17 14:38:29.433  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:29.433  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9274, identity:qcom-perfd
+06-17 14:38:29.434  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:29.447  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:29.452  1927 12762 I [UAH_CLIENT]: UahRelease, handle:419781
+06-17 14:38:29.506  3480  6040 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 2.012943 ave enviroment lux is 18.678757 luxForNit 43.318993demarcationPoint200.0 result is false
+06-17 14:38:29.507  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 5300.0 nearestMaxValue:5300.0 secondNearestValue: 5300.0
+06-17 14:38:29.507  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 19.003408 nearestMaxValue:18.808617 secondNearestValue: 18.808617
+06-17 14:38:29.516  1871  2342 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+06-17 14:38:29.539  3480  4824 I Osense-PsiDetector: 3063,461,306,5631,95,430,543,2134,3194,704,2089,0,12,10771
+06-17 14:38:29.540  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=3}]
+06-17 14:38:29.565  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:29.644  3480  4824 I Osense-PsiDetector: 3057,429,302,5631,95,430,543,2136,3220,706,2113,0,12,10768
+06-17 14:38:29.723  4908  5001 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(com.android.systemui) ==
+06-17 14:38:29.723  4908  5001 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->updateNetworkSpeed: isConnected:true,isSwitchOn:true,isSuspend:false,isPause:false
+06-17 14:38:29.728  4908  5001 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->getTotalByte: totalRxBytes:20700426739,totalTxBytes:1848541859,loopbackTxBytes:73545457,loopbackRxBytes:59624181 ,totalBytes:22415798960
+06-17 14:38:29.729  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:29.743  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:29.743  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9271, identity:qcom-perfd
+06-17 14:38:29.746  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:29.764  1927 12766 I [UAH_CLIENT]: UahRelease, handle:419782
+06-17 14:38:29.771  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=-79,avg=153,not_chg_cnt=1,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=0,debug=0,region=12,ttf=8100(02:15:00),ui_ttf=6987(01:56:27)
+06-17 14:38:29.797  1960  1985 D vendor.oplus.hardware.charger-V10-service: ret_value:122, read content:,326,326,4153,4149,79,79,82,1,1,0,453,5008,82,1,4430,300,500,0,0,9500,0,0,1,0,2,0,0,0,1,5522,95,0,3312,4226,0,0,0,0,0,105
+06-17 14:38:29.797  1960  1985 D vendor.oplus.hardware.charger-V10-service: gmtime: 2026-06-17-14-38-29
+06-17 14:38:29.799  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175984, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:29.799  9623 12253 V Capacitor: callback: 76175984, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:29.799  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:29.799  1960  1985 D vendor.oplus.hardware.charger-V10-service: usb_online:1, ac_online:-2147483648, wireless_online:0
+06-17 14:38:29.801  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:29.956  3480  4824 I Osense-PsiDetector: 3069,348,295,5631,95,430,543,2132,3313,737,2176,0,12,10762
+06-17 14:38:29.957  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=4}]
+06-17 14:38:29.961  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_LEAK, bundle: Bundle[{memLevel=4}]
+06-17 14:38:30.045  1858 21547 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+06-17 14:38:30.046  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-17 14:38:30.047  3084  3084 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+06-17 14:38:30.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1381)(cct,lux,ir)[5300.00, 21.37, 0.000000](rgbc)[748.39, 566.97, 361.57, 1493.06](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:30.184  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:30.184  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9272, identity:qcom-perfd
+06-17 14:38:30.185  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:30.199  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:30.200  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175985, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:30.200  9623 12253 V Capacitor: callback: 76175985, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:30.203  1927 12772 I [UAH_CLIENT]: UahRelease, handle:419783
+06-17 14:38:30.207  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:30.235 28671 28904 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(com.oplus.camera) ==
+06-17 14:38:30.235 28671 28904 I APS_ALOG: flushRoutine g_immediateFlush=0 g_pendingCount=0 g_oobCount=0
+06-17 14:38:30.373  3480  4819 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_IO_PSI, bundle: Bundle[{ioLevel=3}]
+06-17 14:38:30.373  3480  4819 I Osense-BaseDecisionMaker: OSense not supported scene! SCENE_RES_IO_PSI
+06-17 14:38:30.374 27029 27071 I metis_v2_OsenseCallBack: memLevel: 0
+06-17 14:38:30.582 27029 27071 I metis_v2_OsenseCallBack: memLevel: 3
+06-17 14:38:30.583  3480  4824 I Osense-PsiDetector: 3049,388,297,5631,95,430,543,2148,3257,856,2001,0,12,10763
+06-17 14:38:30.583  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=3}]
+06-17 14:38:30.589  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:30.601  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175986, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:30.601  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:30.601  9623 12253 V Capacitor: callback: 76175986, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:30.606  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:30.684  3480  4824 I Osense-PsiDetector: 3049,388,297,5631,95,430,543,2146,3257,856,2001,0,12,10763
+06-17 14:38:30.696  1115  1115 E lowmemorykiller: device has enough memory 3122536Kib, freeMemory 397616Kib, cmafree 0Kib, file_cache 2926868Kib, disable killing (limit_killing:1024000Kib)
+06-17 14:38:30.701  1851 17756 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 21.4,cct 5300.0,brl/algo/ir 36.0/2.0/0.0,pwm/dc 0.0/0.0,rgbc 748.390686/566.966492/361.568909/1493.055054,ts 952232380580686,cnt 1384,flag 0
+06-17 14:38:30.711  4908  5083 I SystemUi--Statusbar: PrivacyDotViewController-->scheduleUpdate: 
+06-17 14:38:30.725  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:30.725  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9273, identity:qcom-perfd
+06-17 14:38:30.728  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:30.733  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:30.737  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:30.747  1927 12774 I [UAH_CLIENT]: UahRelease, handle:419784
+06-17 14:38:30.772  1960  6585 D charge_time: write 6986s(01:56:26) to ttf, rc=6
+06-17 14:38:30.773  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=-79,avg=153,not_chg_cnt=2,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=0,debug=0,region=12,ttf=8100(02:15:00),ui_ttf=6986(01:56:26)
+06-17 14:38:30.812  4908  5083 I SystemUi--Statusbar: PrivacyDotViewController-->processNextViewState: 
+06-17 14:38:30.813  4908  5083 I SystemUi--Statusbar: PrivacyDotViewController-->resolveState ViewState(viewInitialized=true, systemPrivacyEventIsActive=false, shadeExpanded=false, needShow=true, portraitRect=Rect(0, 0 - 1440, 160), landscapeRect=Rect(160, 0 - 3168, 160), upsideDownRect=Rect(0, 0 - 1440, 160), seascapeRect=Rect(0, 0 - 2990, 160), layoutRtl=false, rotation=0, paddingTop=13, paddingBottom=13, cornerIndex=-1, corner=TopRight, designatedCorner=android.widget.FrameLayout{5c62b44 I.E...... ......ID 1348,0-1440,160 #7f0a0ad3 app:id/privacy_dot_top_right_container alpha=0.0 viewInfo = }, contentDescription=Applications are using your camera., dotMargin=82)
+06-17 14:38:30.825  1871  2342 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+06-17 14:38:30.936  1115  1115 E lowmemorykiller: device has enough memory 3119972Kib, freeMemory 384152Kib, cmafree 0Kib, file_cache 2937376Kib, disable killing (limit_killing:1024000Kib)
+06-17 14:38:30.989  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:30.998  3480  4824 I Osense-PsiDetector: 3046,375,299,5631,95,430,542,2147,3268,862,2006,0,12,10761
+06-17 14:38:31.000  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=4}]
+06-17 14:38:31.000  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:31.002  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175987, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:31.002  9623 12253 V Capacitor: callback: 76175987, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:31.002  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_LEAK, bundle: Bundle[{memLevel=4}]
+06-17 14:38:31.009  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:31.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1386)(cct,lux,ir)[5300.00, 21.18, 0.000000](rgbc)[748.39, 566.97, 346.50, 1493.06](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:31.102  3480  4315 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+06-17 14:38:31.107  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:31.107  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9274, identity:qcom-perfd
+06-17 14:38:31.110  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:31.111  5717  5717 D SubsysEventListenerManager-SubsysTelephonyCallback[1]: onSignalStrengthsChanged
+06-17 14:38:31.115  4908  5027 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:2 isSoftSimCard:false slotId:1
+06-17 14:38:31.118  5507  5507 D OplusTelephonyController: onSignalStrengthChanged: SignalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 level=0,mLte=CellSignalStrengthLte: rssi=-53 rsrp=-86 rsrq=-12 rssnr=13 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiCqiTableIndex = 2147483647 csiCqiReport = [] ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 level = 0 parametersUseForLevel = 0 timingAdvance = 2147483647 },primary=CellSignalStrengthLte}
+06-17 14:38:31.119  4908  4908 D Tile.OplusCellularTile: refreshState: tile not listening, ignore
+06-17 14:38:31.122  4908  5027 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:1 isSoftSimCard:false slotId:0
+06-17 14:38:31.125  5717  5717 D SubsysEventListenerManager-SubsysTelephonyCallback[0]: onSignalStrengthsChanged
+06-17 14:38:31.128  1927 12777 I [UAH_CLIENT]: UahRelease, handle:419785
+06-17 14:38:31.140  1115  1115 E lowmemorykiller: device has enough memory 3117948Kib, freeMemory 382076Kib, cmafree 0Kib, file_cache 2937368Kib, disable killing (limit_killing:1024000Kib)
+06-17 14:38:31.190  1871  2342 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+06-17 14:38:31.240  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:31.303  3480  4315 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 763.7/581.5/361.6/1508.1, R/G/B: 28.0/27.0/24.0, bri 36.0, lux: 19.003408, cct: 5300.0, ir: 0.067207, conf: 2, cnt: 0
+06-17 14:38:31.402  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175988, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:31.403  9623 12253 V Capacitor: callback: 76175988, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:31.404  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:31.413  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:31.414  3480  4819 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_IO_PSI, bundle: Bundle[{ioLevel=3}]
+06-17 14:38:31.415  3480  4819 I Osense-BaseDecisionMaker: OSense not supported scene! SCENE_RES_IO_PSI
+06-17 14:38:31.416 27029 27071 I metis_v2_OsenseCallBack: memLevel: 0
+06-17 14:38:31.476  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:31.476  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9271, identity:qcom-perfd
+06-17 14:38:31.479  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:31.489 10374 18035 D gaia-GaiaConnectChecker: start connect check++
+06-17 14:38:31.498  1927 12781 I [UAH_CLIENT]: UahRelease, handle:419786
+06-17 14:38:31.613  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:31.620  3480  4824 I Osense-PsiDetector: 3044,372,299,5631,95,430,542,2149,3268,862,2006,0,12,10763
+06-17 14:38:31.622 27029 27071 I metis_v2_OsenseCallBack: memLevel: 3
+06-17 14:38:31.623  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=3}]
+06-17 14:38:31.724  3480  4824 I Osense-PsiDetector: 3044,372,299,5631,95,430,542,2149,3268,862,2006,0,12,10763
+06-17 14:38:31.734  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:31.776  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=-79,avg=153,not_chg_cnt=3,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=0,debug=0,region=12,ttf=8100(02:15:00),ui_ttf=6985(01:56:25)
+06-17 14:38:31.784  1115  1115 E lowmemorykiller: device has enough memory 3117440Kib, freeMemory 381220Kib, cmafree 0Kib, file_cache 2937616Kib, disable killing (limit_killing:1024000Kib)
+06-17 14:38:31.787  4908  5246 V OplusCustomizeCacheManager: queryCache name: cache_key.system_server.common_customize_cache11011 param: null
+06-17 14:38:31.800  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175989, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:31.800  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:31.800  9623 12253 V Capacitor: callback: 76175989, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:31.805  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:31.964  1115  1115 E lowmemorykiller: device has enough memory 3117412Kib, freeMemory 380680Kib, cmafree 0Kib, file_cache 2938092Kib, disable killing (limit_killing:1024000Kib)
+06-17 14:38:31.977  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:mdp-appconf-row.heytapdl.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10111
+06-17 14:38:31.977  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:mdp-appconf-row.heytapdl.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10111
+06-17 14:38:31.978  4917 12344 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:mdp-appconf-row.heytapdl.com, servname:(null) uid: 10111, result_code:408, res = 0x0, found = 0
+06-17 14:38:31.978  4917 11943 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:mdp-appconf-row.heytapdl.com, servname:(null) uid: 10111, result_code:408, res = 0x0, found = 0
+06-17 14:38:31.980  2172  2172 E esim_service: [getGpioValue][317]: open file failed: -1, error: No such file or directory
+06-17 14:38:31.980  2172  2172 E esim_service: [getEsimGpio][371]: getEsimGpio SP: 0
+06-17 14:38:31.980  2172  2172 E esim_service: [getGpioValue][317]: open file failed: -1, error: No such file or directory
+06-17 14:38:31.980  2172  2172 E esim_service: [getEsimGpio][371]: getEsimGpio SP: 0
+06-17 14:38:31.981  2172  2172 E esim_service: [getGpioValue][317]: open file failed: -1, error: No such file or directory
+06-17 14:38:31.981  2172  2172 E esim_service: [getEsimGpio][371]: getEsimGpio SP: 0
+06-17 14:38:31.987  5566  5859 D DnsDomainBlock: onDnsEvent: latencyMs=1, returnCode=7, uid=10111
+06-17 14:38:31.999  1722  7563 E TetherController: property_get sys.radio.data.modem_share_flag return 0, 1!
+06-17 14:38:32.040  3480  4824 I Osense-PsiDetector: 3043,368,300,5631,95,430,542,2152,3271,863,2008,0,12,10758
+06-17 14:38:32.041  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_NORMAL, bundle: Bundle[{memLevel=4}]
+06-17 14:38:32.041  4908  5246 V OplusCustomizeCacheManager: queryCache name: cache_key.system_server.common_customize_cache18013 param: null
+06-17 14:38:32.042  4908  5246 V OplusCustomizeCacheManager: queryCache name: cache_key.system_server.common_customize_cache18014 param: null
+06-17 14:38:32.042  4908  5246 V OplusCustomizeCacheManager: queryCache name: cache_key.system_server.common_customize_cache18017 param: Bundle[{SETTING=BLOCK, BUSINESS=NCT-DATA}]
+06-17 14:38:32.043  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_RES_MEM_PSI_LEAK, bundle: Bundle[{memLevel=4}]
+06-17 14:38:32.046  1858 21547 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+06-17 14:38:32.046  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-17 14:38:32.046  3084  3084 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: write /dev/memcg/memory.force_shrink_file failed
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: java.io.IOException: write failed: EBUSY (Device or resource busy)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at libcore.io.IoBridge.write(IoBridge.java:651)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at java.io.FileOutputStream.write(FileOutputStream.java:436)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.writeBytes(StreamEncoder.java:233)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.implFlushBuffer(StreamEncoder.java:309)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.implFlush(StreamEncoder.java:313)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.flush(StreamEncoder.java:153)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at java.io.OutputStreamWriter.flush(OutputStreamWriter.java:248)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at com.android.server.oplus.osense.utils.OsenseCommonUtils.writeFile(OsenseCommonUtils.java:163)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at com.android.server.am.OplusOsenseCompressAction.doGlobalShrink(OplusOsenseCompressAction.java:1805)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at com.android.server.am.OplusOsenseCompressAction.-$$Nest$mdoGlobalShrink(Unknown Source:0)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at com.android.server.am.OplusOsenseCompressAction$CompressHandler.handleMessage(OplusOsenseCompressAction.java:1270)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at android.os.Handler.dispatchMessage(Handler.java:116)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at android.os.Looper.loopOnce(Looper.java:306)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at android.os.Looper.loop(Looper.java:416)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: Caused by: android.system.ErrnoException: write failed: EBUSY (Device or resource busy)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at libcore.io.Linux.writeBytes(Native Method)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at libcore.io.Linux.write(Linux.java:338)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at libcore.io.ForwardingOs.write(ForwardingOs.java:954)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at libcore.io.BlockGuardOs.write(BlockGuardOs.java:448)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	at libcore.io.IoBridge.write(IoBridge.java:646)
+06-17 14:38:32.050  3480  4186 E OsenseCommonUtils: 	... 14 more
+06-17 14:38:32.050  4908  4908 D ZenModeController: Added callback class com.oplus.systemui.qs.tiles.OplusDndTile$1
+06-17 14:38:32.052  4908  5246 I SystemUi--QuickSettings: Tile.OplusAirplaneModeTile-->handleUpdateState state.state: 1 airplaneMode: false
+06-17 14:38:32.052  4908  5246 V OplusCustomizeCacheManager: queryCache name: cache_key.system_server.common_customize_cache18026 param: null
+06-17 14:38:32.054  4908  5246 V OplusCustomizeCacheManager: queryCache name: cache_key.system_server.common_customize_cache18025 param: null
+06-17 14:38:32.056  4908  5246 V OplusCustomizeCacheManager: queryCache name: cache_key.system_server.common_customize_cache11009 param: null
+06-17 14:38:32.061  4908  5246 V OplusCustomizeCacheManager: queryCache name: cache_key.system_server.common_customize_cache18027 param: null
+06-17 14:38:32.066  4908  5246 V OplusCustomizeCacheManager: queryCache name: cache_key.system_server.common_customize_cache11010 param: null
+06-17 14:38:32.067  4908  5246 V OplusCustomizeCacheManager: queryCache name: cache_key.system_server.common_customize_cache11010 param: null
+06-17 14:38:32.068  4908  4908 D ZenModeController: Removed callback class com.oplus.systemui.qs.tiles.OplusDndTile$1
+06-17 14:38:32.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1391)(cct,lux,ir)[5300.00, 21.37, 0.000000](rgbc)[748.39, 566.97, 361.57, 1493.06](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:32.201  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175990, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:32.202  9623 12253 V Capacitor: callback: 76175990, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:32.202  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:32.205  1851 17912 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[7993, 0, 300000, 306, 267]
+06-17 14:38:32.205  1851 17912 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[2, 2, 2, 1, 3]
+06-17 14:38:32.208  3480  6040 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 2.012943 ave enviroment lux is 18.938478 luxForNit 43.66335demarcationPoint200.0 result is false
+06-17 14:38:32.209  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 5300.0 nearestMaxValue:5300.0 secondNearestValue: 5300.0
+06-17 14:38:32.209  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 18.808617 nearestMaxValue:18.613827 secondNearestValue: 18.613827
+06-17 14:38:32.213  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:32.377  1851 14865 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=952234047861496 ns; value = [-0.233734, 0.411503, 9.847351], status=3
+06-17 14:38:32.449  5717  5717 D VendorWifiService: onEvent event:9,action:1
+06-17 14:38:32.461  3480  4584 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=1
+06-17 14:38:32.461  3480  4584 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+06-17 14:38:32.602  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175991, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:32.602  9623 12253 V Capacitor: callback: 76175991, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:32.603  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:32.612  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:32.637  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:32.686 12561 12564 W ocessService0:0: userfaultfd: MOVE ioctl seems unsupported: Connection timed out
+06-17 14:38:32.702  1851 17756 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 21.2,cct 5300.0,brl/algo/ir 36.0/2.0/0.0,pwm/dc 0.0/0.0,rgbc 748.390686/566.966492/346.503510/1493.055054,ts 952234380593944,cnt 1394,flag 0
+06-17 14:38:32.735  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:32.778  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=-79,avg=153,not_chg_cnt=4,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=0,debug=0,region=12,ttf=8100(02:15:00),ui_ttf=6984(01:56:24)
+06-17 14:38:33.001  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:33.002  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175992, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:33.002  9623 12253 V Capacitor: callback: 76175992, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:33.011  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:33.021  3480  4614 D OplusNetKit: in getLpByInterface name from LP: [rmnet_data5]
+06-17 14:38:33.021  3480  4614 D OplusNetKit: in getLpByInterface name from LP: [wlan0]
+06-17 14:38:33.045 27029 27071 I metis_v2_OsenseCallBack: memLevel: 0
+06-17 14:38:33.062  5717  6032 D CpuUsageCalculator: Handler received message: 1001
+06-17 14:38:33.062  5717  6032 D CpuUsageCalculator: handleMeasurePower started, mIsRunning=true
+06-17 14:38:33.064  3480  4614 D OplusNetRttKit: getIcmpEchoRtt addr:192.168.1.*** avgRtt: 10
+06-17 14:38:33.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1396)(cct,lux,ir)[5300.00, 21.37, 0.000000](rgbc)[748.39, 566.97, 361.57, 1493.06](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:33.117  5717  6032 E CpuUsageCalculator: File not found: /proc/task_cpustats
+06-17 14:38:33.118  5717  6032 D CpuUsageCalculator: No significant CPU usage changes detected
+06-17 14:38:33.118  5717  6032 D CpuUsageCalculator: Scheduling next measurement in 120 seconds
+06-17 14:38:33.119  5717  5717 D CpuUsageCalculator: Processing power delta report:SystemLoadResult {   cpuStats=CpuTimeStats{user=6260, nice=831, system=10270, idle=75128, iowait=145, irq=2585, softirq=303, total=95522},   processSummaries=[     (empty)   ],   topThreads=[     (empty)   ],   timestamp=1781681913118 }
+06-17 14:38:33.119  5717  5717 D CpuUsageCalculator:   - Time period: 120 seconds
+06-17 14:38:33.403  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175993, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:33.404  9623 12253 V Capacitor: callback: 76175993, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:33.404  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:33.412  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:33.503  3480  4315 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+06-17 14:38:33.661  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:33.667  5507  5507 D OplusTelephonyController: onSignalStrengthChanged: SignalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 level=0,mLte=CellSignalStrengthLte: rssi=-51 rsrp=-85 rsrq=-16 rssnr=11 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiCqiTableIndex = 2147483647 csiCqiReport = [] ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 level = 0 parametersUseForLevel = 0 timingAdvance = 2147483647 },primary=CellSignalStrengthLte}
+06-17 14:38:33.669  5717  5717 D SubsysEventListenerManager-SubsysTelephonyCallback[0]: onSignalStrengthsChanged
+06-17 14:38:33.670  4908  4908 D Tile.OplusCellularTile: refreshState: tile not listening, ignore
+06-17 14:38:33.674  4908  5027 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:1 isSoftSimCard:false slotId:0
+06-17 14:38:33.679  5717  5717 D SubsysEventListenerManager-SubsysTelephonyCallback[1]: onSignalStrengthsChanged
+06-17 14:38:33.680  4908  5027 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:2 isSoftSimCard:false slotId:1
+06-17 14:38:33.703  3480  4315 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 748.4/567.0/346.5/1478.0, R/G/B: 28.0/27.0/24.0, bri 36.0, lux: 18.613827, cct: 5300.0, ir: 0.063509, conf: 2, cnt: 0
+06-17 14:38:33.728  4908  5001 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->updateNetworkSpeed: isConnected:true,isSwitchOn:true,isSuspend:false,isPause:false
+06-17 14:38:33.732  4908  5001 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->getTotalByte: totalRxBytes:20700435599,totalTxBytes:1848543992,loopbackTxBytes:73545697,loopbackRxBytes:59624421 ,totalBytes:22415809473
+06-17 14:38:33.737  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:33.751  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:33.752  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9272, identity:qcom-perfd
+06-17 14:38:33.757  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:33.770  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:33.775  1927 12787 I [UAH_CLIENT]: UahRelease, handle:419787
+06-17 14:38:33.779  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=-79,avg=153,not_chg_cnt=5,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=0,debug=0,region=12,ttf=8100(02:15:00),ui_ttf=6983(01:56:23)
+06-17 14:38:33.800  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175994, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:33.800  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:33.800  9623 12253 V Capacitor: callback: 76175994, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:33.805  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:33.839  1871  2342 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+06-17 14:38:34.055  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-17 14:38:34.055  3084  3084 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+06-17 14:38:34.055  1858 21547 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+06-17 14:38:34.082 10560 11310 I discovery::core::moni..: DiscMonitor: [trace_id=77006682990]DiscoveryComponentStatus { adaptive_sdp_client_status: Some("{\"1\":null,\"0\":\"0.0.0.0\"}"), adaptive_sdp_server_status: None, network_interface_states: Some({}) }
+06-17 14:38:34.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1401)(cct,lux,ir)[5300.00, 21.18, 0.000000](rgbc)[748.39, 566.97, 346.50, 1493.06](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:34.156 18122 18734 E msys    : E[N mns:DGWClient]_OnDiskCacheGetData(1091)=>Start post callback cache refresh DNS resolution
+06-17 14:38:34.157  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-17 14:38:34.158 18122 18739 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-17 14:38:34.159 18122 18734 E msys    : E[N mns:DGWClient]_OnDiskCacheGetData(1091)=>Start post callback cache refresh DNS resolution
+06-17 14:38:34.160  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-17 14:38:34.160 18122 18737 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-17 14:38:34.162 18122 18734 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-17 14:38:34.164  5566  5859 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=4, uid=10526
+06-17 14:38:34.164 18122 18734 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-17 14:38:34.200  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:34.200  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175995, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:34.201  9623 12253 V Capacitor: callback: 76175995, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:34.205  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:34.504  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:34.504  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9273, identity:qcom-perfd
+06-17 14:38:34.507  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:34.525  1927 12791 I [UAH_CLIENT]: UahRelease, handle:419788
+06-17 14:38:34.602  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175996, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:34.603  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:34.603  9623 12253 V Capacitor: callback: 76175996, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:34.613  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:34.685  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:34.702  1851 17756 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 21.0,cct 5300.0,brl/algo/ir 36.0/2.0/0.0,pwm/dc 0.0/0.0,rgbc 733.117432/566.966492/346.503510/1477.973755,ts 952236380598475,cnt 1404,flag 0
+06-17 14:38:34.738  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:34.781  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=140,avg=150,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=307,debug=0,region=12,ttf=8261(02:17:41),ui_ttf=6982(01:56:22)
+06-17 14:38:34.800  1960  1985 D vendor.oplus.hardware.charger-V10-service: ret_value:124, read content:,325,326,4176,4173,-139,79,82,1,1,0,456,5010,82,1,4430,300,500,0,0,9500,0,0,1,0,2,0,0,0,1,5522,95,0,3314,4226,0,0,0,0,0,105
+06-17 14:38:34.800  1960  1985 D vendor.oplus.hardware.charger-V10-service: gmtime: 2026-06-17-14-38-34
+06-17 14:38:34.800  1960  1985 D vendor.oplus.hardware.charger-V10-service: usb_online:1, ac_online:-2147483648, wireless_online:0
+06-17 14:38:34.931  3480  6040 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 2.012943 ave enviroment lux is 18.613829 luxForNit 43.23196demarcationPoint200.0 result is false
+06-17 14:38:34.931  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 5300.0 nearestMaxValue:5300.0 secondNearestValue: 5300.0
+06-17 14:38:34.931  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 18.613827 nearestMaxValue:18.613827 secondNearestValue: 18.613827
+06-17 14:38:34.940 18122 18502 E msys    : E[N mns:TigonMNS]_OnDiskCacheGetData(1091)=>Start post callback cache refresh DNS resolution
+06-17 14:38:34.943  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:graph.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-17 14:38:34.944 18122 18502 E msys    : E[N mns:TigonMNS]_OnDiskCacheGetData(1091)=>Start post callback cache refresh DNS resolution
+06-17 14:38:34.944 18122 18492 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:graph.facebook.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-17 14:38:34.945  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:graph.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-17 14:38:34.945 18122 18495 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:graph.facebook.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-17 14:38:34.946 18122 18502 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-17 14:38:34.947 18122 18502 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-17 14:38:34.949  5566  5859 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=4, uid=10526
+06-17 14:38:35.001  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175997, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:35.001  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.002  9623 12253 V Capacitor: callback: 76175997, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:35.012  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:35.101  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1406)(cct,lux,ir)[5300.00, 20.99, 0.000000](rgbc)[733.12, 566.97, 346.50, 1477.97](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:35.227  3480  5206 W ActivityTaskManager: callingPackage for (uid=2000, pid=12796) has no WPC
+06-17 14:38:35.227  3480  4575 I [UAH_CLIENT]: UahEventAcquire, cmdid:2, pkg:none, identity:com.android.server.wm
+06-17 14:38:35.229  3480  5206 D WindowManager: NFW_setClientVisible:ActivityRecord{124688619 u0 rd.sheepskin.sandboxmusic/.MainActivity clientVisible:true
+06-17 14:38:35.229  3480  4355 D StartingSurfacePreviewController: checkSupportSurfacePreview, token=rd.sheepskin.sandboxmusic/.MainActivity, enableSurfacePreview=false, supportMultiLayout=false, unsupportedSkipViewAnimLv=null, disableSurfacePreviewAnimLv=null, ignoreFileExistAnimLv=null
+06-17 14:38:35.229  3480  5206 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@3d00b63f does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+06-17 14:38:35.229  3480  5206 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+06-17 14:38:35.230  3480  5206 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+06-17 14:38:35.230  3480  5206 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+06-17 14:38:35.230  3480  5206 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+06-17 14:38:35.230  3480  5206 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+06-17 14:38:35.231  1851 17912 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[1569, 0, 150000, 391, 237]
+06-17 14:38:35.231  1851 17912 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[2, 2, 3, 2, 3]
+06-17 14:38:35.231  3480  5206 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3480
+06-17 14:38:35.232  3480  5206 I AppSnapshotController: init, sysSupport = true, mActivitySupport = false, activityRecord = ActivityRecord{124688619 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1}
+06-17 14:38:35.233  3480  3580 E QosSceneRecognizer[ActivityStartScene]: notifyActivityStart get launchedFromUid failed through AppManager! launchedFromPackage: com.android.shell, pkg: rd.sheepskin.sandboxmusic
+06-17 14:38:35.233  3480  5206 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+06-17 14:38:35.233  3480  5206 D ActivityStarterExtImpl: setForceUpdateWindow, targetTask = Task{f33898d #12219 type=standard A=10445:rd.sheepskin.sandboxmusic} r = ActivityRecord{124688619 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} notFinish =false
+06-17 14:38:35.233  3480  5206 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+06-17 14:38:35.233  3480  5206 D FlexibleTaskController: findSourceTaskForFreeForm: sourceRecord = null ,realCallingPid:12796 ,launchFromZoomMode:false ,prevTopTask:Task{f33898d #12219 type=standard A=10445:rd.sheepskin.sandboxmusic}
+06-17 14:38:35.234  3480  5206 D FlexibleTaskController: findSourceTaskForFreeForm: the caller is not a flexible freeform window application and does not have a zoom windowMode startup parameter
+06-17 14:38:35.234  3480  5206 D FlexibleTaskController: adjustOptionsForFlexibleTask not allow options follow process task's options, reason:9 ,reusedOptions:null
+06-17 14:38:35.234  3480  5206 I TaskFragmentExtImpl: reset pause in recents anim for mTaskFragment: Task{f33898d #12219 type=standard A=10445:rd.sheepskin.sandboxmusic}
+06-17 14:38:35.234  3480  5206 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3480
+06-17 14:38:35.234  3480  5206 D FlexibleTaskController: shouldKeepFlexibleTask flexibleTask not active.
+06-17 14:38:35.234  3480  5206 D ActivityStarterExtImpl: isLaunchingRootActivity = true
+06-17 14:38:35.235  3480  5206 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+06-17 14:38:35.235 28671 28904 I APS_ALOG: flushRoutine g_immediateFlush=0 g_pendingCount=0 g_oobCount=0
+06-17 14:38:35.235  4908  4908 D CommandQueueLogger: appTransitionPending displayId=0 forced=false
+06-17 14:38:35.236  3480  5206 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+06-17 14:38:35.236  3480  5206 E Transition: Aborting Transition mSyncId=15432, caller=com.android.server.wm.OplusTransitionUtil.abortTransitionImmediately:109 com.android.server.wm.OplusTransitionController.abortTransitionImmediately:123 com.android.server.wm.ActivityStarterExtImpl.abortTransitionImmediately:1850 
+06-17 14:38:35.236  3480  5206 D OplusTransitionController: hookOnAbort, transition: TransitionRecord{b41da06 id=15432 track=0 type=OPEN flags=0x0 state=0 c=[
+06-17 14:38:35.236  3480  5206 D OplusTransitionController:    ChangeInfo{21bd8c7 container=ActivityRecord{124688619 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} flags=0x0}
+06-17 14:38:35.236  3480  5206 D OplusTransitionController: ]
+06-17 14:38:35.236  3480  5206 D OplusTransitionController: }
+06-17 14:38:35.236  3480  5206 E OplusAppQuickStart_AppQuickStartController: not start from launcher transition:15432
+06-17 14:38:35.237  3480  5206 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+06-17 14:38:35.237  3480  5206 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+06-17 14:38:35.237  3480  5206 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=1 ret=-1 errno=25 (Inappropriate ioctl for device)
+06-17 14:38:35.238  3480  5206 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=0 ret=-1 errno=25 (Inappropriate ioctl for device)
+06-17 14:38:35.238  3480  5206 I ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=sandboxmusic://e2e/... flg=0x14000000 xflg=0x4 cmp=rd.sheepskin.sandboxmusic/.MainActivity mCallingUid=2000} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION (START_ACTIVITIES_FROM_BACKGROUND permission granted)) result code=3
+06-17 14:38:35.240  4908  4942 D KeyguardService: setOccluded(false)
+06-17 14:38:35.240  4908  4978 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity}, wasVisible=true
+06-17 14:38:35.241  4908  4942 D KeyguardService: setOccluded: false, animate= false
+06-17 14:38:35.241  4908  4942 D KeyguardViewMediator: setOccluded(false)
+06-17 14:38:35.241  9623  9623 V Capacitor/AppPlugin: Notifying listeners for event pause
+06-17 14:38:35.241  9623  9623 D Capacitor/AppPlugin: No listeners found for event pause
+06-17 14:38:35.241  4908  4942 D KeyguardViewMediator: setOccluded false
+06-17 14:38:35.241  9623  9623 D Capacitor: App paused
+06-17 14:38:35.241  4908  4942 D KeyguardService: setOccluded(false)
+06-17 14:38:35.241  4908  4942 D KeyguardService: setOccluded: false, animate= false
+06-17 14:38:35.241  9623  9623 V Capacitor/AppPlugin: Notifying listeners for event appUrlOpen
+06-17 14:38:35.242  9623  9623 D ActivityThread: ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity} checkFinished=false 4
+06-17 14:38:35.242  9623  9623 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+06-17 14:38:35.242  4908  4942 D KeyguardViewMediator: setOccluded(false)
+06-17 14:38:35.242  9623  9623 D Capacitor/AppPlugin: Firing change: true
+06-17 14:38:35.242  9623  9623 V Capacitor/AppPlugin: Notifying listeners for event appStateChange
+06-17 14:38:35.242  4908  4942 D KeyguardViewMediator: setOccluded false
+06-17 14:38:35.242  9623  9623 V Capacitor/AppPlugin: Notifying listeners for event resume
+06-17 14:38:35.242  9623  9623 D Capacitor/AppPlugin: No listeners found for event resume
+06-17 14:38:35.242  9623  9623 D Capacitor: App resumed
+06-17 14:38:35.243  3480  5206 V AS.AudioService: uid 10445, callingApp = rd.sheepskin.sandboxmusic
+06-17 14:38:35.243  9623  9623 I AudioManager: In setSpeakerphoneOn(), on: false, calling application: rd.sheepskin.sandboxmusic
+06-17 14:38:35.243  3480  5206 W AS.AudioService: Audio Settings Permission Denial: setSpeakerphoneOn() from pid=9623, uid=10445
+06-17 14:38:35.243  9623  9623 W BluetoothAdapterExtImpl: setSpeakerphoneOn register null!
+06-17 14:38:35.250  9623  9623 D ViewRootImplExtImpl: wrapConfigInfoIntoFlags rotation=0, smallestScreenWidthDp=320, residentWS=false, scenario=0, bounds=Rect(0, 0 - 1440, 3168), isFirstDraw=false, relayoutAsync=true, flags=0, newFlags=1660954624, title=rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity
+06-17 14:38:35.250  3480  5206 V WindowManager: Relayout Window{3023f81 u0 rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity}: viewVisibility=0, oldvis=0, req=1440x3168 , apr = 0, , x=0, y=0
+06-17 14:38:35.250  9623  9623 D VRI[MainActivity]: relayoutWindow result, sizeChanged:false, surfaceControlChanged:false, transformHintChanged:false, mSurfaceSize:Point(1440, 3168), mLastSurfaceSize:Point(1440, 3168), mWidth:1440, mHeight:3168, requestedWidth:1440, requestedHeight:3168, transformHint:0, installOrientation:0, displayRotation:0, isSurfaceValid:true, attr.flag:-2122252032, tmpFrames:ClientWindowFrames{frame=[0,0][1440,3168] display=[0,0][1440,3168] parentFrame=[0,0][1440,3168]}, relayoutResult:0, relayoutAsync:true, mSyncSeqId:0
+06-17 14:38:35.251  9623  9623 W VRI[MainActivity]: updateBlastSurfaceIfNeeded, surfaceSize:Point(1440, 3168), lastSurfaceSize:Point(1440, 3168), format:-1, blastBufferQueue:android.graphics.BLASTBufferQueue@ab73701
+06-17 14:38:35.251  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"url":"sandboxmusic://e2e/skip-onboarding"}
+06-17 14:38:35.252  3480  5206 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+06-17 14:38:35.252  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:35.252  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9274, identity:qcom-perfd
+06-17 14:38:35.254  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:35.254  3480  4817 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_ACTIVITY_IDLE, bundle: Bundle[{scene=SCENE_ACTIVITY_IDLE}]
+06-17 14:38:35.254  3480  4817 I Osense-BaseDecisionMaker: OSense not supported scene! SCENE_ACTIVITY_IDLE
+06-17 14:38:35.258  4908  4908 D CommandQueueLogger: appTransitionCancelled displayId=0
+06-17 14:38:35.259  4908  4908 D CommandQueueLogger: appTransitionCancelled displayId=0
+06-17 14:38:35.259  4908  4908 D KeyguardViewMediator: handleSetOccluded(false)
+06-17 14:38:35.259  4908  4908 D NotificationShadeWindowController: setIsAboutToOccluded:false, needApply:false
+06-17 14:38:35.259  4908  4908 D KeyguardViewMediator: isOccluded=false,mPowerGestureIntercepted=false
+06-17 14:38:35.259  4908  4908 I SystemUi--Keyguard: ChargingAnimationImpl-->onKeyguardOccludeChange occluded= false
+06-17 14:38:35.259  4908  4908 I SystemUi--Keyguard: KeyguardSliderLayout-->onKeyguardOccludeChange occluded= false
+06-17 14:38:35.261  3480  3570 W ProcessStats: Tracking association SourceState{b56f683 system/1000 BFgs #1867197} whose proc state 4 is better than process ProcessState{a75c4ab com.android.wallpaper.livepicker:wallpaperService/10229 pkg=com.android.wallpaper.livepicker} proc state 5 (36 skipped)
+06-17 14:38:35.262  4908  4908 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SET_OCCLUDED
+06-17 14:38:35.264  9623  9623 I Capacitor/Console: File: https://localhost/assets/index-DP3B5cQ_.js - Line 2 - Msg: [SandboxE2E] AREA=onboarding RESULT=PASS skipped
+06-17 14:38:35.264  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175998, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:35.264  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.265  9623 12253 V Capacitor: callback: 76175998, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:35.265  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76175999, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:35.265  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.265  9623 12253 V Capacitor: callback: 76175999, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:35.266  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"url":"sandboxmusic://e2e/skip-onboarding"}
+06-17 14:38:35.266  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"isActive":true}
+06-17 14:38:35.271  1927 12801 I [UAH_CLIENT]: UahRelease, handle:419790
+06-17 14:38:35.272  3480  5206 I BLASTSyncEngine: onCommitted syncId: 15432, timeout: false ran: false
+06-17 14:38:35.273  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:35.275  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:35.276  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.276  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176000, pluginId: NativeExoPlayback, methodName: prepare
+06-17 14:38:35.276  9623 12253 V Capacitor: callback: 76176000, pluginId: NativeExoPlayback, methodName: prepare, methodData: {}
+06-17 14:38:35.276  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176001, pluginId: NativeExoPlayback, methodName: setGaplessEnabled
+06-17 14:38:35.277  9623 12253 V Capacitor: callback: 76176001, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":true}
+06-17 14:38:35.277  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.277  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176002, pluginId: NativeExoPlayback, methodName: prepare
+06-17 14:38:35.278  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:35.278  9623 12253 V Capacitor: callback: 76176002, pluginId: NativeExoPlayback, methodName: prepare, methodData: {}
+06-17 14:38:35.278  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.278  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176003, pluginId: NativeExoPlayback, methodName: setGaplessEnabled
+06-17 14:38:35.278  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.279  9623 12253 V Capacitor: callback: 76176003, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":true}
+06-17 14:38:35.280  9623  9623 I SurfaceControl:  setExtendedRangeBrightness sc=Surface(name=rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity)/@0x147494a,currentBufferRatio=1.0,desiredRatio=1.0
+06-17 14:38:35.282  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"ok":true,"message":"ExoPlayer ready."}
+06-17 14:38:35.282  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176004, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled
+06-17 14:38:35.282  9623 12253 V Capacitor: callback: 76176004, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+06-17 14:38:35.282  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":true}
+06-17 14:38:35.282  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.283  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"ok":true,"message":"ExoPlayer ready."}
+06-17 14:38:35.283  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":true}
+06-17 14:38:35.283  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176005, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled
+06-17 14:38:35.283  9623 12253 V Capacitor: callback: 76176005, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+06-17 14:38:35.283  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.284  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+06-17 14:38:35.284  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176006, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled
+06-17 14:38:35.284  9623 12253 V Capacitor: callback: 76176006, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+06-17 14:38:35.284  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.284  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+06-17 14:38:35.284  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176007, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled
+06-17 14:38:35.284  9623 12253 V Capacitor: callback: 76176007, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+06-17 14:38:35.284  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.285  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+06-17 14:38:35.285  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+06-17 14:38:35.285  3480  4187 I resRelease: policy type is 2
+06-17 14:38:35.365  1871  2342 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+06-17 14:38:35.400  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.401  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176008, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:35.401  9623 12253 V Capacitor: callback: 76176008, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:35.405  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:35.465  5717  5717 D VendorWifiService: onEvent event:9,action:1
+06-17 14:38:35.470  3480  4584 D ScorerUtils: isLowTraffic: txTputKBps=1, rxTputKBps=2
+06-17 14:38:35.470  3480  4584 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+06-17 14:38:35.526  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:35.684  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:35.685  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9271, identity:qcom-perfd
+06-17 14:38:35.688  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:35.706  1927 12803 I [UAH_CLIENT]: UahRelease, handle:419791
+06-17 14:38:35.707  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:35.740  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:35.763  1871  2342 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+06-17 14:38:35.777  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:35.785  1960  6585 D charge_time: write 6981s(01:56:21) to ttf, rc=6
+06-17 14:38:35.785  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=140,avg=147,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=308,debug=0,region=12,ttf=8435(02:20:35),ui_ttf=6981(01:56:21)
+06-17 14:38:35.800  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176009, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:35.800  9623 12253 V Capacitor: callback: 76176009, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:35.800  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:35.804  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:35.904  3480  4315 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+06-17 14:38:35.910  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:35.910  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9272, identity:qcom-perfd
+06-17 14:38:35.913  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:35.931  1927 12807 I [UAH_CLIENT]: UahRelease, handle:419793
+06-17 14:38:35.995  1871  2342 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 69999 us
+06-17 14:38:36.027  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:36.047  4908 10282 I PluginSeedling--Origin: OSenseManager-->isMEMHighPressure oldState:false newState: false isMEMHighPressure:false
+06-17 14:38:36.059  1858 21547 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+06-17 14:38:36.061  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-17 14:38:36.061  3084  3084 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+06-17 14:38:36.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1411)(cct,lux,ir)[5300.00, 21.37, 0.000000](rgbc)[748.39, 566.97, 361.57, 1493.06](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:36.102  3480  4315 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 748.4/567.0/361.6/1493.1, R/G/B: 28.0/27.0/24.0, bri 36.0, lux: 18.808617, cct: 5300.0, ir: 0.062846, conf: 2, cnt: 0
+06-17 14:38:36.199  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176010, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:36.200  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:36.200  9623 12253 V Capacitor: callback: 76176010, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:36.205  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:36.405  1851 14865 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=952238077551600 ns; value = [-0.245705, 0.404321, 9.840169], status=3
+06-17 14:38:36.429  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:36.429  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9273, identity:qcom-perfd
+06-17 14:38:36.432  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:36.451  1927 12811 I [UAH_CLIENT]: UahRelease, handle:419794
+06-17 14:38:36.500  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:36.568  1871  2342 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+06-17 14:38:36.601  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176011, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:36.602  9623 12253 V Capacitor: callback: 76176011, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:36.602  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:36.614  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:36.658  3480 22978 D UsageStatsService: User[0] type=0 b=1781681638092 e=1781681916657 cb=1781617793767 ce=1781681899141 disk=0 all=7
+06-17 14:38:36.702  1851 17756 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 21.4,cct 5300.0,brl/algo/ir 36.0/2.0/0.0,pwm/dc 0.0/0.0,rgbc 748.390686/566.966492/361.568909/1493.055054,ts 952238380758944,cnt 1414,flag 0
+06-17 14:38:36.734  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:36.741  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:36.789  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=140,avg=145,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=309,debug=0,region=12,ttf=8555(02:22:35),ui_ttf=6980(01:56:20)
+06-17 14:38:36.946 30095 30129 I OplusLog_main_host: [IPhoneConnectionProvider] call: method = get_bound_iphone, callingUid = 10110, callingPid = 10560, callingPackage = com.heytap.accessory
+06-17 14:38:36.950 30095 30195 D OplusLog_DeviceKit_com.oplus.linker: [SynergyDeviceManager-246647336] queryOriginalDeviceList from: com.oplus.linker, [11, 12, 6, 10, 8, 16], com.oplus.linker.datalayer.local.LocalDbRepositoryDelegate$getAllSynergyDeviceInfoWithProperty$2$1@5374faa
+06-17 14:38:36.961 30095 30195 D OplusLog_DeviceKit_com.oplus.linker: [OpDeviceServiceClient-246647336] queryOriginalDeviceList onResult: []
+06-17 14:38:37.002  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176012, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:37.002  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:37.003  9623 12253 V Capacitor: callback: 76176012, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:37.014  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:37.103  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1416)(cct,lux,ir)[5300.00, 21.37, 0.000000](rgbc)[748.39, 566.97, 361.57, 1493.06](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:37.225  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:37.225  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9274, identity:qcom-perfd
+06-17 14:38:37.229  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:37.248  1927 12815 I [UAH_CLIENT]: UahRelease, handle:419795
+06-17 14:38:37.275  3274  3274 I OplusTouchDaemon: ts_run_service: shellback temperature updated 32 (32500)
+06-17 14:38:37.282  3480  4187 D osense.compress: com.instagram.android do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+06-17 14:38:37.284  3480  4187 D osense.compress: com.google.android.gms do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+06-17 14:38:37.399  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176013, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:37.400  9623 12253 V Capacitor: callback: 76176013, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:37.400  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:37.406  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:37.659  3480  6040 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 2.012943 ave enviroment lux is 18.808617 luxForNit 43.491943demarcationPoint200.0 result is false
+06-17 14:38:37.660  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 5300.0 nearestMaxValue:5300.0 secondNearestValue: 5300.0
+06-17 14:38:37.660  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 18.613827 nearestMaxValue:18.613827 secondNearestValue: 18.613827
+06-17 14:38:37.737  4908  5001 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->updateNetworkSpeed: isConnected:true,isSwitchOn:true,isSuspend:false,isPause:false
+06-17 14:38:37.740  4908  5001 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->getTotalByte: totalRxBytes:20700443588,totalTxBytes:1848547665,loopbackTxBytes:73545937,loopbackRxBytes:59624661 ,totalBytes:22415820655
+06-17 14:38:37.743  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:37.757  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:37.764  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:37.764  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9271, identity:qcom-perfd
+06-17 14:38:37.768  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:37.785  1927 12817 I [UAH_CLIENT]: UahRelease, handle:419796
+06-17 14:38:37.791  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=140,avg=142,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=310,debug=0,region=12,ttf=8741(02:25:41),ui_ttf=6979(01:56:19)
+06-17 14:38:37.800  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:37.801  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176014, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:37.801  9623 12253 V Capacitor: callback: 76176014, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:37.807  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:37.944 10754 10789 I ForwardSyncCache: reclaimMemory: Clearing caches
+06-17 14:38:37.945 10754 10789 I BugleSpam: HadesBitmapStore: Purged 0 images during memory reclamation
+06-17 14:38:37.945 10754 10789 I BugleRestore: reclaimMemory: Clearing persistent caches
+06-17 14:38:37.947 10754 10789 W Bugle   : TextClassifierLibManagerImpl: Reclaiming memory at level: 40
+06-17 14:38:38.064  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-17 14:38:38.064  3084  3084 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+06-17 14:38:38.065  1858 21547 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+06-17 14:38:38.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1421)(cct,lux,ir)[5300.00, 20.65, 0.000000](rgbc)[748.39, 566.97, 361.57, 1477.97](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:38.200  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:38.201  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176015, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:38.201  9623 12253 V Capacitor: callback: 76176015, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:38.208  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:38.255  1851 17912 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[10741, 0, 300000, 388, 88]
+06-17 14:38:38.255  1851 17912 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[3, 1, 3, 1, 3]
+06-17 14:38:38.302  3480  4315 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+06-17 14:38:38.310  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:38.310  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9272, identity:qcom-perfd
+06-17 14:38:38.312  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:38.323  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-17 14:38:38.331  1927 12820 I [UAH_CLIENT]: UahRelease, handle:419797
+06-17 14:38:38.391  1871  2342 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+06-17 14:38:38.497  5717  5717 D VendorWifiService: onEvent event:9,action:1
+06-17 14:38:38.502  3480  4315 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 748.4/567.0/361.6/1493.1, R/G/B: 28.0/27.0/24.0, bri 36.0, lux: 18.808617, cct: 5300.0, ir: 0.062846, conf: 2, cnt: 0
+06-17 14:38:38.504  3480  4584 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=1
+06-17 14:38:38.505  3480  4584 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+06-17 14:38:38.601  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176016, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:38.602  9623 12253 V Capacitor: callback: 76176016, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:38.604  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:38.611  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:38.619  1851  4415 I sensors-hal: qsh_conn_event_cb:762, event[0] msg_id=1025, ts=18283113709650, sensor_type = pedometer_minute  Wakeup
+06-17 14:38:38.621  1851  4415 E sensors-hal: handle_sns_client_event:95, pedometer_minute: report_ts=15867,counter=50489.000000 move_status =[SNS_CMC_STATIONARY] time_gap = 0 run_counter=32518.000000 walk_counter=13700.000000
+06-17 14:38:38.632  4647  4647 I StepApp_StepDataPreHandler: (main)onSensorChanged raw data: step=50489.0 state=3.0 minuteDelta=0.0 timestamp=952240297614673 steprun=32518.0 stepwalk=13700.0 formatted data: step=50489 state=3 timestamp=952240297614673 time=1781681918613 steprun=32518 stepwalk=13700
+06-17 14:38:38.633  4647 24096 I StepApp_StepDataSaver: (O_dfd_815)getNewFixedOffsetStep type is STEP
+06-17 14:38:38.633  4647 24096 I StepApp_StepDataSaver: (O_dfd_815)isRebootCountStep:false	 lastRealTimeStamp = 1781681820000	 bootTimestamp = 1780729678315	 mLastModifiedMinuteTime = 2026-06-17-14-37
+06-17 14:38:38.634  4647 24096 I StepApp_StepDataSaver: (O_dfd_815)calOffSet:sensorStep = 50489	 lastModifiedStep = 50489	 offSet = 0
+06-17 14:38:38.634  4647 24096 I StepApp_StepDataSaver: (O_dfd_815)getNewFixedOffsetStep type is RUN
+06-17 14:38:38.634  4647 24096 I StepApp_StepDataSaver: (O_dfd_815)isRebootCountStep:false	 lastRealTimeStamp = 1781681820000	 bootTimestamp = 1780729678315	 mLastModifiedMinuteTime = 2026-06-17-14-37
+06-17 14:38:38.634  4647 24096 I StepApp_StepDataSaver: (O_dfd_815)calOffSet:sensorStep = 32518	 lastModifiedStep = 32518	 offSet = 0
+06-17 14:38:38.634  4647 24096 I StepApp_StepDataSaver: (O_dfd_815)getNewFixedOffsetStep type is WALK
+06-17 14:38:38.634  4647 24096 I StepApp_StepDataSaver: (O_dfd_815)isRebootCountStep:false	 lastRealTimeStamp = 1781681820000	 bootTimestamp = 1780729678315	 mLastModifiedMinuteTime = 2026-06-17-14-37
+06-17 14:38:38.634  4647 24096 I StepApp_StepDataSaver: (O_dfd_815)calOffSet:sensorStep = 13700	 lastModifiedStep = 13700	 offSet = 0
+06-17 14:38:38.702  1851 17756 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 21.4,cct 5300.0,brl/algo/ir 36.0/2.0/0.0,pwm/dc 0.0/0.0,rgbc 748.390686/566.966492/361.568909/1493.055054,ts 952240380590559,cnt 1424,flag 0
+06-17 14:38:38.746  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:38.781  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:38.793  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=140,avg=140,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=311,debug=0,region=12,ttf=8869(02:27:49),ui_ttf=6978(01:56:18)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: write /dev/memcg/memory.force_shrink_file failed
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: java.io.IOException: write failed: EBUSY (Device or resource busy)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at libcore.io.IoBridge.write(IoBridge.java:651)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at java.io.FileOutputStream.write(FileOutputStream.java:436)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.writeBytes(StreamEncoder.java:233)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.implFlushBuffer(StreamEncoder.java:309)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.implFlush(StreamEncoder.java:313)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at sun.nio.cs.StreamEncoder.flush(StreamEncoder.java:153)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at java.io.OutputStreamWriter.flush(OutputStreamWriter.java:248)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at com.android.server.oplus.osense.utils.OsenseCommonUtils.writeFile(OsenseCommonUtils.java:163)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at com.android.server.am.OplusOsenseCompressAction.doGlobalShrink(OplusOsenseCompressAction.java:1805)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at com.android.server.am.OplusOsenseCompressAction.-$$Nest$mdoGlobalShrink(Unknown Source:0)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at com.android.server.am.OplusOsenseCompressAction$CompressHandler.handleMessage(OplusOsenseCompressAction.java:1270)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at android.os.Handler.dispatchMessage(Handler.java:116)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at android.os.Looper.loopOnce(Looper.java:306)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at android.os.Looper.loop(Looper.java:416)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: Caused by: android.system.ErrnoException: write failed: EBUSY (Device or resource busy)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at libcore.io.Linux.writeBytes(Native Method)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at libcore.io.Linux.write(Linux.java:338)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at libcore.io.ForwardingOs.write(ForwardingOs.java:954)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at libcore.io.BlockGuardOs.write(BlockGuardOs.java:448)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	at libcore.io.IoBridge.write(IoBridge.java:646)
+06-17 14:38:38.845  3480  4186 E OsenseCommonUtils: 	... 14 more
+06-17 14:38:39.000  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:39.000  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176017, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:39.000  9623 12253 V Capacitor: callback: 76176017, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:39.008  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:39.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1426)(cct,lux,ir)[5300.00, 20.46, 0.000000](rgbc)[748.39, 566.97, 346.50, 1477.97](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:39.401  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:39.401  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176018, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:39.401  9623 12253 V Capacitor: callback: 76176018, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:39.409  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:39.657 10816 11190 I 10816UMSHealthDataProvider_Travel: sportObserver onChange
+06-17 14:38:39.747  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:39.795  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=151,avg=142,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=312,debug=0,region=12,ttf=8739(02:25:39),ui_ttf=6977(01:56:17)
+06-17 14:38:39.801  1960  1985 D vendor.oplus.hardware.charger-V10-service: ret_value:124, read content:,326,325,4178,4176,-151,79,82,1,1,0,453,4992,82,1,4430,300,500,0,0,9500,0,0,1,0,2,0,0,0,1,5522,95,0,3314,4226,0,0,0,0,0,105
+06-17 14:38:39.801  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176019, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:39.801  1960  1985 D vendor.oplus.hardware.charger-V10-service: gmtime: 2026-06-17-14-38-39
+06-17 14:38:39.802  9623 12253 V Capacitor: callback: 76176019, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:39.802  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:39.802  1960  1985 D vendor.oplus.hardware.charger-V10-service: usb_online:1, ac_online:-2147483648, wireless_online:0
+06-17 14:38:39.804  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:39.807  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:39.965 12707 12719 W atistics.rom:cc: userfaultfd: MOVE ioctl seems unsupported: Connection timed out
+06-17 14:38:40.065  1858 21547 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+06-17 14:38:40.066  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-17 14:38:40.066  3084  3084 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+06-17 14:38:40.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1431)(cct,lux,ir)[5300.00, 21.90, 0.000000](rgbc)[748.39, 566.97, 346.50, 1508.14](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:40.201  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176020, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:40.201  9623 12253 V Capacitor: callback: 76176020, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:40.201  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:40.209  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:40.236 28671 28904 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(com.oplus.camera) ==
+06-17 14:38:40.236 28671 28904 I APS_ALOG: flushRoutine g_immediateFlush=0 g_pendingCount=0 g_oobCount=0
+06-17 14:38:40.357  3480  6040 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(system_server) ==
+06-17 14:38:40.357  3480  6040 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 2.012943 ave enviroment lux is 18.808617 luxForNit 43.491943demarcationPoint200.0 result is false
+06-17 14:38:40.357  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 5300.0 nearestMaxValue:5300.0 secondNearestValue: 5300.0
+06-17 14:38:40.357  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 18.613827 nearestMaxValue:18.808617 secondNearestValue: 18.808617
+06-17 14:38:40.436  1851 14865 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=952242106852538 ns; value = [-0.240916, 0.411503, 9.856928], status=3
+06-17 14:38:40.601  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176021, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:40.601  9623 12253 V Capacitor: callback: 76176021, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:40.602  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:40.609  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:40.702  1851 17756 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 21.9,cct 5300.0,brl/algo/ir 36.0/2.0/0.0,pwm/dc 0.0/0.0,rgbc 748.390686/566.966492/346.503510/1508.136475,ts 952242380581496,cnt 1434,flag 0
+06-17 14:38:40.703  3480  4315 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+06-17 14:38:40.749  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:40.797  1960  6585 D charge_time: write 6976s(01:56:16) to ttf, rc=6
+06-17 14:38:40.797  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=151,avg=144,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=313,debug=0,region=12,ttf=8612(02:23:32),ui_ttf=6976(01:56:16)
+06-17 14:38:40.829  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:40.902  3480  4315 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 748.4/567.0/346.5/1508.1, R/G/B: 28.0/27.0/24.0, bri 36.0, lux: 19.003408, cct: 5300.0, ir: 0.051957, conf: 2, cnt: 0
+06-17 14:38:41.003  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:41.005  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176022, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:41.005  9623 12253 V Capacitor: callback: 76176022, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:41.017  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:41.077  3480 11693 D UsageStatsService: User[999] type=0 b=1781679870311 e=1781681921077 cb=1781601129511 ce=1781681530828 disk=0 all=1
+06-17 14:38:41.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1436)(cct,lux,ir)[5300.00, 22.09, 0.000000](rgbc)[748.39, 566.97, 361.57, 1508.14](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:41.255  1851 17912 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[1536, 0, 300000, 391, 234]
+06-17 14:38:41.255  1851 17912 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[2, 2, 3, 1, 3]
+06-17 14:38:41.400  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:41.400  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176023, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:41.400  9623 12253 V Capacitor: callback: 76176023, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:41.407 18122 18734 E msys    : E[N mns:DGWClient]_OnDiskCacheGetData(1091)=>Start post callback cache refresh DNS resolution
+06-17 14:38:41.408  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:41.409  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-17 14:38:41.409 18122 18738 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-17 14:38:41.411 18122 18734 E msys    : E[N mns:DGWClient]_OnDiskCacheGetData(1091)=>Start post callback cache refresh DNS resolution
+06-17 14:38:41.411 18122 18734 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-17 14:38:41.412  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-17 14:38:41.412  5566  5859 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=4, uid=10526
+06-17 14:38:41.412 18122 18736 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-17 14:38:41.413 18122 18734 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-17 14:38:41.496 10374 27654 D gaia-GaiaConnectChecker: start connect check++
+06-17 14:38:41.517  5717  5717 D VendorWifiService: onEvent event:9,action:1
+06-17 14:38:41.523  3480  4584 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=1
+06-17 14:38:41.524  3480  4584 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+06-17 14:38:41.744  4908  5001 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(com.android.systemui) ==
+06-17 14:38:41.744  4908  5001 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->updateNetworkSpeed: isConnected:true,isSwitchOn:true,isSuspend:false,isPause:false
+06-17 14:38:41.750  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:41.753  4908  5001 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->getTotalByte: totalRxBytes:20700447599,totalTxBytes:1848549502,loopbackTxBytes:73545937,loopbackRxBytes:59624661 ,totalBytes:22415826503
+06-17 14:38:41.781  1927  2069 I [UAH_CLIENT]: UahPlatformResAcquire
+06-17 14:38:41.781  1927  2069 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2138 9273, identity:qcom-perfd
+06-17 14:38:41.783  1927  2059 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+06-17 14:38:41.798  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=151,avg=146,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=314,debug=0,region=12,ttf=8489(02:21:29),ui_ttf=6975(01:56:15)
+06-17 14:38:41.801  1927 12828 I [UAH_CLIENT]: UahRelease, handle:419798
+06-17 14:38:41.801  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176024, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:41.801  9623 12253 V Capacitor: callback: 76176024, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:41.802  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:41.808  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:41.852  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:42.071  1858 21547 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+06-17 14:38:42.071  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-17 14:38:42.071  3084  3084 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+06-17 14:38:42.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1441)(cct,lux,ir)[5300.00, 20.84, 0.000000](rgbc)[763.66, 581.50, 361.57, 1508.14](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:42.201  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176025, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:42.201  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:42.201  9623 12253 V Capacitor: callback: 76176025, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:42.211  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:42.601  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:42.601  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176026, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:42.601  9623 12253 V Capacitor: callback: 76176026, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:42.609  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:42.702  1851 17756 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 21.6,cct 5300.0,brl/algo/ir 36.0/2.0/0.0,pwm/dc 0.0/0.0,rgbc 763.663940/581.504089/361.568909/1523.217773,ts 952244380597642,cnt 1444,flag 0
+06-17 14:38:42.751  1960  1986 D BatteryChargeControl: bcc get no support from charging protocol
+06-17 14:38:42.801  1960  6585 D charge_time: type=sdp,reserve_soc=3,soc=79,ui_soc=82,current=151,avg=148,not_chg_cnt=0,stable_cnt=7,fcc=4226,fcc_ratio=82,delta=315,debug=0,region=12,ttf=8369(02:19:29),ui_ttf=6974(01:56:14)
+06-17 14:38:42.879  5717  7539 D CommonApp-227-10445: transport layer data is invalid
+06-17 14:38:42.980 10560 11666 I PTC.DISC.AndroidMultiLanServer: Watcher sysNif=[wlan0], userNif=[wlan0 state=(LISTEN JOIN(|-1)), , vgate0 state=(LISTEN JOIN(|-1))], clientNif=[wlan0 state=(LISTEN), , vgate0 state=(LISTEN)], tcpServer state=LISTEN, ipv4=**8.1.34
+06-17 14:38:42.997  3480  4187 I resRelease: policy type is 2
+06-17 14:38:42.999  9623 12253 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 76176027, pluginId: NativeExoPlayback, methodName: getStatus
+06-17 14:38:43.000  9623 12253 V Capacitor: callback: 76176027, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-17 14:38:43.002  9623  9623 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-17 14:38:43.005  9623  9623 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue ÔÇö content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":0,"queueIndex":0,"queueLength":0,"gaplessEnabled":true,"crossfadeEnabled":false,"bitPerfectActive":false}
+06-17 14:38:43.082  3480  6040 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 2.012943 ave enviroment lux is 19.003408 luxForNit 43.748455demarcationPoint200.0 result is false
+06-17 14:38:43.082  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 5300.0 nearestMaxValue:5300.0 secondNearestValue: 5300.0
+06-17 14:38:43.082  3480  6040 I AICCTModule: SensorFilter: findSecondNearestValue, sensorValue: 18.808617 nearestMaxValue:18.808617 secondNearestValue: 19.003408
+06-17 14:38:43.102  1851 17883 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(1446)(cct,lux,ir)[5300.00, 20.84, 0.000000](rgbc)[763.66, 581.50, 361.57, 1508.14](pwm,hbm,brl,algo)[0.0 0.0 36.0 2.0],flag 0
+06-17 14:38:43.103  3480  4315 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+06-17 14:38:43.302  3480  4315 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 748.4/567.0/361.6/1493.1, R/G/B: 28.0/27.0/24.0, bri 36.0, lux: 18.808617, cct: 5300.0, ir: 0.062846, conf: 2, cnt: 0

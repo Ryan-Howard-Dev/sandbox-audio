@@ -1,0 +1,7 @@
+# Pin a single artifact tree under src-tauri/target (release/ + bundle/).
+# npm run build:desktop sets CARGO_TARGET_DIR to an absolute project path via
+# scripts/tauri-build.mjs so sandbox env overrides cannot redirect cargo output.
+# Do NOT set a relative CARGO_TARGET_DIR=src-tauri\target from repo root — cargo
+# runs inside src-tauri/, which would nest src-tauri/src-tauri/target.
+[build]
+target-dir = "target"

@@ -1,0 +1,32 @@
+﻿{
+    "timestamp":  "2026-07-20T22:53:23.9192693+07:00",
+    "serial":  "46349770",
+    "passCount":  0,
+    "total":  4,
+    "results":  [
+                    {
+                        "name":  "locker:What a Shame",
+                        "pass":  false,
+                        "evidence":  "verify=False play=False content=True exo=True pos=34.403 | no play-offline log",
+                        "verify":  "SandboxE2E] AREA=verify-locker-cache RESULT=FAIL missing artist/title\r"
+                    },
+                    {
+                        "name":  "locker:Redrum",
+                        "pass":  false,
+                        "evidence":  "verify=False play=True content=False exo=False pos=0 | no play-offline log",
+                        "verify":  "no verify log"
+                    },
+                    {
+                        "name":  "locker:American Dream",
+                        "pass":  false,
+                        "evidence":  "verify=False play=True content=False exo=True pos=0 | no play-offline log",
+                        "verify":  "no verify log"
+                    },
+                    {
+                        "name":  "locker:Flygod Did",
+                        "pass":  false,
+                        "evidence":  "verify=False play=True content=False exo=True pos=0 | no play-offline log",
+                        "verify":  "no verify log"
+                    }
+                ]
+}

@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sandbox Music</string>
+    <string name="title_activity_main">Sandbox Music</string>
+    <string name="package_name">rd.sheepskin.sandboxmusic</string>
+    <string name="custom_url_scheme">rd.sheepskin.sandboxmusic</string>
+    <string name="playback_notification_channel">Playback</string>
+    <string name="playback_notification_channel_desc">Shows now playing controls while audio runs in the background.</string>
+    <string name="media_playback_service_description">Keeps music playing with lock screen and notification controls.</string>
+    <string name="android_auto_browse_service_label">Sandbox Music</string>
+    <string name="wake_alarm_notification_channel">Wake alarm</string>
+    <string name="wake_alarm_notification_channel_desc">Alerts when your Sandbox wake alarm fires.</string>
+    <string name="wake_alarm_notification_title">Sandbox wake alarm</string>
+    <string name="wake_alarm_notification_body">Starting your wake playlist</string>
+    <string name="playback_notification_channel_top">Now playing</string>
+    <string name="playback_notification_channel_top_desc">Shows now playing at the top of the notification shade when backgrounded.</string>
+    <string name="pip_artwork_desc">Album artwork</string>
+    <string name="pip_action_previous">Previous track</string>
+    <string name="pip_action_play">Play</string>
+    <string name="pip_action_pause">Pause</string>
+    <string name="pip_action_next">Next track</string>
+    <string name="download_notification_channel">Downloads</string>
+    <string name="download_notification_channel_desc">Shows progress while albums and tracks save to your locker in the background.</string>
+    <string name="download_service_description">Keeps locker downloads running while the app is in the background.</string>
+    <string name="download_notification_title">Downloading to locker</string>
+    <string name="download_notification_active">Saving tracks to locker…</string>
+    <string name="download_notification_progress">Downloading %1$d of %2$d tracks…</string>
+    <string name="download_notification_queue">%1$d albums in queue</string>
+</resources>

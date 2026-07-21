@@ -1,0 +1,5 @@
+Sovereign Music Console is an offline-first music locker, catalog explorer, and DJ console shell.
+
+Import local audio, browse charts, manage playlists, and optionally connect a Tier 3/4 backend for extended search and playback features.
+
+Network access is used for catalog metadata; core locker playback works with local files.

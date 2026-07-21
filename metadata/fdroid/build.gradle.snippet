@@ -1,0 +1,13 @@
+// Reference snippet for fdroiddata build metadata.
+// F-Droid runs Gradle from the android/ subdir after prebuild syncs the web client.
+
+android {
+    defaultConfig {
+        applicationId "rd.sheepskin.sandboxmusic"
+        versionCode 1
+        versionName "1.0.0"
+    }
+}
+
+// Ensure no proprietary Google Services plugin is applied unless google-services.json exists.
+// The stock Capacitor template only applies it when that file is present.

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sovereign Cinema Cast</title>
+    <style>
+      :root {
+        --bg: #07080c;
+        --text: #e8eaef;
+        --text-mid: #9aa3b2;
+        --accent: #e8500a;
+        --border: rgba(255, 255, 255, 0.08);
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 100%;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        overflow: hidden;
+      }
+      .wrap {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 4vh 5vw;
+      }
+      .eyebrow {
+        font-size: 1.4vh;
+        letter-spacing: 0.35em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 1vh;
+      }
+      h1 {
+        font-size: 5vh;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .artist {
+        margin-top: 1vh;
+        font-size: 2vh;
+        color: var(--text-mid);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3vh;
+        min-height: 0;
+      }
+      .art {
+        width: 28vh;
+        height: 28vh;
+        border-radius: 1.2vh;
+        object-fit: cover;
+        border: 1px solid var(--border);
+        display: none;
+      }
+      .art.visible { display: block; }
+      canvas {
+        width: 100%;
+        max-width: 90vw;
+        height: 22vh;
+        border-radius: 1.2vh;
+        border: 1px solid var(--border);
+      }
+      .progress {
+        width: 100%;
+        max-width: 90vw;
+      }
+      .bar {
+        height: 0.6vh;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+      }
+      .fill {
+        height: 100%;
+        background: var(--accent);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+      .status {
+        margin-top: 1vh;
+        text-align: center;
+        font-size: 1.2vh;
+        text-transform: uppercase;
+        color: var(--text-mid);
+        letter-spacing: 0.2em;
+      }
+    </style>
+    <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <p class="eyebrow">Cinema Cast</p>
+        <h1 id="title">Sovereign Music Console</h1>
+        <p class="artist" id="artist">Ready to cast</p>
+      </header>
+      <div class="main">
+        <img id="art" class="art" alt="" />
+        <canvas id="viz" width="960" height="200"></canvas>
+        <div class="progress">
+          <div class="bar"><div class="fill" id="fill"></div></div>
+          <p class="status" id="status">Ready to cast</p>
+        </div>
+      </div>
+    </div>
+    <script>
+      const NS = 'urn:x-cast:com.sovereign.cinemacast';
+      const titleEl = document.getElementById('title');
+      const artistEl = document.getElementById('artist');
+      const artEl = document.getElementById('art');
+      const fillEl = document.getElementById('fill');
+      const statusEl = document.getElementById('status');
+      const canvas = document.getElementById('viz');
+      const ctx = canvas.getContext('2d');
+
+      let state = {
+        title: 'Sovereign Music Console',
+        artist: 'Ready to cast',
+        albumArt: '',
+        isPlaying: false,
+        currentTimeSeconds: 0,
+        durationSeconds: 0,
+      };
+
+      function drawVisualizer() {
+        if (!ctx) return;
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.fillStyle = '#07080c';
+        ctx.fillRect(0, 0, w, h);
+        const bars = 48;
+        const gap = 3;
+        const barW = (w - gap * (bars - 1)) / bars;
+        const t = Date.now() / 1000;
+        for (let i = 0; i < bars; i++) {
+          const phase = i * 0.35 + t * (state.isPlaying ? 2.8 : 0.55);
+          const amp = state.isPlaying
+            ? 0.25 + Math.abs(Math.sin(phase)) * 0.55 + Math.abs(Math.sin(phase * 2.1)) * 0.2
+            : 0.12 + Math.abs(Math.sin(phase)) * 0.14 + Math.abs(Math.sin(phase * 1.7)) * 0.06;
+          const barH = Math.max(4, amp * h * 0.82);
+          const x = i * (barW + gap);
+          const y = (h - barH) / 2;
+          const grad = ctx.createLinearGradient(x, y, x, y + barH);
+          grad.addColorStop(0, 'hsl(23, 78%, 55%)');
+          grad.addColorStop(1, 'hsl(23, 82%, 32%)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(x, y, barW, barH);
+        }
+      }
+
+      function render() {
+        titleEl.textContent = state.title || 'Sovereign Music Console';
+        artistEl.textContent = state.artist || 'Ready to cast';
+        if (state.albumArt) {
+          artEl.src = state.albumArt;
+          artEl.classList.add('visible');
+        } else {
+          artEl.removeAttribute('src');
+          artEl.classList.remove('visible');
+        }
+        const pct = state.durationSeconds > 0
+          ? Math.min(100, (state.currentTimeSeconds / state.durationSeconds) * 100)
+          : 0;
+        fillEl.style.width = pct + '%';
+        statusEl.textContent = state.isPlaying
+          ? 'Live broadcast'
+          : state.durationSeconds > 0
+            ? 'Paused'
+            : 'Ready to cast';
+        drawVisualizer();
+        requestAnimationFrame(render);
+      }
+      requestAnimationFrame(render);
+
+      function applyPayload(data) {
+        if (!data || typeof data !== 'object') return;
+        state = {
+          title: data.title || state.title,
+          artist: data.artist || state.artist,
+          albumArt: data.albumArt || '',
+          isPlaying: Boolean(data.isPlaying),
+          currentTimeSeconds: Number(data.currentTimeSeconds) || 0,
+          durationSeconds: Number(data.durationSeconds) || 0,
+        };
+      }
+
+      const castContext = cast.framework.CastReceiverContext.getInstance();
+      const playerManager = castContext.getPlayerManager();
+
+      castContext.addCustomMessageListener(NS, (event) => {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        applyPayload(data);
+      });
+
+      playerManager.addEventListener(
+        cast.framework.events.EventType.MEDIA_STATUS,
+        (event) => {
+          const status = event.mediaStatus;
+          if (!status) return;
+          state.isPlaying = status.playerState === 'PLAYING';
+          if (status.currentTime != null) state.currentTimeSeconds = status.currentTime;
+        },
+      );
+
+      castContext.start({ maxInactivity: 3600, disableIdleTimeout: true });
+    </script>
+  </body>
+</html>

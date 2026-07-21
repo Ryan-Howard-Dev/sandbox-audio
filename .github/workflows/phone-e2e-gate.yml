@@ -1,0 +1,42 @@
+name: Phone playback E2E gate
+
+# Run on a machine with the phone connected via USB (adb).
+# Upload .phone-e2e-gate.json as artifact — attach to release notes before shipping APKs.
+on:
+  workflow_dispatch:
+    inputs:
+      device_serial:
+        description: 'ADB device serial (default 46349770)'
+        required: false
+        default: '46349770'
+
+jobs:
+  phone-playback-gate:
+    name: Phone playback gate (${{ inputs.device_serial }})
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify device online
+        run: |
+          adb devices
+          adb -s "${{ inputs.device_serial }}" get-state
+      - name: Phone playback gate
+        shell: pwsh
+        run: |
+          pwsh -File scripts/phone-playback-gate.ps1 -Serial "${{ inputs.device_serial }}"
+      - name: Upload phone E2E gate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phone-e2e-gate-${{ inputs.device_serial }}
+          path: |
+            .phone-e2e-gate.json
+            .e2e-phone-logcat.txt

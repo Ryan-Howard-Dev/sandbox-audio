@@ -1,0 +1,1265 @@
+--------- beginning of main
+07-18 16:20:51.089  1875 29173 D DlbDap2Process: process() called [2811000] times with input channel mask 0x3 (ProcessingMode=1)
+07-18 16:20:51.092  1890 20175 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 22.3,cct 5300.0,brl/algo/ir 1411.0/2.0/0.0,pwm/dc 1.0/0.0,rgbc 1130.222656/755.955322/391.699646/1975.658813,ts 112035542338293,cnt 14487,flag 0
+07-18 16:20:51.105  1897 13869 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+07-18 16:20:51.106  3198  3198 I cnss-daemon: nl80211 response handler invoked
+07-18 16:20:51.106  3198  3198 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+07-18 16:20:51.118  2363  2363 I adbd    : adbd service requested 'shell,v2,TERM=dumb,raw:am start -a android.intent.action.VIEW -d "sandboxmusic://e2e/verify-locker-cache?artist=21%20Savage&title=Redrum%20Nightcore" rd.sheepskin.sandboxmusic/.MainActivity'
+07-18 16:20:51.191  3519  4585 I [UAH_CLIENT]: UahEventAcquire, cmdid:2, pkg:none, identity:com.android.server.wm
+--------- beginning of system
+07-18 16:20:51.191  3519  8749 W ActivityTaskManager: callingPackage for (uid=2000, pid=14487) has no WPC
+07-18 16:20:51.192  3519  8749 D WindowManager: NFW_setClientVisible:ActivityRecord{167799281 u0 rd.sheepskin.sandboxmusic/.MainActivity clientVisible:true
+07-18 16:20:51.192  3519  8749 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@a831c29a does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-18 16:20:51.193  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:51.193  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:51.194  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:51.194  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:51.194  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:51.194  3519  8749 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:20:51.194  3519  8749 I AppSnapshotController: init, sysSupport = true, mActivitySupport = false, activityRecord = ActivityRecord{167799281 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1}
+07-18 16:20:51.194  3519  3616 E QosSceneRecognizer[ActivityStartScene]: notifyActivityStart get launchedFromUid failed through AppManager! launchedFromPackage: com.android.shell, pkg: rd.sheepskin.sandboxmusic
+07-18 16:20:51.195  3519  4354 D StartingSurfacePreviewController: checkSupportSurfacePreview, token=rd.sheepskin.sandboxmusic/.MainActivity, enableSurfacePreview=false, supportMultiLayout=false, unsupportedSkipViewAnimLv=null, disableSurfacePreviewAnimLv=null, ignoreFileExistAnimLv=null
+07-18 16:20:51.195  3519  8749 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:20:51.195  3519  8749 D ActivityStarterExtImpl: setForceUpdateWindow, targetTask = Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic} r = ActivityRecord{167799281 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} notFinish =false
+07-18 16:20:51.195  3519  8749 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:20:51.196  3519  8749 D FlexibleTaskController: findSourceTaskForFreeForm: sourceRecord = null ,realCallingPid:14487 ,launchFromZoomMode:false ,prevTopTask:Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:20:51.196  3519  8749 D FlexibleTaskController: findSourceTaskForFreeForm: the caller is not a flexible freeform window application and does not have a zoom windowMode startup parameter
+07-18 16:20:51.196  3519  8749 D FlexibleTaskController: adjustOptionsForFlexibleTask not allow options follow process task's options, reason:9 ,reusedOptions:null
+07-18 16:20:51.196  3519  8749 I TaskFragmentExtImpl: reset pause in recents anim for mTaskFragment: Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:20:51.196  3519  8749 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:20:51.196  3519  8749 D FlexibleTaskController: shouldKeepFlexibleTask flexibleTask not active.
+07-18 16:20:51.196  3519  8749 D ActivityStarterExtImpl: isLaunchingRootActivity = true
+07-18 16:20:51.197  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:51.198  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:51.198  3519  8749 E Transition: Aborting Transition mSyncId=3287, caller=com.android.server.wm.OplusTransitionUtil.abortTransitionImmediately:109 com.android.server.wm.OplusTransitionController.abortTransitionImmediately:123 com.android.server.wm.ActivityStarterExtImpl.abortTransitionImmediately:1896 
+07-18 16:20:51.198  3519  8749 D OplusTransitionController: hookOnAbort, transition: TransitionRecord{ea0b42d id=3287 track=0 type=OPEN flags=0x0 state=0 c=[
+07-18 16:20:51.198  3519  8749 D OplusTransitionController:    ChangeInfo{9209d62 container=ActivityRecord{167799281 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} flags=0x0}
+07-18 16:20:51.198  3519  8749 D OplusTransitionController: ]
+07-18 16:20:51.198  3519  8749 D OplusTransitionController: }
+07-18 16:20:51.197  4980  4980 D CommandQueueLogger: appTransitionPending displayId=0 forced=false
+07-18 16:20:51.198  3519  8749 E OplusAppQuickStart_AppQuickStartController: not start from launcher transition:3287
+07-18 16:20:51.199  3519  8749 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:20:51.199  3519  8749 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:20:51.199  4980  8984 D KeyguardService: setOccluded(false)
+07-18 16:20:51.199  4980  8984 D KeyguardService: setOccluded: false, animate= false
+07-18 16:20:51.199  4980  8984 D KeyguardViewMediator: setOccluded(false)
+07-18 16:20:51.199  4980  8984 D KeyguardViewMediator: setOccluded false
+07-18 16:20:51.199  3519  8749 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=1 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:20:51.199  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:20:51.199  4980  8984 D KeyguardService: setOccluded(false)
+07-18 16:20:51.199  4980  8984 D KeyguardService: setOccluded: false, animate= false
+07-18 16:20:51.199  4980  8984 D KeyguardViewMediator: setOccluded(false)
+07-18 16:20:51.199  4980  8984 D KeyguardViewMediator: setOccluded false
+07-18 16:20:51.199  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:20:51.199  4980  4980 D KeyguardViewMediator: handleSetOccluded(false)
+07-18 16:20:51.199  4980  4980 D NotificationShadeWindowController: setIsAboutToOccluded:false, needApply:false
+07-18 16:20:51.199  4980  4980 D KeyguardViewMediator: isOccluded=false,mPowerGestureIntercepted=false
+07-18 16:20:51.199  4980  4980 I SystemUi--Keyguard: ChargingAnimationImpl-->onKeyguardOccludeChange occluded= false
+07-18 16:20:51.199  4980  4980 I SystemUi--Keyguard: KeyguardSliderLayout-->onKeyguardOccludeChange occluded= false
+07-18 16:20:51.199  4980  4980 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SET_OCCLUDED
+07-18 16:20:51.200  3519  8749 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=0 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:20:51.201  3519  8749 I ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=sandboxmusic://e2e/... flg=0x10000000 xflg=0x4 cmp=rd.sheepskin.sandboxmusic/.MainActivity mCallingUid=2000} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION (START_ACTIVITIES_FROM_BACKGROUND permission granted)) result code=3
+07-18 16:20:51.202  4980  5015 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity}, wasVisible=true
+07-18 16:20:51.202  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event pause
+07-18 16:20:51.203  6994  6994 D Capacitor/AppPlugin: No listeners found for event pause
+07-18 16:20:51.203  6994  6994 D Capacitor: App paused
+07-18 16:20:51.203  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appUrlOpen
+07-18 16:20:51.203  6994  6994 D ActivityThread: ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity} checkFinished=false 4
+07-18 16:20:51.203  6994  6994 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+07-18 16:20:51.203  6994  6994 D Capacitor/AppPlugin: Firing change: true
+07-18 16:20:51.203  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appStateChange
+07-18 16:20:51.204  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event resume
+07-18 16:20:51.204  6994  6994 D Capacitor/AppPlugin: No listeners found for event resume
+07-18 16:20:51.204  6994  6994 D Capacitor: App resumed
+07-18 16:20:51.204  3519  4907 V AS.AudioService: uid 10448, callingApp = rd.sheepskin.sandboxmusic
+07-18 16:20:51.204  6994  6994 I AudioManager: In setSpeakerphoneOn(), on: false, calling application: rd.sheepskin.sandboxmusic
+07-18 16:20:51.205  3519  4907 W AS.AudioService: Audio Settings Permission Denial: setSpeakerphoneOn() from pid=6994, uid=10448
+07-18 16:20:51.205  6994  6994 W BluetoothAdapterExtImpl: setSpeakerphoneOn register null!
+07-18 16:20:51.216  3519  4903 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_ACTIVITY_IDLE, bundle: Bundle[{scene=SCENE_ACTIVITY_IDLE}]
+07-18 16:20:51.216  3519  4903 I Osense-BaseDecisionMaker: OSense not supported scene! SCENE_ACTIVITY_IDLE
+07-18 16:20:51.217  3519  3604 W ProcessStats: Tracking association SourceState{dff5762 system/1000 BFgs #252292} whose proc state 4 is better than process ProcessState{e1f07b8 com.android.wallpaper.livepicker:wallpaperService/10229 pkg=com.android.wallpaper.livepicker} proc state 5 (5 skipped)
+07-18 16:20:51.337  2129  3762 D AudioFlinger: fast trackId 933 is playing mute data
+07-18 16:20:51.380  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112035791192980 ns; value = [-0.315136, 0.203208, 9.902418], status=3
+07-18 16:20:51.442  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:20:51.442  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:20:51.489  1960 24179 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_264]QueueRead[0] empty, waiting buffer.
+07-18 16:20:51.490  1960 21869 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_214]QueueRead[0] empty, waiting buffer.
+07-18 16:20:51.491  1960 24998 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_184]QueueRead[0] empty, waiting buffer.
+07-18 16:20:51.539  3519  6109 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 118.22056 ave enviroment lux is 22.32415 luxForNit 47.457275demarcationPoint200.0 result is true
+07-18 16:20:51.862  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:20:51.871  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=23 renderFps=0, discardFps=24
+07-18 16:20:51.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14491)(cct,lux,ir)[5300.00, 23.70, 67.816635](rgbc)[1130.22, 755.96, 391.70, 2005.82](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:20:51.893  3519  4340 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+07-18 16:20:51.950  2056  2184 D vendor.oplus.hardware.charger-V10-service: ret_value:123, read content:,337,337,4017,4014,102,66,69,1,1,0,456,4996,68,1,4430,300,500,0,7,2500,7,0,1,0,2,0,0,0,1,5397,93,0,3068,4672,0,0,0,0,0,105
+07-18 16:20:51.951  2056  2184 D vendor.oplus.hardware.charger-V10-service: gmtime: 2026-07-18-16-20-51
+07-18 16:20:51.951  2056  2184 D vendor.oplus.hardware.charger-V10-service: usb_online:1, ac_online:-2147483648, wireless_online:0
+07-18 16:20:52.016  5656  5656 D VendorWifiService: onEvent event:9,action:1
+07-18 16:20:52.025  3519  4590 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=2
+07-18 16:20:52.026  3519  4590 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+07-18 16:20:52.027  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:52.028  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8332, identity:qcom-perfd
+07-18 16:20:52.030  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:52.046  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:20:52.057  1954 14497 I [UAH_CLIENT]: UahRelease, handle:69669
+07-18 16:20:52.092  3519  4340 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1130.2/756.0/391.7/1990.7, R/G/B: 28.0/27.0/23.0, bri 1411.0, lux: 22.151003, cct: 5300.0, ir: 0.076698, conf: 2, cnt: 0
+07-18 16:20:52.116  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 69999 us
+07-18 16:20:52.136  6265  6390 E horae   : 0: target_temp:33700, back:33700,frame:33700,front:33700, 3, +(0), 1 ,33700, algo:0
+07-18 16:20:52.271  6994 14325 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:20:52.357 19514 23380 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(com.oplus.camera) ==
+07-18 16:20:52.357 19514 23380 I APS_ALOG: flushRoutine g_immediateFlush=0 g_pendingCount=0 g_oobCount=0
+07-18 16:20:52.378  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112036798782199 ns; value = [-0.310348, 0.212784, 9.878476], status=3
+07-18 16:20:52.465  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:20:52.466  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:20:52.710  5656  5656 D SubsysEventListenerManager-SubsysTelephonyCallback[1]: onSignalStrengthsChanged
+07-18 16:20:52.712  5408  5408 D OplusTelephonyController: onSignalStrengthChanged: SignalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 level=0,mLte=CellSignalStrengthLte: rssi=-51 rsrp=-72 rsrq=-12 rssnr=15 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiCqiTableIndex = 2147483647 csiCqiReport = [] ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 level = 0 parametersUseForLevel = 0 timingAdvance = 2147483647 },primary=CellSignalStrengthLte}
+07-18 16:20:52.713  4980  5072 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:2 isSoftSimCard:false slotId:1
+07-18 16:20:52.714  4980  5072 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:1 isSoftSimCard:false slotId:0
+07-18 16:20:52.716  5656  5656 D SubsysEventListenerManager-SubsysTelephonyCallback[0]: onSignalStrengthsChanged
+07-18 16:20:52.716  4980  4980 D Tile.OplusCellularTile: refreshState: tile not listening, ignore
+07-18 16:20:52.779  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:52.779  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8333, identity:qcom-perfd
+07-18 16:20:52.782  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:52.810  1954 14499 I [UAH_CLIENT]: UahRelease, handle:69670
+07-18 16:20:52.857  2129  3762 D AudioFlinger: fast trackId 929 is playing mute data
+07-18 16:20:52.862  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:20:52.872  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=25 renderFps=0, discardFps=24
+07-18 16:20:52.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14496)(cct,lux,ir)[5300.00, 22.98, 0.000000](rgbc)[1130.22, 755.96, 391.70, 1990.74](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:20:52.897  2129  3762 D AudioFlinger: fast trackId 930 is playing mute data
+07-18 16:20:53.092  1890 20175 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 23.0,cct 5300.0,brl/algo/ir 1411.0/2.0/0.0,pwm/dc 1.0/0.0,rgbc 1130.222656/755.955322/391.699646/1990.740112,ts 112037542341053,cnt 14497,flag 0
+07-18 16:20:53.116  3198  3198 I cnss-daemon: nl80211 response handler invoked
+07-18 16:20:53.116  3198  3198 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+07-18 16:20:53.117  1897 13869 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+07-18 16:20:53.437  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112037806374855 ns; value = [-0.315136, 0.212784, 9.830592], status=3
+07-18 16:20:53.490  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:20:53.490  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:20:53.723 12521 16115 E fb4a.msys: E[N rtchannel]_rt_mqtt_bridge_bootstrap_callback(997)=>Failed to boot stap bridged mqtt channel.  RT error code:2001 token:14382
+07-18 16:20:53.770  1875 29173 D DlbDap2Process: process() called [2811500] times with input channel mask 0x3 (ProcessingMode=1)
+07-18 16:20:53.845  1960 14318 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_341]QueueRead[0] empty, waiting buffer.
+07-18 16:20:53.863  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:20:53.872  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=24 renderFps=0, discardFps=24
+07-18 16:20:53.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14501)(cct,lux,ir)[5300.00, 22.98, 0.000000](rgbc)[1130.22, 755.96, 391.70, 1990.74](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:20:53.914  2363  2363 I adbd    : adbd service requested 'shell,v2,TERM=dumb,raw:am start -a android.intent.action.VIEW -d sandboxmusic://e2e/expand-now-playing -f 0x14000000 rd.sheepskin.sandboxmusic'
+07-18 16:20:53.961  1890 29579 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[27309, 0, 300000, 449, 111]
+07-18 16:20:53.961  1890 29579 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[2, 1, 3, 1, 3]
+07-18 16:20:53.984  3519  8749 W ActivityTaskManager: callingPackage for (uid=2000, pid=14502) has no WPC
+07-18 16:20:53.984  3519  4585 I [UAH_CLIENT]: UahEventAcquire, cmdid:2, pkg:none, identity:com.android.server.wm
+07-18 16:20:53.986  3519  4354 D StartingSurfacePreviewController: checkSupportSurfacePreview, token=rd.sheepskin.sandboxmusic/.MainActivity, enableSurfacePreview=false, supportMultiLayout=false, unsupportedSkipViewAnimLv=null, disableSurfacePreviewAnimLv=null, ignoreFileExistAnimLv=null
+07-18 16:20:53.988  3519  8749 D WindowManager: NFW_setClientVisible:ActivityRecord{221092579 u0 rd.sheepskin.sandboxmusic/.MainActivity clientVisible:true
+07-18 16:20:53.988  3519  8749 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@a831c29a does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-18 16:20:53.989  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:53.989  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:53.989  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:53.989  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:53.989  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:53.989  3519  8749 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:20:53.989  3519  8749 I AppSnapshotController: init, sysSupport = true, mActivitySupport = false, activityRecord = ActivityRecord{221092579 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1}
+07-18 16:20:53.989  3519  3616 E QosSceneRecognizer[ActivityStartScene]: notifyActivityStart get launchedFromUid failed through AppManager! launchedFromPackage: com.android.shell, pkg: rd.sheepskin.sandboxmusic
+07-18 16:20:53.990  3519  8749 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:20:53.990  3519  8749 D ActivityStarterExtImpl: setForceUpdateWindow, targetTask = Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic} r = ActivityRecord{221092579 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} notFinish =false
+07-18 16:20:53.990  3519  8749 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:20:53.990  3519  8749 D FlexibleTaskController: findSourceTaskForFreeForm: sourceRecord = null ,realCallingPid:14502 ,launchFromZoomMode:false ,prevTopTask:Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:20:53.990  3519  8749 D FlexibleTaskController: findSourceTaskForFreeForm: the caller is not a flexible freeform window application and does not have a zoom windowMode startup parameter
+07-18 16:20:53.990  3519  8749 D FlexibleTaskController: adjustOptionsForFlexibleTask not allow options follow process task's options, reason:9 ,reusedOptions:null
+07-18 16:20:53.990  3519  8749 I TaskFragmentExtImpl: reset pause in recents anim for mTaskFragment: Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:20:53.990  3519  8749 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:20:53.990  3519  8749 D FlexibleTaskController: shouldKeepFlexibleTask flexibleTask not active.
+07-18 16:20:53.991  3519  8749 D ActivityStarterExtImpl: isLaunchingRootActivity = true
+07-18 16:20:53.991  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:53.992  4980  4980 D CommandQueueLogger: appTransitionPending displayId=0 forced=false
+07-18 16:20:53.992  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:53.992  3519  8749 E Transition: Aborting Transition mSyncId=3288, caller=com.android.server.wm.OplusTransitionUtil.abortTransitionImmediately:109 com.android.server.wm.OplusTransitionController.abortTransitionImmediately:123 com.android.server.wm.ActivityStarterExtImpl.abortTransitionImmediately:1896 
+07-18 16:20:53.992  3519  8749 D OplusTransitionController: hookOnAbort, transition: TransitionRecord{6d85e5e id=3288 track=0 type=OPEN flags=0x0 state=0 c=[
+07-18 16:20:53.992  3519  8749 D OplusTransitionController:    ChangeInfo{195023f container=ActivityRecord{221092579 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} flags=0x0}
+07-18 16:20:53.992  3519  8749 D OplusTransitionController: ]
+07-18 16:20:53.992  3519  8749 D OplusTransitionController: }
+07-18 16:20:53.993  3519  8749 E OplusAppQuickStart_AppQuickStartController: not start from launcher transition:3288
+07-18 16:20:53.993  3519  8749 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:20:53.993  3519  8749 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:20:53.993  4980 28305 D KeyguardService: setOccluded(false)
+07-18 16:20:53.993  4980 28305 D KeyguardService: setOccluded: false, animate= false
+07-18 16:20:53.993  4980 28305 D KeyguardViewMediator: setOccluded(false)
+07-18 16:20:53.993  4980 28305 D KeyguardViewMediator: setOccluded false
+07-18 16:20:53.993  3519  8749 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=1 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:20:53.993  4980  8984 D KeyguardService: setOccluded(false)
+07-18 16:20:53.993  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:20:53.993  4980  8984 D KeyguardService: setOccluded: false, animate= false
+07-18 16:20:53.993  4980  8984 D KeyguardViewMediator: setOccluded(false)
+07-18 16:20:53.993  4980  8984 D KeyguardViewMediator: setOccluded false
+07-18 16:20:53.993  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:20:53.993  4980  4980 D KeyguardViewMediator: handleSetOccluded(false)
+07-18 16:20:53.993  3519  8749 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=0 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:20:53.994  4980  4980 D NotificationShadeWindowController: setIsAboutToOccluded:false, needApply:false
+07-18 16:20:53.994  4980  4980 D KeyguardViewMediator: isOccluded=false,mPowerGestureIntercepted=false
+07-18 16:20:53.994  4980  4980 I SystemUi--Keyguard: ChargingAnimationImpl-->onKeyguardOccludeChange occluded= false
+07-18 16:20:53.994  4980  4980 I SystemUi--Keyguard: KeyguardSliderLayout-->onKeyguardOccludeChange occluded= false
+07-18 16:20:53.994  4980  4980 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SET_OCCLUDED
+07-18 16:20:53.994  3519  8749 I ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=sandboxmusic://e2e/... flg=0x14000000 xflg=0x4 pkg=rd.sheepskin.sandboxmusic cmp=rd.sheepskin.sandboxmusic/.MainActivity mCallingUid=2000} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION (START_ACTIVITIES_FROM_BACKGROUND permission granted)) result code=3
+07-18 16:20:53.994  4980  5015 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity}, wasVisible=true
+07-18 16:20:53.996  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event pause
+07-18 16:20:53.996  6994  6994 D Capacitor/AppPlugin: No listeners found for event pause
+07-18 16:20:53.996  6994  6994 D Capacitor: App paused
+07-18 16:20:53.996  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appUrlOpen
+07-18 16:20:53.996  6994  6994 D ActivityThread: ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity} checkFinished=false 4
+07-18 16:20:53.996  6994  6994 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+07-18 16:20:53.996  6994  6994 D Capacitor/AppPlugin: Firing change: true
+07-18 16:20:53.997  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appStateChange
+07-18 16:20:53.997  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event resume
+07-18 16:20:53.997  6994  6994 D Capacitor/AppPlugin: No listeners found for event resume
+07-18 16:20:53.997  6994  6994 D Capacitor: App resumed
+07-18 16:20:53.997  3519  8749 V AS.AudioService: uid 10448, callingApp = rd.sheepskin.sandboxmusic
+07-18 16:20:53.998  6994  6994 I AudioManager: In setSpeakerphoneOn(), on: false, calling application: rd.sheepskin.sandboxmusic
+07-18 16:20:53.998  3519  8749 W AS.AudioService: Audio Settings Permission Denial: setSpeakerphoneOn() from pid=6994, uid=10448
+07-18 16:20:53.998  6994  6994 W BluetoothAdapterExtImpl: setSpeakerphoneOn register null!
+07-18 16:20:54.002  3519  4903 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_ACTIVITY_IDLE, bundle: Bundle[{scene=SCENE_ACTIVITY_IDLE}]
+07-18 16:20:54.002  3519  4903 I Osense-BaseDecisionMaker: OSense not supported scene! SCENE_ACTIVITY_IDLE
+07-18 16:20:54.088  9296 10256 W Battery : ThermalControllHandler: MSG_THERMAL_CONTROL_CPU_CTRL_CHANGED: ThermalControlState=true, curThermalPolicyCpu=10, curCpu=4, isUserForeground=true
+07-18 16:20:54.091  9296 10256 I [UAH_CLIENT]: uahRuleCtl, ruleId:4, status:1
+07-18 16:20:54.131  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:z-m-gateway.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10303
+07-18 16:20:54.133 12566 13265 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:z-m-gateway.facebook.com, servname:443 uid: 10303, result_code:408, res = 0x0, found = 0
+07-18 16:20:54.139 12566 13271 E msgr.msys: E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:20:54.144  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:z-m-gateway.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10303
+07-18 16:20:54.144  5485  5817 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=4, uid=10303
+07-18 16:20:54.145 12566 13264 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:z-m-gateway.facebook.com, servname:443 uid: 10303, result_code:408, res = 0x0, found = 0
+07-18 16:20:54.146 12566 13271 E msgr.msys: E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:20:54.262  3519  6109 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 118.22056 ave enviroment lux is 22.151003 luxForNit 47.29068demarcationPoint200.0 result is true
+07-18 16:20:54.293  3519  4340 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+07-18 16:20:54.295  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:54.295  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8334, identity:qcom-perfd
+07-18 16:20:54.299  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:54.299  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:20:54.307  6994 14300 D BufferPoolAccessor2.0: bufferpool2 0xb40000717eb13028 : 18(56401920 size) total buffers - 10(31334400 size) used buffers - 404/422 (recycle/alloc) - 25/422 (fetch/transfer)
+07-18 16:20:54.326  1954 14512 I [UAH_CLIENT]: UahRelease, handle:69673
+07-18 16:20:54.357  2129  3762 D AudioFlinger: fast trackId 933 is playing mute data
+07-18 16:20:54.369  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:20:54.379  6994 14325 D BufferPoolAccessor2.0: bufferpool2 0xb4000072d7880228 : 8(65536 size) total buffers - 1(8192 size) used buffers - 673/681 (recycle/alloc) - 9/679 (fetch/transfer)
+07-18 16:20:54.442  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112038813969699 ns; value = [-0.300771, 0.203208, 9.864111], status=3
+07-18 16:20:54.445  4980  5029 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->updateNetworkSpeed: isConnected:true,isSwitchOn:true,isSuspend:false,isPause:false
+07-18 16:20:54.446  4980  5029 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->getTotalByte: totalRxBytes:3123479796,totalTxBytes:437901143,loopbackTxBytes:274191578,loopbackRxBytes:274191578 ,totalBytes:3012997783
+07-18 16:20:54.463  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:54.463  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8331, identity:qcom-perfd
+07-18 16:20:54.465  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:54.492  3519  4340 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1130.2/756.0/391.7/2005.8, R/G/B: 28.0/27.0/23.0, bri 1411.0, lux: 22.345795, cct: 5300.0, ir: 0.071671, conf: 2, cnt: 0
+07-18 16:20:54.493  1954 14515 I [UAH_CLIENT]: UahRelease, handle:69674
+07-18 16:20:54.513  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:20:54.513  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:20:54.578  3186 14329 D BufferPoolAccessor2.0: bufferpool2 0xb400007b84d09628 : 5(20480 size) total buffers - 1(4096 size) used buffers - 678/683 (recycle/alloc) - 8/682 (fetch/transfer)
+07-18 16:20:54.697  3519  4907 D ConnectivityService: Returning BLOCKED NetworkInfo to uid=10308
+07-18 16:20:54.707  6994 14325 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:20:54.714  3519  3644 D osense.compress: com.tinder do shrink, target ratio = 10, final ratio = 20, cur ratio = 0
+07-18 16:20:54.864  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:20:54.873  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=24 renderFps=0, discardFps=24
+07-18 16:20:54.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14506)(cct,lux,ir)[5300.00, 22.98, 0.000000](rgbc)[1130.22, 755.96, 391.70, 1990.74](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:20:55.037  5656  5656 D VendorWifiService: onEvent event:9,action:1
+07-18 16:20:55.041  3519  4590 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=1
+07-18 16:20:55.041  3519  4590 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+07-18 16:20:55.045  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:55.045  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8332, identity:qcom-perfd
+07-18 16:20:55.046  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:55.061  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:20:55.073  1954 14524 I [UAH_CLIENT]: UahRelease, handle:69676
+07-18 16:20:55.092  1890 20175 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 23.0,cct 5300.0,brl/algo/ir 1411.0/2.0/0.0,pwm/dc 1.0/0.0,rgbc 1130.222656/755.955322/391.699646/1990.740112,ts 112039542336574,cnt 14507,flag 0
+07-18 16:20:55.123  3198  3198 I cnss-daemon: nl80211 response handler invoked
+07-18 16:20:55.123  3198  3198 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+07-18 16:20:55.124  1897 13869 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+07-18 16:20:55.131  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:20:55.451  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112039821566157 ns; value = [-0.305560, 0.207996, 9.921572], status=3
+07-18 16:20:55.537  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:20:55.537  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:20:55.796  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:55.796  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8333, identity:qcom-perfd
+07-18 16:20:55.798  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:55.825  1954 14529 I [UAH_CLIENT]: UahRelease, handle:69677
+07-18 16:20:55.865  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:20:55.873  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=23 renderFps=0, discardFps=24
+07-18 16:20:55.877  2129  3762 D AudioFlinger: fast trackId 929 is playing mute data
+07-18 16:20:55.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14511)(cct,lux,ir)[5300.00, 22.26, 0.000000](rgbc)[1130.22, 755.96, 391.70, 1975.66](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:20:55.917  2129  3762 D AudioFlinger: fast trackId 930 is playing mute data
+07-18 16:20:56.113  9131  9241 D gaia-GaiaConnectChecker: start connect check++
+07-18 16:20:56.156  2129 11767 D AFExtImpl: notifySilencePlayback event:event_audio_detect_playback_silence info:pid:6994,scene:10
+07-18 16:20:56.156  2129 11767 D AtlasEventUploadUtils: setEvent event:event_audio_detect_playback_silence
+07-18 16:20:56.157  2129 11767 D AFExtImpl: enterSilencePlayback isScreenOn:1 isTrackVolumeSilent:0
+07-18 16:20:56.158  5759 10547 D OplusAtlasAudioDetectionManager: callback success event:event_audio_detect_playback_silence eventInfo:pid:6994,scene:10
+07-18 16:20:56.162  5759 11713 D OplusAtlasService: isAppInRecording getActiveAudioPids is null
+07-18 16:20:56.165  5759 11713 D OplusAtlasAudioDetectionManager: notifySilencePlayback: pid: 6994 uid: 10448 isSilent: true
+07-18 16:20:56.165  5759 11713 D OplusAtlasAudioDetectionManager: handleMessage() invalidate int-msg
+07-18 16:20:56.198  2129 11767 D AFExtImpl: notifySilencePlayback event:event_audio_detect_playback_silence info:pid:6994,scene:10
+07-18 16:20:56.198  2129 11767 D AtlasEventUploadUtils: setEvent event:event_audio_detect_playback_silence
+07-18 16:20:56.198  2129 11767 D AFExtImpl: enterSilencePlayback isScreenOn:1 isTrackVolumeSilent:0
+07-18 16:20:56.199  5759 10547 D OplusAtlasAudioDetectionManager: callback success event:event_audio_detect_playback_silence eventInfo:pid:6994,scene:10
+07-18 16:20:56.200  3519  3604 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(system_server) ==
+07-18 16:20:56.200  3519  3604 E BLASTSyncEngine: WM sent Transaction (#3287, Transition-OPEN, tx=15113990331914) to organizer, but never received commit callback. Application ANR likely to follow.
+07-18 16:20:56.202  3519  3604 I BLASTSyncEngineExtImpl: syncTransitionCommitTimeout  syncGroupId=3287,merged.mNativeObjec=-5476376660061193088
+07-18 16:20:56.202  5759 11713 D OplusAtlasService: isAppInRecording getActiveAudioPids is null
+07-18 16:20:56.202  3519  3604 I BLASTSyncEngine: onCommitted syncId: 3287, timeout: true ran: false
+07-18 16:20:56.204  5759 11713 D OplusAtlasAudioDetectionManager: notifySilencePlayback: pid: 6994 uid: 10448 isSilent: true
+07-18 16:20:56.204  5759 11713 D OplusAtlasAudioDetectionManager: handleMessage() invalidate int-msg
+07-18 16:20:56.205  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:56.205  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8334, identity:qcom-perfd
+07-18 16:20:56.210  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:56.236  1954 14532 I [UAH_CLIENT]: UahRelease, handle:69678
+07-18 16:20:56.410  1875 29173 D DlbDap2Process: process() called [2812000] times with input channel mask 0x3 (ProcessingMode=1)
+07-18 16:20:56.458  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112040829164022 ns; value = [-0.276829, 0.188843, 9.854534], status=3
+07-18 16:20:56.489  1960 24179 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_264]QueueRead[0] empty, waiting buffer.
+07-18 16:20:56.490  1960 21869 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_214]QueueRead[0] empty, waiting buffer.
+07-18 16:20:56.491  1960 24998 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_184]QueueRead[0] empty, waiting buffer.
+07-18 16:20:56.562  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:20:56.562  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:20:56.692  3519  4340 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+07-18 16:20:56.698  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:56.698  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8331, identity:qcom-perfd
+07-18 16:20:56.700  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:56.703  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:20:56.728  1954 14536 I [UAH_CLIENT]: UahRelease, handle:69679
+07-18 16:20:56.772  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:20:56.866  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:20:56.873  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=24 renderFps=0, discardFps=24
+07-18 16:20:56.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14516)(cct,lux,ir)[5300.00, 22.98, 0.000000](rgbc)[1130.22, 755.96, 391.70, 1990.74](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:20:56.892  3519  4340 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1130.2/756.0/391.7/1990.7, R/G/B: 28.0/27.0/23.0, bri 1411.0, lux: 22.151003, cct: 5300.0, ir: 0.076698, conf: 2, cnt: 0
+07-18 16:20:56.894  3519  6109 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 118.22056 ave enviroment lux is 22.32415 luxForNit 47.457275demarcationPoint200.0 result is true
+07-18 16:20:56.936 12521 12521 E fb4a.Execution: Redirecting MSYS Execution scheduling from the UI thread to a custom executor
+07-18 16:20:56.943  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:edge-mqtt.facebook.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10499
+07-18 16:20:56.943 12521 14537 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:edge-mqtt.facebook.com, servname:(null) uid: 10499, result_code:408, res = 0x0, found = 0
+07-18 16:20:56.945  6994 14325 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:20:56.953  2056  2184 D vendor.oplus.hardware.charger-V10-service: ret_value:122, read content:,338,337,4022,4019,80,66,69,1,1,0,453,5006,68,1,4430,300,500,0,7,2500,7,0,1,0,2,0,0,0,1,5397,93,0,3068,4672,0,0,0,0,0,105
+07-18 16:20:56.953  2056  2184 D vendor.oplus.hardware.charger-V10-service: gmtime: 2026-07-18-16-20-56
+07-18 16:20:56.953  2056  2184 D vendor.oplus.hardware.charger-V10-service: usb_online:1, ac_online:-2147483648, wireless_online:0
+07-18 16:20:56.961  1890 29579 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[31420, 0, 300000, 454, 116]
+07-18 16:20:56.961  1890 29579 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[2, 1, 3, 1, 3]
+07-18 16:20:56.966  1765  8457 E         : DNS_CACHE: hanle request << adddns: hostname:edge-mqtt.facebook.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10499
+07-18 16:20:56.966 12521 14537 D DNS_CACHE: oplus_send_dns_response send hostname: edge-mqtt.facebook.com, servname: (null) response into netd: 0, *res = 0xb400007127476380
+07-18 16:20:56.973  5485  5817 D DnsDomainBlock: onDnsEvent: latencyMs=17, returnCode=0, uid=10499
+07-18 16:20:56.977 12521 15956 E fb4a.FBMsysMqttClientCallbacks: onPublish, onFailure, msgId = 14384, error = 2003
+07-18 16:20:56.978 12521 15956 E fb4a.FBMsysMqttClientCallbacks: onPublish, onFailure, msgId = 14383, error = 2003
+07-18 16:20:56.980 12521 12521 E fb4a.Execution: Redirecting MSYS Execution scheduling from the UI thread to a custom executor
+07-18 16:20:56.987 12521 16115 E fb4a.msys: E[N rtchannel]_rt_mqtt_bridge_bootstrap_callback(997)=>Failed to boot stap bridged mqtt channel.  RT error code:2002 token:14384
+07-18 16:20:56.987 12521 16115 E fb4a.msys: E[N rtchannel]_rt_mqtt_bridge_bootstrap_callback(997)=>Failed to boot stap bridged mqtt channel.  RT error code:2002 token:14383
+07-18 16:20:57.027  2363  2363 I adbd    : adbd service requested 'shell,v2,TERM=dumb,raw:am start -a android.intent.action.VIEW -d sandboxmusic://e2e/thumb-up -f 0x14000000 rd.sheepskin.sandboxmusic'
+07-18 16:20:57.076  3519  4585 I [UAH_CLIENT]: UahEventAcquire, cmdid:2, pkg:none, identity:com.android.server.wm
+07-18 16:20:57.077  3519  4907 W ActivityTaskManager: callingPackage for (uid=2000, pid=14545) has no WPC
+07-18 16:20:57.077  3519  4907 D WindowManager: NFW_setClientVisible:ActivityRecord{40409916 u0 rd.sheepskin.sandboxmusic/.MainActivity clientVisible:true
+07-18 16:20:57.078  3519  4354 D StartingSurfacePreviewController: checkSupportSurfacePreview, token=rd.sheepskin.sandboxmusic/.MainActivity, enableSurfacePreview=false, supportMultiLayout=false, unsupportedSkipViewAnimLv=null, disableSurfacePreviewAnimLv=null, ignoreFileExistAnimLv=null
+07-18 16:20:57.078  3519  4907 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@a831c29a does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-18 16:20:57.078  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:57.078  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:57.078  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:57.078  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:57.078  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:57.078  3519  4907 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:20:57.078  3519  4907 I AppSnapshotController: init, sysSupport = true, mActivitySupport = false, activityRecord = ActivityRecord{40409916 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1}
+07-18 16:20:57.079  3519  3616 E QosSceneRecognizer[ActivityStartScene]: notifyActivityStart get launchedFromUid failed through AppManager! launchedFromPackage: com.android.shell, pkg: rd.sheepskin.sandboxmusic
+07-18 16:20:57.079  3519  4907 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:20:57.080  3519  4907 D ActivityStarterExtImpl: setForceUpdateWindow, targetTask = Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic} r = ActivityRecord{40409916 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} notFinish =false
+07-18 16:20:57.080  3519  4907 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:20:57.080  3519  4907 D FlexibleTaskController: findSourceTaskForFreeForm: sourceRecord = null ,realCallingPid:14545 ,launchFromZoomMode:false ,prevTopTask:Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:20:57.080  3519  4907 D FlexibleTaskController: findSourceTaskForFreeForm: the caller is not a flexible freeform window application and does not have a zoom windowMode startup parameter
+07-18 16:20:57.080  3519  4907 D FlexibleTaskController: adjustOptionsForFlexibleTask not allow options follow process task's options, reason:9 ,reusedOptions:null
+07-18 16:20:57.080  3519  4907 I TaskFragmentExtImpl: reset pause in recents anim for mTaskFragment: Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:20:57.080  3519  4907 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:20:57.080  3519  4907 D FlexibleTaskController: shouldKeepFlexibleTask flexibleTask not active.
+07-18 16:20:57.080  3519  4907 D ActivityStarterExtImpl: isLaunchingRootActivity = true
+07-18 16:20:57.082  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:57.082  4980  4980 D CommandQueueLogger: appTransitionPending displayId=0 forced=false
+07-18 16:20:57.082  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:20:57.083  3519  4907 E Transition: Aborting Transition mSyncId=3289, caller=com.android.server.wm.OplusTransitionUtil.abortTransitionImmediately:109 com.android.server.wm.OplusTransitionController.abortTransitionImmediately:123 com.android.server.wm.ActivityStarterExtImpl.abortTransitionImmediately:1896 
+07-18 16:20:57.083  3519  4907 D OplusTransitionController: hookOnAbort, transition: TransitionRecord{945f94b id=3289 track=0 type=OPEN flags=0x0 state=0 c=[
+07-18 16:20:57.083  3519  4907 D OplusTransitionController:    ChangeInfo{fc22f28 container=ActivityRecord{40409916 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} flags=0x0}
+07-18 16:20:57.083  3519  4907 D OplusTransitionController: ]
+07-18 16:20:57.083  3519  4907 D OplusTransitionController: }
+07-18 16:20:57.083  3519  4907 E OplusAppQuickStart_AppQuickStartController: not start from launcher transition:3289
+07-18 16:20:57.083  3519  4907 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:20:57.083  3519  4907 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:20:57.083  4980 28741 D KeyguardService: setOccluded(false)
+07-18 16:20:57.083  4980 28741 D KeyguardService: setOccluded: false, animate= false
+07-18 16:20:57.083  4980 28741 D KeyguardViewMediator: setOccluded(false)
+07-18 16:20:57.084  4980 28741 D KeyguardViewMediator: setOccluded false
+07-18 16:20:57.084  3519  4907 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=1 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:20:57.084  4980 28741 D KeyguardService: setOccluded(false)
+07-18 16:20:57.084  4980 28741 D KeyguardService: setOccluded: false, animate= false
+07-18 16:20:57.084  3519  4907 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=0 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:20:57.085  3519  4907 I ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=sandboxmusic://e2e/... flg=0x14000000 xflg=0x4 pkg=rd.sheepskin.sandboxmusic cmp=rd.sheepskin.sandboxmusic/.MainActivity mCallingUid=2000} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION (START_ACTIVITIES_FROM_BACKGROUND permission granted)) result code=3
+07-18 16:20:57.085  4980 28741 D KeyguardViewMediator: setOccluded(false)
+07-18 16:20:57.085  4980 28741 D KeyguardViewMediator: setOccluded false
+07-18 16:20:57.086  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event pause
+07-18 16:20:57.086  6994  6994 D Capacitor/AppPlugin: No listeners found for event pause
+07-18 16:20:57.086  6994  6994 D Capacitor: App paused
+07-18 16:20:57.086  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appUrlOpen
+07-18 16:20:57.087  6994  6994 D ActivityThread: ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity} checkFinished=false 4
+07-18 16:20:57.087  6994  6994 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+07-18 16:20:57.087  6994  6994 D Capacitor/AppPlugin: Firing change: true
+07-18 16:20:57.087  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appStateChange
+07-18 16:20:57.087  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event resume
+07-18 16:20:57.087  6994  6994 D Capacitor/AppPlugin: No listeners found for event resume
+07-18 16:20:57.088  6994  6994 D Capacitor: App resumed
+07-18 16:20:57.088  3519  8749 V AS.AudioService: uid 10448, callingApp = rd.sheepskin.sandboxmusic
+07-18 16:20:57.088  4980  5015 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity}, wasVisible=true
+07-18 16:20:57.088  6994  6994 I AudioManager: In setSpeakerphoneOn(), on: false, calling application: rd.sheepskin.sandboxmusic
+07-18 16:20:57.088  3519  8749 W AS.AudioService: Audio Settings Permission Denial: setSpeakerphoneOn() from pid=6994, uid=10448
+07-18 16:20:57.088  6994  6994 W BluetoothAdapterExtImpl: setSpeakerphoneOn register null!
+07-18 16:20:57.090  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:20:57.090  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:20:57.090  4980  4980 D KeyguardViewMediator: handleSetOccluded(false)
+07-18 16:20:57.091  1890 20175 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 23.5,cct 5300.0,brl/algo/ir 1411.0/2.0/0.0,pwm/dc 1.0/0.0,rgbc 1114.949341/741.417725/391.699646/1975.658813,ts 112041542337147,cnt 14517,flag 0
+07-18 16:20:57.094  4980  4980 D NotificationShadeWindowController: setIsAboutToOccluded:false, needApply:false
+07-18 16:20:57.094  4980  4980 D KeyguardViewMediator: isOccluded=false,mPowerGestureIntercepted=false
+07-18 16:20:57.095  4980  4980 I SystemUi--Keyguard: ChargingAnimationImpl-->onKeyguardOccludeChange occluded= false
+07-18 16:20:57.095  4980  4980 I SystemUi--Keyguard: KeyguardSliderLayout-->onKeyguardOccludeChange occluded= false
+07-18 16:20:57.095  4980  4980 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SET_OCCLUDED
+07-18 16:20:57.099  3519  4903 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_ACTIVITY_IDLE, bundle: Bundle[{scene=SCENE_ACTIVITY_IDLE}]
+07-18 16:20:57.099  3519  4903 I Osense-BaseDecisionMaker: OSense not supported scene! SCENE_ACTIVITY_IDLE
+07-18 16:20:57.103  6994 14325 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:20:57.131  3198  3198 I cnss-daemon: nl80211 response handler invoked
+07-18 16:20:57.131  3198  3198 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+07-18 16:20:57.131  1897 13869 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+07-18 16:20:57.136  6265  6390 E horae   : 0: target_temp:33800, back:33800,frame:33800,front:33800, 3, +(0), 1 ,33800, algo:0
+07-18 16:20:57.358 19514 23380 I APS_ALOG: flushRoutine g_immediateFlush=0 g_pendingCount=0 g_oobCount=0
+07-18 16:20:57.377  2129  3762 D AudioFlinger: fast trackId 933 is playing mute data
+07-18 16:20:57.439  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+07-18 16:20:57.440 26444 26891 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+07-18 16:20:57.447 26444 26856 E msys    : E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:20:57.453  5485  5817 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=4, uid=10526
+07-18 16:20:57.454  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+07-18 16:20:57.454 26444 26889 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+07-18 16:20:57.455 26444 26856 E msys    : E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:20:57.465  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112041836762876 ns; value = [-0.281618, 0.188843, 9.859323], status=3
+07-18 16:20:57.586  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:20:57.586  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:20:57.663  6994 14325 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:20:57.664  6994 14308 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:20:57.859  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:mail-api.proton.me, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+07-18 16:20:57.859  9248 14555 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:mail-api.proton.me, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+07-18 16:20:57.865  5485  5817 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=4, uid=10438
+07-18 16:20:57.866  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+07-18 16:20:57.866  9248 14555 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+07-18 16:20:57.867  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:20:57.870  5485  5817 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=4, uid=10438
+07-18 16:20:57.871  6994 14325 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:20:57.871  6994 14308 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:20:57.874  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=25 renderFps=0, discardFps=24
+07-18 16:20:57.878  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+07-18 16:20:57.878  9248 14555 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+07-18 16:20:57.881  5485  5817 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=4, uid=10438
+07-18 16:20:57.882  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+07-18 16:20:57.882  9248 14555 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+07-18 16:20:57.886  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+07-18 16:20:57.886  9248 14555 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+07-18 16:20:57.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14521)(cct,lux,ir)[5300.00, 22.26, 0.000000](rgbc)[1130.22, 755.96, 391.70, 1975.66](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:20:57.969  3270  3270 I OplusTouchDaemon: ts_run_service: shellback temperature updated 33 (33800)
+07-18 16:20:58.056  5656  5656 D VendorWifiService: onEvent event:9,action:1
+07-18 16:20:58.061  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:58.062  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8332, identity:qcom-perfd
+07-18 16:20:58.066  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:58.069  3519  4590 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=2
+07-18 16:20:58.070  3519  4590 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+07-18 16:20:58.079  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:20:58.093  1954 14565 I [UAH_CLIENT]: UahRelease, handle:69682
+07-18 16:20:58.148  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:20:58.450  4980  5029 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->updateNetworkSpeed: isConnected:true,isSwitchOn:true,isSuspend:false,isPause:false
+07-18 16:20:58.458  4980  5029 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->getTotalByte: totalRxBytes:3123491586,totalTxBytes:437901992,loopbackTxBytes:274191578,loopbackRxBytes:274191578 ,totalBytes:3013010422
+07-18 16:20:58.474  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112042844361938 ns; value = [-0.276829, 0.207996, 9.859323], status=3
+07-18 16:20:58.481  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:58.481  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8333, identity:qcom-perfd
+07-18 16:20:58.483  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:58.511  1954 14567 I [UAH_CLIENT]: UahRelease, handle:69683
+07-18 16:20:58.610  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:20:58.614  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:20:58.813  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:58.813  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8334, identity:qcom-perfd
+07-18 16:20:58.817  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:58.845  1954 14569 I [UAH_CLIENT]: UahRelease, handle:69684
+07-18 16:20:58.845  1960 14318 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_341]QueueRead[0] empty, waiting buffer.
+07-18 16:20:58.867  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:20:58.874  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=24 renderFps=0, discardFps=24
+07-18 16:20:58.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14526)(cct,lux,ir)[5300.00, 23.50, 0.000000](rgbc)[1114.95, 741.42, 391.70, 1975.66](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:20:58.897  2129  3762 D AudioFlinger: fast trackId 929 is playing mute data
+07-18 16:20:58.937  2129  3762 D AudioFlinger: fast trackId 930 is playing mute data
+07-18 16:20:58.961  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+07-18 16:20:58.962 26444 26890 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+07-18 16:20:58.964 26444 26856 E msys    : E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:20:58.983  1875  3589 D PAL: OplusPalCommon: getActiveStreamPcmId: 2077:  dir: 1, stream: 0xb400007b4286db00, pcmDevId: 126
+07-18 16:20:58.994  3519  3604 E BLASTSyncEngine: WM sent Transaction (#3288, Transition-OPEN, tx=15113990331919) to organizer, but never received commit callback. Application ANR likely to follow.
+07-18 16:20:58.994  3519  3604 I BLASTSyncEngineExtImpl: syncTransitionCommitTimeout  syncGroupId=3288,merged.mNativeObjec=-5476376661143817088
+07-18 16:20:58.995  3519  3604 I BLASTSyncEngine: onCommitted syncId: 3288, timeout: true ran: false
+07-18 16:20:58.997  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:58.997  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8331, identity:qcom-perfd
+07-18 16:20:58.998  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:59.004  1875  3589 D PAL: OplusPalCommon: getActiveStreamPcmId: 2077:  dir: 1, stream: 0xb400007b4286db00, pcmDevId: 126
+07-18 16:20:59.004  1875  3589 D AGM: graph: graph_set_config: 1225 entry graph_handle 0x247534c
+07-18 16:20:59.004  1875  3589 I gsl     : gsl_send_spf_cmd:236 sending pkt opcode 0x1001006 token 0x03598000
+07-18 16:20:59.005  1875  3589 I gsl     : gsl_send_spf_cmd:282 rcvd pkt token : 0x3598000
+07-18 16:20:59.006  1875  3589 D AGM: graph: graph_set_config: 1233 exit, graph handle 0x247534c, ret 0
+07-18 16:20:59.011  1875  3589 I gsl     : gsl_send_spf_cmd:236 sending pkt opcode 0x1001007 token 0x03599000
+07-18 16:20:59.012  1875  3589 I gsl     : gsl_send_spf_cmd:282 rcvd pkt token : 0x3599000
+07-18 16:20:59.026  1954 14572 I [UAH_CLIENT]: UahRelease, handle:69685
+07-18 16:20:59.033  1875  3589 D PAL: OplusPalCommon: getActiveStreamPcmId: 2077:  dir: 1, stream: 0xb400007b4286db00, pcmDevId: 126
+07-18 16:20:59.033  1875  3589 D AGM: graph: graph_set_config: 1225 entry graph_handle 0x247534c
+07-18 16:20:59.033  1875  3589 I gsl     : gsl_send_spf_cmd:236 sending pkt opcode 0x1001006 token 0x0359a000
+07-18 16:20:59.034  1875  3589 I gsl     : gsl_send_spf_cmd:282 rcvd pkt token : 0x359a000
+07-18 16:20:59.034  1875  3589 D AGM: graph: graph_set_config: 1233 exit, graph handle 0x247534c, ret 0
+07-18 16:20:59.090  1875 29173 D DlbDap2Process: process() called [2812500] times with input channel mask 0x3 (ProcessingMode=1)
+07-18 16:20:59.091  1890 20175 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 23.5,cct 5300.0,brl/algo/ir 1411.0/2.0/0.0,pwm/dc 1.0/0.0,rgbc 1114.949341/741.417725/391.699646/1975.658813,ts 112043542336678,cnt 14527,flag 0
+07-18 16:20:59.091  3519  4340 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+07-18 16:20:59.092  9296 10256 W Battery : ThermalControllHandler: MSG_THERMAL_CONTROL_CPU_CTRL_CHANGED: ThermalControlState=true, curThermalPolicyCpu=10, curCpu=5, isUserForeground=true
+07-18 16:20:59.095  9296 10256 I [UAH_CLIENT]: uahRuleCtl, ruleId:4, status:1
+07-18 16:20:59.098  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:20:59.101  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8332, identity:qcom-perfd
+07-18 16:20:59.105  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:20:59.108  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:20:59.132  1954 14576 I [UAH_CLIENT]: UahRelease, handle:69687
+07-18 16:20:59.134  1875  3589 D PAL: OplusPalCommon: getActiveStreamPcmId: 2077:  dir: 1, stream: 0xb400007b4286db00, pcmDevId: 126
+07-18 16:20:59.134  1875  3589 D AGM: graph: graph_set_config: 1225 entry graph_handle 0x247534c
+07-18 16:20:59.134  1875  3589 I gsl     : gsl_send_spf_cmd:236 sending pkt opcode 0x1001006 token 0x0359b000
+07-18 16:20:59.135  1875  3589 I gsl     : gsl_send_spf_cmd:282 rcvd pkt token : 0x359b000
+07-18 16:20:59.135  1875  3589 D AGM: graph: graph_set_config: 1233 exit, graph handle 0x247534c, ret 0
+07-18 16:20:59.135 26444  8809 E msys    : E[N mccw.liger]onConnectError(587)=>connect/error - address: 57.145.18.36, port: 5222, ex: folly::AsyncSocketException: AsyncSocketException: connect timed out after 9999ms, type = Timed out
+07-18 16:20:59.141  1875  3589 I gsl     : gsl_send_spf_cmd:236 sending pkt opcode 0x1001007 token 0x0359c000
+07-18 16:20:59.142  1875  3589 I gsl     : gsl_send_spf_cmd:282 rcvd pkt token : 0x359c000
+07-18 16:20:59.142  1875  3589 I PAL: OplusSpeakerTfa98xx: chkSpkResultFeedback: 1875: TFA98xx SPK1: damage=0x0, R0=7004, r0Cal=5710, F0=922, f0Cal=762
+07-18 16:20:59.142  1875  3589 I PAL: OplusSpeakerTfa98xx: chkSpkResultFeedback: 1875: TFA98xx SPK2: damage=0x0, R0=7005, r0Cal=5819, F0=798, f0Cal=762
+07-18 16:20:59.143  3198  3198 I cnss-daemon: nl80211 response handler invoked
+07-18 16:20:59.143  3198  3198 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+07-18 16:20:59.143  1897 13869 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+07-18 16:20:59.177  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:20:59.257  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+07-18 16:20:59.259 26444 26858 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+07-18 16:20:59.266 26444 26856 E msys    : E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:20:59.292  3519  4340 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1114.9/741.4/391.7/1990.7, R/G/B: 28.0/27.0/23.0, bri 1411.0, lux: 22.151003, cct: 5300.0, ir: 0.068007, conf: 2, cnt: 0
+07-18 16:20:59.374 26444  8809 E msys    : E[N mccw.liger]onConnectError(587)=>connect/error - address: 57.145.18.36, port: 443, ex: folly::AsyncSocketException: AsyncSocketException: connect timed out after 9999ms, type = Timed out
+07-18 16:20:59.388  3519  6109 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 118.22056 ave enviroment lux is 22.151003 luxForNit 47.29068demarcationPoint200.0 result is true
+07-18 16:20:59.396  6994 14300 D BufferPoolAccessor2.0: bufferpool2 0xb40000717eb13028 : 18(56401920 size) total buffers - 10(31334400 size) used buffers - 526/544 (recycle/alloc) - 25/544 (fetch/transfer)
+07-18 16:20:59.430  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112043851961366 ns; value = [-0.291194, 0.207996, 9.883265], status=3
+07-18 16:20:59.636  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:20:59.637  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:20:59.869  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:20:59.874  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=23 renderFps=0, discardFps=24
+07-18 16:20:59.893  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14531)(cct,lux,ir)[5300.00, 22.98, 0.000000](rgbc)[1130.22, 755.96, 391.70, 1990.74](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:20:59.894  6994 14325 D BufferPoolAccessor2.0: bufferpool2 0xb4000072d7880228 : 8(65536 size) total buffers - 1(8192 size) used buffers - 910/918 (recycle/alloc) - 9/916 (fetch/transfer)
+07-18 16:20:59.901  3186 14329 D BufferPoolAccessor2.0: bufferpool2 0xb400007b84d09628 : 6(24576 size) total buffers - 1(4096 size) used buffers - 905/911 (recycle/alloc) - 10/910 (fetch/transfer)
+07-18 16:20:59.986  1890 29579 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[13074, 0, 300000, 369, 137]
+07-18 16:20:59.986  1890 29579 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[2, 1, 2, 1, 3]
+07-18 16:21:00.001  3519  4348 V AlarmManager: sending alarm Alarm{e0a46c3 type 3 origWhen 112044456 whenElapsed 112044456 android} uid 1000 whenElapsed 112044456 windowLength 0 maxWhenElapsed 112044456 repeatInterval 0 action null component null tag TIME_TICK flags 0x9 procName system_server
+07-18 16:21:00.002  4980  4980 I SystemUi--SystemUi--: Clock-->smallTime: 16:21
+07-18 16:21:00.003  4980  4980 I SystemUi--SystemUi--: Clock-->smallTime: 16:21
+07-18 16:21:00.003  4980  4980 I SystemUi--SystemUi--: Clock-->smallTime: 16:21
+07-18 16:21:00.011  5656  5656 D SubsysBroadcastManager: onReceive action:android.intent.action.TIME_TICK
+07-18 16:21:00.027  4980  4980 I SystemUi--Notification: SimpleQsClock-->textWidth:144.0, mPaddingEnd 27, dynamicWidth 221, systemFontScale 1.15
+07-18 16:21:00.028  5485  5834 D AMC     : [TriggerSystem] handleLoopTick trigger:vowifihandover phoneId:0 voWifiHandoverCount:0
+07-18 16:21:00.028  5485  5834 D AMC     : [TriggerSystem] handleLoopTick trigger:vowifihandover phoneId:1 voWifiHandoverCount:0
+07-18 16:21:00.039  5523  5724 W ModemAci: [Main] loop tick trigger loop update aci alarm due to delay:382068
+07-18 16:21:00.041  4980  4980 I SystemUi--SystemUi--: Clock-->smallTime: 16:21
+07-18 16:21:00.041  5523  5724 I ModemAci: [Main] loop update aci alarm is triggered!
+07-18 16:21:00.042  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:00.042  3519  3655 D OplusDisplayBrightnessBroadcastReceiver: onReceive action = android.intent.action.TIME_TICK , listeners = [com.android.server.display.feature.ambience.events.event.TimeEvent$TimeChangeReceiver@ea9ef7f, com.android.server.display.color.eyeprotect.manager.AiCurveManager$RhythmBroadcastReceiverWithUpgradeUI@8ddb4c]
+07-18 16:21:00.042  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8333, identity:qcom-perfd
+07-18 16:21:00.043  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:00.043  5523  5724 E ModemAciRpmAidlUtils: getService exception caught java.lang.NoSuchMethodException: P0.a$a.asInterface [interface android.os.IBinder]
+07-18 16:21:00.044  1194  1194 I hwservicemanager: getTransport: Cannot find entry vendor.oplus.hardware.rpmh@2.0::IRpmh/default in either framework or device VINTF manifest.
+07-18 16:21:00.045  5523  5724 W System.err: java.lang.reflect.InvocationTargetException
+07-18 16:21:00.045  5523  5724 W System.err: 	at java.lang.reflect.Method.invoke(Native Method)
+07-18 16:21:00.045  5523  5724 W System.err: 	at com.oplus.nhs.pwr.helper.h.h(SourceFile:20)
+07-18 16:21:00.045  5523  5724 W System.err: 	at com.oplus.nhs.pwr.helper.h.i(SourceFile:0)
+07-18 16:21:00.045  5523  5724 W System.err: 	at com.oplus.nhs.pwr.info.RpmInfo.t(SourceFile:17)
+07-18 16:21:00.045  5523  5724 W System.err: 	at com.oplus.nhs.pwr.info.b.l(SourceFile:24)
+07-18 16:21:00.045  5523  5724 W System.err: 	at com.oplus.nhs.pwr.info.b.u(SourceFile:0)
+07-18 16:21:00.045  5523  5724 W System.err: 	at Y.D.h0(SourceFile:2)
+07-18 16:21:00.045  5523  5724 W System.err: 	at Y.D.u(SourceFile:0)
+07-18 16:21:00.045  5523  5724 W System.err: 	at Y.y.run(SourceFile:2)
+07-18 16:21:00.045  5523  5724 W System.err: 	at android.os.Handler.handleCallback(Handler.java:1001)
+07-18 16:21:00.045  5523  5724 W System.err: 	at android.os.Handler.dispatchMessage(Handler.java:109)
+07-18 16:21:00.045  5523  5724 W System.err: 	at android.os.Looper.loopOnce(Looper.java:306)
+07-18 16:21:00.045  5523  5724 W System.err: 	at android.os.Looper.loop(Looper.java:416)
+07-18 16:21:00.045  5523  5724 W System.err: 	at android.os.HandlerThread.run(HandlerThread.java:85)
+07-18 16:21:00.046  5523  5724 W System.err: Caused by: java.util.NoSuchElementException
+07-18 16:21:00.046  5523  5724 W System.err: 	at android.os.HwBinder.getService(Native Method)
+07-18 16:21:00.046  5523  5724 W System.err: 	at android.os.HwBinder.getService(HwBinder.java:93)
+07-18 16:21:00.046  5523  5724 W System.err: 	at vendor.oplus.hardware.rpmh.V2_0.IRpmh.getService(IRpmh.java:74)
+07-18 16:21:00.046  5523  5724 W System.err: 	at vendor.oplus.hardware.rpmh.V2_0.IRpmh.getService(IRpmh.java:84)
+07-18 16:21:00.046  5523  5724 W System.err: 	... 14 more
+07-18 16:21:00.046  5523  5724 E ModemAci: [RpmInfo] failed to request due to invalid state list!
+07-18 16:21:00.051  5408  5798 D PhoneInterfaceManager: QueryTelephonyChecker-getDataNetworkTypeForSubscriber: packageName = com.oplus.nhs, isGrant = true
+07-18 16:21:00.054  3519  3644 D osense.compress: jp.naver.line.android_u999 do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+07-18 16:21:00.057  5523  5724 I ModemAci: [CommonInfo] [LO, DA]:{ stamp=112044502 duration=382 screenOnT=32108 wifiConnectT=48890 power=69 dataNetworkType=13 signalStrength=-72 batteryCapacity=3068 thermal[]=33.8 softAp=false charge=false simCount=2 defaultPhone=0 networkType=WIFI}
+07-18 16:21:00.067  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:21:00.070  1954 14579 I [UAH_CLIENT]: UahRelease, handle:69688
+07-18 16:21:00.071  5485  5834 E AMC     : [P-lowpower_vowifi/0] execute failed in triggers[0]:[bcc:34][apsleept:null, deepsleep:false, mpsleept:null]
+07-18 16:21:00.071  5485  5834 E AMC     : [P-lowpower_vowifi/1] execute failed in triggers[0]:[bcc:34][apsleept:null, deepsleep:false, mpsleept:null]
+07-18 16:21:00.075  5656  5656 D RadioMessenger: handleMessage Request msgid 2220
+07-18 16:21:00.081  5656  5656 D RadioMessenger: handleSetSyncWithAp: -1, syncFlag: 1
+07-18 16:21:00.082  5656  5656 D QtiRadioService: setSyncWithAp
+07-18 16:21:00.082  5656  5656 D RadioProxyJ[0]: [6681]> setSyncWithAp syncFlag:1
+07-18 16:21:00.083  2629  6091 D RadioService: setSyncWithAp with instance 0
+07-18 16:21:00.083  2629  6091 D VendorService: VendorService::setSyncWithAp
+07-18 16:21:00.084  2629  2725 D QmiVsClient: setSyncWithAp - enter
+07-18 16:21:00.084  2629  2725 E QmiVsClient: sendAsyncRequest QMI_VS_SET_SYNC_WITH_AP_REQ_MSG_V01 ret 0
+07-18 16:21:00.086  2629  2725 D VsProxy : handleMessage msg is 4001
+07-18 16:21:00.086  2629  2725 D RadioProxy: setSyncWithAp : response cb for instance 0
+07-18 16:21:00.086  2629  2629 D RadioServiceResponse: RadioServiceResponse::setSyncWithApResponse
+07-18 16:21:00.086  5656  6849 D SubsysRadioResponse: setSyncWithApResponse info.error = 0
+07-18 16:21:00.087  5656  6849 D RadioProxyJ[0]: [6681]< setSyncWithApResponse 
+07-18 16:21:00.087  5656  5656 D MessengerResponseHandler: handleMessage Response msgid 210
+07-18 16:21:00.093  2629  3913 D QmiClient: qmiServiceEventCallback recv msg id 1085
+07-18 16:21:00.093  2629  3913 D QmiClient: enter -mServiceType 4 onQmiServiceEventCallback msgId 1085
+07-18 16:21:00.093  2629  3913 D QmiClient: onQmiServiceEventCallback - enter. msgId=1085
+07-18 16:21:00.093  2629  3913 D QmiVsClientEvent: qmiVsClientNotifyNecEvent - RADIO_EVENT_NEC_IND
+07-18 16:21:00.094  2629  2725 D VsProxy : handleMessage msg is 2403
+07-18 16:21:00.094  2629  2725 D VsProxy : handleNecInd for instance 0
+07-18 16:21:00.098  5656  6849 D SubsysRadioIndication[0]: radioNecInd 
+07-18 16:21:00.099  5656  5656 D ModemChannel: handleMessage what:102
+07-18 16:21:00.099  5656  5656 D ModemChannel: handleNecEvent
+07-18 16:21:00.102  5485  5821 D SubsysCallManager: handleMessage what:102
+07-18 16:21:00.102  5485  5821 D SubsysCallManager: parseMdmInfoData len:392
+07-18 16:21:00.102  5485  5821 D SubsysCallManager: onMdmEvent moduleId:6,eventId:4
+07-18 16:21:00.102  5523  5663 E NhsUtils: ### DEBUG ### getChipsetType: platform=pineapple
+07-18 16:21:00.103  5523  5724 I ModemAci: [ModemActivityInfo] [LO, DA]:{ stamp=112044558 duration=382 sleepTMs=337737 idleTMs=37503 rxTMs=6873 5gRxTMs=0 txTMs=[0, 0, 0, 0, 0, 0, 0, 0] 5gTxTMs=[0, 0, 0, 0, 7103, 3384, 1725, 2724] rrc10sC[]=[0, 0] rrc20sC[]=[0, 0] rrcMore20sC[]=[0, 0] rrcC[]=[0, 0] rrcT[]=[0, 0] saRrc10sC[]=[0, 0] saRrc20sC[]=[0, 0] saRrcMore20sC[]=[0, 0] saRrcC[]=[0, 0] saRrcT[]=[0, 0] endcActT[]=[0, 0] wifiRrcT[]=[0, 0] csChgC[]=[0, 0] psChgC[]=[0, 0] iRatC[]=[0, 0] cellUpdC[]=[0, 0] handOverC[]=[0, 0] nwSrchC[]=[0, 0] nwSrchT[]=[0, 0] psRegT[]=[382, 382] csRegT[]=[382, 382] psNoRegT[]=[0, 0] csNoRegT[]=[0, 0] sigGrid0T[]=[0, 0] voWifiRegT[]=[0, 0] voLteRegT[]=[382, 382] voNrRegT[]=[0, 0] gpsTMs=37052 wlanTMs=0 sim15gTxTMs[]=[0, 0, 0, 0, 7103, 3384, 1725, 2724] sim25gTxTMs[]=[0, 0, 0, 0, 0, 0, 0, 0] techTMs[]=[0, 0, 0, 0, 6872, 0, 0, 0, 0] saActT[]=[0, 0] lteHoC[]=[0, 0] saHoC[]=[0, 0]}
+07-18 16:21:00.105  5485  5821 D ModemDataAnalysis: phoneId = 0, moduleId = 6, onEvent...4, version = 0, size:380
+07-18 16:21:00.107  5485  5834 E AMC     : [P-ooslimited_deep/0] execute failed in triggers[0]:[nwsrcht:0][nwsrcht:0]
+07-18 16:21:00.108  5485  5834 E AMC     : [P-ooslimited_deep/1] execute failed in triggers[0]:[nwsrcht:0][nwsrcht:0]
+07-18 16:21:00.109  5485  5834 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[0]:[cschgc:0][cschgc:0, pschgc:0]
+07-18 16:21:00.109  5485  5834 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[1]:[cschgc:0][psnoregt:0, csnoregt:0]
+07-18 16:21:00.109  5485  5834 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[0]:[cschgc:0][cschgc:0, pschgc:0]
+07-18 16:21:00.109  5485  5834 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[1]:[cschgc:0][psnoregt:0, csnoregt:0]
+07-18 16:21:00.110  5485  5834 E AMC     : [P-mpss_reset/0] execute failed in triggers[0]:[sleept:337][sleept:1700]
+07-18 16:21:00.110  5485  5834 E AMC     : [P-mpss_reset/1] execute failed in triggers[0]:[sleept:337][sleept:1700]
+07-18 16:21:00.110  5485  5834 E AMC     : [P-pidnetdisable_recovery] execute failed in triggers[0]:[sleept:337][sleept:1700, pidnetdisable:null]
+07-18 16:21:00.110  5485  5834 E AMC     : [P-standby_5gbackoff/0] execute failed in triggers[0]:[sleept:337][inactive:false, sleept:840]
+07-18 16:21:00.110  5485  5834 E AMC     : [P-standby_5gbackoff/1] execute failed in triggers[0]:[sleept:337][inactive:false, sleept:840]
+07-18 16:21:00.111  5485  5834 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[0]:[psnoregt:0][cschgc:0, pschgc:0]
+07-18 16:21:00.111  5485  5834 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[1]:[psnoregt:0][psnoregt:0, csnoregt:0]
+07-18 16:21:00.111  5485  5834 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[0]:[psnoregt:0][cschgc:0, pschgc:0]
+07-18 16:21:00.111  5485  5834 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[1]:[psnoregt:0][psnoregt:0, csnoregt:0]
+07-18 16:21:00.111  5485  5834 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[0]:[pschgc:0][cschgc:0, pschgc:0]
+07-18 16:21:00.111  5485  5834 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[1]:[pschgc:0][psnoregt:0, csnoregt:0]
+07-18 16:21:00.111  5485  5834 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[0]:[pschgc:0][cschgc:0, pschgc:0]
+07-18 16:21:00.111  5485  5834 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[1]:[pschgc:0][psnoregt:0, csnoregt:0]
+07-18 16:21:00.112  5485  5834 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[0]:[csnoregt:0][cschgc:0, pschgc:0]
+07-18 16:21:00.112  5485  5834 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[1]:[csnoregt:0][psnoregt:0, csnoregt:0]
+07-18 16:21:00.113  5485  5834 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[0]:[csnoregt:0][cschgc:0, pschgc:0]
+07-18 16:21:00.114  5485  5834 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[1]:[csnoregt:0][psnoregt:0, csnoregt:0]
+07-18 16:21:00.128  2363  2363 I adbd    : adbd service requested 'shell,v2,TERM=dumb,raw:am start -a android.intent.action.VIEW -d sandboxmusic://e2e/probe-thumb-visual?which=up -f 0x14000000 rd.sheepskin.sandboxmusic'
+07-18 16:21:00.136  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:21:00.177  3519  3644 D osense.compress: com.facebook.katana do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+07-18 16:21:00.199  3519  4585 I [UAH_CLIENT]: UahEventAcquire, cmdid:2, pkg:none, identity:com.android.server.wm
+07-18 16:21:00.199  3519  4907 W ActivityTaskManager: callingPackage for (uid=2000, pid=14583) has no WPC
+07-18 16:21:00.201  3519  4907 D WindowManager: NFW_setClientVisible:ActivityRecord{161342441 u0 rd.sheepskin.sandboxmusic/.MainActivity clientVisible:true
+07-18 16:21:00.201  3519  4907 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@a831c29a does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-18 16:21:00.201  3519  4354 D StartingSurfacePreviewController: checkSupportSurfacePreview, token=rd.sheepskin.sandboxmusic/.MainActivity, enableSurfacePreview=false, supportMultiLayout=false, unsupportedSkipViewAnimLv=null, disableSurfacePreviewAnimLv=null, ignoreFileExistAnimLv=null
+07-18 16:21:00.201  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:00.201  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:00.202  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:00.202  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:00.202  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:00.202  3519  4907 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:21:00.202  3519  4907 I AppSnapshotController: init, sysSupport = true, mActivitySupport = false, activityRecord = ActivityRecord{161342441 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1}
+07-18 16:21:00.203  3519  3616 E QosSceneRecognizer[ActivityStartScene]: notifyActivityStart get launchedFromUid failed through AppManager! launchedFromPackage: com.android.shell, pkg: rd.sheepskin.sandboxmusic
+07-18 16:21:00.203  3519  4907 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:21:00.204  3519  4907 D ActivityStarterExtImpl: setForceUpdateWindow, targetTask = Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic} r = ActivityRecord{161342441 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} notFinish =false
+07-18 16:21:00.204  3519  4907 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:21:00.204  3519  4907 D FlexibleTaskController: findSourceTaskForFreeForm: sourceRecord = null ,realCallingPid:14583 ,launchFromZoomMode:false ,prevTopTask:Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:21:00.204  3519  4907 D FlexibleTaskController: findSourceTaskForFreeForm: the caller is not a flexible freeform window application and does not have a zoom windowMode startup parameter
+07-18 16:21:00.204  3519  4907 D FlexibleTaskController: adjustOptionsForFlexibleTask not allow options follow process task's options, reason:9 ,reusedOptions:null
+07-18 16:21:00.204  3519  4907 I TaskFragmentExtImpl: reset pause in recents anim for mTaskFragment: Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:21:00.204  3519  4907 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:21:00.204  3519  4907 D FlexibleTaskController: shouldKeepFlexibleTask flexibleTask not active.
+07-18 16:21:00.204  3519  4907 D ActivityStarterExtImpl: isLaunchingRootActivity = true
+07-18 16:21:00.205  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:00.205  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:00.206  3519  4907 E Transition: Aborting Transition mSyncId=3290, caller=com.android.server.wm.OplusTransitionUtil.abortTransitionImmediately:109 com.android.server.wm.OplusTransitionController.abortTransitionImmediately:123 com.android.server.wm.ActivityStarterExtImpl.abortTransitionImmediately:1896 
+07-18 16:21:00.206  3519  4907 D OplusTransitionController: hookOnAbort, transition: TransitionRecord{fca679c id=3290 track=0 type=OPEN flags=0x0 state=0 c=[
+07-18 16:21:00.206  3519  4907 D OplusTransitionController:    ChangeInfo{367d5a5 container=ActivityRecord{161342441 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} flags=0x0}
+07-18 16:21:00.206  3519  4907 D OplusTransitionController: ]
+07-18 16:21:00.206  3519  4907 D OplusTransitionController: }
+07-18 16:21:00.206  3519  4907 E OplusAppQuickStart_AppQuickStartController: not start from launcher transition:3290
+07-18 16:21:00.206  3519  4907 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:21:00.206  3519  4907 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:21:00.206  3519  4907 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=1 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:21:00.207  3519  4907 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=0 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:21:00.205  4980  4980 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(com.android.systemui) ==
+07-18 16:21:00.205  4980  4980 D CommandQueueLogger: appTransitionPending displayId=0 forced=false
+07-18 16:21:00.206  4980 28744 D KeyguardService: setOccluded(false)
+07-18 16:21:00.207  4980 28744 D KeyguardService: setOccluded: false, animate= false
+07-18 16:21:00.207  4980 28744 D KeyguardViewMediator: setOccluded(false)
+07-18 16:21:00.207  4980 28744 D KeyguardViewMediator: setOccluded false
+07-18 16:21:00.207  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:21:00.207  3519  4907 I ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=sandboxmusic://e2e/... flg=0x14000000 xflg=0x4 pkg=rd.sheepskin.sandboxmusic cmp=rd.sheepskin.sandboxmusic/.MainActivity mCallingUid=2000} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION (START_ACTIVITIES_FROM_BACKGROUND permission granted)) result code=3
+07-18 16:21:00.207  4980 28744 D KeyguardService: setOccluded(false)
+07-18 16:21:00.207  4980 28744 D KeyguardService: setOccluded: false, animate= false
+07-18 16:21:00.207  4980 28744 D KeyguardViewMediator: setOccluded(false)
+07-18 16:21:00.207  4980 28744 D KeyguardViewMediator: setOccluded false
+07-18 16:21:00.207  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:21:00.208  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event pause
+07-18 16:21:00.209  6994  6994 D Capacitor/AppPlugin: No listeners found for event pause
+07-18 16:21:00.209  6994  6994 D Capacitor: App paused
+07-18 16:21:00.209  4980  4980 D KeyguardViewMediator: handleSetOccluded(false)
+07-18 16:21:00.209  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appUrlOpen
+07-18 16:21:00.209  6994  6994 D ActivityThread: ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity} checkFinished=false 4
+07-18 16:21:00.209  6994  6994 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+07-18 16:21:00.209  6994  6994 D Capacitor/AppPlugin: Firing change: true
+07-18 16:21:00.209  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appStateChange
+07-18 16:21:00.210  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event resume
+07-18 16:21:00.210  6994  6994 D Capacitor/AppPlugin: No listeners found for event resume
+07-18 16:21:00.210  6994  6994 D Capacitor: App resumed
+07-18 16:21:00.210  3519  4907 V AS.AudioService: uid 10448, callingApp = rd.sheepskin.sandboxmusic
+07-18 16:21:00.210  4980  4980 D NotificationShadeWindowController: setIsAboutToOccluded:false, needApply:false
+07-18 16:21:00.210  4980  4980 D KeyguardViewMediator: isOccluded=false,mPowerGestureIntercepted=false
+07-18 16:21:00.211  4980  4980 I SystemUi--Keyguard: ChargingAnimationImpl-->onKeyguardOccludeChange occluded= false
+07-18 16:21:00.211  6994  6994 I AudioManager: In setSpeakerphoneOn(), on: false, calling application: rd.sheepskin.sandboxmusic
+07-18 16:21:00.211  4980  4980 I SystemUi--Keyguard: KeyguardSliderLayout-->onKeyguardOccludeChange occluded= false
+07-18 16:21:00.211  4980  4980 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SET_OCCLUDED
+07-18 16:21:00.211  4980  5015 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity}, wasVisible=true
+07-18 16:21:00.211  3519  4907 W AS.AudioService: Audio Settings Permission Denial: setSpeakerphoneOn() from pid=6994, uid=10448
+07-18 16:21:00.211  6994  6994 W BluetoothAdapterExtImpl: setSpeakerphoneOn register null!
+07-18 16:21:00.221  3519  4903 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_ACTIVITY_IDLE, bundle: Bundle[{scene=SCENE_ACTIVITY_IDLE}]
+07-18 16:21:00.221  3519  4903 I Osense-BaseDecisionMaker: OSense not supported scene! SCENE_ACTIVITY_IDLE
+07-18 16:21:00.274  3519  3644 D osense.compress: com.google.android.googlequicksearchbox do shrink, target ratio = 35, final ratio = 70, cur ratio = 0
+07-18 16:21:00.397  2129  3762 D AudioFlinger: fast trackId 933 is playing mute data
+07-18 16:21:00.438  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112044859561886 ns; value = [-0.300771, 0.207996, 9.854534], status=3
+07-18 16:21:00.529  3519  3644 D osense.compress: com.google.android.gms do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+07-18 16:21:00.657  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:21:00.658  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:21:00.806  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:00.806  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8334, identity:qcom-perfd
+07-18 16:21:00.812  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:00.841  1954 14589 I [UAH_CLIENT]: UahRelease, handle:69691
+07-18 16:21:00.870  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:21:00.874  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=25 renderFps=0, discardFps=24
+07-18 16:21:00.893  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14536)(cct,lux,ir)[5300.00, 23.50, 0.000000](rgbc)[1114.95, 755.96, 391.70, 1990.74](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:21:01.074  5656  5656 D VendorWifiService: onEvent event:9,action:1
+07-18 16:21:01.079  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:01.079  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8331, identity:qcom-perfd
+07-18 16:21:01.081  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:01.088  3519  4590 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=2
+07-18 16:21:01.091  3519  4590 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+07-18 16:21:01.092  1890 20175 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 23.0,cct 5300.0,brl/algo/ir 1411.0/2.0/0.0,pwm/dc 1.0/0.0,rgbc 1130.222656/755.955322/391.699646/1990.740112,ts 112045542337251,cnt 14537,flag 0
+07-18 16:21:01.097  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:21:01.103  6994 14308 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:21:01.103  6994 14325 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:21:01.108  1954 14591 I [UAH_CLIENT]: UahRelease, handle:69692
+07-18 16:21:01.152  3198  3198 I cnss-daemon: nl80211 response handler invoked
+07-18 16:21:01.152  3198  3198 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+07-18 16:21:01.153  1897 13869 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+07-18 16:21:01.165  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:21:01.234  2363  2363 I adbd    : adbd service requested 'shell,v2,TERM=dumb:export ANDROID_LOG_TAGS=''; exec logcat '-d' '-v' 'time''
+07-18 16:21:01.446  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112045867163761 ns; value = [-0.315136, 0.212784, 9.864111], status=3
+07-18 16:21:01.490  1960 24179 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_264]QueueRead[0] empty, waiting buffer.
+07-18 16:21:01.493  3519  4340 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+07-18 16:21:01.493  1960 21869 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_214]QueueRead[0] empty, waiting buffer.
+07-18 16:21:01.494  1960 24998 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_184]QueueRead[0] empty, waiting buffer.
+07-18 16:21:01.499  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:01.499  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8332, identity:qcom-perfd
+07-18 16:21:01.502  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:01.511  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:21:01.530  1954 14597 I [UAH_CLIENT]: UahRelease, handle:69693
+07-18 16:21:01.580  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:21:01.627  2363  2363 I adbd    : adbd service requested 'shell,v2,TERM=dumb:export ANDROID_LOG_TAGS=''; exec logcat '-d' '-v' 'time''
+07-18 16:21:01.683  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:21:01.684  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:21:01.693  3519  4340 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1130.2/756.0/391.7/1990.7, R/G/B: 28.0/27.0/23.0, bri 1411.0, lux: 22.151003, cct: 5300.0, ir: 0.076698, conf: 2, cnt: 0
+07-18 16:21:01.771  1875 29173 D DlbDap2Process: process() called [2813000] times with input channel mask 0x3 (ProcessingMode=1)
+07-18 16:21:01.830  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:01.830  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8333, identity:qcom-perfd
+07-18 16:21:01.834  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:01.862  1954 14605 I [UAH_CLIENT]: UahRelease, handle:69694
+07-18 16:21:01.871  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:21:01.874  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=24 renderFps=0, discardFps=24
+07-18 16:21:01.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14541)(cct,lux,ir)[5300.00, 23.50, 0.000000](rgbc)[1114.95, 741.42, 391.70, 1975.66](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:21:01.917  2129  3762 D AudioFlinger: fast trackId 929 is playing mute data
+07-18 16:21:01.954  2056  2184 D vendor.oplus.hardware.charger-V10-service: ret_value:122, read content:,338,338,4024,4022,55,66,69,1,1,0,453,4997,68,1,4430,300,500,0,7,2500,7,0,1,0,2,0,0,0,1,5397,93,0,3068,4672,0,0,0,0,0,105
+07-18 16:21:01.954  2056  2184 D vendor.oplus.hardware.charger-V10-service: gmtime: 2026-07-18-16-21-01
+07-18 16:21:01.955  2056  2184 D vendor.oplus.hardware.charger-V10-service: usb_online:1, ac_online:-2147483648, wireless_online:0
+07-18 16:21:01.957  2129  3762 D AudioFlinger: fast trackId 930 is playing mute data
+07-18 16:21:01.964  3519  3644 D osense.compress: jp.naver.line.android do shrink, target ratio = 35, final ratio = 70, cur ratio = 0
+07-18 16:21:02.084  3519  3604 E BLASTSyncEngine: WM sent Transaction (#3289, Transition-OPEN, tx=15113990331926) to organizer, but never received commit callback. Application ANR likely to follow.
+07-18 16:21:02.084  3519  3604 I BLASTSyncEngineExtImpl: syncTransitionCommitTimeout  syncGroupId=3289,merged.mNativeObjec=-5476376663958349440
+07-18 16:21:02.085  3519  3604 I BLASTSyncEngine: onCommitted syncId: 3289, timeout: true ran: false
+07-18 16:21:02.087  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:02.087  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8334, identity:qcom-perfd
+07-18 16:21:02.087  3519  6109 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 118.22056 ave enviroment lux is 22.151003 luxForNit 47.29068demarcationPoint200.0 result is true
+07-18 16:21:02.090  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:02.121  1954 14607 I [UAH_CLIENT]: UahRelease, handle:69695
+07-18 16:21:02.138  6265  6390 E horae   : 0: target_temp:33800, back:33800,frame:33800,front:33800, 3, +(0), 1 ,33800, algo:0
+07-18 16:21:02.265  2363  2363 I adbd    : adbd service requested 'shell,v2,TERM=dumb,raw:am start -a android.intent.action.VIEW -d sandboxmusic://e2e/probe-liked-playlist?track=Nee%20Nah -f 0x14000000 rd.sheepskin.sandboxmusic'
+07-18 16:21:02.331  3519  4585 I [UAH_CLIENT]: UahEventAcquire, cmdid:2, pkg:none, identity:com.android.server.wm
+07-18 16:21:02.331  3519  4907 W ActivityTaskManager: callingPackage for (uid=2000, pid=14611) has no WPC
+07-18 16:21:02.332  3519  4907 D WindowManager: NFW_setClientVisible:ActivityRecord{113569740 u0 rd.sheepskin.sandboxmusic/.MainActivity clientVisible:true
+07-18 16:21:02.332  3519  4907 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@a831c29a does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-18 16:21:02.332  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:02.333  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:02.333  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:02.333  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:02.333  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:02.333  3519  4907 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:21:02.333  3519  4907 I AppSnapshotController: init, sysSupport = true, mActivitySupport = false, activityRecord = ActivityRecord{113569740 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1}
+07-18 16:21:02.334  3519  4354 D StartingSurfacePreviewController: checkSupportSurfacePreview, token=rd.sheepskin.sandboxmusic/.MainActivity, enableSurfacePreview=false, supportMultiLayout=false, unsupportedSkipViewAnimLv=null, disableSurfacePreviewAnimLv=null, ignoreFileExistAnimLv=null
+07-18 16:21:02.334  3519  4907 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:21:02.334  3519  4907 D ActivityStarterExtImpl: setForceUpdateWindow, targetTask = Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic} r = ActivityRecord{113569740 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} notFinish =false
+07-18 16:21:02.334  3519  4907 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:21:02.334  3519  4907 D FlexibleTaskController: findSourceTaskForFreeForm: sourceRecord = null ,realCallingPid:14611 ,launchFromZoomMode:false ,prevTopTask:Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:21:02.334  3519  4907 D FlexibleTaskController: findSourceTaskForFreeForm: the caller is not a flexible freeform window application and does not have a zoom windowMode startup parameter
+07-18 16:21:02.334  3519  4907 D FlexibleTaskController: adjustOptionsForFlexibleTask not allow options follow process task's options, reason:9 ,reusedOptions:null
+07-18 16:21:02.334  3519  4907 I TaskFragmentExtImpl: reset pause in recents anim for mTaskFragment: Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:21:02.335  3519  4907 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:21:02.335  3519  4907 D FlexibleTaskController: shouldKeepFlexibleTask flexibleTask not active.
+07-18 16:21:02.335  3519  4907 D ActivityStarterExtImpl: isLaunchingRootActivity = true
+07-18 16:21:02.335  3519  3616 E QosSceneRecognizer[ActivityStartScene]: notifyActivityStart get launchedFromUid failed through AppManager! launchedFromPackage: com.android.shell, pkg: rd.sheepskin.sandboxmusic
+07-18 16:21:02.336  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:02.336  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:02.337  4980  4980 D CommandQueueLogger: appTransitionPending displayId=0 forced=false
+07-18 16:21:02.337  3519  4907 E Transition: Aborting Transition mSyncId=3291, caller=com.android.server.wm.OplusTransitionUtil.abortTransitionImmediately:109 com.android.server.wm.OplusTransitionController.abortTransitionImmediately:123 com.android.server.wm.ActivityStarterExtImpl.abortTransitionImmediately:1896 
+07-18 16:21:02.337  3519  4907 D OplusTransitionController: hookOnAbort, transition: TransitionRecord{6f7831b id=3291 track=0 type=OPEN flags=0x0 state=0 c=[
+07-18 16:21:02.337  3519  4907 D OplusTransitionController:    ChangeInfo{3373cb8 container=ActivityRecord{113569740 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} flags=0x0}
+07-18 16:21:02.337  3519  4907 D OplusTransitionController: ]
+07-18 16:21:02.337  3519  4907 D OplusTransitionController: }
+07-18 16:21:02.337  3519  4907 E OplusAppQuickStart_AppQuickStartController: not start from launcher transition:3291
+07-18 16:21:02.337  3519  4907 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:21:02.337  3519  4907 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:21:02.337  3519  4907 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=1 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:21:02.338  4980  8984 D KeyguardService: setOccluded(false)
+07-18 16:21:02.338  3519  4907 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=0 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:21:02.338  4980  8984 D KeyguardService: setOccluded: false, animate= false
+07-18 16:21:02.338  4980  8984 D KeyguardViewMediator: setOccluded(false)
+07-18 16:21:02.338  4980  8984 D KeyguardViewMediator: setOccluded false
+07-18 16:21:02.339  4980  8984 D KeyguardService: setOccluded(false)
+07-18 16:21:02.339  4980  8984 D KeyguardService: setOccluded: false, animate= false
+07-18 16:21:02.339  4980  8984 D KeyguardViewMediator: setOccluded(false)
+07-18 16:21:02.339  4980  8984 D KeyguardViewMediator: setOccluded false
+07-18 16:21:02.339  3519  4907 I ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=sandboxmusic://e2e/... flg=0x14000000 xflg=0x4 pkg=rd.sheepskin.sandboxmusic cmp=rd.sheepskin.sandboxmusic/.MainActivity mCallingUid=2000} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION (START_ACTIVITIES_FROM_BACKGROUND permission granted)) result code=3
+07-18 16:21:02.341  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event pause
+07-18 16:21:02.341  6994  6994 D Capacitor/AppPlugin: No listeners found for event pause
+07-18 16:21:02.341  6994  6994 D Capacitor: App paused
+07-18 16:21:02.341  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:21:02.341  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appUrlOpen
+07-18 16:21:02.341  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:21:02.341  4980  4980 D KeyguardViewMediator: handleSetOccluded(false)
+07-18 16:21:02.341  4980  4980 D NotificationShadeWindowController: setIsAboutToOccluded:false, needApply:false
+07-18 16:21:02.341  4980  4980 D KeyguardViewMediator: isOccluded=false,mPowerGestureIntercepted=false
+07-18 16:21:02.341  4980  4980 I SystemUi--Keyguard: ChargingAnimationImpl-->onKeyguardOccludeChange occluded= false
+07-18 16:21:02.341  4980  4980 I SystemUi--Keyguard: KeyguardSliderLayout-->onKeyguardOccludeChange occluded= false
+07-18 16:21:02.341  4980  4980 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SET_OCCLUDED
+07-18 16:21:02.341  6994  6994 D ActivityThread: ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity} checkFinished=false 4
+07-18 16:21:02.341  6994  6994 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+07-18 16:21:02.342  6994  6994 D Capacitor/AppPlugin: Firing change: true
+07-18 16:21:02.342  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appStateChange
+07-18 16:21:02.342  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event resume
+07-18 16:21:02.342  6994  6994 D Capacitor/AppPlugin: No listeners found for event resume
+07-18 16:21:02.342  6994  6994 D Capacitor: App resumed
+07-18 16:21:02.342  3519  4907 V AS.AudioService: uid 10448, callingApp = rd.sheepskin.sandboxmusic
+07-18 16:21:02.342  6994  6994 I AudioManager: In setSpeakerphoneOn(), on: false, calling application: rd.sheepskin.sandboxmusic
+07-18 16:21:02.343  3519  4907 W AS.AudioService: Audio Settings Permission Denial: setSpeakerphoneOn() from pid=6994, uid=10448
+07-18 16:21:02.343  6994  6994 W BluetoothAdapterExtImpl: setSpeakerphoneOn register null!
+07-18 16:21:02.346  4980  5015 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity}, wasVisible=true
+07-18 16:21:02.355  3519  4903 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_ACTIVITY_IDLE, bundle: Bundle[{scene=SCENE_ACTIVITY_IDLE}]
+07-18 16:21:02.355  3519  4903 I Osense-BaseDecisionMaker: OSense not supported scene! SCENE_ACTIVITY_IDLE
+07-18 16:21:02.359 19514 23380 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(com.oplus.camera) ==
+07-18 16:21:02.359 19514 23380 I APS_ALOG: flushRoutine g_immediateFlush=0 g_pendingCount=0 g_oobCount=0
+07-18 16:21:02.361  3519  3604 W ProcessStats: Tracking association SourceState{dff5762 system/1000 BFgs #252299} whose proc state 4 is better than process ProcessState{e1f07b8 com.android.wallpaper.livepicker:wallpaperService/10229 pkg=com.android.wallpaper.livepicker} proc state 5 (7 skipped)
+07-18 16:21:02.463  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112046874767199 ns; value = [-0.300771, 0.193631, 9.844957], status=3
+07-18 16:21:02.463  4980  5029 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->updateNetworkSpeed: isConnected:true,isSwitchOn:true,isSuspend:false,isPause:false
+07-18 16:21:02.465  4980  5029 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->getTotalByte: totalRxBytes:3123495457,totalTxBytes:437902056,loopbackTxBytes:274191578,loopbackRxBytes:274191578 ,totalBytes:3013014357
+07-18 16:21:02.471  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:02.471  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8331, identity:qcom-perfd
+07-18 16:21:02.473  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:02.500  1954 14616 I [UAH_CLIENT]: UahRelease, handle:69697
+07-18 16:21:02.706  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:21:02.706  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:21:02.873  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:21:02.875  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=24 renderFps=0, discardFps=24
+07-18 16:21:02.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14546)(cct,lux,ir)[5300.00, 23.70, 67.816635](rgbc)[1130.22, 755.96, 391.70, 2005.82](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:21:02.946  5656  5656 D SubsysEventListenerManager-SubsysTelephonyCallback[1]: onSignalStrengthsChanged
+07-18 16:21:02.949  4980  5072 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:2 isSoftSimCard:false slotId:1
+07-18 16:21:02.951  5656  5656 D SubsysEventListenerManager-SubsysTelephonyCallback[0]: onSignalStrengthsChanged
+07-18 16:21:02.953  5408  5408 D OplusTelephonyController: onSignalStrengthChanged: SignalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 level=0,mLte=CellSignalStrengthLte: rssi=-51 rsrp=-72 rsrq=-13 rssnr=12 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiCqiTableIndex = 2147483647 csiCqiReport = [] ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 level = 0 parametersUseForLevel = 0 timingAdvance = 2147483647 },primary=CellSignalStrengthLte}
+07-18 16:21:02.955  4980  5072 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:1 isSoftSimCard:false slotId:0
+07-18 16:21:02.955  4980  4980 D Tile.OplusCellularTile: refreshState: tile not listening, ignore
+07-18 16:21:02.986  1890 29579 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[31350, 0, 300000, 455, 116]
+07-18 16:21:02.986  1890 29579 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[2, 1, 3, 1, 3]
+07-18 16:21:03.092  1890 20175 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 22.8,cct 5300.0,brl/algo/ir 1411.0/2.0/0.0,pwm/dc 1.0/0.0,rgbc 1114.949341/741.417725/391.699646/1960.577393,ts 112047542339386,cnt 14547,flag 0
+07-18 16:21:03.162  1897 13869 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+07-18 16:21:03.163  3198  3198 I cnss-daemon: nl80211 response handler invoked
+07-18 16:21:03.163  3198  3198 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+07-18 16:21:03.417  2129  3762 D AudioFlinger: fast trackId 933 is playing mute data
+07-18 16:21:03.471  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112047882371574 ns; value = [-0.305560, 0.198419, 9.902418], status=3
+07-18 16:21:03.734  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:21:03.735  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:21:03.846  1960 14318 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_341]QueueRead[0] empty, waiting buffer.
+07-18 16:21:03.874  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:21:03.875  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=23 renderFps=0, discardFps=24
+07-18 16:21:03.891  3519  4340 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+07-18 16:21:03.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14551)(cct,lux,ir)[5300.00, 22.78, 0.000000](rgbc)[1114.95, 755.96, 391.70, 1975.66](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:21:04.092  3519  4340 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1114.9/741.4/391.7/1960.6, R/G/B: 28.0/27.0/23.0, bri 1411.0, lux: 21.761421, cct: 5300.0, ir: 0.078175, conf: 2, cnt: 0
+07-18 16:21:04.096  9296 10256 W Battery : ThermalControllHandler: MSG_THERMAL_CONTROL_CPU_CTRL_CHANGED: ThermalControlState=true, curThermalPolicyCpu=10, curCpu=6, isUserForeground=true
+07-18 16:21:04.096  9296 10256 I [UAH_CLIENT]: uahRuleCtl, ruleId:4, status:1
+07-18 16:21:04.107  5656  5656 D VendorWifiService: onEvent event:9,action:1
+07-18 16:21:04.115  3519  4590 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=1
+07-18 16:21:04.115  3519  4590 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+07-18 16:21:04.118  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:04.118  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8332, identity:qcom-perfd
+07-18 16:21:04.121  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:04.129  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:21:04.149  1954 14620 I [UAH_CLIENT]: UahRelease, handle:69700
+07-18 16:21:04.199  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:21:04.382  2363  2363 I adbd    : adbd service requested 'shell,v2,TERM=dumb,raw:am start -a android.intent.action.VIEW -d sandboxmusic://e2e/thumb-down -f 0x14000000 rd.sheepskin.sandboxmusic'
+07-18 16:21:04.409  1875 29173 D DlbDap2Process: process() called [2813500] times with input channel mask 0x3 (ProcessingMode=1)
+07-18 16:21:04.470  3519  4585 I [UAH_CLIENT]: UahEventAcquire, cmdid:2, pkg:none, identity:com.android.server.wm
+07-18 16:21:04.471  3519  8749 W ActivityTaskManager: callingPackage for (uid=2000, pid=14623) has no WPC
+07-18 16:21:04.471  3519  8749 D WindowManager: NFW_setClientVisible:ActivityRecord{235072751 u0 rd.sheepskin.sandboxmusic/.MainActivity clientVisible:true
+07-18 16:21:04.472  3519  8749 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@a831c29a does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-18 16:21:04.472  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:04.472  3519  4354 D StartingSurfacePreviewController: checkSupportSurfacePreview, token=rd.sheepskin.sandboxmusic/.MainActivity, enableSurfacePreview=false, supportMultiLayout=false, unsupportedSkipViewAnimLv=null, disableSurfacePreviewAnimLv=null, ignoreFileExistAnimLv=null
+07-18 16:21:04.472  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:04.472  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:04.473  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:04.473  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:04.473  3519  8749 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:21:04.473  3519  8749 I AppSnapshotController: init, sysSupport = true, mActivitySupport = false, activityRecord = ActivityRecord{235072751 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1}
+07-18 16:21:04.473  3519  3616 E QosSceneRecognizer[ActivityStartScene]: notifyActivityStart get launchedFromUid failed through AppManager! launchedFromPackage: com.android.shell, pkg: rd.sheepskin.sandboxmusic
+07-18 16:21:04.474  3519  8749 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:21:04.475  3519  8749 D ActivityStarterExtImpl: setForceUpdateWindow, targetTask = Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic} r = ActivityRecord{235072751 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} notFinish =false
+07-18 16:21:04.475  3519  8749 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:21:04.475  3519  8749 D FlexibleTaskController: findSourceTaskForFreeForm: sourceRecord = null ,realCallingPid:14623 ,launchFromZoomMode:false ,prevTopTask:Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:21:04.475  3519  8749 D FlexibleTaskController: findSourceTaskForFreeForm: the caller is not a flexible freeform window application and does not have a zoom windowMode startup parameter
+07-18 16:21:04.475  3519  8749 D FlexibleTaskController: adjustOptionsForFlexibleTask not allow options follow process task's options, reason:9 ,reusedOptions:null
+07-18 16:21:04.475  3519  8749 I TaskFragmentExtImpl: reset pause in recents anim for mTaskFragment: Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:21:04.475  3519  8749 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:21:04.475  3519  8749 D FlexibleTaskController: shouldKeepFlexibleTask flexibleTask not active.
+07-18 16:21:04.475  3519  8749 D ActivityStarterExtImpl: isLaunchingRootActivity = true
+07-18 16:21:04.476  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:04.477  3519  8749 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:04.477  3519  8749 E Transition: Aborting Transition mSyncId=3292, caller=com.android.server.wm.OplusTransitionUtil.abortTransitionImmediately:109 com.android.server.wm.OplusTransitionController.abortTransitionImmediately:123 com.android.server.wm.ActivityStarterExtImpl.abortTransitionImmediately:1896 
+07-18 16:21:04.477  3519  8749 D OplusTransitionController: hookOnAbort, transition: TransitionRecord{5c830da id=3292 track=0 type=OPEN flags=0x0 state=0 c=[
+07-18 16:21:04.477  3519  8749 D OplusTransitionController:    ChangeInfo{7bb690b container=ActivityRecord{235072751 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} flags=0x0}
+07-18 16:21:04.477  3519  8749 D OplusTransitionController: ]
+07-18 16:21:04.477  3519  8749 D OplusTransitionController: }
+07-18 16:21:04.477  3519  8749 E OplusAppQuickStart_AppQuickStartController: not start from launcher transition:3292
+07-18 16:21:04.477  3519  8749 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:21:04.478  3519  8749 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:21:04.478  3519  8749 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=1 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:21:04.478  3519  8749 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=0 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:21:04.479  3519  8749 I ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=sandboxmusic://e2e/... flg=0x14000000 xflg=0x4 pkg=rd.sheepskin.sandboxmusic cmp=rd.sheepskin.sandboxmusic/.MainActivity mCallingUid=2000} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION (START_ACTIVITIES_FROM_BACKGROUND permission granted)) result code=3
+07-18 16:21:04.480  4980  8984 D KeyguardService: setOccluded(false)
+07-18 16:21:04.480  4980  8984 D KeyguardService: setOccluded: false, animate= false
+07-18 16:21:04.480  4980  8984 D KeyguardViewMediator: setOccluded(false)
+07-18 16:21:04.480  4980  8984 D KeyguardViewMediator: setOccluded false
+07-18 16:21:04.480  4980 28741 D KeyguardService: setOccluded(false)
+07-18 16:21:04.480  4980 28741 D KeyguardService: setOccluded: false, animate= false
+07-18 16:21:04.480  4980 28741 D KeyguardViewMediator: setOccluded(false)
+07-18 16:21:04.480  4980 28741 D KeyguardViewMediator: setOccluded false
+07-18 16:21:04.481  4980  4980 D KeyguardViewMediator: handleSetOccluded(false)
+07-18 16:21:04.481  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event pause
+07-18 16:21:04.481  6994  6994 D Capacitor/AppPlugin: No listeners found for event pause
+07-18 16:21:04.481  6994  6994 D Capacitor: App paused
+07-18 16:21:04.481  4980  5015 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity}, wasVisible=true
+07-18 16:21:04.481  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appUrlOpen
+07-18 16:21:04.481  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112048889978136 ns; value = [-0.324713, 0.198419, 9.888053], status=3
+07-18 16:21:04.481  4980  4980 D NotificationShadeWindowController: setIsAboutToOccluded:false, needApply:false
+07-18 16:21:04.481  4980  4980 D KeyguardViewMediator: isOccluded=false,mPowerGestureIntercepted=false
+07-18 16:21:04.481  4980  4980 I SystemUi--Keyguard: ChargingAnimationImpl-->onKeyguardOccludeChange occluded= false
+07-18 16:21:04.481  6994  6994 D ActivityThread: ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity} checkFinished=false 4
+07-18 16:21:04.481  4980  4980 I SystemUi--Keyguard: KeyguardSliderLayout-->onKeyguardOccludeChange occluded= false
+07-18 16:21:04.481  6994  6994 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+07-18 16:21:04.481  4980  4980 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SET_OCCLUDED
+07-18 16:21:04.481  6994  6994 D Capacitor/AppPlugin: Firing change: true
+07-18 16:21:04.481  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appStateChange
+07-18 16:21:04.482  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event resume
+07-18 16:21:04.482  6994  6994 D Capacitor/AppPlugin: No listeners found for event resume
+07-18 16:21:04.482  6994  6994 D Capacitor: App resumed
+07-18 16:21:04.482  3519  4907 V AS.AudioService: uid 10448, callingApp = rd.sheepskin.sandboxmusic
+07-18 16:21:04.482  4980  4980 D CommandQueueLogger: appTransitionPending displayId=0 forced=false
+07-18 16:21:04.482  6994  6994 I AudioManager: In setSpeakerphoneOn(), on: false, calling application: rd.sheepskin.sandboxmusic
+07-18 16:21:04.483  3519  4907 W AS.AudioService: Audio Settings Permission Denial: setSpeakerphoneOn() from pid=6994, uid=10448
+07-18 16:21:04.483  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:21:04.483  6994  6994 W BluetoothAdapterExtImpl: setSpeakerphoneOn register null!
+07-18 16:21:04.483  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:21:04.492  3519  4903 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_ACTIVITY_IDLE, bundle: Bundle[{scene=SCENE_ACTIVITY_IDLE}]
+07-18 16:21:04.493  3519  4903 I Osense-BaseDecisionMaker: OSense not supported scene! SCENE_ACTIVITY_IDLE
+07-18 16:21:04.549  6994 14308 D BufferPoolAccessor2.0: bufferpool2 0xb40000717eb13028 : 18(56401920 size) total buffers - 11(34467840 size) used buffers - 650/668 (recycle/alloc) - 25/667 (fetch/transfer)
+07-18 16:21:04.635  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:z-m-gateway.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10303
+07-18 16:21:04.637 12566 13266 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:z-m-gateway.facebook.com, servname:443 uid: 10303, result_code:408, res = 0x0, found = 0
+07-18 16:21:04.645  5485  5817 D DnsDomainBlock: onDnsEvent: latencyMs=2, returnCode=4, uid=10303
+07-18 16:21:04.651 12566 13271 E msgr.msys: E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:21:04.660  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:z-m-gateway.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10303
+07-18 16:21:04.660 12566 13267 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:z-m-gateway.facebook.com, servname:443 uid: 10303, result_code:408, res = 0x0, found = 0
+07-18 16:21:04.661 12566 13271 E msgr.msys: E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:21:04.754  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:21:04.754  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:21:04.811  3519  6109 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 118.22056 ave enviroment lux is 21.977854 luxForNit 47.122368demarcationPoint200.0 result is true
+07-18 16:21:04.868  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:04.868  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8333, identity:qcom-perfd
+07-18 16:21:04.870  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:04.874  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:21:04.875  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=25 renderFps=0, discardFps=24
+07-18 16:21:04.891  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14556)(cct,lux,ir)[5300.00, 23.31, 0.000000](rgbc)[1114.95, 741.42, 376.63, 1975.66](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:21:04.897  1954 14630 I [UAH_CLIENT]: UahRelease, handle:69702
+07-18 16:21:04.901  6994 14325 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:21:04.901  6994 14308 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:21:04.940  2129  3762 D AudioFlinger: fast trackId 929 is playing mute data
+07-18 16:21:04.981  2129  3762 D AudioFlinger: fast trackId 930 is playing mute data
+07-18 16:21:05.026  3186 14329 D BufferPoolAccessor2.0: bufferpool2 0xb400007b84d09628 : 6(24576 size) total buffers - 1(4096 size) used buffers - 1126/1132 (recycle/alloc) - 10/1131 (fetch/transfer)
+07-18 16:21:05.030  6994 14325 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:21:05.092  1890 20175 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 23.3,cct 5300.0,brl/algo/ir 1411.0/2.0/0.0,pwm/dc 1.0/0.0,rgbc 1114.949341/741.417725/376.634277/1975.658813,ts 112049542343553,cnt 14557,flag 0
+07-18 16:21:05.175  3198  3198 I cnss-daemon: nl80211 response handler invoked
+07-18 16:21:05.175  3198  3198 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+07-18 16:21:05.175  1897 13869 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+07-18 16:21:05.207  3519  3604 E BLASTSyncEngine: WM sent Transaction (#3290, Transition-OPEN, tx=15113990331933) to organizer, but never received commit callback. Application ANR likely to follow.
+07-18 16:21:05.208  3519  3604 I BLASTSyncEngineExtImpl: syncTransitionCommitTimeout  syncGroupId=3290,merged.mNativeObjec=-5476376663957980928
+07-18 16:21:05.208  3519  3604 I BLASTSyncEngine: onCommitted syncId: 3290, timeout: true ran: false
+07-18 16:21:05.210  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:05.211  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8334, identity:qcom-perfd
+07-18 16:21:05.214  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:05.242  1954 14633 I [UAH_CLIENT]: UahRelease, handle:69704
+07-18 16:21:05.338  6994 14325 D BufferPoolAccessor2.0: bufferpool2 0xb4000072d7880228 : 8(65536 size) total buffers - 1(8192 size) used buffers - 1145/1153 (recycle/alloc) - 9/1151 (fetch/transfer)
+07-18 16:21:05.507  5656  5656 D SubsysEventListenerManager-SubsysTelephonyCallback[1]: onSignalStrengthsChanged
+07-18 16:21:05.509  4980  5072 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:2 isSoftSimCard:false slotId:1
+07-18 16:21:05.513  5408  5408 D OplusTelephonyController: onSignalStrengthChanged: SignalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 level=0,mLte=CellSignalStrengthLte: rssi=-51 rsrp=-73 rsrq=-14 rssnr=13 cqiTableIndex=2147483647 cqi=2147483647 ta=2147483647 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiCqiTableIndex = 2147483647 csiCqiReport = [] ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 level = 0 parametersUseForLevel = 0 timingAdvance = 2147483647 },primary=CellSignalStrengthLte}
+07-18 16:21:05.513  5656  5656 D SubsysEventListenerManager-SubsysTelephonyCallback[0]: onSignalStrengthsChanged
+07-18 16:21:05.514  4980  4980 D Tile.OplusCellularTile: refreshState: tile not listening, ignore
+07-18 16:21:05.515  4980  5072 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:1 isSoftSimCard:false slotId:0
+07-18 16:21:05.536  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112049897586313 ns; value = [-0.319925, 0.207996, 9.897630], status=3
+07-18 16:21:05.779  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:21:05.781  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:21:05.783 27601 24989 W OplusMediaMonitor: [0xb4000071adcc6800] c2.qti.avc.decoder [544*544] inputFps=0, outputFps=0 renderFps=0, discardFps=0
+07-18 16:21:05.876  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:21:05.877  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=24 renderFps=0, discardFps=24
+07-18 16:21:05.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14561)(cct,lux,ir)[5300.00, 23.12, 0.000000](rgbc)[1099.68, 726.88, 376.63, 1945.50](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:21:06.011  1890 29579 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[1551, 0, 150000, 388, 232]
+07-18 16:21:06.011  1890 29579 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[2, 2, 3, 2, 3]
+07-18 16:21:06.123  9131  9241 D gaia-GaiaConnectChecker: start connect check++
+07-18 16:21:06.293  3519  4340 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(system_server) ==
+07-18 16:21:06.293  3519  4340 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+07-18 16:21:06.302  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:06.302  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8331, identity:qcom-perfd
+07-18 16:21:06.305  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:06.318  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:21:06.332  1954 14636 I [UAH_CLIENT]: UahRelease, handle:69705
+07-18 16:21:06.388  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:21:06.440  2129  3762 D AudioFlinger: fast trackId 933 is playing mute data
+07-18 16:21:06.467  4980  5029 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->updateNetworkSpeed: isConnected:true,isSwitchOn:true,isSuspend:false,isPause:false
+07-18 16:21:06.471  4980  5029 I SystemUi--Statusbar: OplusNetworkSpeedControllExImpl-->getTotalByte: totalRxBytes:3123502759,totalTxBytes:437902056,loopbackTxBytes:274191578,loopbackRxBytes:274191578 ,totalBytes:3013021659
+07-18 16:21:06.488  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:06.488  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8332, identity:qcom-perfd
+07-18 16:21:06.490  1960 24179 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_264]QueueRead[0] empty, waiting buffer.
+07-18 16:21:06.491  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:06.492  3519  4340 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1114.9/741.4/376.6/1960.6, R/G/B: 28.0/27.0/23.0, bri 1411.0, lux: 21.761421, cct: 5300.0, ir: 0.073704, conf: 2, cnt: 0
+07-18 16:21:06.493  1960 21869 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_214]QueueRead[0] empty, waiting buffer.
+07-18 16:21:06.495  1960 24998 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_184]QueueRead[0] empty, waiting buffer.
+07-18 16:21:06.517  1954 14638 I [UAH_CLIENT]: UahRelease, handle:69706
+07-18 16:21:06.544  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112050905193293 ns; value = [-0.310348, 0.198419, 9.859323], status=3
+07-18 16:21:06.647  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+07-18 16:21:06.650 26444 26891 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+07-18 16:21:06.658  5485  5817 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=4, uid=10526
+07-18 16:21:06.658 26444 26856 E msys    : E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:21:06.663  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+07-18 16:21:06.664 26444 26889 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+07-18 16:21:06.665 26444 26856 E msys    : E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:21:06.802  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:21:06.803  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:21:06.877  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=24 renderFps=0, discardFps=24
+07-18 16:21:06.877  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:21:06.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14566)(cct,lux,ir)[5300.00, 22.60, 0.000000](rgbc)[1114.95, 741.42, 376.63, 1960.58](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:21:06.907 27601 21865 W OplusMediaMonitor: [0xb4000070a7f84000] c2.qti.avc.decoder [544*544] inputFps=0, outputFps=0 renderFps=0, discardFps=0
+07-18 16:21:06.954  6994 14325 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:21:06.954  6994 14308 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:21:06.955  2056  2184 D vendor.oplus.hardware.charger-V10-service: ret_value:123, read content:,338,338,4016,4013,181,66,69,1,1,0,450,4997,68,1,4430,300,500,0,7,2500,7,0,1,0,2,0,0,0,1,5397,93,0,3068,4672,0,0,0,0,0,105
+07-18 16:21:06.955  2056  2184 D vendor.oplus.hardware.charger-V10-service: gmtime: 2026-07-18-16-21-06
+07-18 16:21:06.956  2056  2184 D vendor.oplus.hardware.charger-V10-service: usb_online:1, ac_online:-2147483648, wireless_online:0
+07-18 16:21:07.090  1875 29173 D DlbDap2Process: process() called [2814000] times with input channel mask 0x3 (ProcessingMode=1)
+07-18 16:21:07.092  1890 20175 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 22.4,cct 5300.0,brl/algo/ir 1411.0/2.0/0.0,pwm/dc 1.0/0.0,rgbc 1099.676147/741.417725/376.634277/1945.496094,ts 112051542339126,cnt 14567,flag 0
+07-18 16:21:07.136  6265  6390 E horae   : 0: target_temp:33800, back:33800,frame:33800,front:33800, 3, +(0), 1 ,33800, algo:0
+07-18 16:21:07.139  5656  5656 D VendorWifiService: onEvent event:9,action:1
+07-18 16:21:07.143  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:07.143  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8333, identity:qcom-perfd
+07-18 16:21:07.145  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:07.145  5380 12238 D IpClient/wlan0: interfaceLinkStateChanged: ifindex 27 up
+07-18 16:21:07.146  3519  4590 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=1
+07-18 16:21:07.146  3519  4590 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+07-18 16:21:07.165  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:21:07.171  1954 14642 I [UAH_CLIENT]: UahRelease, handle:69707
+07-18 16:21:07.177  1897 13869 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+07-18 16:21:07.178  3198  3198 I cnss-daemon: nl80211 response handler invoked
+07-18 16:21:07.178  3198  3198 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+07-18 16:21:07.234  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:21:07.340  3519  3604 E BLASTSyncEngine: WM sent Transaction (#3291, Transition-OPEN, tx=15113990331940) to organizer, but never received commit callback. Application ANR likely to follow.
+07-18 16:21:07.340  3519  3604 I BLASTSyncEngineExtImpl: syncTransitionCommitTimeout  syncGroupId=3291,merged.mNativeObjec=-5476376663957973248
+07-18 16:21:07.340  3519  3604 I BLASTSyncEngine: onCommitted syncId: 3291, timeout: true ran: false
+07-18 16:21:07.346  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:07.346  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8334, identity:qcom-perfd
+07-18 16:21:07.349  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:07.360 19514 23380 I APS_ALOG: flushRoutine g_immediateFlush=0 g_pendingCount=0 g_oobCount=0
+07-18 16:21:07.378  1954 14644 I [UAH_CLIENT]: UahRelease, handle:69708
+07-18 16:21:07.514  3519  6109 I AICCTModule: SensorFilter: brightness threshold 1.2 screenNit is 118.22056 ave enviroment lux is 21.761421 luxForNit 46.909218demarcationPoint200.0 result is true
+07-18 16:21:07.521  2363  2363 I adbd    : adbd service requested 'shell,v2,TERM=dumb,raw:am start -a android.intent.action.VIEW -d sandboxmusic://e2e/probe-thumb-visual?which=down -f 0x14000000 rd.sheepskin.sandboxmusic'
+07-18 16:21:07.552  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112051912796366 ns; value = [-0.310348, 0.203208, 9.873688], status=3
+07-18 16:21:07.592  3519  4585 I [UAH_CLIENT]: UahEventAcquire, cmdid:2, pkg:none, identity:com.android.server.wm
+07-18 16:21:07.593  3519  4907 W ActivityTaskManager: callingPackage for (uid=2000, pid=14648) has no WPC
+07-18 16:21:07.594  3519  4907 D WindowManager: NFW_setClientVisible:ActivityRecord{160759422 u0 rd.sheepskin.sandboxmusic/.MainActivity clientVisible:true
+07-18 16:21:07.594  3519  4907 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@a831c29a does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+07-18 16:21:07.594  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:07.594  3519  4354 D StartingSurfacePreviewController: checkSupportSurfacePreview, token=rd.sheepskin.sandboxmusic/.MainActivity, enableSurfacePreview=false, supportMultiLayout=false, unsupportedSkipViewAnimLv=null, disableSurfacePreviewAnimLv=null, ignoreFileExistAnimLv=null
+07-18 16:21:07.595  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:07.595  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:07.595  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:07.595  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:07.595  3519  4907 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:21:07.596  3519  4907 I AppSnapshotController: init, sysSupport = true, mActivitySupport = false, activityRecord = ActivityRecord{160759422 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1}
+07-18 16:21:07.596  3519  3616 E QosSceneRecognizer[ActivityStartScene]: notifyActivityStart get launchedFromUid failed through AppManager! launchedFromPackage: com.android.shell, pkg: rd.sheepskin.sandboxmusic
+07-18 16:21:07.597  3519  4907 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:21:07.597  3519  4907 D ActivityStarterExtImpl: setForceUpdateWindow, targetTask = Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic} r = ActivityRecord{160759422 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} notFinish =false
+07-18 16:21:07.597  3519  4907 D FlexibleWindowManagerService: isIgnoreAppearedAcrossTask:false
+07-18 16:21:07.598  3519  4907 D FlexibleTaskController: findSourceTaskForFreeForm: sourceRecord = null ,realCallingPid:14648 ,launchFromZoomMode:false ,prevTopTask:Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:21:07.598  3519  4907 D FlexibleTaskController: findSourceTaskForFreeForm: the caller is not a flexible freeform window application and does not have a zoom windowMode startup parameter
+07-18 16:21:07.598  3519  4907 D FlexibleTaskController: adjustOptionsForFlexibleTask not allow options follow process task's options, reason:9 ,reusedOptions:null
+07-18 16:21:07.598  3519  4907 I TaskFragmentExtImpl: reset pause in recents anim for mTaskFragment: Task{edfb678 #3030 type=standard A=10448:rd.sheepskin.sandboxmusic}
+07-18 16:21:07.598  3519  4907 D FlexibleTaskController: isSupportFlexibleWindow target = rd.sheepskin.sandboxmusic/.MainActivity callPkg = FlexibleTaskController support = true ,caller = 3519
+07-18 16:21:07.598  3519  4907 D FlexibleTaskController: shouldKeepFlexibleTask flexibleTask not active.
+07-18 16:21:07.598  3519  4907 D ActivityStarterExtImpl: isLaunchingRootActivity = true
+07-18 16:21:07.599  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:07.599  4980  4980 D CommandQueueLogger: appTransitionPending displayId=0 forced=false
+07-18 16:21:07.600  3519  4907 D ActivityTaskManager: The isLandscapeFullscreenEnabled is: rd.sheepskin.sandboxmusic/.MainActivity
+07-18 16:21:07.600  3519  4907 E Transition: Aborting Transition mSyncId=3293, caller=com.android.server.wm.OplusTransitionUtil.abortTransitionImmediately:109 com.android.server.wm.OplusTransitionController.abortTransitionImmediately:123 com.android.server.wm.ActivityStarterExtImpl.abortTransitionImmediately:1896 
+07-18 16:21:07.600  3519  4907 D OplusTransitionController: hookOnAbort, transition: TransitionRecord{bc69ef5 id=3293 track=0 type=OPEN flags=0x0 state=0 c=[
+07-18 16:21:07.600  3519  4907 D OplusTransitionController:    ChangeInfo{e7e848a container=ActivityRecord{160759422 u0 rd.sheepskin.sandboxmusic/.MainActivity t-1} flags=0x0}
+07-18 16:21:07.600  3519  4907 D OplusTransitionController: ]
+07-18 16:21:07.600  3519  4907 D OplusTransitionController: }
+07-18 16:21:07.600  3519  4907 E OplusAppQuickStart_AppQuickStartController: not start from launcher transition:3293
+07-18 16:21:07.601  3519  4907 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:21:07.601  3519  4907 D KEYLOG_PhoneWindowManager: setKeyguardOccludedLw occluded=false,false,false
+07-18 16:21:07.601  4980 28736 D KeyguardService: setOccluded(false)
+07-18 16:21:07.601  4980 28736 D KeyguardService: setOccluded: false, animate= false
+07-18 16:21:07.601  4980 28736 D KeyguardViewMediator: setOccluded(false)
+07-18 16:21:07.601  4980 28736 D KeyguardViewMediator: setOccluded false
+07-18 16:21:07.601  3519  4907 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=1 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:21:07.601  4980  4980 D KeyguardViewMediator: handleSetOccluded(false)
+07-18 16:21:07.601  4980 28736 D KeyguardService: setOccluded(false)
+07-18 16:21:07.601  4980 28736 D KeyguardService: setOccluded: false, animate= false
+07-18 16:21:07.601  4980 28736 D KeyguardViewMediator: setOccluded(false)
+07-18 16:21:07.601  4980 28736 D KeyguardViewMediator: setOccluded false
+07-18 16:21:07.601  4980  4980 D NotificationShadeWindowController: setIsAboutToOccluded:false, needApply:false
+07-18 16:21:07.601  4980  4980 D KeyguardViewMediator: isOccluded=false,mPowerGestureIntercepted=false
+07-18 16:21:07.601  4980  4980 I SystemUi--Keyguard: ChargingAnimationImpl-->onKeyguardOccludeChange occluded= false
+07-18 16:21:07.601  4980  4980 I SystemUi--Keyguard: KeyguardSliderLayout-->onKeyguardOccludeChange occluded= false
+07-18 16:21:07.601  4980  4980 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SET_OCCLUDED
+07-18 16:21:07.601  4980  4980 D KeyguardViewMediator: handleSetOccluded(false)
+07-18 16:21:07.601  4980  4980 D NotificationShadeWindowController: setIsAboutToOccluded:false, needApply:false
+07-18 16:21:07.601  4980  4980 D KeyguardViewMediator: isOccluded=false,mPowerGestureIntercepted=false
+07-18 16:21:07.601  4980  4980 I SystemUi--Keyguard: ChargingAnimationImpl-->onKeyguardOccludeChange occluded= false
+07-18 16:21:07.601  4980  4980 I SystemUi--Keyguard: KeyguardSliderLayout-->onKeyguardOccludeChange occluded= false
+07-18 16:21:07.601  4980  4980 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SET_OCCLUDED
+07-18 16:21:07.601  3519  4907 E SchedAssist: binderSetThreadUxFlagByIoctl: ioctl failed, tid=-1 flag=0 ret=-1 errno=25 (Inappropriate ioctl for device)
+07-18 16:21:07.602  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:21:07.602  4980  4980 D CommandQueueLogger: appTransitionCancelled displayId=0
+07-18 16:21:07.602  3519  4907 I ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=sandboxmusic://e2e/... flg=0x14000000 xflg=0x4 pkg=rd.sheepskin.sandboxmusic cmp=rd.sheepskin.sandboxmusic/.MainActivity mCallingUid=2000} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION (START_ACTIVITIES_FROM_BACKGROUND permission granted)) result code=3
+07-18 16:21:07.603  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event pause
+07-18 16:21:07.603  6994  6994 D Capacitor/AppPlugin: No listeners found for event pause
+07-18 16:21:07.603  6994  6994 D Capacitor: App paused
+07-18 16:21:07.604  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appUrlOpen
+07-18 16:21:07.604  6994  6994 D ActivityThread: ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity} checkFinished=false 4
+07-18 16:21:07.604  6994  6994 D ResourcesManagerExtImpl: applyConfigurationToAppResourcesLocked app.getDisplayId() return callback.displayId:0
+07-18 16:21:07.604  6994  6994 D Capacitor/AppPlugin: Firing change: true
+07-18 16:21:07.604  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event appStateChange
+07-18 16:21:07.605  6994  6994 V Capacitor/AppPlugin: Notifying listeners for event resume
+07-18 16:21:07.605  6994  6994 D Capacitor/AppPlugin: No listeners found for event resume
+07-18 16:21:07.605  6994  6994 D Capacitor: App resumed
+07-18 16:21:07.605  3519  8749 V AS.AudioService: uid 10448, callingApp = rd.sheepskin.sandboxmusic
+07-18 16:21:07.606  6994  6994 I AudioManager: In setSpeakerphoneOn(), on: false, calling application: rd.sheepskin.sandboxmusic
+07-18 16:21:07.606  3519  8749 W AS.AudioService: Audio Settings Permission Denial: setSpeakerphoneOn() from pid=6994, uid=10448
+07-18 16:21:07.606  4980  5015 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity}, wasVisible=true
+07-18 16:21:07.606  6994  6994 W BluetoothAdapterExtImpl: setSpeakerphoneOn register null!
+07-18 16:21:07.611  3519  4903 I Osense-BaseDecisionMaker: notifySceneToAthenaPolicy: SCENE_ACTIVITY_IDLE, bundle: Bundle[{scene=SCENE_ACTIVITY_IDLE}]
+07-18 16:21:07.611  3519  4903 I Osense-BaseDecisionMaker: OSense not supported scene! SCENE_ACTIVITY_IDLE
+07-18 16:21:07.825  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:21:07.826  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:21:07.877  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=24 renderFps=0, discardFps=24
+07-18 16:21:07.877  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:21:07.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14571)(cct,lux,ir)[5300.00, 21.68, 0.000000](rgbc)[1099.68, 741.42, 376.63, 1930.41](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:21:07.893  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:07.893  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8331, identity:qcom-perfd
+07-18 16:21:07.895  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:07.923  1954 14653 I [UAH_CLIENT]: UahRelease, handle:69710
+07-18 16:21:07.960  2129  3762 D AudioFlinger: fast trackId 929 is playing mute data
+07-18 16:21:08.000  2129  3762 D AudioFlinger: fast trackId 930 is playing mute data
+07-18 16:21:08.110  6994 14325 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:21:08.110  6994 14308 D PipelineWatcher: [0xb40000718b108f00] pipelineFull: too many frames in pipeline (6)
+07-18 16:21:08.233  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+07-18 16:21:08.233 26444 26890 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+07-18 16:21:08.241 26444 26856 E msys    : E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:21:08.438  1765  8457 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+07-18 16:21:08.439 26444 26858 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+07-18 16:21:08.445 26444 26856 E msys    : E[N mns:DGWClient]_LogError(328)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+07-18 16:21:08.493  3519  4340 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+07-18 16:21:08.499  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:08.499  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8332, identity:qcom-perfd
+07-18 16:21:08.503  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:08.508  2155  2911 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+07-18 16:21:08.531  1954 14660 I [UAH_CLIENT]: UahRelease, handle:69712
+07-18 16:21:08.559  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112052920395480 ns; value = [-0.295983, 0.236726, 9.907207], status=3
+07-18 16:21:08.577  1925  2357 I SDM     : DisplayBase::CommitThread: Received idle timeout, panel: cmd, timeout: 70000 us
+07-18 16:21:08.692  3519  4340 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1099.7/741.4/376.6/1945.5, R/G/B: 28.0/27.0/23.0, bri 1411.0, lux: 21.566631, cct: 5300.0, ir: 0.074313, conf: 2, cnt: 0
+07-18 16:21:08.847  1960 14318 V Codec2-DumpInput: [processLoop:L697][c2.qti.avc.decoder_341]QueueRead[0] empty, waiting buffer.
+07-18 16:21:08.853  5656  7530 D CommonApp-133-10162: transport layer data is invalid
+07-18 16:21:08.855  5656  7530 D CommonApp-133-10448: transport layer data is invalid
+07-18 16:21:08.877  6994 14301 W OplusMediaMonitor: [0xb4000072d78a7000] c2.qti.avc.decoder [640*368] inputFps=24, outputFps=24 renderFps=0, discardFps=24
+07-18 16:21:08.878  2056  2198 D BatteryChargeControl: bcc get no support from charging protocol
+07-18 16:21:08.892  1890 29574 I sensors-hal: handle_oplus_wise_rgb_event:160, wise_rgb:(14576)(cct,lux,ir)[5300.00, 22.40, 0.000000](rgbc)[1099.68, 741.42, 376.63, 1945.50](pwm,hbm,brl,algo)[1.0 0.0 1411.0 2.0],flag 0
+07-18 16:21:08.944  3519  8749 D ConnectivityService: Returning BLOCKED NetworkInfo to uid=10470
+07-18 16:21:08.952  3519  8749 D ConnectivityService: requestNetwork for uid/pid:10470/17533 activeRequest: null callbackRequest: 23192 [NetworkRequest [ REQUEST id=23193, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10470 RequestorUid: 10470 RequestorPkg: proton.android.pass.fdroid UnderlyingNetworks: Null] ]] callback flags: 0 order: 2147483647 isUidTracked: false declaredMethods: AVAIL|LOST|NC
+07-18 16:21:08.960  3519  4461 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=23193, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10470 RequestorUid: 10470 RequestorPkg: proton.android.pass.fdroid UnderlyingNetworks: Null] ]
+07-18 16:21:08.961  3519  4461 D MultiInternetWifiNetworkFactory: got request NetworkRequest [ REQUEST id=23193, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10470 RequestorUid: 10470 RequestorPkg: proton.android.pass.fdroid UnderlyingNetworks: Null] ]
+07-18 16:21:08.962  3519  4461 D WifiNetworkFactory: got request NetworkRequest [ REQUEST id=23193, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10470 RequestorUid: 10470 RequestorPkg: proton.android.pass.fdroid UnderlyingNetworks: Null] ]
+07-18 16:21:08.962  3519  4461 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=23193, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED&NOT_BANDWIDTH_CONSTRAINED Uid: 10470 RequestorUid: 10470 RequestorPkg: proton.android.pass.fdroid UnderlyingNetworks: Null] ]
+07-18 16:21:08.963  3519  4474 D ConnectivityService: NetReassign [23193 : null → 133] [c 1] [a 3] [i 5]
+07-18 16:21:08.982  3519  3644 D osense.compress: try do inactive compress task
+07-18 16:21:08.983  3519  3644 D osense.compress: inactive do shrink, target ratio = 27, final ratio = 55, cur ratio = 0
+07-18 16:21:09.036  1890 29579 I sensors-hal: handle_sns_std_sensor_event:104, oplus rgb_rear sample: (cct, lux, ir, x, y)[27985, 0, 200000, 453, 110]
+07-18 16:21:09.036  1890 29579 I sensors-hal: handle_sns_std_sensor_event:106, oplus rgb_rear sample: (r, g, b, c w)[2, 1, 3, 1, 2]
+07-18 16:21:09.093  1890 20175 I sensors-hal: handle_oplus_wise_rgb_event:189, high_pwm_light:lux 21.9,cct 5300.0,brl/algo/ir 1411.0/2.0/0.0,pwm/dc 1.0/0.0,rgbc 1114.949341/741.417725/376.634277/1945.496094,ts 112053542335011,cnt 14577,flag 0
+07-18 16:21:09.102  9296 10256 W Battery : ThermalControllHandler: MSG_THERMAL_CONTROL_CPU_CTRL_CHANGED: ThermalControlState=true, curThermalPolicyCpu=10, curCpu=7, isUserForeground=true
+07-18 16:21:09.102  9296 10256 I [UAH_CLIENT]: uahRuleCtl, ruleId:4, status:1
+07-18 16:21:09.144  1875  3589 D PAL: OplusPalCommon: getActiveStreamPcmId: 2077:  dir: 1, stream: 0xb400007b4286db00, pcmDevId: 126
+07-18 16:21:09.151 26444  8809 E msys    : E[N mccw.liger]onConnectError(587)=>connect/error - address: 57.145.18.36, port: 80, ex: folly::AsyncSocketException: AsyncSocketException: connect timed out after 9999ms, type = Timed out
+07-18 16:21:09.153 26444 26897 E msys    : E[N WA]_WCCXMPPStreamDisconnectHandler(344)=>xmpp/disconnect - WCIStreamStateErrorCode: 0, domain: WCIStreamState, subdomain: MCCWLigerStream: Error Domain=WCIStreamState Code=0 UserInfo=0xb40000724354ea80 {MCFErrorDirectUnderlyingErrorKey=0xb40000718003c680 "Error Domain=MCCWLigerStream Code=1 UserInfo=0xb400007243477740 {MCFErrorDirectLocalizedFailureReasonKey=folly::AsyncSocketException: AsyncSocketException: connect timed out after 9999ms, type = Timed out}"}
+07-18 16:21:09.154 26444 26897 E msys    : E[N WCCConnectionMEM]_WCCConnectionMEMLifecycleEventHandler(2214)=>[INFO] connection/xmpp/lifecycle_event/not-connected, [20.0364s]
+07-18 16:21:09.154 26444 26897 E msys    : E[N WA]_WCCXMPPStreamDoDisconnect(1319)=>xmpp/disconnect - flags: 163
+07-18 16:21:09.154 26444 26897 E msys    : E[N WCCConnectionMEM]_WCCConnectionMEMDisconnectHandler(2246)=>connection/disconnected, backoff on socket failed to connect
+07-18 16:21:09.154 26444 26897 E msys    : E[N WCCConnectionMEM]_WCCConnectionMEMDisconnectHandler(2281)=>connection/disconnected, transport error
+07-18 16:21:09.154 26444 26897 E msys    : E[C 1]_MCCLogErrorInternal(331)=>8/1066/2864/0
+07-18 16:21:09.154 26444 26897 E msys    : E[N WCCConnectionMEM]_WCCConnectionMEMDisconnectHandler(2312)=>connection/disconnected, handshake failure
+07-18 16:21:09.155 26444 26897 E msys    : E[N WCCConnectionMEM]_WCCConnectionMEMEmitStateChange(3230)=>[INFO] connection/new_state/not-connected [connection_id=870936072, wcc_source=1, wcc_reason=2]
+07-18 16:21:09.155 26444 26897 E msys    : E[C MEMConnectionManager]_MEMConnectionManagerStateChangeHandler(627)=>[Critical] MEMConnectionState updated to ID: 0 with connectionId: 870936072
+07-18 16:21:09.156 26444 26897 E msys    : E[C 1]_MCCLogErrorInternal(331)=>8/374/3970/49155
+07-18 16:21:09.157 26444 26897 E msys    : E[C 1]_MCCLogErrorInternal(331)=>8/374/3972/2
+07-18 16:21:09.157 26444 26897 E msys    : E[C mem.context]_LogConnectFailure(4891)=>Establishing connection failure reason and flags: disconnect/Doze/-1/reason/2/flags/49155/[no_connect, -, handshake_failure, transport_error, no_bytes_read, -, -, -, -, -, -, -, -, -]
+07-18 16:21:09.158 26444 26897 E msys    : E[C mem.context]_LogConnectFailure(4923)=>[Happy Eyeball] Connect failed with source=1, winner stream ip=57.145.18.36, port=5222, dnsResolutionMethod=1, combined_ip_addresses=57.145.18.36
+07-18 16:21:09.164  1875  3589 D PAL: OplusPalCommon: getActiveStreamPcmId: 2077:  dir: 1, stream: 0xb400007b4286db00, pcmDevId: 126
+07-18 16:21:09.164  1875  3589 D AGM: graph: graph_set_config: 1225 entry graph_handle 0x247534c
+07-18 16:21:09.164  1875  3589 I gsl     : gsl_send_spf_cmd:236 sending pkt opcode 0x1001006 token 0x0359d000
+07-18 16:21:09.165  1875  3589 I gsl     : gsl_send_spf_cmd:282 rcvd pkt token : 0x359d000
+07-18 16:21:09.165  1875  3589 D AGM: graph: graph_set_config: 1233 exit, graph handle 0x247534c, ret 0
+07-18 16:21:09.171  1875  3589 I gsl     : gsl_send_spf_cmd:236 sending pkt opcode 0x1001007 token 0x0359e000
+07-18 16:21:09.171  1875  3589 I gsl     : gsl_send_spf_cmd:282 rcvd pkt token : 0x359e000
+07-18 16:21:09.188  3198  3198 I cnss-daemon: nl80211 response handler invoked
+07-18 16:21:09.188  3198  3198 I cnss-daemon: nl80211_response_handler: cmd 103, vendorID 4980, subcmd 13  received
+07-18 16:21:09.189  1897 13869 I WifiHAL : event received NL80211_CMD_VENDOR, vendor_id = 0x1374, subcmd = 0xd
+07-18 16:21:09.192  1875  3589 D PAL: OplusPalCommon: getActiveStreamPcmId: 2077:  dir: 1, stream: 0xb400007b4286db00, pcmDevId: 126
+07-18 16:21:09.192  1875  3589 D AGM: graph: graph_set_config: 1225 entry graph_handle 0x247534c
+07-18 16:21:09.192  1875  3589 I gsl     : gsl_send_spf_cmd:236 sending pkt opcode 0x1001006 token 0x0359f000
+07-18 16:21:09.192  1875  3589 I gsl     : gsl_send_spf_cmd:282 rcvd pkt token : 0x359f000
+07-18 16:21:09.193  1875  3589 D AGM: graph: graph_set_config: 1233 exit, graph handle 0x247534c, ret 0
+07-18 16:21:09.232  3270  3270 I OplusTouchDaemon: ts_run_service: shellback temperature updated 33 (33800)
+07-18 16:21:09.293  1875  3589 D PAL: OplusPalCommon: getActiveStreamPcmId: 2077:  dir: 1, stream: 0xb400007b4286db00, pcmDevId: 126
+07-18 16:21:09.293  1875  3589 D AGM: graph: graph_set_config: 1225 entry graph_handle 0x247534c
+07-18 16:21:09.293  1875  3589 I gsl     : gsl_send_spf_cmd:236 sending pkt opcode 0x1001006 token 0x035a0000
+07-18 16:21:09.294  1875  3589 I gsl     : gsl_send_spf_cmd:282 rcvd pkt token : 0x35a0000
+07-18 16:21:09.294  1875  3589 D AGM: graph: graph_set_config: 1233 exit, graph handle 0x247534c, ret 0
+07-18 16:21:09.300  1875  3589 I gsl     : gsl_send_spf_cmd:236 sending pkt opcode 0x1001007 token 0x035a1000
+07-18 16:21:09.301  1875  3589 I gsl     : gsl_send_spf_cmd:282 rcvd pkt token : 0x35a1000
+07-18 16:21:09.302  1875  3589 I PAL: OplusSpeakerTfa98xx: chkSpkResultFeedback: 1875: TFA98xx SPK1: damage=0x0, R0=7127, r0Cal=5710, F0=900, f0Cal=762
+07-18 16:21:09.302  1875  3589 I PAL: OplusSpeakerTfa98xx: chkSpkResultFeedback: 1875: TFA98xx SPK2: damage=0x0, R0=7051, r0Cal=5819, F0=794, f0Cal=762
+07-18 16:21:09.460  2129  3762 D AudioFlinger: fast trackId 933 is playing mute data
+07-18 16:21:09.480  3519  3604 E BLASTSyncEngine: WM sent Transaction (#3292, Transition-OPEN, tx=15113990331945) to organizer, but never received commit callback. Application ANR likely to follow.
+07-18 16:21:09.481  3519  3604 I BLASTSyncEngineExtImpl: syncTransitionCommitTimeout  syncGroupId=3292,merged.mNativeObjec=-5476376661563235712
+07-18 16:21:09.481  3519  3604 I BLASTSyncEngine: onCommitted syncId: 3292, timeout: true ran: false
+07-18 16:21:09.483  1954  1954 I [UAH_CLIENT]: UahPlatformResAcquire
+07-18 16:21:09.483  1954  1954 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:2155 8333, identity:qcom-perfd
+07-18 16:21:09.486  1954  2160 E ANDR-PERF-RESOURCEQS: ANDR-PERF-RESOURCEQS: AddAndApply() 125: Resource with major=16, minor=0 not supported
+07-18 16:21:09.513  1954 14664 I [UAH_CLIENT]: UahRelease, handle:69714
+07-18 16:21:09.567  1890 10009 I sensors-hal: handle_sns_client_event:316, accel_sample: 0: ts=112053927992616 ns; value = [-0.319925, 0.193631, 9.835381], status=3
+07-18 16:21:09.637  2363  2363 I adbd    : adbd service requested 'shell,v2,TERM=dumb:export ANDROID_LOG_TAGS=''; exec logcat '-d''
+07-18 16:21:09.644  6994 14300 D BufferPoolAccessor2.0: bufferpool2 0xb40000717eb13028 : 18(56401920 size) total buffers - 10(31334400 size) used buffers - 772/790 (recycle/alloc) - 25/790 (fetch/transfer)

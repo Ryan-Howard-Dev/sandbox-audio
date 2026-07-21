@@ -1,0 +1,17 @@
+
+06-13 23:54:06.208 17238 21166 I YtDlpMobile: resolve start query=Drake, Future & Molly Santana Ran To Atlanta
+06-13 23:54:06.209 17238 21182 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 68913882, pluginId: YtDlpMobile, methodName: resolve
+06-13 23:54:06.209 17238 21182 V Capacitor: callback: 68913882, pluginId: YtDlpMobile, methodName: resolve, methodData: {"query":"Drake Whisper My Name"}
+06-13 23:54:06.226  4908  4908 I SystemUi--Notification: MediaPlayerData-->MEDIA_PANEL-->addMediaSortKey newKey:0|rd.sheepskin.sandboxmusic|88001|null|10445 oldKey:0|rd.sheepskin.sandboxmusic|88001|null|10445 packageName:rd.sheepskin.sandboxmusic playbackStateUnchanged:true newPlaying:false oldPlaying:false updateTime:1781369629636 oldTime:1781369629636 noUpdateTime:false
+06-13 23:54:06.228  4908  4908 D MediaDataManager: updateState: isPlaying = false, song change = false
+06-13 23:54:06.237 27504 27504 I SystemUi--Notification: MediaPlayerData-->MEDIA_PANEL-->addMediaSortKey newKey:260465102 oldKey:260465102 packageName:rd.sheepskin.sandboxmusic playbackStateUnchanged:true newPlaying:false oldPlaying:false updateTime:1781369643788 oldTime:1781369643788 noUpdateTime:false
+06-13 23:54:06.239 27504 27504 D MediaDataManager: updateState: isPlaying = false, song change = false
+06-13 23:54:06.328 27504 27504 I SystemUi--Notification: MediaPlayerData-->MEDIA_PANEL-->addMediaSortKey newKey:260465102 oldKey:260465102 packageName:rd.sheepskin.sandboxmusic playbackStateUnchanged:true newPlaying:false oldPlaying:false updateTime:1781369643788 oldTime:1781369643788 noUpdateTime:false
+06-13 23:54:06.329  4908  4908 I SystemUi--Notification: MediaPlayerData-->MEDIA_PANEL-->addMediaSortKey newKey:0|rd.sheepskin.sandboxmusic|88001|null|10445 oldKey:0|rd.sheepskin.sandboxmusic|88001|null|10445 packageName:rd.sheepskin.sandboxmusic playbackStateUnchanged:true newPlaying:false oldPlaying:false updateTime:1781369629636 oldTime:1781369629636 noUpdateTime:false
+06-13 23:54:06.462  4908  4908 I SystemUi--Notification: MediaPlayerData-->MEDIA_PANEL-->addMediaSortKey newKey:0|rd.sheepskin.sandboxmusic|88001|null|10445 oldKey:0|rd.sheepskin.sandboxmusic|88001|null|10445 packageName:rd.sheepskin.sandboxmusic playbackStateUnchanged:true newPlaying:false oldPlaying:false updateTime:1781369629636 oldTime:1781369629636 noUpdateTime:false
+06-13 23:54:06.562  4908  4908 I SystemUi--Notification: MediaPlayerData-->MEDIA_PANEL-->addMediaSortKey newKey:0|rd.sheepskin.sandboxmusic|88001|null|10445 oldKey:0|rd.sheepskin.sandboxmusic|88001|null|10445 packageName:rd.sheepskin.sandboxmusic playbackStateUnchanged:true newPlaying:false oldPlaying:false updateTime:1781369629636 oldTime:1781369629636 noUpdateTime:false
+06-13 23:54:09.788  3480  6116 I ActivityManager: Broadcasting: Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x400000 }
+06-13 23:54:09.790  3480  6116 I ActivityManager: Enqueued broadcast Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x400000 }: 0
+06-13 23:54:09.793 10141 10141 I MediaServiceV2: Creating work for intent Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x1400010 cmp=com.google.android.providers.media.module/com.android.providers.media.MediaServiceV2 }
+06-13 23:54:09.794 10141 10141 I MediaServiceV2: Work enqueued for intent: Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///... flg=0x1400010 cmp=com.google.android.providers.media.module/com.android.providers.media.MediaServiceV2 }
+

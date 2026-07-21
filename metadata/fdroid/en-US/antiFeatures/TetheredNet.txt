@@ -1,0 +1,7 @@
+This application can run as a local music locker and catalog browser without any backend you operate. Import audio, play from the on-device locker, manage playlists, and browse chart metadata over the network.
+
+Full ecosystem features depend on a self-hosted Tier 3/4 server that you run (for example npm run dev:tier34 or the tier34-server Docker image on your LAN). This is not a commercial tether or a single vendor cloud; it is operator-run infrastructure under your control.
+
+Without that backend, the following do not work: Feed station, catalog acquire/download worker, full-track playback beyond short iTunes previews, Sandbox Connect multi-device playback sync, cross-device locker blob sync via tier34, Meilisearch locker search, DLNA media server, Sonos/UPnP speaker streaming through tier34, YouTube podcast feeds, and OAuth playlist import. Configure the backend URL in Settings.
+
+Locker sync can alternatively use WebDAV or S3-compatible storage you provide; those paths do not require tier34.

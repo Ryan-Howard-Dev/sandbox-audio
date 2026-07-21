@@ -1,0 +1,283 @@
+/**
+ * Android phone: MainActivity shrinks the WebView with bottom margin above system nav.
+ * Do NOT add system-bar inset again in CSS — only a small lip above the WebView bottom edge.
+ */
+
+html[data-platform='android']:not([data-platform='android-tv']),
+html[data-platform='android']:not([data-platform='android-tv']) body,
+html[data-platform='android']:not([data-platform='android-tv']) #root {
+  height: 100%;
+  min-height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-void, #07080c);
+}
+
+html[data-platform='android']:not([data-platform='android-tv']) {
+  /* Native WebView margin owns clearance above 3-button / gesture nav — not env()/48px again. */
+  --safe-bottom: 0.35rem;
+  --android-dock-lip: 0.35rem;
+  --sandbox-inset-top: 0px;
+  --sandbox-inset-right: 0px;
+  --sandbox-inset-bottom: 0px;
+  --sandbox-inset-left: 0px;
+}
+
+html[data-platform='android']:not([data-platform='android-tv']) .shell-root,
+html[data-platform='android']:not([data-platform='android-tv']) #root {
+  padding-bottom: 0 !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv']) .shell-root.shell-root--mobile-nav {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+}
+
+/* Flex column shell: main scrolls, dock pinned to WebView bottom (above OEM nav). */
+html[data-platform='android']:not([data-platform='android-tv']) .shell-root--android-inline-dock {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .shell-root--android-inline-dock
+  > .mobile-combined-dock {
+  flex: 0 0 auto;
+  padding-bottom: var(--android-dock-lip) !important;
+  margin-top: auto;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .shell-root--android-inline-dock.shell-root--now-playing-open
+  > .mobile-combined-dock {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv']) .shell-root--combined-dock {
+  --shell-mobile-bottom-tabs-only: calc(
+    var(--mobile-tab-bar-height) + var(--mobile-combined-dock-pill-margin) * 2 +
+      var(--mobile-combined-dock-pad) * 2 + var(--android-dock-lip)
+  );
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .shell-root--combined-dock.shell-root--mobile-dock-mini {
+  --shell-mobile-bottom-tabs-only: calc(
+    var(--mobile-combined-dock-mini-row) + var(--mobile-tab-bar-height) +
+      var(--mobile-combined-dock-pill-margin) * 2 + var(--mobile-combined-dock-pad) * 2 +
+      var(--android-dock-lip)
+  );
+}
+
+/* Overlays must match WebView box — 100dvh exceeds shrunk WebView and leaves a black strip. */
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-now-playing.mobile-now-playing--sheet {
+  height: 100%;
+  max-height: 100%;
+  padding-bottom: 0.5rem;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-now-playing--sheet.mobile-now-playing--unified {
+  padding-bottom: 0.5rem;
+}
+
+html[data-platform='android']:not([data-platform='android-tv']) .mobile-np-footer--tidal {
+  padding-bottom: 0.75rem;
+}
+
+html[data-platform='android']:not([data-platform='android-tv']) .mobile-player-shell--combined {
+  position: fixed;
+  inset: 0;
+  height: 100%;
+  max-height: 100%;
+}
+
+html[data-platform='android']:not([data-platform='android-tv']) .mobile-combined-dock {
+  padding-bottom: var(--android-dock-lip) !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv']) .mobile-combined-dock-pill {
+  max-width: 100%;
+}
+
+/* Android WebView: grid columns force equal tab width edge-to-edge (flex-grow on <button> fails). */
+html[data-platform='android']:not([data-platform='android-tv']) .mobile-bottom-nav-inner {
+  display: grid;
+  grid-template-columns: repeat(var(--mobile-tab-count, 5), minmax(0, 1fr));
+  width: 100%;
+  max-width: 100%;
+  padding-inline: 0;
+}
+
+html[data-platform='android']:not([data-platform='android-tv']) .mobile-bottom-nav-item {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
+html[data-platform='android']:not([data-platform='android-tv']) .mobile-combined-dock .mobile-bottom-nav {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Combined dock mini player — lock [art+title] left, transport right (OnePlus curved safe inset) */
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar--mobile-mini
+  .player-bar-row:not(.player-bar-row--tidal-mini) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas: 'media tail' !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  direction: ltr !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar--mobile-mini
+  .player-bar-row--tidal-mini {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  grid-template-areas: 'lead media tail' !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  direction: ltr !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar-row--tidal-mini:has(.player-bar-tidal-lead-play) {
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  grid-template-areas: 'lead media tail' !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar--mobile-mini
+  .player-bar-row:not(.player-bar-row--tidal-mini)
+  .player-bar-track {
+  grid-area: media !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+  order: unset !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar--mobile-mini
+  .player-bar-row:not(.player-bar-row--tidal-mini)
+  .player-bar-mini-transport {
+  grid-area: tail !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+  order: unset !important;
+  flex-shrink: 0 !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar-row--tidal-mini
+  .player-bar-tidal-lead-play {
+  grid-area: lead !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+  flex-shrink: 0 !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar-row--tidal-mini
+  .player-bar-track--tidal-mini,
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar-row--tidal-mini
+  .player-bar-track {
+  grid-area: media !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+  order: unset !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar-row--tidal-mini
+  .player-bar-tidal-tail-transport,
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar-row--tidal-mini
+  .player-bar-mini-transport {
+  grid-area: tail !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+  order: unset !important;
+  flex-shrink: 0 !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar--mobile-mini
+  .player-bar-track-meta {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  padding-inline-end: max(0.25rem, env(safe-area-inset-right, 0px), var(--safe-right, 0px));
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar--mobile-mini
+  .player-bar-track-title {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar--tidal-mini
+  .player-bar-scrub--compact {
+  display: none !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar--tidal-mini
+  .player-bar-tidal-tail-btn {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  min-width: 2.25rem !important;
+  min-height: 2.25rem !important;
+  opacity: 1 !important;
+  color: var(--text-heading) !important;
+}
+
+html[data-platform='android']:not([data-platform='android-tv'])
+  .mobile-combined-dock
+  .player-bar--tidal-mini
+  .player-bar-tidal-tail-btn svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}

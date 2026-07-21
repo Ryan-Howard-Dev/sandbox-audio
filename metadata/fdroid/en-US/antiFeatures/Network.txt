@@ -1,0 +1,1 @@
+This application uses the network for optional catalog metadata, artist lookups, Google Cast to LAN receivers, and synchronisation with a self-hosted Tier 3/4 backend. Core locker playback works offline with local audio files.

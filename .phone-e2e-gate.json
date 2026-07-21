@@ -1,0 +1,27 @@
+{
+  "serial": "46349770",
+  "pass": false,
+  "track": "Ultimate",
+  "artist": "Denzel Curry",
+  "artistTrackPlay": false,
+  "playbackProgress": false,
+  "freshResolve": false,
+  "ytdlpCacheCleared": true,
+  "timing": {
+    "ytdlpResolve": false,
+    "cachedFatherHit": false,
+    "playbackUrl": null,
+    "totalLagSec": null,
+    "source": null,
+    "playLagSec": null,
+    "resolveLagSec": null,
+    "hasUrl": null,
+    "nativeResolveMs": null,
+    "streamKind": "unknown"
+  },
+  "playSpine": {
+    "handlePlayEnvelope": true,
+    "playUrl": false,
+    "exoActive": false
+  }
+}

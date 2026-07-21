@@ -1,0 +1,101 @@
+# Sandbox Music — self-hosted overlay + tier34 stack
+#
+# Brings up Meilisearch, tier34, Headscale (self-hosted Tailscale control plane),
+# and a Tailscale sidecar that shares tier34's network namespace so the API is
+# reachable on overlay IPs (100.x.x.x) without Tailscale SaaS.
+#
+# Quick start:
+#   cp overlay/headscale/config.example.yaml overlay/headscale/config.yaml
+#   cp .env.overlay.example .env.overlay   # edit secrets
+#   docker compose -f docker-compose.yml -f docker-compose.overlay.yml --env-file .env.overlay up -d
+#
+# Honest limitation: CGNAT bypass without ANY coordination server is impossible.
+# Headscale/Nebula lighthouses are coordination — you own the infra (not a public relay).
+
+services:
+  headscale:
+    image: headscale/headscale:0.23.0
+    container_name: sandbox-headscale
+    restart: unless-stopped
+    command: serve
+    volumes:
+      - ./overlay/headscale/config.yaml:/etc/headscale/config.yaml:ro
+      - headscale_data:/var/lib/headscale
+    ports:
+      - "${HEADSCALE_HTTP_PORT:-8080}:8080"
+    networks:
+      - overlay_ctrl
+
+  tier34:
+    networks:
+      - default
+      - overlay_ctrl
+    environment:
+      TIER34_TMPFS_CACHE: /cache
+      TIER34_TMPFS_CACHE_MAX_MB: "${TIER34_TMPFS_CACHE_MAX_MB:-512}"
+    tmpfs:
+      - /cache:size=${TIER34_TMPFS_CACHE_MAX_MB:-512}m,mode=1777
+
+  tier34-gateway:
+    image: caddy:2.9-alpine
+    container_name: sandbox-tier34-gateway
+    restart: unless-stopped
+    ports:
+      - "${TIER34_HTTPS_PORT:-443}:443"
+      - "${TIER34_HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - ./overlay/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - tier34
+    networks:
+      - default
+      - overlay_ctrl
+
+  tier34-tailscale:
+    image: tailscale/tailscale:stable
+    container_name: sandbox-tier34-tailscale
+    restart: unless-stopped
+    hostname: ${TAILSCALE_HOSTNAME:-sandbox-tier34}
+    environment:
+      TS_AUTHKEY: ${TAILSCALE_AUTHKEY:-}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+      TS_EXTRA_ARGS: >-
+        --login-server=${HEADSCALE_LOGIN_SERVER:-http://headscale:8080}
+        --accept-routes
+        --accept-dns=false
+    volumes:
+      - tier34_tailscale_state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    network_mode: service:tier34
+    depends_on:
+      - tier34
+      - headscale
+
+  # Optional Nebula lighthouse (uncomment to use instead of Headscale/Tailscale).
+  # nebula-lighthouse:
+  #   image: nebulaoss/nebula:latest
+  #   container_name: sandbox-nebula-lighthouse
+  #   restart: unless-stopped
+  #   command: -config /config/lighthouse.yml
+  #   volumes:
+  #     - ./overlay/nebula:/config:ro
+  #   ports:
+  #     - "${NEBULA_UDP_PORT:-4242}:4242/udp"
+  #   networks:
+  #     - overlay_ctrl
+
+volumes:
+  headscale_data:
+  tier34_tailscale_state:
+  caddy_data:
+  caddy_config:
+
+networks:
+  overlay_ctrl:
+    driver: bridge

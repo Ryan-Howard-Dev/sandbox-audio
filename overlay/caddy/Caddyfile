@@ -1,0 +1,22 @@
+# Sandbox Music — HTTP/3 (QUIC) gateway in front of tier34
+# TLS: internal (self-signed). Replace with real certs for production hostnames.
+
+{
+	servers {
+		protocols h1 h2 h3
+	}
+}
+
+:443 {
+	tls internal
+
+	reverse_proxy tier34:3001 {
+		header_up Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-For {remote_host}
+	}
+
+	# Advertise HTTP/3 for clients that support Alt-Svc upgrade
+	header Alt-Svc "h3=\":443\"; ma=2592000"
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+}

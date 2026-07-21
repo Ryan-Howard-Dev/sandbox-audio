@@ -1,0 +1,14 @@
+# Vinyl Album Switch Stability Report - Android Emulator
+Date: 2026-06-15 07:01:45
+Device: emulator-5554 (emulator only; phone 46349770 NOT used)
+
+| Case | Result | Notes |
+|------|--------|-------|
+| rapid-toggle | FAIL |  |
+| toggle-mid-play | PASS |  |
+| expand-collapse-poster | FAIL |  |
+| tab-switch | PASS |  |
+| long-press-settings | PASS |  |
+
+## Overall: FAIL
+

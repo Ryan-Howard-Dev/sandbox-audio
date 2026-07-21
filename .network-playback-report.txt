@@ -1,0 +1,29 @@
+# Network + Playback Stability Report - Android Emulator
+Date: 2026-06-15 20:04:50
+Device: emulator-5554 (emulator only; phone 46349770 NOT used)
+
+## Test matrix
+| Source | Network | Play | Stable 60s | Notes |
+|--------|---------|------|------------|-------|
+| Stream | WiFi | PASS | FAIL | progress-fail |
+| Stream | throttled-edge | FAIL | PASS |  |
+| Stream | network-drop | PASS | PASS | graceful-error-or-idle |
+| Locker | offline | PASS | FAIL | no-file-url |
+| Playlist | streamed | FAIL | FAIL | album-sequence x3 |
+| Playlist | locker-offline | FAIL | FAIL | locker-sequence |
+
+## Overall: FAIL (5 failures)
+
+## Emulator network simulation limits
+- WiFi: default emulator virtual NIC at full speed.
+- Mobile/throttle: adb emu network speed edge|gsm|umts (bandwidth/latency only; no separate 3G/4G/5G stacks).
+- Real cellular: physical device 46349770; toggle airplane mode or field-test; Charles/mitm optional.
+
+## Code review (network-aware playback)
+- hybridResolution: locker -> cache -> server -> mobile -> preview; Android mobile-first when resolvers active.
+- playbackPipeline: skips server cache when tier34 unreachable; local-vault/stream-cache bypass network.
+- offlineStatus: navigator.onLine + online/offline events + air-gap; no Capacitor Network plugin for WiFi/cell handoff.
+- airGapMode: fetch guard blocks WAN; locker + LAN tier34 allowed.
+
+## Phone install: NO
+

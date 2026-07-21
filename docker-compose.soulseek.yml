@@ -1,0 +1,15 @@
+# Optional overlay — wires tier34 to slskd when using the soulseek profile.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.soulseek.yml --profile soulseek up -d --build
+#
+# Set Soulseek credentials in .env:
+#   SLSKD_SLSK_USERNAME=your_user
+#   SLSKD_SLSK_PASSWORD=your_password
+
+services:
+  tier34:
+    environment:
+      SOULSEEK_SLKD_URL: "http://slskd:5030"
+      SOULSEEK_DOWNLOADS_PATH: "/data/slskd-downloads"
+    volumes:
+      - slskd_downloads:/data/slskd-downloads

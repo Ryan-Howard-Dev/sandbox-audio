@@ -1,0 +1,75 @@
+# Sovereign Music Console — self-hosted stack
+# Quick start: docker compose up -d
+
+services:
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    restart: unless-stopped
+    ports:
+      - "7700:7700"
+    environment:
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meili_data:/meili_data
+
+  tier34:
+    build:
+      context: .
+      dockerfile: Dockerfile.tier34
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      TIER34_PORT: "3001"
+      TIER34_CORS_ORIGIN: "http://localhost:3002"
+      MEILISEARCH_URL: "http://meilisearch:7700"
+      TIER34_STORAGE_PATH: /data/storage
+      TIER34_TMPFS_CACHE: /cache
+      TIER34_TMPFS_CACHE_MAX_MB: "512"
+      DEMUCS_SERVICE_URL: "http://demucs:8765"
+    tmpfs:
+      - /cache:size=512m,mode=1777
+    volumes:
+      - tier34_storage:/data/storage
+    depends_on:
+      - meilisearch
+
+  # Headless Soulseek client — no SoulseekQt GUI, no third-party API.
+  # Requires a Soulseek username/password (free account at slsknet.org).
+  # Start: docker compose --profile soulseek up -d
+  # Or set SOULSEEK_SLKD_URL=http://HOST:5030 on tier34 when slskd runs elsewhere.
+  slskd:
+    profiles: ["soulseek"]
+    image: slskd/slskd:latest
+    restart: unless-stopped
+    ports:
+      - "5030:5030"
+    environment:
+      SLSKD_REMOTE_CONFIGURATION: "true"
+      SLSKD_SLSK_USERNAME: ${SLSKD_SLSK_USERNAME:-}
+      SLSKD_SLSK_PASSWORD: ${SLSKD_SLSK_PASSWORD:-}
+      SLSKD_DOWNLOADS_DIR: /downloads
+      SLSKD_INCOMPLETE_DIR: /incomplete
+      SLSKD_CONFIG: /config/slskd.yml
+    volumes:
+      - ./config/slskd.docker.yml:/config/slskd.yml:ro
+      - slskd_downloads:/downloads
+      - slskd_incomplete:/incomplete
+
+  demucs:
+    profiles: ["stems"]
+    build:
+      context: .
+      dockerfile: Dockerfile.demucs
+    restart: unless-stopped
+    volumes:
+      - tier34_storage:/data/storage
+    environment:
+      TIER34_STORAGE_PATH: /data/storage
+
+volumes:
+  meili_data:
+  tier34_storage:
+  slskd_downloads:
+  slskd_incomplete:

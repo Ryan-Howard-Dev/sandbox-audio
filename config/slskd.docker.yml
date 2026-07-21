@@ -1,0 +1,27 @@
+# slskd config for docker compose profile "soulseek"
+# Soulseek account credentials — set via environment in docker-compose.yml
+#
+# Create a free Soulseek account at https://www.slsknet.org/news/ if needed.
+
+soulseek:
+  username: ~
+  password: ~
+
+directories:
+  downloads: /downloads
+  incomplete: /incomplete
+
+web:
+  port: 5030
+  authentication:
+    disabled: true
+
+remote_configuration: true
+
+feature:
+  swagger: true
+
+transfers:
+  download:
+    destination:
+      subdirectory: ${SOURCE_DIRECTORY}

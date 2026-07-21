@@ -1,0 +1,443 @@
+/* Tidal-style now playing sheet — slides up over app, dismisses down */
+
+.mobile-np-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.32s ease;
+}
+
+.mobile-np-backdrop--open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-now-playing.mobile-now-playing--sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-height: 100dvh;
+  transform: translate3d(0, 100%, 0);
+  transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+  overflow: hidden;
+  contain: layout style;
+  padding-bottom: calc(
+    0.5rem + max(env(safe-area-inset-bottom, 0px), var(--sandbox-inset-bottom, 0px))
+  );
+  box-sizing: border-box;
+  border-radius: 1rem 1rem 0 0;
+  box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.55);
+  animation: none;
+}
+
+.mobile-now-playing--sheet.mobile-now-playing--sheet-open {
+  transform: translate3d(0, 0, 0);
+}
+
+.mobile-now-playing--sheet.mobile-now-playing--sheet-dragging {
+  transition: none;
+}
+
+.mobile-now-playing--sheet.mobile-now-playing--sheet-dragging .mobile-np-backdrop {
+  transition: none;
+}
+
+.mobile-now-playing--sheet.mobile-now-playing--unified {
+  padding-bottom: calc(
+    0.5rem + max(env(safe-area-inset-bottom, 0px), var(--sandbox-inset-bottom, 0px))
+  );
+}
+
+.shell-root--now-playing-open .mobile-combined-dock,
+.shell-root--now-playing-open .mobile-player-dock {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.shell-root--now-playing-open .mobile-now-playing,
+.shell-root--now-playing-open .mobile-np-backdrop {
+  z-index: 60;
+}
+
+.shell-root--now-playing-open .mobile-np-backdrop {
+  z-index: 58;
+}
+
+.shell-root--now-playing-open .mobile-now-playing--unified {
+  padding-bottom: calc(
+    0.5rem + max(env(safe-area-inset-bottom, 0px), var(--sandbox-inset-bottom, 0px))
+  );
+}
+
+.shell-root--now-playing-open .mobile-now-playing--unified .home-featured-meta {
+  padding-left: var(--mobile-np-chrome-inset, var(--mobile-edge-left));
+  padding-right: var(--mobile-np-chrome-inset, var(--mobile-edge-right));
+}
+
+.shell-root--now-playing-open .mobile-now-playing--unified .home-hero-title,
+.shell-root--now-playing-open .mobile-now-playing--unified .home-hero-artist,
+.shell-root--now-playing-open .mobile-now-playing--unified .player-artist-link {
+  max-width: 100%;
+  padding-inline: 0.125rem;
+  box-sizing: border-box;
+}
+
+.mobile-np-header--tidal .mobile-np-header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Must beat .mobile-np-header { grid-template-columns: 2.75rem 1fr 2.75rem } — duplicate in index.css after base rule. */
+.mobile-np-header.mobile-np-header--tidal {
+  grid-template-columns: 3rem 1fr 3rem;
+}
+
+.mobile-np-header--tidal .mobile-np-collapse-btn {
+  width: 3rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--accent-burnt) 12%, transparent);
+  color: var(--accent-burnt);
+}
+
+.mobile-np-header--tidal .mobile-np-collapse-btn svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.mobile-np-header--tidal .mobile-np-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+/* Never show the in-artwork collapse chevron on the full-screen sheet — header owns dismiss. */
+.mobile-now-playing--sheet .home-vinyl-collapse {
+  display: none !important;
+}
+
+.mobile-np-drag-handle {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0.45rem 0 0.15rem;
+  touch-action: none;
+}
+
+.mobile-np-drag-zone {
+  flex-shrink: 0;
+  touch-action: none;
+  cursor: grab;
+}
+
+.mobile-np-drag-handle span {
+  width: 2.5rem;
+  height: 0.22rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--text) 28%, transparent);
+}
+
+.mobile-np-footer--tidal .mobile-np-lyrics-pill {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-color: color-mix(in srgb, var(--accent-brand) 45%, var(--border));
+  color: var(--accent-brand);
+}
+
+.mobile-np-podcast-controls-wrap {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-left: var(--mobile-np-chrome-inset, var(--mobile-edge-left));
+  padding-right: var(--mobile-np-chrome-inset, var(--mobile-edge-right));
+}
+
+/* Podcast toolbar — compact Skip Ad row (speed/boost in ⋮ menu) */
+.podcasts-player-controls.podcasts-player-controls--compact {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  padding: 0.5rem 0.55rem;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+  box-sizing: border-box;
+}
+
+.podcasts-skip-ad-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+  width: 100%;
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+
+.podcasts-skip-ad-btn--solo {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.podcasts-skip-ad-btn {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.75rem;
+  margin-bottom: 0.1rem;
+  border: 1px solid color-mix(in srgb, var(--accent-brand) 55%, transparent);
+  border-radius: 0.85rem;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent-brand) 22%, transparent),
+    color-mix(in srgb, var(--accent-brand) 10%, transparent)
+  );
+  color: var(--accent-brand);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-brand) 12%, transparent);
+  transition:
+    transform 0.12s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.podcasts-skip-ad-btn:active {
+  transform: scale(0.98);
+}
+
+.podcasts-skip-ad-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent-brand) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-brand) 40%, transparent);
+}
+
+.podcasts-skip-ad-btn-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.podcasts-skip-ad-btn-title {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.podcasts-skip-ad-btn-hint {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text) 65%, var(--accent-brand));
+  line-height: 1.1;
+}
+
+.podcasts-auto-skip-chip {
+  flex: 0 0 auto;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.25rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--bg-card) 70%, transparent);
+  color: color-mix(in srgb, var(--text) 72%, transparent);
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.podcasts-auto-skip-chip--active {
+  color: var(--bg-base, #0a0a0a);
+  background: var(--accent-brand);
+  border-color: var(--accent-brand);
+}
+
+.podcasts-player-control-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.125rem 0.2rem;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.podcasts-player-control-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent-brand) 38%, transparent);
+  color: var(--accent-brand);
+  background: color-mix(in srgb, var(--accent-brand) 8%, transparent);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.podcasts-player-control-item--active .podcasts-player-control-icon {
+  color: var(--bg-base, #0a0a0a);
+  background: var(--accent-brand);
+  border-color: var(--accent-brand);
+}
+
+.podcasts-player-control-item:active .podcasts-player-control-icon {
+  transform: scale(0.94);
+}
+
+.podcasts-player-control-item:active {
+  opacity: 0.88;
+}
+
+.podcasts-skip-ad-btn:active {
+  transform: scale(0.97);
+  opacity: 0.92;
+}
+
+.mobile-np-main--unified {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.podcasts-player-control-label {
+  display: block;
+  width: 100%;
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.2;
+  color: color-mix(in srgb, var(--text) 72%, transparent);
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.podcasts-player-control-item--active .podcasts-player-control-label {
+  color: var(--accent-brand);
+}
+
+.podcasts-player-control-value {
+  display: block;
+  width: 100%;
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.5rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.1;
+  color: color-mix(in srgb, var(--text) 55%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.podcasts-player-control-item--active .podcasts-player-control-value {
+  color: color-mix(in srgb, var(--accent-brand) 85%, var(--text));
+}
+
+.mobile-np-footer--podcast {
+  grid-template-columns: 2.25rem 1fr auto;
+}
+
+.mobile-np-footer--podcast .mobile-np-footer-context {
+  display: none;
+}
+
+.mobile-np-footer--podcast .mobile-np-footer-actions {
+  gap: 0.125rem;
+  flex-shrink: 0;
+}
+
+.mobile-np-footer--podcast .mobile-np-lyrics-pill {
+  padding-inline: 0.45rem;
+  min-width: 0;
+  max-width: 5.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 340px) {
+  .podcasts-player-control-icon {
+    width: 2.15rem;
+    height: 2.15rem;
+  }
+
+  .podcasts-player-control-label {
+    font-size: 0.5rem;
+  }
+
+  .podcasts-player-control-value {
+    font-size: 0.4375rem;
+  }
+}
+
+.mobile-np-footer--tidal {
+  padding-top: 0.55rem;
+  padding-left: var(--mobile-np-chrome-inset, var(--mobile-edge-left));
+  padding-right: var(--mobile-np-chrome-inset, var(--mobile-edge-right));
+  padding-bottom: calc(
+    0.75rem + max(env(safe-area-inset-bottom, 0px), var(--sandbox-inset-bottom, 0px))
+  );
+}

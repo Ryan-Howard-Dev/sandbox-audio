@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive foreground: orange S only (no vinyl rings — rings cause double-circle on OEM launchers). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#C2410C"
+        android:pathData="M68,38c0,-8.5 -7,-14 -17,-14c-9.5,0 -16.5,4.5 -16.5,11.5c0,5 3.5,8.5 11.5,11l7,2.2c11.5,3.5 17,8.5 17,18c0,10.5 -9,17.5 -22.5,17.5c-13,0 -22.5,-6.5 -24,-15.5h11c1,5 5.5,8 12.5,8c8,0 13.5,-4 13.5,-9.5c0,-5 -3.5,-8.5 -12,-11l-7.5,-2.2c-11,-3.5 -16.5,-9 -16.5,-17.5c0,-10 9.5,-17 23,-17c12.5,0 22,6.5 23,15.5H68z" />
+</vector>

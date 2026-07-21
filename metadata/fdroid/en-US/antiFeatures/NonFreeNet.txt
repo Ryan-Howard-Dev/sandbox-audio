@@ -1,0 +1,7 @@
+This application connects to proprietary third-party network services that are not under your control.
+
+When you configure a self-hosted Tier 3/4 backend, that server uses yt-dlp to resolve and acquire media from YouTube (and similar platforms) for search, podcast, and extended playback paths.
+
+The client also contacts TheAudioDB for artist photos and biographies in catalog search and artist pages, and the iTunes Search API for chart and album metadata.
+
+Enable Air-Gap Mode in Settings to block outbound requests from the app on this device. Traffic to your Tier 3/4 host (including yt-dlp) is separate and depends on how you run that server.

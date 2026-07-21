@@ -1,0 +1,11 @@
+const fs = require('fs');
+const p = 'C:/Users/RH/Downloads/sovereign-music-console/src/sandboxLayer3.tsx';
+let s = fs.readFileSync(p,'utf8');
+const neu = `        const locker = await ensureLockerPlayable(seed);
+        if (locker.kind !== 'playable' || !locker.envelope.url?.trim()) return false;
+        return playEnvelopeRef.current(locker.envelope, undefined, { autoPlay: true });`;
+const old = /let locker = await ensureLockerPlayable\(seed\);[\s\S]*?return playEnvelopeRef\.current\(locker\.envelope, undefined, \{ autoPlay: true \}\);/;
+if (!old.test(s)) throw new Error('block not found');
+s = s.replace(old, neu);
+fs.writeFileSync(p,s);
+console.log('reverted reacquire block');

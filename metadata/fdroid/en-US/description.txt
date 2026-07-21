@@ -1,0 +1,7 @@
+Sovereign Music Console is an offline-first music locker, catalog explorer, and DJ console shell.
+
+Import local audio, browse charts, manage playlists, and optionally connect a Tier 3/4 backend for extended search and playback features.
+
+Network access is used for catalog metadata (iTunes Search API, MusicBrainz, Cover Art Archive, TheAudioDB), optional Google Cast to LAN receivers, and an optional self-hosted Tier 3/4 backend. Core locker playback works with local files. Enable Air-Gap Mode in Settings to block outbound network requests from this device.
+
+Anti-features: Network; NonFreeNet (YouTube via yt-dlp on Tier 3/4, TheAudioDB artist images/bios, iTunes Search API); NonFreeDep (Google Play services Cast SDK); TetheredNet (self-hosted Tier 3/4 backend required for Feed, acquire, Connect, full-stream playback, and related ecosystem features; core locker playback works without it).

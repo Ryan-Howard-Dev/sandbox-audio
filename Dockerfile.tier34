@@ -1,0 +1,16 @@
+FROM node:22-bookworm-slim
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY tier34-server ./tier34-server
+COPY tsconfig.json ./
+
+ENV TIER34_PORT=3001
+ENV NODE_ENV=production
+
+EXPOSE 3001
+
+CMD ["npx", "tsx", "tier34-server/index.ts"]

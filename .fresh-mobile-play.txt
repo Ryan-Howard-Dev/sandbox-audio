@@ -1,0 +1,689 @@
+06-13 20:43:14.350  3480  3580 E QosSceneRecognizer[ActivityStartScene]: notifyActivityStart get launchedFromUid failed through AppManager! launchedFromPackage: com.android.shell, pkg: rd.sheepskin.sandboxmusic
+06-13 20:43:14.351  3480  4355 D StartingSurfacePreviewController: checkSupportSurfacePreview, token=rd.sheepskin.sandboxmusic/.MainActivity, enableSurfacePreview=false, supportMultiLayout=false, unsupportedSkipViewAnimLv=null, disableSurfacePreviewAnimLv=null, ignoreFileExistAnimLv=null
+06-13 20:43:14.352  3480  5768 D OplusTransitionController: hookOnAbort, transition: TransitionRecord{b15a666 id=11421 track=0 type=OPEN flags=0x0 state=0 c=[
+06-13 20:43:14.455  3480  3580 W QosScheduler: executeSceneQosStrategy failed! qos feature no enable
+06-13 20:43:17.861  3480  4187 D osense.compress: com.facebook.orca do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+06-13 20:43:24.723  3480  3580 W QosScheduler: executeSceneQosStrategy failed! qos feature no enable
+06-13 20:43:37.862  3480  4187 D osense.compress: com.facebook.orca do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+06-13 20:43:57.870  3480  4187 D osense.compress: com.facebook.orca do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+06-13 20:44:17.875  3480  4187 D osense.compress: com.facebook.orca do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+06-13 20:44:24.073 22848 22899 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(4)). 1 threads attached
+06-13 20:44:24.073 22848 22899 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(4)). 0 threads remain attached
+06-13 20:44:25.554  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:25.691  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:25.692  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:25.696  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:25.699  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:25.700  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:25.702  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:25.789  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:25.789  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:25.796  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:27.556  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:28.577  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:44:28.578 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:44:29.561  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:29.860  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:29.861  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:29.864  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:31.562  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:32.908  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:32.908  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:32.913  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:32.915  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:32.916  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:32.921  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:33.542  3480  4583 D OplusWifiPower_WakeupIp: com.facebook.orca(57.145.18.***) wakeup host
+06-13 20:44:33.563  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:33.584  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:44:33.585 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:44:33.870  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:33.871  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:33.876  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:35.567  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:37.285  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:version1-uk.0.0, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10114
+06-13 20:44:37.285 25501 25727 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:version1-uk.0.0, servname:(null) uid: 10114, result_code:408, res = 0x0, found = 0
+06-13 20:44:37.289 25501 25727 E NDSF.Server.QueryHostWorker: CloudConfig throwable:未匹配到符合条件的数据 未匹配到符合条件的数据 [com.heytap.nearx.cloudconfig.impl.ObservableQueryExecutor$queryEntities$1.invoke(SourceFile:3), com.heytap.nearx.cloudconfig.impl.ObservableQueryExecutor$queryEntities$1.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.Observable$map$1$call$1.invoke(SourceFile:2), com.heytap.nearx.cloudconfig.observable.Observable$map$1$call$1.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.RealSubscriber.invoke(SourceFile:2), com.heytap.nearx.cloudconfig.observable.RealSubscriber.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.Observable$Companion.safeInvoke(Unknown Source:4), com.heytap.nearx.cloudconfig.observable.Observable$Companion.access$safeInvoke(Unknown Source:0), com.heytap.nearx.cloudconfig.observable.Observable$observeOn$1$call$1$1.run(Unknown Source:8), java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154), java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652), java.lang.Thread.run(Thread.java:1564)]
+06-13 20:44:37.575  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:37.885  3480  4187 D osense.compress: com.facebook.orca do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+06-13 20:44:38.311  3480  3578 I LocaleConfig: parseLocaleConfig: resourceName=ai.x.grok:xml/_generated_res_locale_config
+06-13 20:44:38.312  3480  3578 I LocaleConfig: parseLocaleConfig: resourceName=ai.x.grok:xml/_generated_res_locale_config
+06-13 20:44:38.355  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:44:38.594  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:44:38.596 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:44:38.605  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:44:39.178 10560 11596 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:44:39.178 10560 11596 D adapter::platform::an..: invoke return [JoinHandle { id: Id(19676) }]
+06-13 20:44:39.178 10560 11313 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(5)). 1 threads attached
+06-13 20:44:39.179 10560  1066 W PTC.DISC.NetRegisterCentral: registerLanInfo failed. msg=Account not logged in desc=wlanAvailable(repeat=0)
+06-13 20:44:39.194 10560 11313 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(5)). 0 threads remain attached
+06-13 20:44:39.197 10560 11313 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:44:39.197 10560 11313 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:44:39.198 10560 11313 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(5)). 1 threads attached
+06-13 20:44:39.198 10560 11313 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(5)). 0 threads remain attached
+06-13 20:44:39.198 22848 23059 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:44:39.198 22848 23059 D adapter::platform::an..: invoke return [JoinHandle { id: Id(830) }]
+06-13 20:44:39.199 22848 22897 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(2)). 1 threads attached
+06-13 20:44:39.208 22848 22897 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(2)). 0 threads remain attached
+06-13 20:44:39.217 22848 22897 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:44:39.217 22848 22897 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:44:39.218 22848 22897 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(2)). 1 threads attached
+06-13 20:44:39.219 22848 22897 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(2)). 0 threads remain attached
+06-13 20:44:39.577  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:39.843  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:mail-api.proton.me, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:39.844 29259  2989 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:mail-api.proton.me, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:39.852  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:39.852 29259  2989 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:39.858  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:39.859 29259  2989 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:39.864  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:39.864 29259  2989 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:39.869  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:39.870 29259  2989 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:39.874  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:mail-api.proton.me, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:39.874 29259  2989 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:mail-api.proton.me, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:39.879  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:39.880 29259  2989 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:39.885  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:39.885 29259  2989 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:39.891  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:39.892 29259  2989 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:39.898  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:39.898 29259  2989 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:40.133  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:40.133  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:40.145  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:40.147  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:40.147  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:40.149  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:40.151  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:44:40.227  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:40.228  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:40.237  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:41.607  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:42.226  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:42.228  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:42.232  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:43.588  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:43.601  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:44:43.602 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:44:45.266  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:44:45.591  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:47.347  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:44:47.359  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:47.359  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:47.361  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:47.362  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:47.362  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:47.363  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:47.590  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:48.205  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:48.206  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:48.211  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:48.453  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:48.454  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:48.457  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:48.607  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:44:48.608 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:44:49.627  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:51.295  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:44:51.603  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:52.144  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:44:52.783  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:mail-api.proton.me, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:52.784 29259  3058 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:mail-api.proton.me, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:52.792  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:52.793 29259  3058 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:52.801  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:52.801 29259  3058 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:52.809  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:52.809 29259  3058 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:52.815  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:44:52.815 29259  3058 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:44:53.610  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:53.618  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:44:53.619 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:44:54.576  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:54.578  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:54.584  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:54.585  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:54.587  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:54.588  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:55.612  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:56.079  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:56.080  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:56.087  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:56.468  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:44:56.469  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:44:56.470  1722  9292 W         : write error (Broken pipe)
+06-13 20:44:56.472  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:44:57.344  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:44:57.618  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:44:57.891  3480  4187 D osense.compress: com.facebook.orca do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+06-13 20:44:58.626  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:44:58.627 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:44:58.702  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:z-m-gateway.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10303
+06-13 20:44:58.702  5505 17391 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:z-m-gateway.facebook.com, servname:443 uid: 10303, result_code:408, res = 0x0, found = 0
+06-13 20:44:58.718  1722  9292 E         : DNS_CACHE: hanle request << adddns: hostname:z-m-gateway.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10303
+06-13 20:44:58.718  5505 17391 D DNS_CACHE: oplus_send_dns_response send hostname: z-m-gateway.facebook.com, servname: 443 response into netd: 0, *res = 0xb40000760fb033c0
+06-13 20:44:58.719  5505 17396 E msgr.msys: E[N mns:DGWClient]_OnResolverSuccess(335)=>Cache refresh succeeded with system DNS resolver. IP count: 1
+06-13 20:44:58.735  5468  3144 D NetworkMonitor/182: PROBE_DNS conn-service-us-05.allawnos.com 36ms OK 203.144.145.25,203.144.145.18
+06-13 20:44:58.740  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:conn-service-us-05.allawnos.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:-2147483466, uid:1073
+06-13 20:44:58.740  5468  3144 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:conn-service-us-05.allawnos.com, servname:(null) uid: 1073, result_code:408, res = 0x0, found = 0
+06-13 20:44:58.741  5468  3147 D NetworkMonitor/182: PROBE_DNS www.google.us 41ms OK 142.250.204.163,2404:6800:4016:80d::2003
+06-13 20:44:58.742  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:www.google.us, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:-2147483466, uid:1073
+06-13 20:44:58.743  5468  3147 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:www.google.us, servname:(null) uid: 1073, result_code:408, res = 0x0, found = 0
+06-13 20:44:58.745  5468  3136 D NetworkMonitor/182: PROBE_DNS www.google.us 46ms OK 142.250.204.163,2404:6800:4016:80d::2003
+06-13 20:44:58.754  5468  3135 D NetworkMonitor/182: PROBE_DNS conn-service-us-04.allawnos.com 54ms OK 203.144.145.18,203.144.145.10,203.144.145.24,203.144.145.16
+06-13 20:44:58.758  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:conn-service-us-04.allawnos.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:-2147483466, uid:1073
+06-13 20:44:58.758  5468  3135 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:conn-service-us-04.allawnos.com, servname:(null) uid: 1073, result_code:408, res = 0x0, found = 0
+06-13 20:44:59.148  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:44:59.620  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:00.036  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:00.367  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:00.378 10560 11596 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:45:00.378 10560 11596 D adapter::platform::an..: invoke return [JoinHandle { id: Id(19678) }]
+06-13 20:45:00.380 10560  1066 W PTC.DISC.NetRegisterCentral: registerLanInfo failed. msg=Account not logged in desc=wlanAvailable(repeat=0)
+06-13 20:45:00.381 10560 11310 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(2)). 1 threads attached
+06-13 20:45:00.394 22848 23059 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:45:00.394 22848 23059 D adapter::platform::an..: invoke return [JoinHandle { id: Id(832) }]
+06-13 20:45:00.396 10560 11310 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(2)). 0 threads remain attached
+06-13 20:45:00.396 22848 22899 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(4)). 1 threads attached
+06-13 20:45:00.399 10560 11310 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:45:00.399 10560 11310 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:45:00.399 10560 11310 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(2)). 1 threads attached
+06-13 20:45:00.400 10560 11310 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(2)). 0 threads remain attached
+06-13 20:45:00.404 22848 22899 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(4)). 0 threads remain attached
+06-13 20:45:00.409 22848 22899 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:45:00.409 22848 22899 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:45:00.409 22848 22899 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(4)). 1 threads attached
+06-13 20:45:00.409 22848 22899 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(4)). 0 threads remain attached
+06-13 20:45:01.335  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:i.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:01.336  3250  3864 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:i.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:01.341  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:i.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:01.342  3250  3864 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:i.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:01.344  3250  3958 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:01.345  3250  3958 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:01.547  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:01.652  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:01.792  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:01.793  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:01.801  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:01.804  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:01.805  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:01.807  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:02.325 31332 31395 I MSP-LOG-SDK-RealIPCInterceptor: before invoke [a#a], len(args) = -1, thread name = Timer-0
+06-13 20:45:02.328 31332 31395 E MSP-LOG-SDK-: 	at com.heytap.mspsdk.proxy.d.invoke(InnerInvocationHandler.java:23)
+06-13 20:45:02.328 31332 31395 E MSP-LOG-SDK-: 	at java.lang.reflect.Proxy.invoke(Proxy.java:1006)
+06-13 20:45:02.328 31332 31395 E MSP-LOG-SDK-: 	at com.oplus.statistic.rom.oneidsdk.c$d.a(OneIdOsTokenKitSdk.java:1)
+06-13 20:45:02.328 31332 31395 E MSP-LOG-SDK-: 	at com.oplus.statistic.rom.oneidsdk.c.o(OneIdOsTokenKitSdk.java:2)
+06-13 20:45:02.328 31332 31395 E MSP-LOG-SDK-: 	at com.oplus.statistic.rom.oneidsdk.c.n(OneIdOsTokenKitSdk.java:13)
+06-13 20:45:02.328 31332 31395 E MSP-LOG-SDK-: 	at java.lang.reflect.Method.invoke(Native Method)
+06-13 20:45:02.329 31332 31395 I MSP-LOG-SDK-RealIPCInterceptor: before invoke [a#c], len(args) = 1, thread name = Timer-0
+06-13 20:45:02.330 31332 31395 E MSP-LOG-SDK-: 	at com.heytap.mspsdk.proxy.d.invoke(InnerInvocationHandler.java:23)
+06-13 20:45:02.330 31332 31395 E MSP-LOG-SDK-: 	at java.lang.reflect.Proxy.invoke(Proxy.java:1006)
+06-13 20:45:02.330 31332 31395 E MSP-LOG-SDK-: 	at com.oplus.statistic.rom.oneidsdk.c$d.c(OneIdOsTokenKitSdk.java:1)
+06-13 20:45:02.330 31332 31395 E MSP-LOG-SDK-: 	at com.oplus.statistic.rom.oneidsdk.c.j(OneIdOsTokenKitSdk.java:19)
+06-13 20:45:02.330 31332 31395 E MSP-LOG-SDK-: 	at java.lang.reflect.Method.invoke(Native Method)
+06-13 20:45:02.331 31332 31395 E MSP-LOG-SDK-OneIdOsTokenKitSdk: error----->bridge: No target found for all actions
+06-13 20:45:02.332 31332 31395 I MSP-LOG-SDK-RealIPCInterceptor: before invoke [a#e], len(args) = 1, thread name = Timer-0
+06-13 20:45:02.334 31332 31395 E MSP-LOG-SDK-: 	at com.heytap.mspsdk.proxy.d.invoke(InnerInvocationHandler.java:23)
+06-13 20:45:02.334 31332 31395 E MSP-LOG-SDK-: 	at java.lang.reflect.Proxy.invoke(Proxy.java:1006)
+06-13 20:45:02.334 31332 31395 E MSP-LOG-SDK-: 	at com.oplus.statistic.rom.oneidsdk.c$d.e(OneIdOsTokenKitSdk.java:1)
+06-13 20:45:02.334 31332 31395 E MSP-LOG-SDK-: 	at com.oplus.statistic.rom.oneidsdk.c.m(OneIdOsTokenKitSdk.java:19)
+06-13 20:45:02.334 31332 31395 E MSP-LOG-SDK-: 	at java.lang.reflect.Method.invoke(Native Method)
+06-13 20:45:02.334 31332 31395 E MSP-LOG-SDK-OneIdOsTokenKitSdk: error----->bridge: No target found for all actions
+06-13 20:45:02.565  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:edge-mqtt-fallback.facebook.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:02.565  3250  3243 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:edge-mqtt-fallback.facebook.com, servname:(null) uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:02.865  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:02.866  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:02.869  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:03.473  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:03.474  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:03.479  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:03.633  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:03.634 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:03.657  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:05.665  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:07.359  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:version1-uk.0.0, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10114
+06-13 20:45:07.360 25501 25877 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:version1-uk.0.0, servname:(null) uid: 10114, result_code:408, res = 0x0, found = 0
+06-13 20:45:07.365 25501 25877 E NDSF.Server.QueryHostWorker: CloudConfig throwable:未匹配到符合条件的数据 未匹配到符合条件的数据 [com.heytap.nearx.cloudconfig.impl.ObservableQueryExecutor$queryEntities$1.invoke(SourceFile:3), com.heytap.nearx.cloudconfig.impl.ObservableQueryExecutor$queryEntities$1.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.Observable$map$1$call$1.invoke(SourceFile:2), com.heytap.nearx.cloudconfig.observable.Observable$map$1$call$1.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.RealSubscriber.invoke(SourceFile:2), com.heytap.nearx.cloudconfig.observable.RealSubscriber.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.Observable$Companion.safeInvoke(Unknown Source:4), com.heytap.nearx.cloudconfig.observable.Observable$Companion.access$safeInvoke(Unknown Source:0), com.heytap.nearx.cloudconfig.observable.Observable$observeOn$1$call$1$1.run(Unknown Source:8), java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154), java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652), java.lang.Thread.run(Thread.java:1564)]
+06-13 20:45:07.637  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:07.814  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:0.pool.ntp.org, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:07.815 19482 25096 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:0.pool.ntp.org, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:07.818  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:1.pool.ntp.org, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:07.818 19482 25096 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:1.pool.ntp.org, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:07.821  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:2.pool.ntp.org, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:07.821 19482 25096 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:2.pool.ntp.org, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:07.824  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:3.pool.ntp.org, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:07.825 19482 25096 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:3.pool.ntp.org, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:07.888  1824  1839 E SmcInvoke_MinkDescriptor: Handle found in qnode, clearing mem obj
+06-13 20:45:07.928  1946  5850 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:07.945  1946  5850 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:07.945  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:07.953  1946  5852 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:07.961  1946  5850 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.002  1824  1838 E SmcInvoke_MinkDescriptor: Handle found in qnode, clearing mem obj
+06-13 20:45:08.027  4908  5083 I SystemUi--Statusbar: PrivacyDotViewController-->resolveState ViewState(viewInitialized=true, systemPrivacyEventIsActive=false, shadeExpanded=false, needShow=true, portraitRect=Rect(0, 0 - 1440, 160), landscapeRect=Rect(160, 0 - 3168, 160), upsideDownRect=Rect(0, 0 - 1440, 160), seascapeRect=Rect(0, 0 - 2990, 160), layoutRtl=false, rotation=0, paddingTop=13, paddingBottom=13, cornerIndex=-1, corner=TopRight, designatedCorner=android.widget.FrameLayout{5c62b44 I.E...... .......D 1365,0-1440,160 #7f0a0ad3 app:id/privacy_dot_top_right_container alpha=0.0 viewInfo = }, contentDescription=Applications are using your microphone., dotMargin=87)
+06-13 20:45:08.042  1946  5850 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.065  1946  5853 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.198  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:08.259  1946  5852 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.296  1946  5853 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.328  1946  5852 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.360  1946  5851 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.390  3480  3578 I LocaleConfig: parseLocaleConfig: resourceName=ai.x.grok:xml/_generated_res_locale_config
+06-13 20:45:08.390  1946  5853 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.391  3480  3578 I LocaleConfig: parseLocaleConfig: resourceName=ai.x.grok:xml/_generated_res_locale_config
+06-13 20:45:08.418  1946  5851 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.445  1946  5853 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.447  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:08.477  1946  5853 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.508  1946  5853 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.539  1946  5853 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.571  1946  5852 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.600  1946  5851 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.640  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:08.641 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:08.651  1946  5852 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:08.659  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:api.grab.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:08.659 19482  3311 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:api.grab.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:08.749  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:09.016  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:09.016  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:09.022  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:09.023  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:09.023  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:09.026  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:09.465  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:09.640  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:10.701  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:10.705  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:10.708  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:10.764  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:10.764  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:10.768  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:11.149  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:11.648  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:11.670  1946  5852 E SmcInvoke_MinkDescriptor: mem obj with id :15 not found in list
+06-13 20:45:11.898  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:graph.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:11.899  3250  3851 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:graph.facebook.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:11.902  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:graph.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:11.903  3250  3855 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:graph.facebook.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:11.904  3250  3958 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:11.906  3250  3958 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:12.490  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:13.122 21207 21207 D BoundBrokerSvc: onRebind: Intent { act=com.google.android.gms.auth.aang.events.services.START dat=chimera-action:/... xflg=0x4 cmp=com.google.android.gms/.chimera.PersistentApiService mCallingUid=1210119 }
+06-13 20:45:13.547  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:13.650  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:13.652  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:13.653 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:14.124 21207 21207 D BoundBrokerSvc: onRebind: Intent { act=com.google.android.gms.libs.gmscorelogger.service.START dat=chimera-action:/... xflg=0x4 cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService mCallingUid=1210119 }
+06-13 20:45:14.373 15804 15804 E Capacitor/Console: File: https://localhost/assets/index-tro0VzBr.js - Line 516 - Msg: [SandboxE2E] AREA=mobile-play RESULT=FAIL query=Shake It Off via=app-pipeline
+06-13 20:45:15.513  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:15.654  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:15.944  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:16.243  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:16.244  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:16.247  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:16.248  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:16.250  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:16.250  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:17.462  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:17.462  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:17.468  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:17.690  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:17.898  3480  4187 D osense.compress: com.facebook.orca do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+06-13 20:45:18.403  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:18.404  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:18.408  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:18.549  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:18.660  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:18.661 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:19.668  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:20.748  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:21.557 10560 11596 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:45:21.558 10560 11596 D adapter::platform::an..: invoke return [JoinHandle { id: Id(19680) }]
+06-13 20:45:21.558 10560 11311 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(3)). 1 threads attached
+06-13 20:45:21.560 10560 16645 W PTC.DISC.NetRegisterCentral: registerLanInfo failed. msg=Account not logged in desc=wlanAvailable(repeat=0)
+06-13 20:45:21.571  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:21.577 22848 23059 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:45:21.577 22848 22899 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(4)). 1 threads attached
+06-13 20:45:21.578 22848 23059 D adapter::platform::an..: invoke return [JoinHandle { id: Id(834) }]
+06-13 20:45:21.583 10560 11311 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(3)). 0 threads remain attached
+06-13 20:45:21.587 22848 22899 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(4)). 0 threads remain attached
+06-13 20:45:21.589 10560 11311 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:45:21.589 10560 11311 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:45:21.589 10560 11311 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(3)). 1 threads attached
+06-13 20:45:21.589 10560 11311 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(3)). 0 threads remain attached
+06-13 20:45:21.592 22848 22899 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:45:21.592 22848 22899 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:45:21.592 22848 22899 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(4)). 1 threads attached
+06-13 20:45:21.592 22848 22899 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(4)). 0 threads remain attached
+06-13 20:45:21.673  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:23.149  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:23.458  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:23.459  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:23.465  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:23.468  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:23.468  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:23.472  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:23.668  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:23.668 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:23.674  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:24.286  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:mail-api.proton.me, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:45:24.287 29259  3795 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:mail-api.proton.me, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:45:24.295  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:45:24.296 29259  3795 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:45:24.303  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:45:24.304 29259  3795 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:45:24.311  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:45:24.311 29259  3795 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:45:24.317  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:45:24.318 29259  3795 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:45:24.577 10560 16645 W PTC.DISC.NetRegisterCentral: registerLanInfo failed. msg=Account not logged in desc=wlanAvailable(repeat=0)
+06-13 20:45:24.579 10560 11596 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:45:24.579 10560 11596 D adapter::platform::an..: invoke return [JoinHandle { id: Id(19682) }]
+06-13 20:45:24.581 10560 11311 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(3)). 1 threads attached
+06-13 20:45:24.587 10560 11311 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(3)). 0 threads remain attached
+06-13 20:45:24.589 10560 11311 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:45:24.589 10560 11311 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:45:24.589 10560 11311 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(3)). 1 threads attached
+06-13 20:45:24.589 10560 11311 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(3)). 0 threads remain attached
+06-13 20:45:24.598 22848 23059 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:45:24.599 22848 23059 D adapter::platform::an..: invoke return [JoinHandle { id: Id(836) }]
+06-13 20:45:24.599 22848 22900 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(5)). 1 threads attached
+06-13 20:45:24.611 22848 22900 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(5)). 0 threads remain attached
+06-13 20:45:24.617 22848 22900 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:45:24.617 22848 22900 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:45:24.617 22848 22900 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(5)). 1 threads attached
+06-13 20:45:24.617 22848 22900 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(5)). 0 threads remain attached
+06-13 20:45:24.828  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:24.829  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:24.835  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:25.709  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:25.767  3250  4190 E MQTTBypassDGWStreamGroupConnection.cpp: connect failed. Callbacks terminated before ack received
+06-13 20:45:26.784  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:26.784  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:26.789  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:27.601  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:27.688  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:27.944  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:28.149 21207 21207 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.auth.aang.events.services.START dat=chimera-action:/... xflg=0x4 cmp=com.google.android.gms/.chimera.PersistentApiService mCallingUid=1210119 }
+06-13 20:45:28.679  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:28.680 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:29.144 21207 21207 D BoundBrokerSvc: onUnbind: Intent { act=com.google.android.gms.libs.gmscorelogger.service.START dat=chimera-action:/... xflg=0x4 cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService mCallingUid=1210119 }
+06-13 20:45:29.691  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:30.636  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:30.638 10560 16645 W PTC.DISC.NetRegisterCentral: registerLanInfo failed. msg=Account not logged in desc=wlanAvailable(repeat=0)
+06-13 20:45:30.642 10560 11596 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:45:30.642 10560 11596 D adapter::platform::an..: invoke return [JoinHandle { id: Id(19684) }]
+06-13 20:45:30.645 10560 11311 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(3)). 1 threads attached
+06-13 20:45:30.656 10560 11311 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(3)). 0 threads remain attached
+06-13 20:45:30.660 10560 11311 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:45:30.660 10560 11311 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:45:30.660 10560 11311 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(3)). 1 threads attached
+06-13 20:45:30.660 10560 11311 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(3)). 0 threads remain attached
+06-13 20:45:30.664 22848 23059 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:45:30.664 22848 23059 D adapter::platform::an..: invoke return [JoinHandle { id: Id(838) }]
+06-13 20:45:30.665 22848 22897 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(2)). 1 threads attached
+06-13 20:45:30.675  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:30.675  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:30.676  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:30.676  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:30.677  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:30.679  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:30.680 22848 22897 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(2)). 0 threads remain attached
+06-13 20:45:30.684 22848 22897 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:45:30.684 22848 22897 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:45:30.684 22848 22897 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(2)). 1 threads attached
+06-13 20:45:30.685 22848 22897 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(2)). 0 threads remain attached
+06-13 20:45:31.691  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:31.822  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:31.823  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:31.829  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:32.751  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:33.685  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:33.686 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:33.726  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:34.956  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:api.grab.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:34.957 19482  4114 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:api.grab.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:35.705  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:37.453  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:version1-uk.0.0, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10114
+06-13 20:45:37.453 25501 26020 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:version1-uk.0.0, servname:(null) uid: 10114, result_code:408, res = 0x0, found = 0
+06-13 20:45:37.458 25501 26020 E NDSF.Server.QueryHostWorker: CloudConfig throwable:未匹配到符合条件的数据 未匹配到符合条件的数据 [com.heytap.nearx.cloudconfig.impl.ObservableQueryExecutor$queryEntities$1.invoke(SourceFile:3), com.heytap.nearx.cloudconfig.impl.ObservableQueryExecutor$queryEntities$1.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.Observable$map$1$call$1.invoke(SourceFile:2), com.heytap.nearx.cloudconfig.observable.Observable$map$1$call$1.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.RealSubscriber.invoke(SourceFile:2), com.heytap.nearx.cloudconfig.observable.RealSubscriber.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.Observable$Companion.safeInvoke(Unknown Source:4), com.heytap.nearx.cloudconfig.observable.Observable$Companion.access$safeInvoke(Unknown Source:0), com.heytap.nearx.cloudconfig.observable.Observable$observeOn$1$call$1$1.run(Unknown Source:8), java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154), java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652), java.lang.Thread.run(Thread.java:1564)]
+06-13 20:45:37.707  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:37.893  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:37.894  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:37.898  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:37.899  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:37.901  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:37.903  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:37.905  3480  4187 D osense.compress: com.facebook.orca do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+06-13 20:45:37.989  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:37.990  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:37.996  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:38.531  3480  3578 I LocaleConfig: parseLocaleConfig: resourceName=ai.x.grok:xml/_generated_res_locale_config
+06-13 20:45:38.532  3480  3578 I LocaleConfig: parseLocaleConfig: resourceName=ai.x.grok:xml/_generated_res_locale_config
+06-13 20:45:38.544  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:38.692  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:38.693 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:38.797  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:39.743  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:39.945  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:41.739  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:43.702  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:43.703 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:43.722  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:45.110  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:45.111  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:45.116  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:45.118  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:45.119  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:45.121  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:45.726  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:47.195  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:47.195  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:47.200  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:47.571  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:edge-mqtt.facebook.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:47.572  3250  4236 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:edge-mqtt.facebook.com, servname:(null) uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:47.755  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:48.709  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:48.709 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:48.808  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:49.546  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:49.737  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:51.739  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:51.834  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:52.026  8767 15755 D nativeloader: Load /data/app/~~UMc76VvN7RR4dBdd_TO4kA==/com.google.android.googlequicksearchbox-4al2CAJ9cPZczgltuqIdbw==/base.apk!/lib/arm64-v8a/libelements.so using class loader ns clns-10 (caller=/data/app/~~UMc76VvN7RR4dBdd_TO4kA==/com.google.android.googlequicksearchbox-4al2CAJ9cPZczgltuqIdbw==/base.apk!classes2.dex): ok
+06-13 20:45:52.085  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:52.112  8767 15759 W dolk    : java.io.FileNotFoundException: /proc/8767/dmabuf_rss: open failed: ENOENT (No such file or directory)
+06-13 20:45:52.112  8767 15759 W dolk    : Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+06-13 20:45:52.332  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:52.333  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:52.338  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:52.339  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:52.340  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:52.342  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:53.716  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:53.716 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:53.741  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:53.770  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:53.770  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:53.778  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:54.869  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:55.775  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:56.471  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:i-fallback.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:56.472  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:i.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:56.472  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:graph.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:56.472  3250  3864 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:i-fallback.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:56.472  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:graph-fallback.facebook.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:56.473  3250  3850 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:i.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:56.473  3250  3855 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:graph-fallback.facebook.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:56.473  3250  3851 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:graph.facebook.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:56.474  3250  3958 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:56.475  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:graph.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:56.475  3250  3864 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:graph.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:56.478  3250  3958 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:56.478  3250  3958 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:56.479  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:graph-fallback.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:56.480  3250  3855 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:graph-fallback.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:56.481  3250  3958 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:56.484  3250  3958 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:56.485  3250  3958 E msys    : E[N mns:TigonMNS]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:56.751  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:45:56.951  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:mail-api.proton.me, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:45:56.952 29259  4300 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:mail-api.proton.me, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:45:56.962  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:45:56.963 29259  4300 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:45:56.971  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:45:56.972 29259  4300 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:45:56.979  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.quad9.net, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:45:56.980 29259  4300 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.quad9.net, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:45:56.989  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:dns.google, servername:^, ai_flags:0, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10438
+06-13 20:45:56.989 29259  4300 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:dns.google, servname:(null) uid: 10438, result_code:408, res = 0x0, found = 0
+06-13 20:45:57.750  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:45:57.911  3480  4187 D osense.compress: com.facebook.orca do shrink, target ratio = 45, final ratio = 90, cur ratio = 0
+06-13 20:45:58.724  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:45:58.725 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:45:59.551  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:59.552  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:59.556  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:45:59.557  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:45:59.558  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:59.561  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:45:59.754  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:46:00.026  5584  5783 W System.err: 	at java.lang.reflect.Method.invoke(Native Method)
+06-13 20:46:00.027  5584  5783 E ModemAci: [RpmInfo] failed to request due to invalid state list!
+06-13 20:46:00.037  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:46:00.051  5566  5883 E AMC     : [P-lowpower_vowifi/0] execute failed in triggers[0]:[bcc:0][bcc:9, apsleept:null, deepsleep:false, mpsleept:null]
+06-13 20:46:00.051  5566  5883 E AMC     : [P-lowpower_vowifi/1] execute failed in triggers[0]:[bcc:0][bcc:9, apsleept:null, deepsleep:false, mpsleept:null]
+06-13 20:46:00.067  5566  5883 E AMC     : [P-ooslimited_deep/0] execute failed in triggers[0]:[nwsrcht:0][nwsrcht:0]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-ooslimited_deep/1] execute failed in triggers[0]:[nwsrcht:0][nwsrcht:0]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[0]:[cschgc:0][cschgc:0, pschgc:0]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[1]:[cschgc:0][psnoregt:0, csnoregt:0]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[0]:[cschgc:0][cschgc:0, pschgc:0]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[1]:[cschgc:0][psnoregt:0, csnoregt:0]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-mpss_reset/0] execute failed in triggers[0]:[sleept:355][sleept:1746]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-mpss_reset/1] execute failed in triggers[0]:[sleept:355][sleept:1746]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-pidnetdisable_recovery] execute failed in triggers[0]:[sleept:355][sleept:1746, pidnetdisable:false]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-standby_5gbackoff/0] execute failed in triggers[0]:[sleept:355][inactive:false, sleept:875]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-standby_5gbackoff/1] execute failed in triggers[0]:[sleept:355][inactive:false, sleept:875]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-qc_oos_qrxlv/0] execute failed in triggers[0]:[sleept:355][sleept:585, deepsleep:false, csnoregt:0]
+06-13 20:46:00.068  5566  5883 E AMC     : [P-qc_oos_qrxlv/1] execute failed in triggers[0]:[sleept:355][sleept:585, deepsleep:false, csnoregt:0]
+06-13 20:46:00.069  5566  5883 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[0]:[psnoregt:0][cschgc:0, pschgc:0]
+06-13 20:46:00.069  5566  5883 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[1]:[psnoregt:0][psnoregt:0, csnoregt:0]
+06-13 20:46:00.069  5566  5883 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[0]:[psnoregt:0][cschgc:0, pschgc:0]
+06-13 20:46:00.069  5566  5883 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[1]:[psnoregt:0][psnoregt:0, csnoregt:0]
+06-13 20:46:00.069  5566  5883 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[0]:[pschgc:0][cschgc:0, pschgc:0]
+06-13 20:46:00.069  5566  5883 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[1]:[pschgc:0][psnoregt:0, csnoregt:0]
+06-13 20:46:00.069  5566  5883 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[0]:[pschgc:0][cschgc:0, pschgc:0]
+06-13 20:46:00.069  5566  5883 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[1]:[pschgc:0][psnoregt:0, csnoregt:0]
+06-13 20:46:00.070  5566  5883 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[0]:[csnoregt:0][cschgc:0, pschgc:0]
+06-13 20:46:00.070  5566  5883 E AMC     : [P-idle_cs_ps_change/0] execute failed in triggers[1]:[csnoregt:0][psnoregt:0, csnoregt:0]
+06-13 20:46:00.070  5566  5883 E AMC     : [P-qc_oos_qrxlv/0] execute failed in triggers[0]:[csnoregt:0][sleept:585, deepsleep:false, csnoregt:0]
+06-13 20:46:00.070  5566  5883 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[0]:[csnoregt:0][cschgc:0, pschgc:0]
+06-13 20:46:00.070  5566  5883 E AMC     : [P-idle_cs_ps_change/1] execute failed in triggers[1]:[csnoregt:0][psnoregt:0, csnoregt:0]
+06-13 20:46:00.070  5566  5883 E AMC     : [P-qc_oos_qrxlv/1] execute failed in triggers[0]:[csnoregt:0][sleept:585, deepsleep:false, csnoregt:0]
+06-13 20:46:00.468  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:46:00.469  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:46:00.477  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:46:00.919  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:46:01.348  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:46:01.781  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:46:03.733  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:46:03.734 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:46:03.786  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:46:03.953  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:46:05.626  3480  3585 W ContextImpl: Calling a method in the system process without a qualified user: android.app.ContextImpl.sendBroadcast:1281 com.android.server.am.OplusAppStartupConfig.sendAbnormalNotify:2320 com.android.server.am.OplusAppStartupConfig.notifyAbnormalInfo:2253 com.android.server.am.OplusAppStartupManager.handleStartAppInfo:5836 com.android.server.am.ProcessListExtImpl.hookHandleProcessStart:305 
+06-13 20:46:05.643  4435  4435 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+06-13 20:46:05.681  4435  4435 W able_art_image_: Loading /data/app/~~zFYT-lr9TUTqeUt2OOVW9A==/org.mozilla.firefox-avhunqILA7oSjGD0KUJZ-g==/oat/arm64/base.odex non-executable as it requires an image which we failed to load
+06-13 20:46:05.684  4435  4435 W able_art_image_: Failed to find entry 'classes.dex': Entry not found
+06-13 20:46:05.685  4435  4435 W able_art_image_: Failed to find entry 'classes.dex': Entry not found
+06-13 20:46:05.754  4435  4435 D nativeloader: Load /data/app/~~zFYT-lr9TUTqeUt2OOVW9A==/org.mozilla.firefox-avhunqILA7oSjGD0KUJZ-g==/split_config.arm64_v8a.apk!/lib/arm64-v8a/libcrashhelper.so using class loader ns clns-9 (caller=/data/app/~~zFYT-lr9TUTqeUt2OOVW9A==/org.mozilla.firefox-avhunqILA7oSjGD0KUJZ-g==/base.apk!classes3.dex): ok
+06-13 20:46:05.791  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:46:05.945  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:46:06.769  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:46:06.770  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:46:06.777  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:46:06.778  3250  4174 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:46:06.779  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:46:06.781  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:46:06.928  4590  4590 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+06-13 20:46:06.954 10560 11596 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:46:06.955 10560 11596 D adapter::platform::an..: invoke return [JoinHandle { id: Id(19686) }]
+06-13 20:46:06.959 10560 11313 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(5)). 1 threads attached
+06-13 20:46:06.968 10560 28885 W PTC.DISC.NetRegisterCentral: registerLanInfo failed. msg=Account not logged in desc=wlanAvailable(repeat=0)
+06-13 20:46:06.968 10560 11313 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(5)). 0 threads remain attached
+06-13 20:46:06.971 10560 11313 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:46:06.971 10560 11313 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:46:06.971 10560 11313 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(5)). 1 threads attached
+06-13 20:46:06.971 10560 11313 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(5)). 0 threads remain attached
+06-13 20:46:06.975  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:46:06.980 22848 23059 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:46:06.980 22848 23059 D adapter::platform::an..: invoke return [JoinHandle { id: Id(840) }]
+06-13 20:46:06.990 22848 22899 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(4)). 1 threads attached
+06-13 20:46:07.000 22848 22899 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(4)). 0 threads remain attached
+06-13 20:46:07.003  4590  4590 W mozilla.firefox: Failed to find entry 'classes.dex': Entry not found
+06-13 20:46:07.004  4590  4590 W mozilla.firefox: Failed to find entry 'classes.dex': Entry not found
+06-13 20:46:07.008 22848 22899 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:46:07.008 22848 22899 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:46:07.009 22848 22899 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(4)). 1 threads attached
+06-13 20:46:07.009 22848 22899 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(4)). 0 threads remain attached
+06-13 20:46:07.060  4590  4590 D nativeloader: Load /data/app/~~zFYT-lr9TUTqeUt2OOVW9A==/org.mozilla.firefox-avhunqILA7oSjGD0KUJZ-g==/split_config.arm64_v8a.apk!/lib/arm64-v8a/libjnidispatch.so using class loader ns clns-9 (caller=/data/app/~~zFYT-lr9TUTqeUt2OOVW9A==/org.mozilla.firefox-avhunqILA7oSjGD0KUJZ-g==/base.apk): ok
+06-13 20:46:07.163  4590  4654 D nativeloader: Load /data/app/~~zFYT-lr9TUTqeUt2OOVW9A==/org.mozilla.firefox-avhunqILA7oSjGD0KUJZ-g==/split_config.arm64_v8a.apk!/lib/arm64-v8a/libmozglue.so using class loader ns clns-9 (caller=/data/app/~~zFYT-lr9TUTqeUt2OOVW9A==/org.mozilla.firefox-avhunqILA7oSjGD0KUJZ-g==/base.apk!classes3.dex): ok
+06-13 20:46:07.166  4590  4655 D WindowContextController: attachToDisplayArea  type = 2 ,displayId = 0 ,options = null ,mToken = android.window.WindowTokenClient@f165b98
+06-13 20:46:07.329  4590  4590 E SchedAssist: open sharedFd failed with error=Permission denied
+06-13 20:46:07.330  4590  4590 E SchedAssist: open sharedFd failed with error=Permission denied
+06-13 20:46:07.330  4590  4590 E SchedAssist: open sharedFd failed with error=Permission denied
+06-13 20:46:07.525  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:version1-uk.0.0, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10114
+06-13 20:46:07.525 25501 26304 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:version1-uk.0.0, servname:(null) uid: 10114, result_code:408, res = 0x0, found = 0
+06-13 20:46:07.528 25501 26304 E NDSF.Server.QueryHostWorker: CloudConfig throwable:未匹配到符合条件的数据 未匹配到符合条件的数据 [com.heytap.nearx.cloudconfig.impl.ObservableQueryExecutor$queryEntities$1.invoke(SourceFile:3), com.heytap.nearx.cloudconfig.impl.ObservableQueryExecutor$queryEntities$1.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.Observable$map$1$call$1.invoke(SourceFile:2), com.heytap.nearx.cloudconfig.observable.Observable$map$1$call$1.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.RealSubscriber.invoke(SourceFile:2), com.heytap.nearx.cloudconfig.observable.RealSubscriber.invoke(SourceFile:1), com.heytap.nearx.cloudconfig.observable.Observable$Companion.safeInvoke(Unknown Source:4), com.heytap.nearx.cloudconfig.observable.Observable$Companion.access$safeInvoke(Unknown Source:0), com.heytap.nearx.cloudconfig.observable.Observable$observeOn$1$call$1$1.run(Unknown Source:8), java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154), java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652), java.lang.Thread.run(Thread.java:1564)]
+06-13 20:46:07.645  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:firefox.settings.services.mozilla.com, servername:^, ai_flags:1026, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10429
+06-13 20:46:07.645  4590  4801 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:firefox.settings.services.mozilla.com, servname:(null) uid: 10429, result_code:408, res = 0x0, found = 0
+06-13 20:46:07.654  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:incoming.telemetry.mozilla.org, servername:^, ai_flags:1026, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10429
+06-13 20:46:07.656  4590  4800 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:incoming.telemetry.mozilla.org, servname:(null) uid: 10429, result_code:408, res = 0x0, found = 0
+06-13 20:46:07.769  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:46:07.945  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:46:08.025  4908  5083 I SystemUi--Statusbar: PrivacyDotViewController-->resolveState ViewState(viewInitialized=true, systemPrivacyEventIsActive=false, shadeExpanded=false, needShow=true, portraitRect=Rect(0, 0 - 1440, 160), landscapeRect=Rect(160, 0 - 3168, 160), upsideDownRect=Rect(0, 0 - 1440, 160), seascapeRect=Rect(0, 0 - 2990, 160), layoutRtl=false, rotation=0, paddingTop=13, paddingBottom=13, cornerIndex=-1, corner=TopRight, designatedCorner=android.widget.FrameLayout{5c62b44 I.E...... .......D 1365,0-1440,160 #7f0a0ad3 app:id/privacy_dot_top_right_container alpha=0.0 viewInfo = }, contentDescription=Applications are using your microphone., dotMargin=86)
+06-13 20:46:08.069  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:content-signature-2.cdn.mozilla.net, servername:^, ai_flags:1026, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10429
+06-13 20:46:08.069  4590  4801 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:content-signature-2.cdn.mozilla.net, servname:(null) uid: 10429, result_code:408, res = 0x0, found = 0
+06-13 20:46:08.180  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:46:08.181  3250  4172 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:46:08.185  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:46:08.196  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:46:08.447  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:46:08.568  3480  3578 I LocaleConfig: parseLocaleConfig: resourceName=ai.x.grok:xml/_generated_res_locale_config
+06-13 20:46:08.568  3480  3578 I LocaleConfig: parseLocaleConfig: resourceName=ai.x.grok:xml/_generated_res_locale_config
+06-13 20:46:08.697  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:46:08.743  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:46:08.745 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:46:09.496  3480  4583 D OplusWifiPower_WakeupIp: com.facebook.orca(57.145.10.***) wakeup host
+06-13 20:46:09.772  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:46:09.998 10560 11596 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:46:09.998 10560 17053 W PTC.DISC.NetRegisterCentral: registerLanInfo failed. msg=Account not logged in desc=wlanAvailable(repeat=0)
+06-13 20:46:09.998 10560 11311 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(3)). 1 threads attached
+06-13 20:46:09.999 10560 11596 D adapter::platform::an..: invoke return [JoinHandle { id: Id(19688) }]
+06-13 20:46:10.007 10560 11311 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(3)). 0 threads remain attached
+06-13 20:46:10.016 10560 11311 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:46:10.016 10560 11311 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:46:10.017 10560 11311 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(3)). 1 threads attached
+06-13 20:46:10.017 10560 11311 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(3)). 0 threads remain attached
+06-13 20:46:10.020 22848 23059 D adapter::platform::an..: adapter/src/platform/android/wifi.rs:102: invokeStateCallbackAP entry
+06-13 20:46:10.020 22848 23059 D adapter::platform::an..: invoke return [JoinHandle { id: Id(842) }]
+06-13 20:46:10.021 22848 22899 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(4)). 1 threads attached
+06-13 20:46:10.027 22848 22899 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(4)). 0 threads remain attached
+06-13 20:46:10.038 22848 22899 D connection::networkin..: connection::networking::link_switch::link_detection:155:[link_detection_listener_start] Link detection listener with same instance_id WLAN_STA and ip 19********38 already running, returning OK
+06-13 20:46:10.038 22848 22899 D connection::networkin..: connection::networking::link_switch::link_detection:266:[link_detection_sender_start] Link detection sender with same instance_id WLAN_STA and ip 19*******.1 already running, returning OK
+06-13 20:46:10.039 22848 22899 D jni::wrapper::java_vm..: Attached thread tokio-rt-worker (ThreadId(4)). 1 threads attached
+06-13 20:46:10.040 22848 22899 D jni::wrapper::java_vm..: Detached thread tokio-rt-worker (ThreadId(4)). 0 threads remain attached
+06-13 20:46:10.750  2138  2762 E HwcComposer: getLuts failed Status(-129, EX_TRANSACTION_FAILED): 'UNKNOWN_TRANSACTION: '
+06-13 20:46:11.776  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:46:13.750  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:p-hermes2.grabtaxi.com, servername:^, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10423
+06-13 20:46:13.751 19482 25084 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:p-hermes2.grabtaxi.com, servname:(null) uid: 10423, result_code:408, res = 0x0, found = 0
+06-13 20:46:13.778  3084  3084 I cnss-daemon: nl80211 response handler invoked
+06-13 20:46:13.992  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:2, ai_protocol:0, netid:0, uid:10526
+06-13 20:46:13.993  3250  4173 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:46:13.997  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname
+06-13 20:46:13.999  1722  9292 E         : DNS_CACHE: hanle request << lookupdns: hostname:test-gateway.instagram.com, servername:443, ai_flags:1024, ai_family:0, ai_socktype:1, ai_protocol:0, netid:0, uid:10526
+06-13 20:46:14.000  3250  4164 D DNS_CACHE: oplus_oplus_getaddrinfo_proxy lookup from netd: hostname:test-gateway.instagram.com, servname:443 uid: 10526, result_code:408, res = 0x0, found = 0
+06-13 20:46:14.001  3250  4158 E msys    : E[N mns:DGWClient]_LogError(280)=>Failed to resolve using system DNS resolver, getaddrinfo(): No address associated with hostname

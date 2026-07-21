@@ -1,0 +1,175 @@
+{
+  "timestamp": "2026-06-19T00:39:00.8146782+07:00",
+  "serial": "46349770",
+  "elapsedMin": 80.3,
+  "tracksPass": "5/13",
+  "podcastsPass": "0/5",
+  "noFatal": true,
+  "tracks": [
+    {
+      "artist": "Tyler, The Creator",
+      "track": "See You Again (feat. Kali Uchis)",
+      "pass": true,
+      "play": true,
+      "progress": true,
+      "freshResolve": true,
+      "cachedFatherHit": false,
+      "streamKind": "unknown",
+      "nativeResolveMs": null
+    },
+    {
+      "artist": "Radiohead",
+      "track": "Everything In Its Right Place",
+      "pass": false,
+      "play": false,
+      "progress": false,
+      "freshResolve": false,
+      "cachedFatherHit": false,
+      "streamKind": null,
+      "nativeResolveMs": null
+    },
+    {
+      "artist": "JPEGMAFIA",
+      "track": "PRONE!",
+      "pass": false,
+      "play": false,
+      "progress": false,
+      "freshResolve": false,
+      "cachedFatherHit": false,
+      "streamKind": null,
+      "nativeResolveMs": null
+    },
+    {
+      "artist": "Kanye West",
+      "track": "Devil In A New Dress",
+      "pass": false,
+      "play": false,
+      "progress": false,
+      "freshResolve": false,
+      "cachedFatherHit": false,
+      "streamKind": null,
+      "nativeResolveMs": null
+    },
+    {
+      "artist": "Frank Ocean",
+      "track": "Pink + White",
+      "pass": true,
+      "play": true,
+      "progress": true,
+      "freshResolve": true,
+      "cachedFatherHit": false,
+      "streamKind": "unknown",
+      "nativeResolveMs": null
+    },
+    {
+      "artist": "Kanye West",
+      "track": "Ghost Town (feat. PARTYNEXTDOOR)",
+      "pass": true,
+      "play": true,
+      "progress": true,
+      "freshResolve": false,
+      "cachedFatherHit": false,
+      "streamKind": "unknown",
+      "nativeResolveMs": null
+    },
+    {
+      "artist": "Billie Eilish",
+      "track": "when the party's over",
+      "pass": false,
+      "play": false,
+      "progress": false,
+      "freshResolve": false,
+      "cachedFatherHit": false,
+      "streamKind": null,
+      "nativeResolveMs": null
+    },
+    {
+      "artist": "Arctic Monkeys",
+      "track": "Do I Wanna Know?",
+      "pass": true,
+      "play": true,
+      "progress": true,
+      "freshResolve": true,
+      "cachedFatherHit": false,
+      "streamKind": "unknown",
+      "nativeResolveMs": 17662
+    },
+    {
+      "artist": "Kendrick Lamar",
+      "track": "HUMBLE.",
+      "pass": false,
+      "play": false,
+      "progress": false,
+      "freshResolve": false,
+      "cachedFatherHit": false,
+      "streamKind": null,
+      "nativeResolveMs": null
+    },
+    {
+      "artist": "Denzel Curry",
+      "track": "Ultimate",
+      "pass": false,
+      "play": false,
+      "progress": false,
+      "freshResolve": false,
+      "cachedFatherHit": false,
+      "streamKind": null,
+      "nativeResolveMs": null
+    },
+    {
+      "artist": "SZA",
+      "track": "Kill Bill",
+      "pass": true,
+      "play": true,
+      "progress": true,
+      "freshResolve": false,
+      "cachedFatherHit": false,
+      "streamKind": "unknown",
+      "nativeResolveMs": null
+    },
+    {
+      "artist": "Bon Iver",
+      "track": "Holocene",
+      "pass": false,
+      "play": false,
+      "progress": false,
+      "freshResolve": false,
+      "cachedFatherHit": false,
+      "streamKind": null,
+      "nativeResolveMs": null
+    },
+    {
+      "artist": "Cigarettes After Sex",
+      "track": "Apocalypse",
+      "pass": false,
+      "play": false,
+      "progress": false,
+      "freshResolve": false,
+      "cachedFatherHit": false,
+      "streamKind": null,
+      "nativeResolveMs": null
+    }
+  ],
+  "podcasts": [
+    {
+      "query": "Joe Rogan Experience",
+      "pass": false
+    },
+    {
+      "query": "Wrestle Talk Podcast",
+      "pass": false
+    },
+    {
+      "query": "The Peter McCormack Show",
+      "pass": false
+    },
+    {
+      "query": "Jim Cornette Experience",
+      "pass": false
+    },
+    {
+      "query": "Syntax FM",
+      "pass": false
+    }
+  ]
+}

@@ -1,0 +1,916 @@
+--------- beginning of main
+07-08 23:05:38.820 D/Capacitor(31151): App restarted
+07-08 23:05:38.821 D/Capacitor(31151): App started
+07-08 23:05:38.824 D/Capacitor(31151): App resumed
+07-08 23:05:38.841 W/chromium(31151): [WARNING:android_webview/browser/gfx/display_webview.cc:33] WebView overlays are enabled!
+07-08 23:05:38.850 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.850 V/Capacitor(31151): callback: 23869285, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:38.852 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"url":"sandboxmusic://e2e/cancel-play"}
+07-08 23:05:38.852 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"url":"sandboxmusic://e2e/cancel-play"}
+07-08 23:05:38.852 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"url":"sandboxmusic://e2e/cancel-play"}
+07-08 23:05:38.852 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.856 D/Capacitor(31151): Handling CapacitorHttp request: https://localhost/_capacitor_http_interceptor_?u=https%3A%2F%2Ffeeds.megaphone.fm%2FGLT1412515089
+07-08 23:05:38.857 V/Capacitor(31151): callback: 23869286, pluginId: YtDlpMobile, methodName: cancel, methodData: {}
+07-08 23:05:38.858 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.858 V/Capacitor(31151): callback: 23869287, pluginId: NativeExoPlayback, methodName: stop, methodData: {}
+07-08 23:05:38.874 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"isActive":true}
+07-08 23:05:38.874 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"isActive":true}
+07-08 23:05:38.877 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":66.079,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:38.877 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:38.880 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:38.880 I/Capacitor/Console(31151): File: https://localhost/assets/e2e-bridge-BsUmlZid.js - Line 5 - Msg: [SandboxE2E] AREA=cancel-play RESULT=PASS cancelled
+07-08 23:05:38.888 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.888 V/Capacitor(31151): callback: 23869288, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:38.889 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.890 V/Capacitor(31151): callback: 23869289, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:38.892 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.893 V/Capacitor(31151): callback: 23869290, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:38.893 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.894 V/Capacitor(31151): callback: 23869291, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:38.894 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.894 V/Capacitor(31151): callback: 23869292, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:38.895 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.895 V/Capacitor(31151): callback: 23869293, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:38.895 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.895 V/Capacitor(31151): callback: 23869294, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869226"}
+07-08 23:05:38.896 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.896 V/Capacitor(31151): callback: 23869295, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:38.897 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:38.898 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:38.898 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:38.898 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.898 V/Capacitor(31151): callback: 23869296, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:38.900 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:38.900 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:38.901 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:38.980 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:38.981 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.981 V/Capacitor(31151): callback: 23869297, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:38.982 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:38.982 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.982 V/Capacitor(31151): callback: 23869298, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":66079,"durationMs":7506677,"playbackRate":1,"revision":37}
+07-08 23:05:38.983 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.983 V/Capacitor(31151): callback: 23869299, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:38.984 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:38.984 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:38.985 V/Capacitor(31151): callback: 23869300, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:39.013 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:39.014 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":7806,"queueIndex":0,"queueLength":0,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:39.019 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:39.019 V/Capacitor(31151): callback: 23869301, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:39.019 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.027 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.027 V/Capacitor(31151): callback: 23869302, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:39.027 V/Capacitor(31151): callback: 23869303, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:39.027 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.028 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.028 V/Capacitor(31151): callback: 23869304, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:39.030 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.030 V/Capacitor(31151): callback: 23869305, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:39.030 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.031 V/Capacitor(31151): callback: 23869306, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:39.031 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.033 V/Capacitor(31151): callback: 23869307, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:39.034 V/Capacitor(31151): callback: 23869308, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869292"}
+07-08 23:05:39.034 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.035 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.035 V/Capacitor(31151): callback: 23869309, pluginId: BackgroundMedia, methodName: stopForeground, methodData: {}
+07-08 23:05:39.037 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:39.037 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:39.037 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:39.042 V/Capacitor(31151): callback: 23869310, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:39.045 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:39.045 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.046 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:39.046 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:39.046 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:39.050 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.050 V/Capacitor(31151): callback: 23869311, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:39.052 V/Capacitor(31151): callback: 23869312, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:39.052 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.052 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.053 V/Capacitor(31151): callback: 23869313, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:39.053 V/Capacitor(31151): callback: 23869314, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:39.054 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.054 V/Capacitor(31151): callback: 23869315, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:39.054 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.054 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.056 V/Capacitor(31151): callback: 23869316, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:39.056 V/Capacitor(31151): callback: 23869317, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869306"}
+07-08 23:05:39.056 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.057 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.057 V/Capacitor(31151): callback: 23869318, pluginId: BackgroundMedia, methodName: stopForeground, methodData: {}
+07-08 23:05:39.058 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:39.059 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:39.059 V/Capacitor(31151): callback: 23869319, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:39.059 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.060 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:39.060 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:39.060 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:39.060 V/Capacitor(31151): callback: 23869320, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:39.060 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.061 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:39.061 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:39.062 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:39.062 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:39.078 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:39.078 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.078 V/Capacitor(31151): callback: 23869321, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:39.079 V/Capacitor(31151): callback: 23869322, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:39.079 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:39.079 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.081 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:39.081 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.082 V/Capacitor(31151): callback: 23869323, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:39.083 V/Capacitor(31151): callback: 23869324, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:39.084 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:39.084 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.085 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:39.085 V/Capacitor(31151): callback: 23869325, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:39.085 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.087 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:39.087 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:39.515 W/Capacitor/Console(31151): File: https://localhost/assets/tier34-client-Cl7SVO_u.js - Line 23 - Msg: [Sandbox] prefsSetItem failed: sandbox_podcast_library [object QuotaExceededError]
+07-08 23:05:39.527 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:39.527 V/Capacitor(31151): callback: 23869326, pluginId: FollowedReleaseNative, methodName: schedulePeriodicCheck, methodData: {"intervalHours":6}
+07-08 23:05:39.531 D/Capacitor(31151): Handling CapacitorHttp request: https://localhost/_capacitor_http_interceptor_?u=https%3A%2F%2Ffeeds.acast.com%2Fpublic%2Fshows%2F69d4f193b76468caacc5068f
+07-08 23:05:39.532 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:39.913 D/Capacitor(31151): App paused
+07-08 23:05:39.914 D/Capacitor(31151): App resumed
+07-08 23:05:40.029 V/Capacitor(31151): callback: 23869327, pluginId: FollowedReleaseNative, methodName: schedulePeriodicCheck, methodData: {"intervalHours":6}
+07-08 23:05:40.030 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.040 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"url":"sandboxmusic://e2e/podcast-play?query=Joe%20Rogan%20Experience%20%232524&playTimeoutMs=240000"}
+07-08 23:05:40.040 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"url":"sandboxmusic://e2e/podcast-play?query=Joe%20Rogan%20Experience%20%232524&playTimeoutMs=240000"}
+07-08 23:05:40.040 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"url":"sandboxmusic://e2e/podcast-play?query=Joe%20Rogan%20Experience%20%232524&playTimeoutMs=240000"}
+07-08 23:05:40.041 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.042 V/Capacitor(31151): callback: 23869328, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:40.042 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.042 V/Capacitor(31151): callback: 23869329, pluginId: YtDlpMobile, methodName: cancel, methodData: {}
+07-08 23:05:40.043 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.043 V/Capacitor(31151): callback: 23869330, pluginId: NativeExoPlayback, methodName: stop, methodData: {}
+07-08 23:05:40.043 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.043 V/Capacitor(31151): callback: 23869331, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:40.044 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"isActive":true}
+07-08 23:05:40.045 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"isActive":true}
+07-08 23:05:40.045 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.045 V/Capacitor(31151): callback: 23869332, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:40.114 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:40.114 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:40.114 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.115 V/Capacitor(31151): callback: 23869333, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:40.115 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:40.115 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:40.116 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":7806,"queueIndex":0,"queueLength":0,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:40.116 V/Capacitor(31151): callback: 23869334, pluginId: NativeExoPlayback, methodName: prepare, methodData: {}
+07-08 23:05:40.116 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.116 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.116 V/Capacitor(31151): callback: 23869335, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:40.117 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":7806,"queueIndex":0,"queueLength":0,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:40.127 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:40.127 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.127 V/Capacitor(31151): callback: 23869336, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:40.128 V/Capacitor(31151): callback: 23869337, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:40.128 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"message":"ExoPlayer ready."}
+07-08 23:05:40.128 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:40.128 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.129 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:40.129 V/Capacitor(31151): callback: 23869338, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:40.129 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.129 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:40.130 V/Capacitor(31151): callback: 23869339, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:40.130 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.131 V/Capacitor(31151): callback: 23869340, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:40.131 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:40.131 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.133 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:40.133 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:40.721 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.721 V/Capacitor(31151): callback: 23869341, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:40.723 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.723 V/Capacitor(31151): callback: 23869342, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:40.786 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:40.786 V/Capacitor(31151): callback: 23869343, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:40.786 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.787 V/Capacitor(31151): callback: 23869344, pluginId: NativeExoPlayback, methodName: prepare, methodData: {}
+07-08 23:05:40.787 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":7806,"queueIndex":0,"queueLength":0,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:40.787 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.787 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:40.787 V/Capacitor(31151): callback: 23869345, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:42.395 V/Capacitor(31151): callback: 23869346, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:42.396 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:42.396 D/Capacitor(31151): Handling CapacitorHttp request: https://localhost/_capacitor_http_interceptor_?u=https%3A%2F%2Fitunes.apple.com%2Fsearch%3Fterm%3DJoe%2520Rogan%2520Experience%2520%25232524%26media%3Dpodcast%26entity%3Dpodcast%26limit%3D12
+07-08 23:05:42.396 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:42.397 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"message":"ExoPlayer ready."}
+07-08 23:05:42.397 V/Capacitor(31151): callback: 23869347, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:42.398 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:42.398 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:42.400 V/Capacitor(31151): callback: 23869348, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:42.400 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:42.401 V/Capacitor(31151): callback: 23869349, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:42.402 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:42.402 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:42.403 V/Capacitor(31151): callback: 23869350, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:42.404 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:42.404 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:42.404 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":7806,"queueIndex":0,"queueLength":0,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:42.405 V/Capacitor(31151): callback: 23869351, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:42.406 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:42.406 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:42.410 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:42.411 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:42.803 D/Capacitor(31151): Handling CapacitorHttp request: https://localhost/_capacitor_http_interceptor_?u=https%3A%2F%2Ffeeds.megaphone.fm%2FGLT1412515089
+07-08 23:05:43.244 W/Capacitor/Console(31151): File: https://localhost/assets/tier34-client-Cl7SVO_u.js - Line 23 - Msg: [Sandbox] prefsSetItem failed: sandbox_podcast_library [object QuotaExceededError]
+07-08 23:05:43.255 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.256 V/Capacitor(31151): callback: 23869352, pluginId: FollowedReleaseNative, methodName: schedulePeriodicCheck, methodData: {"intervalHours":6}
+07-08 23:05:43.257 W/Capacitor/Console(31151): File: https://localhost/assets/sandboxLayer3-ChD1JI6o.js - Line 3 - Msg: [handlePlayEnvelope] tap {"title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","hasUrl":true,"mobileActive":true,"serverReachable":false,"connectRole":"auto","networkSync":true}
+07-08 23:05:43.261 V/Capacitor(31151): callback: 23869353, pluginId: NativeExoPlayback, methodName: prepare, methodData: {}
+07-08 23:05:43.261 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.261 V/Capacitor(31151): callback: 23869354, pluginId: YtDlpMobile, methodName: cancel, methodData: {}
+07-08 23:05:43.262 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.262 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.262 V/Capacitor(31151): callback: 23869355, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:43.262 V/Capacitor(31151): callback: 23869356, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:43.262 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.263 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.263 V/Capacitor(31151): callback: 23869357, pluginId: NativeExoPlayback, methodName: prepare, methodData: {}
+07-08 23:05:43.263 V/Capacitor(31151): callback: 23869358, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:43.263 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.264 V/Capacitor(31151): callback: 23869359, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:43.264 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.283 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.283 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"message":"ExoPlayer ready."}
+07-08 23:05:43.283 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.283 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.283 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.283 V/Capacitor(31151): callback: 23869360, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:43.284 V/Capacitor(31151): callback: 23869361, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:43.284 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.284 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.285 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"message":"ExoPlayer ready."}
+07-08 23:05:43.285 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":7806,"queueIndex":0,"queueLength":0,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:43.285 V/Capacitor(31151): callback: 23869362, pluginId: NativeExoPlayback, methodName: prepare, methodData: {}
+07-08 23:05:43.285 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.286 V/Capacitor(31151): callback: 23869363, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:43.286 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.286 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":7806,"queueIndex":0,"queueLength":0,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:43.287 V/Capacitor(31151): callback: 23869364, pluginId: NativeExoPlayback, methodName: prepare, methodData: {}
+07-08 23:05:43.287 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.287 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.287 V/Capacitor(31151): callback: 23869365, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:43.313 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.313 V/Capacitor(31151): callback: 23869366, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:43.314 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.314 V/Capacitor(31151): callback: 23869367, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:43.315 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.315 V/Capacitor(31151): callback: 23869368, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:43.315 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.315 V/Capacitor(31151): callback: 23869369, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:43.316 V/Capacitor(31151): callback: 23869370, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:43.316 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.316 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.316 V/Capacitor(31151): callback: 23869371, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:43.317 V/Capacitor(31151): callback: 23869372, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869315"}
+07-08 23:05:43.318 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.318 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.318 V/Capacitor(31151): callback: 23869373, pluginId: BackgroundMedia, methodName: stopForeground, methodData: {}
+07-08 23:05:43.319 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:43.319 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.322 V/Capacitor(31151): callback: 23869374, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:43.323 V/Capacitor(31151): callback: 23869375, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:43.323 V/Capacitor(31151): callback: 23869376, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:43.324 V/Capacitor(31151): callback: 23869377, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:43.327 V/Capacitor(31151): callback: 23869378, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:43.330 V/Capacitor(31151): callback: 23869379, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:43.335 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:43.335 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.335 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:43.335 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.335 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"message":"ExoPlayer ready."}
+07-08 23:05:43.336 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"message":"ExoPlayer ready."}
+07-08 23:05:43.336 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:43.336 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.336 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.337 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:43.337 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.337 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.337 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:43.337 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.338 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:43.338 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.341 V/Capacitor(31151): callback: 23869380, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:43.342 V/Capacitor(31151): callback: 23869381, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:43.342 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.342 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:43.342 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.342 V/Capacitor(31151): callback: 23869382, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:43.343 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:43.343 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.343 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:43.343 V/Capacitor(31151): callback: 23869383, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:43.343 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.343 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:43.343 V/Capacitor(31151): callback: 23869384, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:43.344 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.344 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:43.344 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.348 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"idle","positionSecs":0,"durationSecs":7806,"queueIndex":0,"queueLength":0,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:43.348 I/Capacitor/Console(31151): File: https://localhost/assets/tier34-client-Cl7SVO_u.js - Line 2 - Msg: [useAudioFSM] nativeExoPlayUrl {"title":"#2524 - Rupert Lowe","urlKind":"http","urlLen":46,"autoPlay":true}
+07-08 23:05:43.348 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.348 V/Capacitor(31151): callback: 23869385, pluginId: NativeExoPlayback, methodName: playUrl, methodData: {"url":"https:\/\/traffic.megaphone.fm\/GLT2768068918.mp3","autoPlay":true,"resetQueue":true,"gaplessEnabled":false,"crossfade":false,"envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https:\/\/megaphone.imgix.net\/podcasts\/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c\/image\/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress","durationSeconds":7806}
+07-08 23:05:43.349 V/Capacitor(31151): callback: 23869386, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:43.349 V/Capacitor(31151): callback: 23869387, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:43.350 V/Capacitor(31151): callback: 23869388, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:43.354 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:43.354 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.354 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:43.354 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.355 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:43.355 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.355 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:43.355 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:43.356 V/Capacitor(31151): callback: 23869389, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:43.356 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.357 V/Capacitor(31151): callback: 23869390, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:43.357 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.358 V/Capacitor(31151): callback: 23869391, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:43.358 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.358 V/Capacitor(31151): callback: 23869392, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:43.359 V/Capacitor(31151): callback: 23869393, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:43.359 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.359 V/Capacitor(31151): callback: 23869394, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:43.360 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.360 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.360 V/Capacitor(31151): callback: 23869395, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869370"}
+07-08 23:05:43.360 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.361 V/Capacitor(31151): callback: 23869396, pluginId: BackgroundMedia, methodName: stopForeground, methodData: {}
+07-08 23:05:43.362 V/Capacitor(31151): callback: 23869397, pluginId: YtDlpMobile, methodName: resolve, methodData: {"query":"The Weeknd Blinding Lights - EP Blinding Lights (feat. Chromatics) [Chromatics Remix]"}
+07-08 23:05:43.363 V/Capacitor(31151): callback: 23869398, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:43.369 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.369 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.370 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:43.370 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.380 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"event":"mediaItemTransition","index":0,"queueLength":1,"reason":3,"url":"https://traffic.megaphone.fm/GLT2768068918.mp3"}
+07-08 23:05:43.381 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfaded":false}
+07-08 23:05:43.381 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.381 V/Capacitor(31151): callback: 23869399, pluginId: NativeExoPlayback, methodName: resume, methodData: {}
+07-08 23:05:43.382 V/Capacitor(31151): callback: 23869400, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:43.385 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.385 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:43.386 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:43.386 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.386 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.386 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:43.386 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.387 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:43.387 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.392 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:43.393 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:43.393 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.394 V/Capacitor(31151): callback: 23869401, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:43.402 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:43.411 V/Capacitor(31151): callback: 23869402, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:43.412 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.412 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.412 V/Capacitor(31151): callback: 23869403, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:43.412 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:43.412 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.414 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:43.414 V/Capacitor(31151): callback: 23869404, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:43.414 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.415 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"loading","positionSecs":0,"durationSecs":7806,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:43.416 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:43.495 V/Capacitor(31151): callback: 23869405, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:43.495 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.497 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"loading","positionSecs":0,"durationSecs":7806,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:43.577 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.578 V/Capacitor(31151): callback: 23869406, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:43.588 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"loading","positionSecs":0,"durationSecs":7806,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:43.671 V/Capacitor(31151): callback: 23869407, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:43.671 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.673 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":0,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:43.673 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.675 V/Capacitor(31151): callback: 23869408, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:43.675 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.676 V/Capacitor(31151): callback: 23869409, pluginId: NativeExoPlayback, methodName: setReplayGainDb, methodData: {"replayGainDb":-4}
+07-08 23:05:43.677 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":0,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:43.678 V/Capacitor(31151): callback: 23869410, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:43.678 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.690 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"replayGainLinear":0.6309573650360107}
+07-08 23:05:43.690 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":0,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:43.691 I/Capacitor/Console(31151): File: https://localhost/assets/e2e-bridge-BsUmlZid.js - Line 5 - Msg: [SandboxE2E] AREA=podcast-play RESULT=PASS query=Joe Rogan Experience #2524 playing=true
+07-08 23:05:43.696 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.696 V/Capacitor(31151): callback: 23869411, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:43.697 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.697 V/Capacitor(31151): callback: 23869412, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:43.698 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.698 V/Capacitor(31151): callback: 23869413, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:43.699 V/Capacitor(31151): callback: 23869414, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:43.700 V/Capacitor(31151): callback: 23869415, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:43.701 V/Capacitor(31151): callback: 23869416, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:43.702 V/Capacitor(31151): callback: 23869417, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869393"}
+07-08 23:05:43.703 V/Capacitor(31151): callback: 23869418, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:43.707 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.707 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.707 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.707 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.708 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.708 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.708 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:43.710 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.710 V/Capacitor(31151): callback: 23869419, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:43.710 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.714 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:43.714 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.714 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:43.715 V/Capacitor(31151): callback: 23869420, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:43.716 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:43.716 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.717 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.724 V/Capacitor(31151): callback: 23869421, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2489285,"durationMs":7506677,"playbackRate":1,"revision":42}
+07-08 23:05:43.727 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.728 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:43.728 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.728 V/Capacitor(31151): callback: 23869422, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:43.738 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:43.739 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:43.739 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:43.740 V/Capacitor(31151): callback: 23869423, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:43.741 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:44.174 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:44.174 V/Capacitor(31151): callback: 23869424, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:44.177 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":0.328,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:44.614 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:44.614 V/Capacitor(31151): callback: 23869425, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:44.616 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":0.777,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:44.621 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:44.621 V/Capacitor(31151): callback: 23869426, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:44.623 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:45.718 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.718 V/Capacitor(31151): callback: 23869427, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:45.722 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":1.89,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:45.730 V/Capacitor(31151): callback: 23869428, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:45.731 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.732 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.732 V/Capacitor(31151): callback: 23869429, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:45.733 V/Capacitor(31151): callback: 23869430, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:45.733 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.733 V/Capacitor(31151): callback: 23869431, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:45.733 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.734 V/Capacitor(31151): callback: 23869432, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:45.734 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.734 V/Capacitor(31151): callback: 23869433, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:45.734 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.735 V/Capacitor(31151): callback: 23869434, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869415"}
+07-08 23:05:45.735 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.736 V/Capacitor(31151): callback: 23869435, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:45.736 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.736 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:45.737 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:45.737 V/Capacitor(31151): callback: 23869436, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:45.737 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:45.737 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.737 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:45.738 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:45.738 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:45.743 V/Capacitor(31151): callback: 23869437, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:45.749 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:45.749 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.750 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:45.751 V/Capacitor(31151): callback: 23869438, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2490392,"durationMs":7506677,"playbackRate":1,"revision":43}
+07-08 23:05:45.751 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.751 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:45.752 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.753 V/Capacitor(31151): callback: 23869439, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:45.757 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:45.757 V/Capacitor(31151): callback: 23869440, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:45.757 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:45.758 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:45.759 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:46.818 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.819 V/Capacitor(31151): callback: 23869441, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:46.826 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":2.995,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:46.842 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.844 V/Capacitor(31151): callback: 23869442, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:46.846 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.846 V/Capacitor(31151): callback: 23869443, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:46.849 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.849 V/Capacitor(31151): callback: 23869444, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:46.850 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.850 V/Capacitor(31151): callback: 23869445, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:46.851 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.851 V/Capacitor(31151): callback: 23869446, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:46.852 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.852 V/Capacitor(31151): callback: 23869447, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:46.852 V/Capacitor(31151): callback: 23869448, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869432"}
+07-08 23:05:46.852 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.853 V/Capacitor(31151): callback: 23869449, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:46.853 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.854 V/Capacitor(31151): callback: 23869450, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:46.856 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:46.856 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:46.856 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:46.857 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.857 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:46.857 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:46.857 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:46.860 V/Capacitor(31151): callback: 23869451, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:46.861 V/Capacitor(31151): callback: 23869452, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2491495,"durationMs":7506677,"playbackRate":1,"revision":44}
+07-08 23:05:46.868 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:46.869 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.869 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:46.869 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.870 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:46.871 V/Capacitor(31151): callback: 23869453, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:46.871 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.872 V/Capacitor(31151): callback: 23869454, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:46.872 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:46.873 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:46.873 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:46.874 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:47.562 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"uri":"https://rr3---sn-cu-nuoz.googlevideo.com/videoplayback?expire=1783569947&ei=u8lOaobqEP-cp-oPtqO58A8&ip=2a00%3A23c8%3A1736%3A1601%3A7409%3A4669%3A6d2f%3A3eff&id=o-AFPm5im83jytDmNexHMCVNq1StOXPICkaSVJPeO8ERX-&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=268&met=1783548347%2C&mh=7m&mm=31%2C29&mn=sn-cu-nuoz%2Csn-cu-ajted&ms=au%2Crdu&mv=m&mvi=3&pl=41&rms=au%2Cau&initcwndbps=3681250&bui=ARmQxEVEgi1uftN6urq6ulpYkEHfp55s928LjsI40DWYU04GRPpEL8WYwRviVU7jSfbK8JNuponme6gm&spc=SQ-umq3vWdi3Jlpgzkptj2_D1it3kiLeVwB8QWRNGkmGZzOB1QDpPvkloU8k7Wl2X78&vprv=1&svpuc=1&xtags=heaudio%3Dtrue&mime=video%2Fmp4&rqh=1&cnr=14&ratebypass=yes&dur=262.106&lmt=1696351438472995&mt=1783547844&fvip=3&fexp=51565115%2C52017146&c=ANDROID&txp=4438434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cxtags%2Cmime%2Crqh%2Ccnr%2Cratebypass%2Cdur%2Clmt&sig=AHEqNM4wRgIhAMJtfI1tgQ8ztyTxOXz7jssWH7SPI1bf53ctnYEbJLbJAiEAwFGIh5NAYVMMsVKPo4ZVgEziwIc45QMC5kKMXZNOwXs%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRgIhAKSRYqdR12TUW4na6m_M2dXiUACWtU8_Qf8AcnnrNV7dAiEAntH1gd77sURyvwkDKP1R9Qis9zy0RVQj87bGTZKC1vI%3D","bitrate":0,"format":"unknown"}
+07-08 23:05:47.562 I/Capacitor/Console(31151): File: https://localhost/assets/tier34-client-Cl7SVO_u.js - Line 2 - Msg: [YtDlpMobile] resolve ok [object Object]
+07-08 23:05:47.563 V/Capacitor(31151): callback: 23869455, pluginId: YtDlpMobile, methodName: resolve, methodData: {"query":"The Weeknd Blinding Lights - EP Blinding Lights (Instrumental)"}
+07-08 23:05:47.563 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.917 V/Capacitor(31151): callback: 23869456, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:47.917 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.920 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":4.087,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:47.936 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.937 V/Capacitor(31151): callback: 23869457, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:47.938 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.939 V/Capacitor(31151): callback: 23869458, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:47.939 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.939 V/Capacitor(31151): callback: 23869459, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:47.940 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.940 V/Capacitor(31151): callback: 23869460, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:47.940 V/Capacitor(31151): callback: 23869461, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:47.941 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.941 V/Capacitor(31151): callback: 23869462, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:47.941 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.941 V/Capacitor(31151): callback: 23869463, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869446"}
+07-08 23:05:47.941 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.942 V/Capacitor(31151): callback: 23869464, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:47.942 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.943 V/Capacitor(31151): callback: 23869465, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:47.944 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:47.945 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:47.945 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:47.945 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.945 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:47.945 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:47.946 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:47.949 V/Capacitor(31151): callback: 23869466, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:47.954 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:47.955 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.956 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:47.956 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.956 V/Capacitor(31151): callback: 23869467, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2492589,"durationMs":7506677,"playbackRate":1,"revision":45}
+07-08 23:05:47.957 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:47.957 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.957 V/Capacitor(31151): callback: 23869468, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:47.964 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:47.964 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:47.964 V/Capacitor(31151): callback: 23869469, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:47.964 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:47.967 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:49.016 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.016 V/Capacitor(31151): callback: 23869470, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:49.017 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":5.186,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:49.028 V/Capacitor(31151): callback: 23869471, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:49.028 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.029 V/Capacitor(31151): callback: 23869472, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:49.029 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.029 V/Capacitor(31151): callback: 23869473, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:49.029 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.030 V/Capacitor(31151): callback: 23869474, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:49.030 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.031 V/Capacitor(31151): callback: 23869475, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:49.031 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.031 V/Capacitor(31151): callback: 23869476, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:49.031 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.032 V/Capacitor(31151): callback: 23869477, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869461"}
+07-08 23:05:49.032 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.032 V/Capacitor(31151): callback: 23869478, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:49.032 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.033 V/Capacitor(31151): callback: 23869479, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:49.034 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:49.035 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:49.035 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:49.035 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.035 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:49.035 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:49.035 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:49.038 V/Capacitor(31151): callback: 23869480, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:49.039 V/Capacitor(31151): callback: 23869481, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2493687,"durationMs":7506677,"playbackRate":1,"revision":46}
+07-08 23:05:49.044 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:49.044 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.044 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:49.045 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.047 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:49.047 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.048 V/Capacitor(31151): callback: 23869482, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:49.049 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:49.049 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:49.050 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:49.050 V/Capacitor(31151): callback: 23869483, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:49.051 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:50.118 V/Capacitor(31151): callback: 23869484, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:50.118 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.125 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":6.298,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:50.144 V/Capacitor(31151): callback: 23869485, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:50.144 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.145 V/Capacitor(31151): callback: 23869486, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:50.146 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.147 V/Capacitor(31151): callback: 23869487, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:50.147 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.148 V/Capacitor(31151): callback: 23869488, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:50.148 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.149 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.150 V/Capacitor(31151): callback: 23869489, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:50.151 V/Capacitor(31151): callback: 23869490, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:50.152 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.152 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.152 V/Capacitor(31151): callback: 23869491, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869475"}
+07-08 23:05:50.154 V/Capacitor(31151): callback: 23869492, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:50.154 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.156 V/Capacitor(31151): callback: 23869493, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:50.158 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:50.158 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:50.158 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:50.159 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.159 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:50.160 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:50.160 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:50.167 V/Capacitor(31151): callback: 23869494, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:50.168 V/Capacitor(31151): callback: 23869495, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2494794,"durationMs":7506677,"playbackRate":1,"revision":47}
+07-08 23:05:50.174 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:50.174 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.175 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:50.175 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.177 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:50.177 V/Capacitor(31151): callback: 23869496, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:50.177 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.178 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:50.179 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:50.179 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:50.179 V/Capacitor(31151): callback: 23869497, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:50.181 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:51.216 V/Capacitor(31151): callback: 23869498, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:51.217 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.219 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":7.389,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:51.237 V/Capacitor(31151): callback: 23869499, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:51.238 V/Capacitor(31151): callback: 23869500, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:51.238 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.238 V/Capacitor(31151): callback: 23869501, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:51.239 V/Capacitor(31151): callback: 23869502, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:51.239 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.239 V/Capacitor(31151): callback: 23869503, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:51.239 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.240 V/Capacitor(31151): callback: 23869504, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:51.240 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.240 V/Capacitor(31151): callback: 23869505, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869489"}
+07-08 23:05:51.240 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.241 V/Capacitor(31151): callback: 23869506, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:51.241 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.241 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.242 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.246 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:51.246 V/Capacitor(31151): callback: 23869507, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:51.247 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:51.247 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.248 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:51.249 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:51.249 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:51.250 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:51.251 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:51.251 V/Capacitor(31151): callback: 23869508, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2495889,"durationMs":7506677,"playbackRate":1,"revision":48}
+07-08 23:05:51.251 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.252 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:51.252 V/Capacitor(31151): callback: 23869509, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:51.252 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.262 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:51.262 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:51.262 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.262 V/Capacitor(31151): callback: 23869510, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:51.263 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:51.264 V/Capacitor(31151): callback: 23869511, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:51.264 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:51.266 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:51.638 W/Capacitor/Console(31151): File: https://localhost/assets/tier34-client-Cl7SVO_u.js - Line 23 - Msg: [Sandbox] prefsSetItem failed: sandbox_play_queue_state_v1 [object QuotaExceededError]
+07-08 23:05:51.638 W/Capacitor/Console(31151): File: https://localhost/assets/index-Btnp8wRH.js - Line 2 - Msg: [Sandbox] queue state not saved (storage quota or private mode)
+07-08 23:05:51.821 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"uri":"https://rr4---sn-cu-nuoz.googlevideo.com/videoplayback?expire=1783569951&ei=v8lOate4FPrJhcIPyqaZsAI&ip=2a00%3A23c8%3A1736%3A1601%3A7409%3A4669%3A6d2f%3A3eff&id=o-AOv6p01wGpmtdO6tDJUaQ7-6poDEbXjIbk96x7CCNBQ5&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=237&met=1783548351%2C&mh=1m&mm=31%2C29&mn=sn-cu-nuoz%2Csn-cu-ajted&ms=au%2Crdu&mv=m&mvi=4&pl=41&rms=au%2Cau&gcr=gb&initcwndbps=3681250&bui=ARmQxEUp0lAvx_Ksvb54TuDkNl2li8BZHQg_kCMs0xsLzUoTSebe-FsxCLua6LysPQo94e8JCzARMgmm&spc=SQ-umqNjmIWvLTzdXiAM9Q3HiRPC5mW2cJ1Fa0OPactZxtBCGPCwGPU8C9F8aU3uc9M&vprv=1&svpuc=1&xtags=heaudio%3Dtrue&mime=video%2Fmp4&rqh=1&cnr=14&ratebypass=yes&dur=203.406&lmt=1706297633673163&mt=1783547844&fvip=4&fexp=51565116%2C52017147&c=ANDROID&txp=4530434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cgcr%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cxtags%2Cmime%2Crqh%2Ccnr%2Cratebypass%2Cdur%2Clmt&sig=AHEqNM4wRQIhANPV50l47Vb6hIuCxMA1vJuUTVXM1TBM5GC-yJ3-ax7iAiAHF1CYWm87imYpToNnOOmxpcvyML936F6GURNtGwR99g%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRgIhAMcteeFaWcmxOlYtv-kVOiEinsX4ui6dMV61V77tyPkZAiEA5iAlEUN_bS5qE1_3v-sPyqBdsrVVIN0qE8DuqnIT49E%3D","bitrate":0,"format":"unknown"}
+07-08 23:05:51.821 V/Capacitor(31151): callback: 23869512, pluginId: YtDlpMobile, methodName: resolve, methodData: {"query":"The Weeknd Blinding Lights - EP Blinding Lights"}
+07-08 23:05:51.821 I/Capacitor/Console(31151): File: https://localhost/assets/tier34-client-Cl7SVO_u.js - Line 2 - Msg: [YtDlpMobile] resolve ok [object Object]
+07-08 23:05:51.822 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.317 V/Capacitor(31151): callback: 23869513, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:52.317 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.321 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":8.492,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:52.331 V/Capacitor(31151): callback: 23869514, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:52.331 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.332 V/Capacitor(31151): callback: 23869515, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:52.332 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.333 V/Capacitor(31151): callback: 23869516, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:52.333 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.333 V/Capacitor(31151): callback: 23869517, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:52.334 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.334 V/Capacitor(31151): callback: 23869518, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:52.334 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.335 V/Capacitor(31151): callback: 23869519, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:52.335 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.336 V/Capacitor(31151): callback: 23869520, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869503"}
+07-08 23:05:52.336 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.336 V/Capacitor(31151): callback: 23869521, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:52.336 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.337 V/Capacitor(31151): callback: 23869522, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:52.344 V/Capacitor(31151): callback: 23869523, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:52.346 V/Capacitor(31151): callback: 23869524, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2496991,"durationMs":7506677,"playbackRate":1,"revision":49}
+07-08 23:05:52.354 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:52.355 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:52.355 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:52.355 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.355 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:52.356 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:52.356 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:52.356 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:52.357 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.357 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:52.357 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.360 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:52.360 V/Capacitor(31151): callback: 23869525, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:52.360 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.360 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:52.361 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:52.361 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:52.361 V/Capacitor(31151): callback: 23869526, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:52.362 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:53.420 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.420 V/Capacitor(31151): callback: 23869527, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:53.425 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":9.591,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:53.475 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.476 V/Capacitor(31151): callback: 23869528, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:53.478 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.478 V/Capacitor(31151): callback: 23869529, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:53.479 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.479 V/Capacitor(31151): callback: 23869530, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:53.480 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.480 V/Capacitor(31151): callback: 23869531, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:53.482 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.483 V/Capacitor(31151): callback: 23869532, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:53.484 V/Capacitor(31151): callback: 23869533, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:53.484 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.486 V/Capacitor(31151): callback: 23869534, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869518"}
+07-08 23:05:53.487 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.488 V/Capacitor(31151): callback: 23869535, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:53.488 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.492 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:53.492 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:53.493 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:53.493 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.494 V/Capacitor(31151): callback: 23869536, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:53.503 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:53.503 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:53.503 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:53.505 V/Capacitor(31151): callback: 23869537, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2498094,"durationMs":7506677,"playbackRate":1,"revision":50}
+07-08 23:05:53.505 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:53.505 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.506 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:53.507 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.507 V/Capacitor(31151): callback: 23869538, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:53.520 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:53.520 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:53.520 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.520 V/Capacitor(31151): callback: 23869539, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:53.523 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:53.523 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:53.524 V/Capacitor(31151): callback: 23869540, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:53.526 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:54.516 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.520 V/Capacitor(31151): callback: 23869541, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:54.524 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":10.709,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:54.541 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.542 V/Capacitor(31151): callback: 23869542, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:54.543 V/Capacitor(31151): callback: 23869543, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:54.543 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.544 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.545 V/Capacitor(31151): callback: 23869544, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:54.546 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.547 V/Capacitor(31151): callback: 23869545, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:54.548 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.548 V/Capacitor(31151): callback: 23869546, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:54.550 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.551 V/Capacitor(31151): callback: 23869547, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:54.553 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.553 V/Capacitor(31151): callback: 23869548, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869532"}
+07-08 23:05:54.554 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.555 V/Capacitor(31151): callback: 23869549, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:54.558 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:54.558 V/Capacitor(31151): callback: 23869550, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:54.558 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:54.559 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:54.559 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.559 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:54.566 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:54.566 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:54.567 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:54.568 V/Capacitor(31151): callback: 23869551, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2499193,"durationMs":7506677,"playbackRate":1,"revision":51}
+07-08 23:05:54.568 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.569 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:54.569 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.569 V/Capacitor(31151): callback: 23869552, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:54.574 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:54.574 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:54.575 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.575 V/Capacitor(31151): callback: 23869553, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:54.576 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:54.576 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:54.577 V/Capacitor(31151): callback: 23869554, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:54.582 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:54.942 W/Capacitor/Console(31151): File: https://localhost/assets/tier34-client-Cl7SVO_u.js - Line 23 - Msg: [Sandbox] prefsSetItem failed: sandbox_play_queue_state_v1 [object QuotaExceededError]
+07-08 23:05:54.943 W/Capacitor/Console(31151): File: https://localhost/assets/index-Btnp8wRH.js - Line 2 - Msg: [Sandbox] queue state not saved (storage quota or private mode)
+07-08 23:05:55.619 V/Capacitor(31151): callback: 23869555, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:55.619 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.627 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":11.814,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:55.659 V/Capacitor(31151): callback: 23869556, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:55.660 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.662 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.662 V/Capacitor(31151): callback: 23869557, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:55.665 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.667 V/Capacitor(31151): callback: 23869558, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:55.669 V/Capacitor(31151): callback: 23869559, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:55.669 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.670 V/Capacitor(31151): callback: 23869560, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:55.671 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.672 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.672 V/Capacitor(31151): callback: 23869561, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:55.676 V/Capacitor(31151): callback: 23869562, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869546"}
+07-08 23:05:55.676 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.677 V/Capacitor(31151): callback: 23869563, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:55.677 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.683 V/Capacitor(31151): callback: 23869564, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:55.685 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:55.685 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:55.686 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:55.687 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.687 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:55.689 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:55.690 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:55.708 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:55.708 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.713 V/Capacitor(31151): callback: 23869565, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:55.716 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:55.716 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.716 V/Capacitor(31151): callback: 23869566, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2500294,"durationMs":7506677,"playbackRate":1,"revision":52}
+07-08 23:05:55.718 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:55.718 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.724 V/Capacitor(31151): callback: 23869567, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:55.725 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:55.738 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:55.738 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:55.738 V/Capacitor(31151): callback: 23869568, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:55.746 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:56.717 V/Capacitor(31151): callback: 23869569, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+07-08 23:05:56.717 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.722 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer decode active — content:// locker bridge + HTTP streams.","state":"playing","positionSecs":12.904,"durationSecs":7506.677,"queueIndex":0,"queueLength":1,"gaplessEnabled":false,"crossfadeEnabled":false,"bitPerfectActive":false,"currentUrl":"https://traffic.megaphone.fm/GLT2768068918.mp3","envelopeId":"podcast:feed-tgquzh:feed-tgquzh:ep-cfntkq","title":"#2524 - Rupert Lowe","artist":"The Joe Rogan Experience","album":"The Joe Rogan Experience","artworkUrl":"https://megaphone.imgix.net/podcasts/8e5bcebc-ca16-11ee-89f0-0fa0b9bdfc7c/image/7190613c58bad86913afb6991d842e2f.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"}
+07-08 23:05:56.752 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.753 V/Capacitor(31151): callback: 23869570, pluginId: BackgroundMedia, methodName: stopAudioRouteWatcher, methodData: {}
+07-08 23:05:56.756 V/Capacitor(31151): callback: 23869571, pluginId: NativeExoPlayback, methodName: setPlaybackSpeed, methodData: {"speed":1}
+07-08 23:05:56.756 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.757 V/Capacitor(31151): callback: 23869572, pluginId: BackgroundMedia, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:56.758 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.758 V/Capacitor(31151): callback: 23869573, pluginId: BackgroundMedia, methodName: startAudioRouteWatcher, methodData: {}
+07-08 23:05:56.760 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.760 V/Capacitor(31151): callback: 23869574, pluginId: BackgroundMedia, methodName: addListener, methodData: {"eventName":"audioRouteChange"}
+07-08 23:05:56.761 V/Capacitor(31151): callback: 23869575, pluginId: BackgroundMedia, methodName: getAudioOutputRoute, methodData: {}
+07-08 23:05:56.761 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.762 V/Capacitor(31151): callback: 23869576, pluginId: BackgroundMedia, methodName: removeListener, methodData: {"eventName":"audioRouteChange","callbackId":"23869560"}
+07-08 23:05:56.762 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.763 V/Capacitor(31151): callback: 23869577, pluginId: BackgroundMedia, methodName: startForeground, methodData: {}
+07-08 23:05:56.763 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.764 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.766 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:56.781 V/Capacitor(31151): callback: 23869578, pluginId: NativeExoPlayback, methodName: setWiredDacStabilityEnabled, methodData: {"enabled":true}
+07-08 23:05:56.785 V/Capacitor(31151): callback: 23869579, pluginId: BackgroundMedia, methodName: updatePlaybackState, methodData: {"isPlaying":true,"positionMs":2501391,"durationMs":7506677,"playbackRate":1,"revision":53}
+07-08 23:05:56.787 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"speed":1}
+07-08 23:05:56.788 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:56.788 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.788 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker","reason":"start"}
+07-08 23:05:56.788 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:56.788 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"route":"speaker"}
+07-08 23:05:56.788 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:56.789 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.790 V/Capacitor(31151): callback: 23869580, pluginId: NativeExoPlayback, methodName: setGaplessEnabled, methodData: {"enabled":false}
+07-08 23:05:56.790 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"wiredDacStabilityEnabled":true}
+07-08 23:05:56.791 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.795 I/Capacitor/Console(31151): File:  - Line 333 - Msg: undefined
+07-08 23:05:56.795 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"gaplessEnabled":false}
+07-08 23:05:56.795 V/Capacitor(31151): callback: 23869581, pluginId: NativeExoPlayback, methodName: setCrossfadeEnabled, methodData: {"enabled":false,"durationMs":2500,"gaplessDurationMs":600}
+07-08 23:05:56.795 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.797 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"crossfadeEnabled":false,"durationMs":2500}
+07-08 23:05:56.797 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.798 V/Capacitor(31151): callback: 23869582, pluginId: NativeExoPlayback, methodName: setBitPerfectEnabled, methodData: {"enabled":false}
+07-08 23:05:56.800 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"ok":true,"bitPerfectEnabled":false,"bitPerfectActive":false}
+07-08 23:05:56.925 I/Capacitor/Console(31151): File:  - Line 333 - Msg: {"uri":"https://rr3---sn-cu-nuoz.googlevideo.com/videoplayback?expire=1783569956&ei=xMlOatGpFo-Cp-oP-7-WyAU&ip=2a00%3A23c8%3A1736%3A1601%3A7409%3A4669%3A6d2f%3A3eff&id=o-AG7pTza7CgysMu2hTQQusBBDDd0VK3xEEuKFRSRSeKlZ&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=962&met=1783548356%2C&mh=j6&mm=31%2C29&mn=sn-cu-nuoz%2Csn-cu-ajted&ms=au%2Crdu&mv=m&mvi=3&pl=41&rms=au%2Cau&gcr=gb&initcwndbps=3681250&bui=ARmQxEURBxTj9c7c2Q2pkp4LEtb0oGQrh57RtvIWFVoacqBZSlk5qimh0BdM5jMivpseMOFo-vmftMw8&spc=SQ-umlEh8eg-4Ni8JsiFHHlVUpmLvivXHQVIQjSN9OV54zmT5yFYKIc_J3iSRbCiELI&vprv=1&svpuc=1&xtags=heaudio%3Dtrue&mime=video%2Fmp4&rqh=1&cnr=14&ratebypass=yes&dur=262.617&lmt=1705797519368544&mt=1783547844&fvip=1&fexp=51565115%2C51992867%2C52017147&c=ANDROID&txp=4530434&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cgcr%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cxtags%2Cmime%2Crqh%2Ccnr%2Cratebypass%2Cdur%2Clmt&sig=AHEqNM4wRgIhAO1t-xXAb93BRbck6F-PJnTBHAnfHOmtS4IscqSGKy_hAiEAvZXKnbtZLX2s6S7hEkRfPz8mnOJjMwHSNm81pgfYgbg%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIgYRGKBDVFeFouKRgA_nA2LszsN45C9Kwef-OIJoxXEmoCIQCdy5MMuEtxZb6UN38AG66cexTV-0OE34i5H6qZD2QvxA%3D%3D","bitrate":0,"format":"unknown"}
+07-08 23:05:56.925 V/Capacitor(31151): callback: 23869583, pluginId: YtDlpMobile, methodName: resolve, methodData: {"query":"The Weeknd Blinding Lights (Major Lazer Remix) [feat. Major Lazer]"}
+07-08 23:05:56.925 I/Capacitor/Console(31151): File: https://localhost/assets/tier34-client-Cl7SVO_u.js - Line 2 - Msg: [YtDlpMobile] resolve ok [object Object]
+07-08 23:05:56.926 I/Capacitor/Console(31151): File:  - Line 349 - Msg: [object Object]
+07-08 23:05:56.927 W/Capacitor/Console(31151): File: https://localhost/assets/index-Btnp8wRH.js - Line 2 - Msg: [Sandbox] Unhandled promise rejection: [object QuotaExceededError]
+07-08 23:05:56.927 E/Capacitor/Console(31151): File: https://localhost/assets/tier34-client-Cl7SVO_u.js - Line 2 - Msg: Uncaught (in promise) QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'sandbox_resolution_uri_cache_v1' exceeded the quota.

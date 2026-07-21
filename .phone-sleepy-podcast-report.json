@@ -1,0 +1,62 @@
+{
+  "timestamp": "2026-07-08T17:50:00.4974050+01:00",
+  "serial": "46349770",
+  "tracks": [
+    {
+      "artist": "Billie Eilish",
+      "track": "when the party's over",
+      "play": true,
+      "progress": true,
+      "tabStable": true
+    },
+    {
+      "artist": "Frank Ocean",
+      "track": "Pink + White",
+      "play": true,
+      "progress": true,
+      "tabStable": true
+    },
+    {
+      "artist": "Cigarettes After Sex",
+      "track": "Apocalypse",
+      "play": true,
+      "progress": true,
+      "tabStable": true
+    },
+    {
+      "artist": "Bon Iver",
+      "track": "Holocene",
+      "play": true,
+      "progress": true,
+      "tabStable": true
+    },
+    {
+      "artist": "Mazzy Star",
+      "track": "Fade Into You",
+      "play": true,
+      "progress": true,
+      "tabStable": true
+    }
+  ],
+  "podcasts": [
+    {
+      "query": "Joe Rogan Experience",
+      "pass": true
+    },
+    {
+      "query": "Wrestle Talk Podcast",
+      "pass": true
+    },
+    {
+      "query": "The Peter McCormack Show",
+      "pass": true
+    },
+    {
+      "query": "Jim Cornette Experience",
+      "pass": true
+    }
+  ],
+  "tracksPass": "5/5",
+  "podcastsPass": "4/4",
+  "noFatal": true
+}

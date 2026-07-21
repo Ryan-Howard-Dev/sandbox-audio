@@ -1,0 +1,53 @@
+﻿{
+    "timestamp":  "2026-07-20T15:31:56.5183863+07:00",
+    "serial":  "46349770",
+    "install":  "lastUpdateTime=2026-07-20 04:53:10",
+    "artist":  "21 Savage",
+    "album":  "american dream",
+    "minTracks":  10,
+    "minPlaylistTracks":  20,
+    "pocketMinutes":  0,
+    "results":  [
+                    {
+                        "label":  "album",
+                        "distinctWhileLocked":  [
+                                                    "Redrum"
+                                                ],
+                        "transitionsWhileLocked":  [
+
+                                                   ],
+                        "transitionLog":  [
+                                              {
+                                                  "atSec":  57,
+                                                  "source":  "metadata",
+                                                  "title":  "Redrum",
+                                                  "locked":  true
+                                              }
+                                          ],
+                        "orderOk":  true,
+                        "lockedSeconds":  37465,
+                        "pass":  false,
+                        "queueLengthBeforeLock":  0,
+                        "positionBeforeLock":  0,
+                        "queuePrimed":  0,
+                        "expectedTracks":  [
+                                               "Redrum",
+                                               "All Of Me",
+                                               "Sneaky",
+                                               "N.h.i.e.",
+                                               "Red Opps",
+                                               "Dangerous",
+                                               "Dark Days",
+                                               "Paperwork",
+                                               "Just Like Me",
+                                               "Ocean Eyes",
+                                               "Smokers Anthem",
+                                               "Redrum (Remix)",
+                                               "Shoulda Ran",
+                                               "Prove It"
+                                           ]
+                    }
+                ],
+    "pass":  false,
+    "verdict":  "FAIL"
+}

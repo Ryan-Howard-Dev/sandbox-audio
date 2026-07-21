@@ -1,0 +1,327 @@
+--------- beginning of system
+06-15 07:01:38.006   752  1107 W ActivityTaskManager: callingPackage for (uid=2000, pid=20451) has no WPC
+--------- beginning of main
+06-15 07:01:38.009   752  1107 V GrammaticalInflectionUtils: AttributionSource: AttributionSource { uid = 10218, packageName = null, attributionTag = null, token = android.os.Binder@39120d5, deviceId = 0, next = null } does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+06-15 07:01:38.010   752  1107 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_OVERRIDE
+06-15 07:01:38.010   752  1107 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_FULLSCREEN_OVERRIDE
+06-15 07:01:38.010   752  1107 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_RESIZEABLE_ACTIVITY_OVERRIDES
+06-15 07:01:38.010   752  1107 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_MIN_ASPECT_RATIO_OVERRIDE
+06-15 07:01:38.014  1128  1144 D KeyguardService: setOccluded(false)
+06-15 07:01:38.014  1128  1144 D KeyguardViewMediator: setOccluded(false)
+06-15 07:01:38.015  1128  1128 D KeyguardViewMediator: handleSetOccluded(false)
+06-15 07:01:38.015   752  1107 I ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=sandboxmusic://e2e/... flg=0x10000000 xflg=0x4 pkg=rd.sheepskin.sandboxmusic cmp=rd.sheepskin.sandboxmusic/.MainActivity} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION) result code=3
+06-15 07:01:38.015   567   745 I BpBinder: onLastStrongRef automatically unlinking death recipients: 
+06-15 07:01:38.017  1128  1128 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SET_OCCLUDED
+06-15 07:01:38.019 19390 19390 V Capacitor/AppPlugin: Notifying listeners for event pause
+06-15 07:01:38.019 19390 19390 D Capacitor/AppPlugin: No listeners found for event pause
+06-15 07:01:38.021 19390 19390 D Capacitor: App paused
+06-15 07:01:38.021  1128  1177 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity}, wasVisible=true
+06-15 07:01:38.021 19390 19390 V Capacitor/AppPlugin: Notifying listeners for event appUrlOpen
+06-15 07:01:38.022 19390 19390 D Capacitor/AppPlugin: Firing change: true
+06-15 07:01:38.022 19390 19390 V Capacitor/AppPlugin: Notifying listeners for event appStateChange
+06-15 07:01:38.022 19390 19390 D Capacitor/AppPlugin: No listeners found for event appStateChange
+06-15 07:01:38.022 19390 19390 V Capacitor/AppPlugin: Notifying listeners for event resume
+06-15 07:01:38.023 19390 19390 D Capacitor/AppPlugin: No listeners found for event resume
+06-15 07:01:38.023 19390 19390 D Capacitor: App resumed
+06-15 07:01:38.028   752  1107 W AS.AudioService: Audio Settings Permission Denial: setSpeakerphoneOn() from pid=19390, uid=10218
+06-15 07:01:38.035 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684086, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:38.035 19390 19464 V Capacitor: callback: 47684086, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:38.036 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"url":"sandboxmusic://e2e/navigate?tab=home"}
+06-15 07:01:38.037 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:38.040 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:38.051 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684087, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:38.051 19390 19464 V Capacitor: callback: 47684087, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:38.052 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:38.055 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:38.435 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684088, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:38.436 19390 19464 V Capacitor: callback: 47684088, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:38.436 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:38.439 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:38.451 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684089, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:38.451 19390 19464 V Capacitor: callback: 47684089, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:38.451 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:38.454 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:38.835 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684090, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:38.835 19390 19464 V Capacitor: callback: 47684090, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:38.836 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:38.837   752   979 D WifiClientModeImpl[7175556:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-50 TxLinkspeed=2 freq=2447 RxLinkSpeed=2
+06-15 07:01:38.838   752   979 D WifiDataStall: tx tput in kbps: 11000
+06-15 07:01:38.838   752   979 D WifiDataStall: rx tput in kbps: 11000
+06-15 07:01:38.838   752   979 V WifiConfigManager: Updating scan detail cache freq=2447 BSSID=00:13:10:85:fe:01 RSSI=-50 for "AndroidWifi"NONE
+06-15 07:01:38.839   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:38.839   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:38.839 19390 19390 I Capacitor/Console: File: https://localhost/assets/index-BrCkD7Bq.js - Line 521 - Msg: [SandboxE2E] AREA=navigation RESULT=PASS tab=home
+06-15 07:01:38.839   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:38.839   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:38.839   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:38.840   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:38.841   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:38.841   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:38.841 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:38.842   752   979 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1580130926 SSID: "AndroidWifi", BSSID: 00:13:10:85:fe:01, MAC: 02:15:b2:00:00:00, IP: /10.0.2.16, Security type: 0, Supplicant state: COMPLETED, Wi-Fi standard: legacy, RSSI: -50, Link speed: 2Mbps, Tx Link speed: 2Mbps, Max Supported Tx Link speed: 11Mbps, Rx Link speed: 2Mbps, Max Supported Rx Link speed: 11Mbps, Frequency: 2447MHz, Net ID: 0, Metered hint: false, score: 60, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"AndroidWifi"openMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+06-15 07:01:38.842   752   979 D WifiScoreCard: txRate: 13 txSpeed: 2
+06-15 07:01:38.842   752   979 D WifiScoreCard: network update SIGNAL_POLL "AndroidWifi" ID: 2047749917 RSSI -50 txSpeed 2
+06-15 07:01:38.842   752   979 D WifiClientModeImpl[7175556:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 1 0 "AndroidWifi" 00:13:10:85:fe:01 rssi=-50 f=2447 sc=60 link=2 tx=12.4, 0.0, 0.0 rx=16.9 bcn=0 [on:0 tx:0 rx:0 period:3005] from screen [on:0 period:688166] score=60
+06-15 07:01:38.851 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684091, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:38.852 19390 19464 V Capacitor: callback: 47684091, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:38.853 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:38.856 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:39.033 17832 17832 D wpa_supplicant: nl80211: Drv Event 64 (NL80211_CMD_NOTIFY_CQM) received for wlan0
+06-15 07:01:39.034 17832 17832 D wpa_supplicant: nl80211: Beacon loss event
+06-15 07:01:39.034 17832 17832 D wpa_supplicant: wlan0: Event BEACON_LOSS (53) received
+06-15 07:01:39.034 17832 17832 I wpa_supplicant: wlan0: CTRL-EVENT-BEACON-LOSS 
+06-15 07:01:39.235 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684092, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:39.235 19390 19464 V Capacitor: callback: 47684092, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:39.236 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:39.239 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:39.253 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684093, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:39.254 19390 19464 V Capacitor: callback: 47684093, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:39.255 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:39.258 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:39.638 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684094, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:39.638 19390 19464 V Capacitor: callback: 47684094, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:39.639 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:39.643 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+--------- beginning of kernel
+06-15 07:01:39.619     0     0 I logd    : logdr: UID=2000 GID=2000 PID=20454 n tail=16000 logMask=99 pid=0 start=0ns deadline=0ns
+06-15 07:01:39.652 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684095, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:39.653 19390 19464 V Capacitor: callback: 47684095, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:39.654 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:39.659 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:39.798   506 19850 W C2BqBuffer: last successful dequeue was 178194675 us ago, 14558 consecutive failures
+06-15 07:01:40.035 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684096, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:40.035 19390 19464 V Capacitor: callback: 47684096, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:40.035 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:40.040 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:40.051 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684097, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:40.051 19390 19464 V Capacitor: callback: 47684097, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:40.051 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:40.055 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:40.439 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684098, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:40.439 19390 19464 V Capacitor: callback: 47684098, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:40.440 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:40.443 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:40.455 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684099, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:40.455 19390 19464 V Capacitor: callback: 47684099, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:40.455 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:40.459 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:40.835 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684100, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:40.835 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:40.836 19390 19464 V Capacitor: callback: 47684100, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:40.840 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:40.851 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684101, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:40.851 19390 19464 V Capacitor: callback: 47684101, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:40.852 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:40.857 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:41.069     0     0 I logd    : logdr: UID=2000 GID=2000 PID=20457 n tail=12000 logMask=99 pid=0 start=0ns deadline=0ns
+06-15 07:01:41.240 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:41.241 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684102, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:41.241 19390 19464 V Capacitor: callback: 47684102, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:41.244 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:41.250 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684103, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:41.251 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:41.251 19390 19464 V Capacitor: callback: 47684103, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:41.255 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:41.286   752   913 W CpuMonitorService: Current CPU frequency (2584824) is greater than maximum CPU frequency (2) for policy ID (0). Skipping CPU frequency policy
+06-15 07:01:41.287   752   913 W CpuMonitorService: Current CPU frequency (3991718) is greater than maximum CPU frequency (2) for policy ID (1). Skipping CPU frequency policy
+06-15 07:01:41.287   752   913 W CpuMonitorService: Current CPU frequency (3930468) is greater than maximum CPU frequency (2) for policy ID (2). Skipping CPU frequency policy
+06-15 07:01:41.287   752   913 W CpuMonitorService: Current CPU frequency (3977057) is greater than maximum CPU frequency (2) for policy ID (3). Skipping CPU frequency policy
+06-15 07:01:41.634 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684104, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:41.635 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:41.635 19390 19464 V Capacitor: callback: 47684104, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:41.639 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:41.650 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684105, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:41.650 19390 19464 V Capacitor: callback: 47684105, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:41.651 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:41.655 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:41.684     0     0 I logd    : logdr: UID=2000 GID=2000 PID=20460 n tail=16000 logMask=99 pid=0 start=0ns deadline=0ns
+06-15 07:01:41.848   752   979 D WifiClientModeImpl[7175556:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-50 TxLinkspeed=1 freq=2447 RxLinkSpeed=2
+06-15 07:01:41.848   752   979 D WifiDataStall: tx tput in kbps: 11000
+06-15 07:01:41.848   752   979 D WifiDataStall: rx tput in kbps: 11000
+06-15 07:01:41.848   752   979 V WifiConfigManager: Updating scan detail cache freq=2447 BSSID=00:13:10:85:fe:01 RSSI=-50 for "AndroidWifi"NONE
+06-15 07:01:41.850   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:41.850   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:41.850   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:41.850   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:41.851   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:41.851   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:41.851   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:41.851   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:41.853   752   979 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1580130926 SSID: "AndroidWifi", BSSID: 00:13:10:85:fe:01, MAC: 02:15:b2:00:00:00, IP: /10.0.2.16, Security type: 0, Supplicant state: COMPLETED, Wi-Fi standard: legacy, RSSI: -50, Link speed: 1Mbps, Tx Link speed: 1Mbps, Max Supported Tx Link speed: 11Mbps, Rx Link speed: 2Mbps, Max Supported Rx Link speed: 11Mbps, Frequency: 2447MHz, Net ID: 0, Metered hint: false, score: 60, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"AndroidWifi"openMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+06-15 07:01:41.853   752   979 D WifiScoreCard: txRate: 5 txSpeed: 1
+06-15 07:01:41.853   752   979 D WifiScoreCard: network update SIGNAL_POLL "AndroidWifi" ID: 2047749917 RSSI -50 txSpeed 1
+06-15 07:01:41.854   752   979 D WifiClientModeImpl[7175556:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 1 0 "AndroidWifi" 00:13:10:85:fe:01 rssi=-50 f=2447 sc=60 link=1 tx=4.5, 0.0, 0.0 rx=6.2 bcn=0 [on:0 tx:0 rx:0 period:3012] from screen [on:0 period:691178] score=60
+06-15 07:01:42.038 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684106, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:42.038 19390 19464 V Capacitor: callback: 47684106, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:42.038 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:42.042 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:42.054 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684107, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:42.054 19390 19464 V Capacitor: callback: 47684107, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:42.054 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:42.058 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:42.175   752  1107 W ActivityTaskManager: callingPackage for (uid=2000, pid=20466) has no WPC
+06-15 07:01:42.176   752  1107 V GrammaticalInflectionUtils: AttributionSource: AttributionSource { uid = 10218, packageName = null, attributionTag = null, token = android.os.Binder@39120d5, deviceId = 0, next = null } does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+06-15 07:01:42.177   752  1107 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_OVERRIDE
+06-15 07:01:42.177   752  1107 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_FULLSCREEN_OVERRIDE
+06-15 07:01:42.177   752  1107 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_RESIZEABLE_ACTIVITY_OVERRIDES
+06-15 07:01:42.177   752  1107 W OptProp : Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_MIN_ASPECT_RATIO_OVERRIDE
+06-15 07:01:42.181   752  1107 I ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=sandboxmusic://e2e/... flg=0x10000000 xflg=0x4 pkg=rd.sheepskin.sandboxmusic cmp=rd.sheepskin.sandboxmusic/.MainActivity} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION) result code=3
+06-15 07:01:42.181  1128  2509 D KeyguardService: setOccluded(false)
+06-15 07:01:42.182  1128  2509 D KeyguardViewMediator: setOccluded(false)
+06-15 07:01:42.182  1128  1177 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{rd.sheepskin.sandboxmusic/rd.sheepskin.sandboxmusic.MainActivity}, wasVisible=true
+06-15 07:01:42.182  1128  1128 D KeyguardViewMediator: handleSetOccluded(false)
+06-15 07:01:42.185  1128  1128 D KeyguardViewMediator: KeyguardViewMediator queue processing message: SET_OCCLUDED
+06-15 07:01:42.185   567   745 I BpBinder: onLastStrongRef automatically unlinking death recipients: 
+06-15 07:01:42.193 19390 19390 V Capacitor/AppPlugin: Notifying listeners for event pause
+06-15 07:01:42.193 19390 19390 D Capacitor/AppPlugin: No listeners found for event pause
+06-15 07:01:42.193 19390 19390 D Capacitor: App paused
+06-15 07:01:42.194 19390 19390 V Capacitor/AppPlugin: Notifying listeners for event appUrlOpen
+06-15 07:01:42.194 19390 19390 D Capacitor/AppPlugin: Firing change: true
+06-15 07:01:42.194 19390 19390 V Capacitor/AppPlugin: Notifying listeners for event appStateChange
+06-15 07:01:42.194 19390 19390 D Capacitor/AppPlugin: No listeners found for event appStateChange
+06-15 07:01:42.194 19390 19390 V Capacitor/AppPlugin: Notifying listeners for event resume
+06-15 07:01:42.195 19390 19390 D Capacitor/AppPlugin: No listeners found for event resume
+06-15 07:01:42.195 19390 19390 D Capacitor: App resumed
+06-15 07:01:42.196   752  1107 W AS.AudioService: Audio Settings Permission Denial: setSpeakerphoneOn() from pid=19390, uid=10218
+06-15 07:01:42.202   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.203   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.203   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.203   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.204   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.206 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"url":"sandboxmusic://e2e/open-vinyl-settings"}
+06-15 07:01:42.206   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.206   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.206   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.207   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.207   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.207   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.208   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.208   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.208   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.210   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.210   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.210   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.211   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.211   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.211   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.213   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.213   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.213   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.214   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.214   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.214   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.214   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.214   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.215   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.215   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.215   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.215   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.216   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.217   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.218   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.218   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.218   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.219   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.219   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.219 19390 19427 D Capacitor: Handling local request: https://localhost/icon.svg
+06-15 07:01:42.220   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.221   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.221   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.222   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.222   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.222   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.222   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.223   752   794 W IPCThreadState: Sending oneway calls to frozen process.
+06-15 07:01:42.246   490 20469 I resolv  : GetAddrInfoHandler::run: {106 106 106 983146 10218 0}
+06-15 07:01:42.247   490 20470 I resolv  : res_nmkquery: (QUERY, IN, AAAA)
+06-15 07:01:42.250   490 20471 I resolv  : res_nmkquery: (QUERY, IN, A)
+06-15 07:01:42.252   490 20470 I resolv  : resolv_cache_lookup: FOUND IN CACHE entry=0x7d8d16116430
+06-15 07:01:42.252   490 20470 I resolv  : doQuery: rcode=0, ancount=1, return value=63
+06-15 07:01:42.438 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684108, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:42.438 19390 19464 V Capacitor: callback: 47684108, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:42.451 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684109, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:42.452 19390 19464 V Capacitor: callback: 47684109, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:42.579   490 20471 I resolv  : res_nsend: used send_dg 51 terrno: 0
+06-15 07:01:42.579   490 20471 I resolv  : doQuery: rcode=0, ancount=1, return value=51
+06-15 07:01:42.638 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:42.639 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:42.639 19390 19390 I Capacitor/Console: File: https://localhost/assets/index-BrCkD7Bq.js - Line 521 - Msg: [SandboxE2E] AREA=vinyl-settings-open RESULT=PASS open=true mode=album-cover
+06-15 07:01:42.816 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:42.817 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:42.839 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:42.841 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684110, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:42.841 19390 19464 V Capacitor: callback: 47684110, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:42.849 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:42.852 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684111, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:42.852 19390 19464 V Capacitor: callback: 47684111, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:42.854 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:42.857 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:43.017   752   794 E BLASTSyncEngine: WM sent Transaction (#451, Transition-OPEN, tx=3229815410671) to organizer, but never received commit callback. Application ANR likely to follow.
+06-15 07:01:43.235 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684112, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:43.235 19390 19464 V Capacitor: callback: 47684112, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:43.237 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:43.242 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:43.255 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:43.258 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684113, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:43.259 19390 19464 V Capacitor: callback: 47684113, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:43.274 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:43.636 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684114, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:43.636 19390 19464 V Capacitor: callback: 47684114, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:43.637 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:43.641 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:43.654 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:43.654 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684115, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:43.654 19390 19464 V Capacitor: callback: 47684115, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:43.658 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:43.755     0     0 I logd    : logdr: UID=2000 GID=2000 PID=20472 n tail=16000 logMask=99 pid=0 start=0ns deadline=0ns
+06-15 07:01:44.038 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684116, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:44.039 19390 19464 V Capacitor: callback: 47684116, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:44.039 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:44.042 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:44.052 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684117, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:44.052 19390 19464 V Capacitor: callback: 47684117, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:44.052 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:44.057 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:44.435 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684118, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:44.436 19390 19464 V Capacitor: callback: 47684118, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:44.436 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:44.441 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:44.451 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684119, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:44.453 19390 19464 V Capacitor: callback: 47684119, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:44.453 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:44.456 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:44.798   506 19850 W C2BqBuffer: last successful dequeue was 183194689 us ago, 14959 consecutive failures
+06-15 07:01:44.835 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684120, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:44.835 19390 19464 V Capacitor: callback: 47684120, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:44.835 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:44.839 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:44.850 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684121, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:44.851 19390 19464 V Capacitor: callback: 47684121, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:44.852 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:44.857 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:44.857   752   979 D WifiClientModeImpl[7175556:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-50 TxLinkspeed=1 freq=2447 RxLinkSpeed=2
+06-15 07:01:44.857   752   979 D WifiDataStall: tx tput in kbps: 11000
+06-15 07:01:44.858   752   979 D WifiDataStall: rx tput in kbps: 11000
+06-15 07:01:44.858   752   979 V WifiConfigManager: Updating scan detail cache freq=2447 BSSID=00:13:10:85:fe:01 RSSI=-50 for "AndroidWifi"NONE
+06-15 07:01:44.858   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:44.858   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:44.859   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:44.859   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:44.859   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:44.859   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:44.860   752   979 D WifiThroughputPredictor:  utilization (LLS) 80 isBluetoothConnected: false final utilization: 80
+06-15 07:01:44.860   752   979 D WifiThroughputPredictor:  BW: 0 RSSI: -50 Nss: 1 Mode: 1 symDur: 4000 snrDb 30 bitPerTone: 4500 rate: 54 throughput: 11
+06-15 07:01:44.861   752   979 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1580130926 SSID: "AndroidWifi", BSSID: 00:13:10:85:fe:01, MAC: 02:15:b2:00:00:00, IP: /10.0.2.16, Security type: 0, Supplicant state: COMPLETED, Wi-Fi standard: legacy, RSSI: -50, Link speed: 1Mbps, Tx Link speed: 1Mbps, Max Supported Tx Link speed: 11Mbps, Rx Link speed: 2Mbps, Max Supported Rx Link speed: 11Mbps, Frequency: 2447MHz, Net ID: 0, Metered hint: false, score: 60, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"AndroidWifi"openMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+06-15 07:01:44.861   752   979 D WifiScoreCard: txRate: 5 txSpeed: 1
+06-15 07:01:44.861   752   979 D WifiScoreCard: network update SIGNAL_POLL "AndroidWifi" ID: 2047749917 RSSI -50 txSpeed 1
+06-15 07:01:44.862   752   979 D WifiClientModeImpl[7175556:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 1 0 "AndroidWifi" 00:13:10:85:fe:01 rssi=-50 f=2447 sc=60 link=1 tx=4.4, 0.0, 0.0 rx=6.4 bcn=0 [on:0 tx:0 rx:0 period:3008] from screen [on:0 period:694186] score=60
+06-15 07:01:45.235 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684122, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:45.236 19390 19464 V Capacitor: callback: 47684122, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:45.237 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:45.242 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:45.217     0     0 I logd    : logdr: UID=2000 GID=2000 PID=20475 n tail=12000 logMask=99 pid=0 start=0ns deadline=0ns
+06-15 07:01:45.259 19390 19464 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 47684123, pluginId: NativeExoPlayback, methodName: getStatus
+06-15 07:01:45.259 19390 19464 V Capacitor: callback: 47684123, pluginId: NativeExoPlayback, methodName: getStatus, methodData: {}
+06-15 07:01:45.261 19390 19390 I Capacitor/Console: File:  - Line 349 - Msg: [object Object]
+06-15 07:01:45.265 19390 19390 I Capacitor/Console: File:  - Line 333 - Msg: {"available":true,"wired":true,"message":"ExoPlayer gapless queue — content:// locker bridge + HTTP streams.","state":"paused","positionSecs":0.755,"durationSecs":147.4,"queueIndex":0,"queueLength":1,"gaplessEnabled":true,"currentUrl":"file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/ivCY3Ec4iaU.mp4","envelopeId":"e2e-mobile-1781481502329","title":"Follow God","artist":"Kanye West"}
+06-15 07:01:45.292     0     0 I logd    : logdr: UID=2000 GID=2000 PID=20478 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns

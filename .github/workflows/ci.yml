@@ -1,0 +1,281 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  typecheck:
+    name: Lint & typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck strict (playback/locker)
+        run: npx tsc -p tsconfig.strict.json --noEmit
+      - name: Lint (npm run lint)
+        run: npm run lint
+      - name: Unit tests (vitest)
+        run: npm run test
+      - name: Typecheck (tsc --noEmit)
+        run: npx tsc --noEmit
+
+  web:
+    name: Build web (PWA + server)
+    needs: [typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build client (Vite PWA)
+        run: |
+          set -euo pipefail
+          npm run build:client
+          node -e "
+          const fs=require('fs');
+          const sw=fs.readFileSync('dist/sw.js','utf8');
+          const m=sw.match(/precacheAndRoute\(\[(.*?)\]/s);
+          if(!m) throw new Error('sw.js missing precache manifest');
+          const entries=JSON.parse('['+m[1]+']');
+          const total=entries.reduce((n,e)=>n+(e.size||0),0);
+          const max=Math.max(...entries.map(e=>e.size||0));
+          console.log('PWA precache:', entries.length, 'entries', (total/1024/1024).toFixed(2), 'MiB, max', (max/1024).toFixed(0), 'KiB');
+          if(total>3.5*1024*1024) throw new Error('PWA precache exceeds 3.5 MiB budget');
+          if(max>2.8*1024*1024) throw new Error('Single precache chunk exceeds 2.8 MiB');
+          "
+          echo "PASS: build:client (Vite production bundle)"
+      - name: Bundle production server
+        run: |
+          set -euo pipefail
+          npx esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs
+          echo "PASS: production server bundle"
+      - name: Upload web artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: |
+            dist/
+            !dist/**/*.map
+
+  tauri-linux:
+    name: Build Tauri (Linux)
+    needs: [typecheck]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            patchelf libssl-dev
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate Tauri icons
+        run: node scripts/generate-tauri-icons.mjs
+      - name: Build desktop (Tauri)
+        run: |
+          set -euo pipefail
+          npm run build:desktop
+          echo "PASS: build:desktop (Tauri Linux)"
+      - name: Upload Tauri Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-linux
+          path: |
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/appimage/*.AppImage
+
+  tauri-windows:
+    name: Build Tauri (Windows)
+    needs: [typecheck]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate Tauri icons
+        run: node scripts/generate-tauri-icons.mjs
+      - name: Build desktop (Tauri)
+        run: npm run build:desktop
+      - name: Upload Tauri Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-windows
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
+
+  android:
+    name: Build Android APK (debug)
+    needs: [typecheck, android-playback-e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm ci
+      - name: Sync Capacitor Android project
+        run: |
+          set -euo pipefail
+          npm run build:android
+          echo "PASS: build:android (client + cap sync)"
+      - name: Assemble debug APK
+        working-directory: android
+        run: |
+          set -euo pipefail
+          ./gradlew assembleDebug --no-daemon
+          echo "PASS: assembleDebug (Android debug APK)"
+      - name: Upload Android debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+  android-release:
+    name: Build Android APK (F-Droid parity)
+    needs: [typecheck, android-playback-e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: F-Droid prebuild + unsigned release APK
+        run: |
+          set -euo pipefail
+          npm run fdroid:local
+          echo "PASS: fdroid:local (unsigned release APK — F-Droid parity)"
+      - name: Package release APKs
+        run: node scripts/android-package-release-apks.mjs
+      - name: Upload unsigned release APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-unsigned
+          path: release-android/
+
+  android-smoke-e2e:
+    name: Android smoke E2E
+    needs: [typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm ci
+      - name: Smoke E2E on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: |
+            npm run build:android:apk
+            chmod +x scripts/android-smoke-e2e.sh
+            SKIP_BUILD=1 scripts/android-smoke-e2e.sh
+
+  android-playback-e2e:
+    name: Android playback E2E (gate)
+    needs: [typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm ci
+      - name: Playback E2E on emulator (play spine + progress)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: |
+            npm run build:android:apk
+            chmod +x scripts/android-playback-e2e.sh
+            SKIP_BUILD=1 scripts/android-playback-e2e.sh
+      - name: Upload playback E2E report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-playback-e2e-report
+          path: .android-playback-e2e-report.txt

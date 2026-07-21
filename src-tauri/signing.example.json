@@ -1,0 +1,16 @@
+{
+  "_comment": "Merge the windows block below into tauri.conf.json bundle.windows after obtaining an Authenticode certificate. Do not commit private keys or passwords.",
+  "windows": {
+    "certificateThumbprint": "ABCDEF1234567890ABCDEF1234567890ABCDEF12",
+    "digestAlgorithm": "sha256",
+    "timestampUrl": "http://timestamp.digicert.com"
+  },
+  "_steps": [
+    "Purchase or create a code-signing certificate (EV or standard Authenticode for Windows).",
+    "Install the cert in Current User > Personal or Local Machine > Personal certificate store.",
+    "List thumbprints: Get-ChildItem Cert:\\CurrentUser\\My | Format-List Subject, Thumbprint",
+    "Set certificateThumbprint to the 40-char hex thumbprint (no spaces).",
+    "Set timestampUrl to your CA's RFC 3161 timestamp server (DigiCert example above).",
+    "Rebuild: npm run build:tauri — Tauri signs MSI/NSIS during bundle."
+  ]
+}

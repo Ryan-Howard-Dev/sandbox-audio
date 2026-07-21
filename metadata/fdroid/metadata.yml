@@ -1,0 +1,71 @@
+# Template for fdroiddata: metadata/rd.sheepskin.sandboxmusic.yml
+# Copy into your fdroiddata MR. F-Droid builds from source tags and signs with the F-Droid key.
+# Maintainer release keystore (android/keystore.properties) is NOT required for standard submission.
+ApplicationId: rd.sheepskin.sandboxmusic
+
+Categories:
+  - Multimedia
+License: MIT
+SourceCode: https://github.com/SheepSkinRD/sandbox-music
+IssueTracker: https://github.com/SheepSkinRD/sandbox-music/issues
+Changelog: https://github.com/SheepSkinRD/sandbox-music/releases
+WebSite: https://ssrd.app
+
+AutoName: Sandbox Music
+Name: Sandbox Music
+Summary: Self-hosted music locker and discovery console
+Description: |-
+  Sandbox Music is an offline-first music locker, catalog explorer,
+  and DJ console shell. Import local audio, browse charts, manage playlists,
+  and optionally connect a Tier 3/4 backend for extended search and playback.
+
+  Core locker playback works with local files. Catalog metadata and artist images
+  use network services (iTunes Search API, MusicBrainz, Cover Art Archive,
+  TheAudioDB). Many ecosystem features (Feed, acquire, Connect, full-stream
+  playback, DLNA) require a self-hosted Tier 3/4 backend you operate. That
+  backend uses yt-dlp against YouTube and similar platforms for acquire, podcast,
+  and extended search paths. Air-Gap Mode blocks outbound client requests when
+  enabled in Settings.
+
+  Android builds include Google Cast (Play services) for LAN casting to TVs and
+  receivers. Cast and catalog features require network access; locker playback
+  does not.
+
+  Application ID: rd.sheepskin.sandboxmusic
+
+AntiFeatures:
+  - Network
+  - NonFreeNet
+  - NonFreeDep
+  - TetheredNet
+
+RepoType: git
+Repo: https://github.com/SheepSkinRD/sandbox-music.git
+
+Builds:
+  - versionName: '1.0.0'
+    versionCode: 1
+    commit: v1.0.0
+    # Bump versionCode/versionName with android/app/build.gradle before each F-Droid release.
+    subdir: android
+    gradle:
+      - yes
+    prebuild:
+      - cd ..
+      - npm ci
+      - npm run build:client
+      - npx cap sync android
+    scandelete:
+      - node_modules
+      - android/.gradle
+      - dist
+    build:
+      - ./gradlew assembleRelease
+
+# Reproducible build: see docs/fdroid.md and metadata/fdroid/README.md
+# Local verify: npm run fdroid:local
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+$
+CurrentVersion: '1.0.0'
+CurrentVersionCode: 1

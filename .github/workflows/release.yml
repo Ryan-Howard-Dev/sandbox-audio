@@ -1,0 +1,316 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  typecheck:
+    name: Lint & typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint (npm run lint)
+        run: npm run lint
+      - name: Unit tests (vitest)
+        run: npm run test
+      - name: Typecheck (tsc --noEmit)
+        run: npx tsc --noEmit
+
+  android-smoke-e2e:
+    name: Android smoke E2E
+    needs: [typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm ci
+      - name: Smoke E2E on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: |
+            npm run build:android:apk
+            chmod +x scripts/android-smoke-e2e.sh
+            SKIP_BUILD=1 scripts/android-smoke-e2e.sh
+
+  android-playback-e2e:
+    name: Android playback E2E (release gate)
+    needs: [typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm ci
+      - name: Playback E2E on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: |
+            npm run build:android:apk
+            chmod +x scripts/android-playback-e2e.sh
+            SKIP_BUILD=1 scripts/android-playback-e2e.sh
+
+  android-fdroid-verify:
+    name: Android F-Droid build verify
+    needs: [typecheck, android-playback-e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: F-Droid prebuild + unsigned release APK
+        run: |
+          set -euo pipefail
+          npm run fdroid:local
+          echo "PASS: fdroid:local (F-Droid parity build)"
+      - name: Package unsigned release APKs
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: node scripts/android-package-release-apks.mjs
+      - name: Upload F-Droid verify APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-fdroid-verify
+          path: release-android/
+
+  build-web:
+    name: Web bundle
+    needs: [typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build client (Vite PWA)
+        run: |
+          set -euo pipefail
+          npm run build:client
+          echo "PASS: build:client (Vite production bundle)"
+      - name: Bundle production server
+        run: |
+          set -euo pipefail
+          npx esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs
+          echo "PASS: production server bundle"
+      - name: Package web tarball
+        run: tar -czf sovereign-music-console-web.tar.gz dist
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: sovereign-music-console-web.tar.gz
+
+  build-tauri-linux:
+    name: Tauri Linux
+    needs: [typecheck]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            patchelf libssl-dev
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate Tauri icons
+        run: node scripts/generate-tauri-icons.mjs
+      - name: Build desktop (Tauri)
+        run: |
+          set -euo pipefail
+          npm run build:desktop
+          echo "PASS: build:desktop (Tauri Linux)"
+      - name: Upload Tauri Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-linux
+          path: |
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/appimage/*.AppImage
+
+  build-tauri-windows:
+    name: Tauri Windows
+    needs: [typecheck]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate Tauri icons
+        run: node scripts/generate-tauri-icons.mjs
+      - name: Build desktop (Tauri)
+        run: npm run build:desktop
+      - name: Upload Tauri Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-windows
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
+
+  android-signed-release:
+    name: Android signed release APKs
+    needs: [typecheck, android-playback-e2e, android-fdroid-verify]
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      RELEASE_VERSION: ${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm ci
+      - name: Decode release keystore
+        run: npm run android:ci:keystore
+      - name: F-Droid prebuild (client + cap sync)
+        run: |
+          set -euo pipefail
+          npm run build:client
+          npx cap sync android
+      - name: Assemble signed release APKs
+        working-directory: android
+        run: |
+          set -euo pipefail
+          ./gradlew assembleRelease --no-daemon
+          echo "PASS: assembleRelease (signed per-ABI APKs)"
+      - name: Verify APKs are signed
+        run: |
+          set -euo pipefail
+          UNSIGNED=$(find android/app/build/outputs/apk/release -name '*-unsigned.apk' 2>/dev/null | wc -l)
+          if [ "$UNSIGNED" -gt 0 ]; then
+            echo "::error::Release APKs are unsigned — check ANDROID_* secrets (docs/android-release.md)"
+            find android/app/build/outputs/apk/release -name '*.apk' -ls
+            exit 1
+          fi
+          SIGNED=$(find android/app/build/outputs/apk/release -name 'app-*-release.apk' | wc -l)
+          if [ "$SIGNED" -lt 1 ]; then
+            echo "::error::No signed release APKs found"
+            exit 1
+          fi
+          echo "PASS: $SIGNED signed release APK(s)"
+      - name: Package release APKs
+        run: node scripts/android-package-release-apks.mjs
+      - name: Upload signed Android release APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: release-android/
+
+  publish:
+    name: Publish GitHub Release
+    needs:
+      - typecheck
+      - build-web
+      - build-tauri-linux
+      - build-tauri-windows
+      - android-signed-release
+      - android-playback-e2e
+      - android-fdroid-verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,28 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Tauri
+src-tauri/target/
+
+# Android / Capacitor
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/keystore.properties
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# PWA dev artifacts
+dev-dist/
+
+# Tier 3/4 locker blob storage
+tier34-server/storage/
