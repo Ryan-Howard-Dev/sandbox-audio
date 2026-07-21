@@ -50,7 +50,7 @@ Inventory scan performed **2026-07-21** for workspace `C:\Users\RH\Downloads\sov
 | `.idea/**` | IDE-local settings |
 | `.jdk21/**` | Local JDK install cache |
 | `proof-screenshots/**`, `proof-oneplus-46349770/**` | Manual QA captures and log dumps; not architectural docs |
-| `_apk_check/**`, `_readonly_locker_check/**` | Ad-hoc APK/locker investigation scratch |
+| `_apk_check/**` | Ad-hoc APK investigation scratch |
 | `node_modules/**/README.md` and similar | Vendor documentation; out of project doc inventory |
 | Duplicate `README.md` under `dist/`, `android/.../assets/`, `src-tauri/target/` | Build copies of `public/addons/record-player/README.md` |
 | Full Java/Kotlin source walk | Pass 1 scope: Gradle dependency declarations only for Android |

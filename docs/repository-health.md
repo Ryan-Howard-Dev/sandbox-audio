@@ -79,7 +79,7 @@ From `repository-map.md` (Pass 1):
 | `src-tauri/target/` | Dead (generated) |
 | `.idea/`, `.jdk21/` | Dead (local) |
 | `proof-screenshots/`, `proof-oneplus-46349770/` | Experimental — QA artifacts |
-| `_apk_check/`, `_readonly_locker_check/` | Experimental — investigation scratch |
+| `_apk_check/` | Experimental — investigation scratch |
 | `STATUS.md` | Deprecated — redirects to CHANGELOG, CODEBASE_HEALTH, CHRONICLE |
 
 ---

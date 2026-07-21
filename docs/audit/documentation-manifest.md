@@ -186,7 +186,7 @@ These are not standalone markdown files but carry operator-facing documentation 
 | `dist/**`, `android/app/build/**`, `src-tauri/target/**` | Build output; may contain copied README |
 | `android/app/src/main/assets/public/**` | Capacitor-synced web build |
 | `proof-screenshots/**`, `proof-oneplus-46349770/**` | QA artifacts (screenshots, logcat) |
-| `_apk_check/**`, `_readonly_locker_check/**` | Investigation scratch outputs |
+| `_apk_check/**` | Investigation scratch outputs |
 
 ---
 
