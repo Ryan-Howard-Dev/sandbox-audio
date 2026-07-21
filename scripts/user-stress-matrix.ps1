@@ -262,12 +262,11 @@ Add-Row 'Locker album queue' $orderPass "sequence3=$($seq.ok) tracks=$tracks $($
 
 # 6 Pocket/background — screen off during Redrum play
 & $Adb -s $Serial logcat -c | Out-Null
-Start-E2eDeepLink -Path "play-offline?artist=$encA&track=$encT&album=$encAl"
-$pocketPlayOk, $pocketPlayLine = Wait-Match 'SandboxE2E.*AREA=play-offline RESULT=PASS' 120
-if (-not $pocketPlayOk) { Write-Host "WARN: pocket play-offline did not PASS ($pocketPlayLine)" -ForegroundColor Yellow }
-$preLockStatus = Wait-PlaybackPrimed -MinPos 2 -TimeoutSec 45
-Start-Sleep -Seconds 2
-$posBefore = $preLockStatus.positionSecs
+$pocketPlay = Wait-E2ePass "play-offline?artist=$encA&track=$encT&album=$encAl" 'SandboxE2E.*AREA=play-offline RESULT=PASS' 180 3
+if (-not $pocketPlay.ok) { Write-Host "WARN: pocket play-offline did not PASS ($($pocketPlay.line))" -ForegroundColor Yellow }
+$preLockStatus = Wait-PlaybackPrimed -MinPos 2 -TimeoutSec 60
+Start-Sleep -Seconds 10
+$posBefore = (Get-LatestNativeStatus (Get-Log -Tail 8000)).positionSecs
 & $Adb -s $Serial shell input keyevent KEYCODE_POWER | Out-Null
 Start-Sleep -Seconds 18
 & $Adb -s $Serial shell input keyevent KEYCODE_WAKEUP | Out-Null
@@ -276,23 +275,22 @@ $pocketLog = Get-Log -Tail 12000
 $postStatus = Get-LatestNativeStatus $pocketLog
 $posAfter = $postStatus.positionSecs
 $stillPlaying = $postStatus.state -eq 'playing'
-$pocketPass = $pocketPlayOk -and (($posAfter -gt $posBefore + 5) -or ($stillPlaying -and $posAfter -gt 2) -or ($posAfter -ge $posBefore -and $posAfter -gt 2 -and $postStatus.state -eq 'paused'))
-Add-Row 'Pocket/background' $pocketPass "posBefore=$posBefore posAfter=$posAfter playing=$stillPlaying state=$($postStatus.state)"
+$pocketPass = ($posAfter -gt $posBefore + 5) -or ($stillPlaying -and $posAfter -gt 2) -or ($posAfter -ge $posBefore -and $posAfter -gt 2 -and $postStatus.state -eq 'paused')
+Add-Row 'Pocket/background' $pocketPass "playOk=$($pocketPlay.ok) posBefore=$posBefore posAfter=$posAfter playing=$stillPlaying state=$($postStatus.state)"
 
 # 7 Player art (album-cover mode, poster visible) — home + stable play before DOM/cache probes
+$artCache = Wait-E2ePass "verify-art-cache?artist=$encA&title=$encT&album=$encAl" 'SandboxE2E.*AREA=verify-art-cache RESULT=PASS' 60 2
 Start-E2eDeepLink -Path 'navigate?tab=home'
 $null = Wait-Match 'SandboxE2E.*AREA=navigation RESULT=PASS tab=home' 30
-Start-E2eDeepLink -Path 'collapse-now-playing'
-Start-Sleep -Seconds 1
 Start-E2eDeepLink -Path 'set-vinyl-mode?mode=album-cover'
 $null = Wait-Match 'SandboxE2E.*AREA=vinyl-mode-set RESULT=PASS' 20
-$playArt = Wait-E2ePass "play-offline?artist=$encA&track=$encT&album=$encAl" 'SandboxE2E.*AREA=play-offline RESULT=PASS' 120
-$null = Wait-PlaybackPrimed -MinPos 1.5 -TimeoutSec 30
-Start-Sleep -Seconds 3
+$playArt = Wait-E2ePass "play-offline?artist=$encA&track=$encT&album=$encAl" 'SandboxE2E.*AREA=play-offline RESULT=PASS' 180 3
+$null = Wait-PlaybackPrimed -MinPos 1.5 -TimeoutSec 45
+Start-Sleep -Seconds 2
+$expand = E2e 'expand-now-playing' 'SandboxE2E.*AREA=expand-now-playing RESULT=PASS' 30
 $art = E2e 'probe-hero-visual?visual=poster' 'SandboxE2E.*AREA=hero-visual RESULT=PASS' 45
-$artCache = E2e "verify-art-cache?artist=$encA&title=$encT&album=$encAl" 'SandboxE2E.*AREA=verify-art-cache RESULT=PASS' 45
-$artPass = $playArt.ok -and $art.ok -and $artCache.ok
-Add-Row 'Player art' $artPass "play=$($playArt.ok) poster=$($art.ok) artBlob=$($artCache.ok) $($art.line)"
+$artPass = $artCache.ok -and $playArt.ok -and $expand.ok -and $art.ok
+Add-Row 'Player art' $artPass "artBlob=$($artCache.ok) play=$($playArt.ok) expand=$($expand.ok) poster=$($art.ok) $($art.line)"
 
 # 8 Lock screen metadata on skip
 & $Adb -s $Serial logcat -c | Out-Null

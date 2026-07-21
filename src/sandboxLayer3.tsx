@@ -843,7 +843,7 @@ export default function SandboxShell() {
   }, []);
 
   const handleThumbUp = useCallback(() => {
-    const env = audio.envelope ?? sessionEnvelopeRef.current;
+    const env = audio.envelope ?? audioEnvelopeRef.current ?? sessionEnvelopeRef.current;
     if (!env?.envelopeId?.trim()) return;
     if (audio.provider) {
       searchFeedback.update(audio.provider, true, 0);
@@ -867,7 +867,7 @@ export default function SandboxShell() {
   }, [audio.envelope, audio.provider]);
 
   const handleThumbDown = useCallback(() => {
-    const env = audio.envelope ?? sessionEnvelopeRef.current;
+    const env = audio.envelope ?? audioEnvelopeRef.current ?? sessionEnvelopeRef.current;
     if (!env?.envelopeId?.trim()) return;
     if (audio.provider) {
       searchFeedback.update(audio.provider, false, 5000);
@@ -4879,13 +4879,13 @@ export default function SandboxShell() {
         };
       },
       thumbUpCurrent: () => {
-        const env = audio.envelope ?? sessionEnvelopeRef.current;
+        const env = audio.envelope ?? audioEnvelopeRef.current ?? sessionEnvelopeRef.current;
         if (!env?.envelopeId?.trim()) return false;
         handleThumbUp();
         return true;
       },
       thumbDownCurrent: () => {
-        const env = audio.envelope ?? sessionEnvelopeRef.current;
+        const env = audio.envelope ?? audioEnvelopeRef.current ?? sessionEnvelopeRef.current;
         if (!env?.envelopeId?.trim()) return false;
         handleThumbDown();
         return true;
@@ -5006,12 +5006,18 @@ export default function SandboxShell() {
       playLockerTrack: async (artistName, trackTitle, albumTitle) => {
         setHomeAwaitingUserResume(false);
         const snapshot = getLockerEntriesSnapshot() ?? [];
-        let entry = await findPlayableLockerEntryForTrack(
-          trackTitle,
-          artistName,
-          albumTitle,
-          snapshot,
-        );
+        let entry =
+          (albumTitle?.trim()
+            ? findLockerEntryForTrack(trackTitle, artistName, albumTitle, snapshot)
+            : undefined) ?? null;
+        if (!entry) {
+          entry = await findPlayableLockerEntryForTrack(
+            trackTitle,
+            artistName,
+            albumTitle,
+            snapshot,
+          );
+        }
         if (!entry) {
           entry =
             findLockerEntryForTrackIncludingHollow(

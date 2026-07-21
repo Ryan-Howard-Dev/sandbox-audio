@@ -118,6 +118,11 @@ public class BackgroundMediaPlugin extends Plugin {
     @PluginMethod
     public void updateMetadata(PluginCall call) {
         Long revision = call.getLong("revision", System.currentTimeMillis());
+        String title = call.getString("title", "");
+        android.util.Log.i(
+            "MediaPlaybackFGS",
+            "bridge metadata rev=" + revision + " title=" + title
+        );
         MediaPlaybackForegroundService.updateMetadata(
             call.getString("title", ""),
             call.getString("artist", ""),
