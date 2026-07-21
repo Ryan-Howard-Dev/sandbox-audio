@@ -31,6 +31,10 @@ vi.mock('./lockerStorage', () => ({
   getLockerAudioBlob: vi.fn(async () => new Blob(['audio-bytes'], { type: 'audio/mpeg' })),
 }));
 
+vi.mock('./bootInteractivity', () => ({
+  isBootUiInteractive: vi.fn(() => true),
+}));
+
 vi.mock('./tier34/client', () => ({
   getTier34BaseUrl: vi.fn(() => 'http://192.168.1.10:3001'),
   appendSandboxClientQuery: vi.fn((url: string) => `${url}?sb_client=test`),

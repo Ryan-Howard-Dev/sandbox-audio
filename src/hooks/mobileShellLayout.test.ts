@@ -10,6 +10,18 @@ vi.mock('../tvDetection', () => ({
   isAndroidTabletNative: vi.fn(() => false),
 }));
 
+vi.mock('@capacitor/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@capacitor/core')>();
+  return {
+    ...actual,
+    Capacitor: {
+      ...actual.Capacitor,
+      getPlatform: vi.fn(() => 'web'),
+    },
+  };
+});
+
+import { Capacitor } from '@capacitor/core';
 import { isCapacitorNative, isTauri } from '../platformEnv';
 import {
   MOBILE_SHELL_MAX_WIDTH_PX,
@@ -56,6 +68,7 @@ describe('mobileShellLayout', () => {
   beforeEach(() => {
     vi.mocked(isTauri).mockReturnValue(false);
     vi.mocked(isCapacitorNative).mockReturnValue(false);
+    vi.mocked(Capacitor.getPlatform).mockReturnValue('web');
     vi.unstubAllGlobals();
     stubWindow({ matchMediaMatches: false });
   });
@@ -95,6 +108,7 @@ describe('mobileShellLayout', () => {
 
   it('keeps phone shell in native landscape when smallest width stays phone-sized', () => {
     vi.mocked(isCapacitorNative).mockReturnValue(true);
+    vi.mocked(Capacitor.getPlatform).mockReturnValue('android');
     stubWindow({ innerWidth: 915, innerHeight: 412 });
     expect(isTabletViewport()).toBe(false);
     expect(usesMobileShellLayout()).toBe(true);

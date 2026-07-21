@@ -36,6 +36,7 @@ vi.mock('@capacitor/core', async (importOriginal) => {
 
 vi.mock('./lockerStorage', () => ({
   getLockerEntries: vi.fn(async () => []),
+  getLockerEntriesSnapshot: vi.fn(() => []),
   saveLockerBlob: vi.fn(async (_blob: Blob, meta: { title: string; artist?: string; [key: string]: unknown }) => ({
     id: 'locker-test-1',
     title: meta.title,
@@ -45,13 +46,28 @@ vi.mock('./lockerStorage', () => ({
     url: 'blob:test',
     addedAt: Date.now(),
   })),
+  saveLockerBlobFromNativeFile: vi.fn(async (_uri: string, meta: { title: string; artist?: string; [key: string]: unknown }) => ({
+    entry: {
+      id: 'locker-test-1',
+      title: meta.title,
+      artist: meta.artist,
+      genre: 'Downloaded',
+      durationSeconds: 180,
+      url: 'blob:test',
+      addedAt: Date.now(),
+    },
+    bytes: 3,
+  })),
   persistAlbumCoverForGroup: vi.fn(async () => true),
   persistOrphanTrackCover: vi.fn(async () => true),
   findLockerEntryForTrack: vi.fn(),
+  findLockerEntryForTrackIncludingHollow: vi.fn(() => null),
+  findPlayableLockerEntryForTrack: vi.fn(async () => null),
+  resolveLockerReacquireTargetId: vi.fn(async () => undefined),
 }));
 
 import { acquireTracksOnMobile, canAcquireOnMobile } from './mobileAcquisition';
-import { saveLockerBlob } from './lockerStorage';
+import { saveLockerBlobFromNativeFile } from './lockerStorage';
 
 describe('mobileAcquisition', () => {
   beforeEach(() => {
@@ -84,6 +100,6 @@ describe('mobileAcquisition', () => {
     );
     expect(result.saved).toBe(1);
     expect(result.failed).toBe(0);
-    expect(saveLockerBlob).toHaveBeenCalled();
+    expect(saveLockerBlobFromNativeFile).toHaveBeenCalled();
   });
 });
