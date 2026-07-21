@@ -111,7 +111,9 @@ import {
   subscribeLockerCache,
   tracksForAlbumGroup,
   warmLockerCache,
+  type LockerEntry,
 } from './lockerStorage';
+import { sortLockerTracks } from './lockerTrackOrder';
 import { LOCKER_USER_DELETE_CONFIRMED } from './lockerDeleteGuard';
 import {
   playbackArtStabilizeScope,
@@ -846,7 +848,7 @@ export default function SandboxShell() {
     if (audio.provider) {
       searchFeedback.update(audio.provider, true, 0);
     }
-    const nextKind = thumbUp ? 'clear' : 'like';
+    const nextKind = getTrackTasteFeedback(env.envelopeId) === 'like' ? 'clear' : 'like';
     recordTasteFeedback({
       envelopeId: env.envelopeId,
       artist: env.artist,
@@ -862,7 +864,7 @@ export default function SandboxShell() {
       setThumbUp(true);
       setThumbDown(false);
     }
-  }, [audio.envelope, audio.provider, thumbUp]);
+  }, [audio.envelope, audio.provider]);
 
   const handleThumbDown = useCallback(() => {
     const env = audio.envelope ?? sessionEnvelopeRef.current;
@@ -870,7 +872,7 @@ export default function SandboxShell() {
     if (audio.provider) {
       searchFeedback.update(audio.provider, false, 5000);
     }
-    const nextKind = thumbDown ? 'clear' : 'dislike';
+    const nextKind = getTrackTasteFeedback(env.envelopeId) === 'dislike' ? 'clear' : 'dislike';
     recordTasteFeedback({
       envelopeId: env.envelopeId,
       artist: env.artist,
@@ -886,7 +888,7 @@ export default function SandboxShell() {
       setThumbDown(true);
       setThumbUp(false);
     }
-  }, [audio.envelope, audio.provider, thumbDown]);
+  }, [audio.envelope, audio.provider]);
 
   const [navOpen, setNavOpen] = useState(false);
   const settingsReturnStationRef = useRef<StationId>('home');
@@ -3098,6 +3100,59 @@ export default function SandboxShell() {
     },
     [audio.prebufferUrl, audio.flushNativeExoEnqueueChain],
   );
+
+  const seedLockerAlbumPlayQueue = useCallback(
+    (
+      entries: LockerEntry[],
+      albumTitle: string,
+      artistName: string,
+      selectedSourceId?: string,
+      selectedTitle?: string,
+    ): { envs: MediaEnvelope[]; index: number } | null => {
+      const sorted = sortLockerTracks(tracksForAlbumGroup(entries, albumTitle, artistName));
+      if (sorted.length < 2) return null;
+      const envs = sorted.map((entry) => lockerEntryToEnvelope(entry));
+      let index = -1;
+      const sourceId = selectedSourceId?.trim();
+      if (sourceId) {
+        index = envs.findIndex((env) => env.sourceId === sourceId);
+      }
+      if (index < 0 && selectedTitle?.trim()) {
+        index = envs.findIndex((env) => lockerTitleMatches(env.title, selectedTitle));
+      }
+      if (index < 0) return null;
+      setPlayQueue(envs);
+      setQueueIndex(index);
+      playQueueRef.current = envs;
+      queueIndexRef.current = index;
+      setShuffleOn(false);
+      setRepeatMode('none');
+      setMixRadioSession(null);
+      autoSimilarRadioSeedRef.current = null;
+      return { envs, index };
+    },
+    [],
+  );
+
+  const logLockerQueueInstrumentation = useCallback(
+    (
+      phase: string,
+      selectedSourceId: string | undefined,
+      selectedIndex: number,
+      envs: MediaEnvelope[],
+    ) => {
+      console.warn(
+        `[locker-queue] ${phase} ${JSON.stringify({
+          selectedTrackId: selectedSourceId ?? envs[selectedIndex]?.sourceId ?? 'unknown',
+          selectedIndex,
+          jsQueueIds: envs.map((env) => env.sourceId ?? env.envelopeId),
+          trackTitles: envs.map((env) => env.title),
+        })}`,
+      );
+    },
+    [],
+  );
+
   const audioEnvelopeRef = useRef(audio.envelope);
   const audioStateRef = useRef(audio.state);
   audioEnvelopeRef.current = audio.envelope;
@@ -4189,6 +4244,58 @@ export default function SandboxShell() {
   );
   scheduleAutoSimilarRadioRef.current = scheduleAutoSimilarRadio;
 
+  const handleLockerTrackPlay = useCallback(
+    async (env: MediaEnvelope): Promise<boolean> => {
+      setHomeAwaitingUserResume(false);
+      const artistName = env.artist?.trim() ?? '';
+      const albumTitle = env.album?.trim();
+      const sourceId = env.sourceId?.trim();
+      const trackTitle = env.title?.trim() ?? '';
+
+      if (albumTitle && artistName) {
+        const snapshot = getLockerEntriesSnapshot() ?? [];
+        const seeded = seedLockerAlbumPlayQueue(
+          snapshot,
+          albumTitle,
+          artistName,
+          sourceId,
+          trackTitle,
+        );
+        if (seeded) {
+          logLockerQueueInstrumentation('tap', sourceId, seeded.index, seeded.envs);
+          const target = seeded.envs[seeded.index]!;
+          const locker = await ensureLockerPlayable(target);
+          if (locker.kind !== 'playable' || !locker.envelope.url?.trim()) {
+            return false;
+          }
+          const playable = preserveTappedEnvelopeIdentity(target, locker.envelope);
+          const started = await handlePlayEnvelope(playable, findHitCandidates(playable), {
+            autoPlay: true,
+            preservePlayQueue: true,
+          });
+          if (started) {
+            await primeLockerNativeQueueFrom(seeded.envs, seeded.index);
+            await audio.flushNativeExoEnqueueChain();
+          }
+          return started;
+        }
+      }
+
+      return handlePlayEnvelope(env, findHitCandidates(env), {
+        autoPlay: true,
+        preservePlayQueue: true,
+      });
+    },
+    [
+      audio,
+      findHitCandidates,
+      handlePlayEnvelope,
+      logLockerQueueInstrumentation,
+      primeLockerNativeQueueFrom,
+      seedLockerAlbumPlayQueue,
+    ],
+  );
+
   const podcastsActiveEnvelopeId = useStableEnvelopeId(audio.envelope?.envelopeId);
 
   const primePlayEnvelope = useCallback(
@@ -4898,50 +5005,39 @@ export default function SandboxShell() {
       },
       playLockerTrack: async (artistName, trackTitle, albumTitle) => {
         setHomeAwaitingUserResume(false);
-        const snapshot = getLockerEntriesSnapshot();
+        const snapshot = getLockerEntriesSnapshot() ?? [];
         if (albumTitle?.trim()) {
-          const albumEntries = tracksForAlbumGroup(snapshot ?? [], albumTitle, artistName);
-          if (albumEntries.length >= 2) {
-            const envs: MediaEnvelope[] = albumEntries.map((e) => ({
-              envelopeId: `local-${e.id}`,
-              title: e.title,
-              artist: e.artist,
-              album: e.albumName,
-              url: e.url,
-              durationSeconds: e.durationSeconds || 210,
-              provider: 'local-vault' as const,
-              transport: 'element-src' as const,
-              sourceId: e.id,
-              artworkUrl: e.albumArt,
-              releaseYear: e.releaseYear,
-            }));
-            if (envs.length >= 2) {
-            const startIdx = envs.findIndex((e) => lockerTitleMatches(e.title, trackTitle));
-            const index = startIdx >= 0 ? startIdx : 0;
-            setPlayQueue(envs);
-            setQueueIndex(index);
-            playQueueRef.current = envs;
-            queueIndexRef.current = index;
-            setShuffleOn(false);
-            setRepeatMode('none');
-            setMixRadioSession(null);
-            autoSimilarRadioSeedRef.current = null;
-            const target = envs[index]!;
+          const entry = findLockerEntryForTrack(
+            trackTitle,
+            artistName,
+            albumTitle,
+            snapshot,
+          );
+          const seeded = seedLockerAlbumPlayQueue(
+            snapshot,
+            albumTitle,
+            artistName,
+            entry?.id,
+            trackTitle,
+          );
+          if (seeded) {
+            logLockerQueueInstrumentation('e2e-offline', entry?.id, seeded.index, seeded.envs);
+            const target = seeded.envs[seeded.index]!;
             const locker = await ensureLockerPlayable(target);
             if (locker.kind !== 'playable' || !locker.envelope.url?.trim()) {
               await attemptDeadLockerReacquire(trackTitle, artistName, albumTitle);
               return false;
             }
-            const started = await playEnvelopeRef.current(locker.envelope, undefined, {
+            const playable = preserveTappedEnvelopeIdentity(target, locker.envelope);
+            const started = await playEnvelopeRef.current(playable, undefined, {
               autoPlay: true,
               preservePlayQueue: true,
             });
             if (started) {
-              await primeLockerNativeQueueFrom(envs, index);
+              await primeLockerNativeQueueFrom(seeded.envs, seeded.index);
               await audio.flushNativeExoEnqueueChain();
             }
             return started;
-            }
           }
         }
         let entry = await findPlayableLockerEntryForTrack(
@@ -4975,9 +5071,17 @@ export default function SandboxShell() {
           await attemptDeadLockerReacquire(trackTitle, artistName, albumTitle);
           return false;
         }
-        return playEnvelopeRef.current(locker.envelope, undefined, {
+        const playable = preserveTappedEnvelopeIdentity(
+          {
+            ...seed,
+            url: locker.envelope.url,
+            artworkUrl: locker.envelope.artworkUrl,
+          },
+          locker.envelope,
+        );
+        return playEnvelopeRef.current(playable, undefined, {
           autoPlay: true,
-          seedSearchQueue: true,
+          preservePlayQueue: true,
         });
       },
       playPlaylistTrack: async (playlistName, trackTitle) => {
@@ -5062,7 +5166,23 @@ export default function SandboxShell() {
               artworkUrl: entry.albumArt,
             });
             if (!resolved?.url?.trim()) return false;
-            envs.push(resolved);
+            envs.push(
+              preserveTappedEnvelopeIdentity(
+                {
+                  envelopeId: `local-${entry.id}`,
+                  title: entry.title,
+                  artist: artistName,
+                  album: albumTitle,
+                  url: resolved.url,
+                  durationSeconds: entry.durationSeconds || 210,
+                  provider: 'local-vault',
+                  transport: 'element-src',
+                  sourceId: entry.id,
+                  artworkUrl: entry.albumArt,
+                },
+                resolved,
+              ),
+            );
           }
           await prepareCleanPlaybackStop(() => audio.stop());
           setPlayQueue(envs);
@@ -5073,7 +5193,11 @@ export default function SandboxShell() {
           setRepeatMode('none');
           setMixRadioSession(null);
           autoSimilarRadioSeedRef.current = null;
-          const started = await playEnvelopeRef.current(envs[0]!, undefined, { autoPlay: true });
+          logLockerQueueInstrumentation('sequence-start', envs[0]?.sourceId, 0, envs);
+          const started = await playEnvelopeRef.current(envs[0]!, undefined, {
+            autoPlay: true,
+            preservePlayQueue: true,
+          });
           if (!started) return false;
           await primeLockerNativeQueueFrom(envs, 0);
           await audio.flushNativeExoEnqueueChain();
@@ -8992,7 +9116,7 @@ export default function SandboxShell() {
             activeEnvelopeId={audio.envelope?.envelopeId ?? null}
             meshResults={searchResults}
             lockerTracks={lockerEnvelopes}
-            onPlay={(env) => void handlePlayEnvelope(env, undefined, { seedSearchQueue: true })}
+            onPlay={(env) => void handleLockerTrackPlay(env)}
             onPlayAlbum={handlePlayAlbum}
             onPlayNext={handlePlayNext}
             onPrepareForTravel={(tracks) => void handlePrepareForTravel(tracks)}

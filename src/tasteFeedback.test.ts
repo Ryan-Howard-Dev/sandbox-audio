@@ -166,4 +166,13 @@ describe('liked playlist sync', () => {
     const liked = loadPlaylists().find((pl) => pl.id === LIKED_PLAYLIST_ID);
     expect(liked?.tracks.map((t) => t.envelopeId).sort()).toEqual(['a', 'b']);
   });
+
+  it('re-liking an already-liked track keeps like feedback', () => {
+    const env = envelope('track-rel');
+    recordTasteFeedback({ envelopeId: env.envelopeId, envelope: env, kind: 'like' });
+    recordTasteFeedback({ envelopeId: env.envelopeId, envelope: env, kind: 'like' });
+    expect(getTrackTasteFeedback(env.envelopeId)).toBe('like');
+    const liked = loadPlaylists().find((p) => p.id === LIKED_PLAYLIST_ID);
+    expect(liked?.tracks.some((t) => t.envelopeId === env.envelopeId)).toBe(true);
+  });
 });

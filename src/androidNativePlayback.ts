@@ -494,7 +494,7 @@ export async function nativeExoUpdateTrackMetadata(
       album: options.album,
       artworkUrl,
       durationSeconds: options.durationSeconds,
-      revision: options.revision ?? nextAndroidMediaMetadataRevision(),
+      revision: options.revision ?? 0,
     });
   } catch {
     /* optional */

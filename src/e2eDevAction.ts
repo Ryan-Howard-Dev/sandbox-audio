@@ -2546,16 +2546,28 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         logE2e('thumb-up', false, 'no current track to thumbs-up');
         return false;
       }
-      const ok = handlers.thumbUpCurrent();
-      if (!ok) {
+      const feedbackBefore = envelopeId ? getTrackTasteFeedback(envelopeId) : null;
+      if (feedbackBefore !== 'like') {
+        const ok = handlers.thumbUpCurrent();
+        if (!ok) {
+          logE2e(
+            'thumb-up',
+            false,
+            `handler returned false title=${titleBefore || 'unknown'} envelopeId=${envelopeId || 'none'}`,
+          );
+          return false;
+        }
+      }
+      const feedbackAfter = envelopeId ? getTrackTasteFeedback(envelopeId) : null;
+      if (feedbackAfter !== 'like') {
         logE2e(
           'thumb-up',
           false,
-          `handler returned false title=${titleBefore || 'unknown'} envelopeId=${envelopeId || 'none'}`,
+          `feedback not like after tap title=${titleBefore || 'unknown'} envelopeId=${envelopeId || 'none'} feedback=${feedbackAfter ?? 'none'}`,
         );
         return false;
       }
-      const feedback = envelopeId ? getTrackTasteFeedback(envelopeId) : null;
+      const feedback = feedbackAfter;
       const liked = loadPlaylists().find((p) => p.id === LIKED_PLAYLIST_ID);
       const inLiked = Boolean(
         liked?.tracks.some(
