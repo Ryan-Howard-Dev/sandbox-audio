@@ -1,16 +1,17 @@
+# IDE
+.cursor/
+.idea/
+
+# Node
 node_modules/
 build/
 dist/
 coverage/
-.DS_Store
-*.log
 .env*
 !.env.example
+*.env.local
 
-# Tauri
-src-tauri/target/
-
-# Android / Capacitor
+# Android build
 android/.gradle/
 android/app/build/
 android/build/
@@ -20,6 +21,29 @@ android/keystore.properties
 *.aab
 *.keystore
 *.jks
+
+# Stress / device test artifacts
+.user-stress-matrix-report.json
+.device-stress-report.txt
+.device-*
+.e2e-*
+.*-logcat*.txt
+.*-stress-*
+proof-oneplus-46349770/
+*.log
+
+# Screenshots / media
+screenshots/
+*.png
+*.jpg
+*.mp4
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tauri
+src-tauri/target/
 
 # PWA dev artifacts
 dev-dist/
