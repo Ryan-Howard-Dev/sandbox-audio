@@ -98,7 +98,26 @@ export type E2ePlaybackProbe = {
   nativeState?: string;
 };
 
-export type E2eNavTab = 'home' | 'locker' | 'discover' | 'search' | 'settings' | 'podcasts';
+export type E2eNavTab =
+  | 'home'
+  | 'locker'
+  | 'discover'
+  | 'search'
+  | 'settings'
+  | 'podcasts'
+  | 'audiobooks';
+
+const ALL_STATION_TABS: E2eNavTab[] = [
+  'home',
+  'locker',
+  'discover',
+  'search',
+  'settings',
+  'podcasts',
+  'audiobooks',
+];
+const OPTIONAL_STATION_TABS = new Set<E2eNavTab>(['podcasts', 'audiobooks']);
+const ADDON_STATION_SKIP_MS = 2000;
 
 export type E2eHandlers = {
   runSearch?: (query: string) => Promise<number | void> | number | void;
@@ -342,6 +361,171 @@ async function waitForExoPlaying(timeoutMs = EXO_PLAYBACK_TIMEOUT_MS): Promise<{
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function waitForNextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+function defaultStationOpenMaxMs(tab: E2eNavTab): number {
+  return tab === 'locker' ? 8000 : 4000;
+}
+
+function isDomElementVisible(el: Element | null): boolean {
+  if (!el || !(el instanceof HTMLElement)) return false;
+  const style = window.getComputedStyle(el);
+  if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) {
+    return false;
+  }
+  let node: HTMLElement | null = el;
+  while (node) {
+    const parentStyle = window.getComputedStyle(node);
+    if (parentStyle.display === 'none' || parentStyle.visibility === 'hidden') return false;
+    node = node.parentElement;
+  }
+  const rect = el.getBoundingClientRect();
+  return rect.width > 0 || rect.height > 0;
+}
+
+/** Poll until station-specific DOM is visible/interactive (not in a hidden parent). */
+export function probeStationOpenFromDom(tab: E2eNavTab): { ready: boolean; detail: string } {
+  if (typeof document === 'undefined') {
+    return { ready: false, detail: 'no-document' };
+  }
+  switch (tab) {
+    case 'home': {
+      const el = document.querySelector('.home-view');
+      const ready = isDomElementVisible(el);
+      return { ready, detail: ready ? 'home-view' : 'missing-home-view' };
+    }
+    case 'locker': {
+      const shell = document.querySelector('.shell-root--on-locker-station');
+      const page = document.querySelector('.shell-root--on-locker-station .locker-page');
+      const ready = Boolean(shell) && isDomElementVisible(page);
+      return {
+        ready,
+        detail: ready ? 'locker-page' : `shell=${Boolean(shell)} pageVisible=${isDomElementVisible(page)}`,
+      };
+    }
+    case 'discover': {
+      const tabs = document.querySelectorAll('[data-testid^="discover-tab-"]');
+      let visibleTab: Element | null = null;
+      for (const candidate of tabs) {
+        if (isDomElementVisible(candidate)) {
+          visibleTab = candidate;
+          break;
+        }
+      }
+      const ready = visibleTab !== null;
+      return {
+        ready,
+        detail: ready
+          ? `discover-tab=${visibleTab?.getAttribute('data-testid') ?? 'unknown'}`
+          : `discover-tabs=${tabs.length}`,
+      };
+    }
+    case 'search': {
+      const results = document.querySelector('.search-results-page');
+      if (isDomElementVisible(results)) {
+        return { ready: true, detail: 'search-results-page' };
+      }
+      const onSearchStation = document.querySelector('.shell-root--on-search-station');
+      const searchUi =
+        document.querySelector('#shell-search-form') ?? document.querySelector('.shell-search');
+      const ready = Boolean(onSearchStation) && isDomElementVisible(searchUi);
+      return {
+        ready,
+        detail: ready
+          ? 'search-station-ui'
+          : `station=${Boolean(onSearchStation)} uiVisible=${isDomElementVisible(searchUi)}`,
+      };
+    }
+    case 'settings': {
+      const el = document.querySelector('.settings-view');
+      const ready = isDomElementVisible(el);
+      return { ready, detail: ready ? 'settings-view' : 'missing-settings-view' };
+    }
+    case 'podcasts': {
+      const el = document.querySelector('.podcasts-view:not(.audiobooks-view)');
+      const ready = isDomElementVisible(el);
+      return { ready, detail: ready ? 'podcasts-view' : 'missing-podcasts-view' };
+    }
+    case 'audiobooks': {
+      const el = document.querySelector('.audiobooks-view');
+      const ready = isDomElementVisible(el);
+      return { ready, detail: ready ? 'audiobooks-view' : 'missing-audiobooks-view' };
+    }
+    default:
+      return { ready: false, detail: `unknown-tab=${tab}` };
+  }
+}
+
+function logE2eStationOpen(
+  result: 'PASS' | 'FAIL' | 'SKIP',
+  detail: string,
+): void {
+  console.warn(`${E2E_PREFIX} AREA=station-open RESULT=${result} ${detail}`);
+}
+
+async function runProbeStationOpen(
+  tab: E2eNavTab,
+  opts?: { maxMs?: number; cold?: boolean },
+): Promise<'pass' | 'fail' | 'skip'> {
+  if (!handlers.navigateTab) {
+    logE2eStationOpen('FAIL', `tab=${tab} interactive=false detail=navigateTab-not-registered`);
+    return 'fail';
+  }
+  const maxMs = opts?.maxMs ?? defaultStationOpenMaxMs(tab);
+  if (opts?.cold) {
+    handlers.navigateTab('home');
+    await sleep(500);
+  }
+  const startMs = performance.now();
+  handlers.navigateTab(tab);
+
+  if (OPTIONAL_STATION_TABS.has(tab)) {
+    const skipDeadline = startMs + ADDON_STATION_SKIP_MS;
+    let appeared = false;
+    while (performance.now() < skipDeadline) {
+      if (probeStationOpenFromDom(tab).ready) {
+        appeared = true;
+        break;
+      }
+      await sleep(50);
+    }
+    if (!appeared) {
+      const elapsed = Math.round(performance.now() - startMs);
+      logE2eStationOpen(
+        'SKIP',
+        `tab=${tab} ms=${elapsed} maxMs=${maxMs} interactive=false detail=addon-disabled`,
+      );
+      return 'skip';
+    }
+  }
+
+  const deadline = startMs + maxMs;
+  let lastDetail = 'polling';
+  while (performance.now() < deadline) {
+    const probe = probeStationOpenFromDom(tab);
+    if (probe.ready) {
+      await waitForNextFrame();
+      const elapsed = Math.round(performance.now() - startMs);
+      const pass = elapsed <= maxMs;
+      logE2eStationOpen(
+        pass ? 'PASS' : 'FAIL',
+        `tab=${tab} ms=${elapsed} maxMs=${maxMs} interactive=true detail=${probe.detail}`,
+      );
+      return pass ? 'pass' : 'fail';
+    }
+    lastDetail = probe.detail;
+    await sleep(50);
+  }
+  const elapsed = Math.round(performance.now() - startMs);
+  logE2eStationOpen(
+    'FAIL',
+    `tab=${tab} ms=${elapsed} maxMs=${maxMs} interactive=false detail=${lastDetail}`,
+  );
+  return 'fail';
 }
 
 async function e2eCombinedPlaybackProbe(): Promise<{
@@ -1537,7 +1721,15 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       const failures: string[] = [];
 
       if (artist && track && handlers.playArtistTrack) {
-        const played = await handlers.playArtistTrack(artist, track);
+        const album =
+          params.get('album')?.trim() ?? handlers.getPlaybackProbe?.()?.album?.trim() ?? '';
+        let played = false;
+        if (album && handlers.playLockerTrack) {
+          played = await handlers.playLockerTrack(artist, track, album);
+        }
+        if (!played) {
+          played = await handlers.playArtistTrack(artist, track);
+        }
         if (!played) {
           logE2e('playback-scrub-stress', false, 'playArtistTrack failed');
           return false;
@@ -2541,7 +2733,10 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       await e2eEnsureNowPlayingChrome();
       const probeBefore = handlers.getPlaybackProbe?.();
       const titleBefore = probeBefore?.title?.trim() ?? '';
-      const envelopeId = probeBefore?.envelopeId?.trim() ?? '';
+      const envelopeId =
+        probeBefore?.envelopeId?.trim() ||
+        handlers.getPlaybackProbe?.()?.envelopeId?.trim() ||
+        '';
       if (!titleBefore && !envelopeId) {
         logE2e('thumb-up', false, 'no current track to thumbs-up');
         return false;
@@ -2558,12 +2753,16 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
           return false;
         }
       }
-      const feedbackAfter = envelopeId ? getTrackTasteFeedback(envelopeId) : null;
+      const resolvedEnvelopeId =
+        handlers.getPlaybackProbe?.()?.envelopeId?.trim() || envelopeId;
+      const feedbackAfter = resolvedEnvelopeId
+        ? getTrackTasteFeedback(resolvedEnvelopeId)
+        : null;
       if (feedbackAfter !== 'like') {
         logE2e(
           'thumb-up',
           false,
-          `feedback not like after tap title=${titleBefore || 'unknown'} envelopeId=${envelopeId || 'none'} feedback=${feedbackAfter ?? 'none'}`,
+          `feedback not like after tap title=${titleBefore || 'unknown'} envelopeId=${resolvedEnvelopeId || envelopeId || 'none'} feedback=${feedbackAfter ?? 'none'}`,
         );
         return false;
       }
@@ -2572,6 +2771,7 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       const inLiked = Boolean(
         liked?.tracks.some(
           (t) =>
+            (resolvedEnvelopeId && t.envelopeId === resolvedEnvelopeId) ||
             (envelopeId && t.envelopeId === envelopeId) ||
             (titleBefore &&
               t.title.trim().toLowerCase() === titleBefore.toLowerCase()),
@@ -2588,7 +2788,7 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       logE2e(
         'thumb-up',
         pass,
-        `title=${titleBefore || 'unknown'} envelopeId=${envelopeId || 'none'} feedback=${feedback ?? 'none'} playlistId=${liked?.id ?? 'missing'} playlistName=${liked?.name ?? 'missing'} tracks=${liked?.tracks.length ?? 0} inLiked=${inLiked} visualFound=${visual.found} ariaPressed=${visual.pressed} activeAttr=${visual.activeAttr} filled=${visual.filled} downPressed=${downVisual.pressed}`,
+        `title=${titleBefore || 'unknown'} envelopeId=${resolvedEnvelopeId || envelopeId || 'none'} feedback=${feedback ?? 'none'} playlistId=${liked?.id ?? 'missing'} playlistName=${liked?.name ?? 'missing'} tracks=${liked?.tracks.length ?? 0} inLiked=${inLiked} visualFound=${visual.found} ariaPressed=${visual.pressed} activeAttr=${visual.activeAttr} filled=${visual.filled} downPressed=${downVisual.pressed}`,
       );
       return pass;
     }
@@ -2600,7 +2800,10 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       await e2eEnsureNowPlayingChrome();
       const probeBefore = handlers.getPlaybackProbe?.();
       const titleBefore = probeBefore?.title?.trim() ?? '';
-      const envelopeId = probeBefore?.envelopeId?.trim() ?? '';
+      const envelopeId =
+        probeBefore?.envelopeId?.trim() ||
+        handlers.getPlaybackProbe?.()?.envelopeId?.trim() ||
+        '';
       if (!titleBefore && !envelopeId) {
         logE2e('thumb-down', false, 'no current track to thumbs-down');
         return false;
@@ -2614,11 +2817,16 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         );
         return false;
       }
-      const feedback = envelopeId ? getTrackTasteFeedback(envelopeId) : null;
+      const resolvedEnvelopeId =
+        handlers.getPlaybackProbe?.()?.envelopeId?.trim() || envelopeId;
+      const feedback = resolvedEnvelopeId
+        ? getTrackTasteFeedback(resolvedEnvelopeId)
+        : null;
       const liked = loadPlaylists().find((p) => p.id === LIKED_PLAYLIST_ID);
       const stillInLiked = Boolean(
         liked?.tracks.some(
           (t) =>
+            (resolvedEnvelopeId && t.envelopeId === resolvedEnvelopeId) ||
             (envelopeId && t.envelopeId === envelopeId) ||
             (titleBefore &&
               t.title.trim().toLowerCase() === titleBefore.toLowerCase()),
@@ -2633,7 +2841,7 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       logE2e(
         'thumb-down',
         pass,
-        `title=${titleBefore || 'unknown'} envelopeId=${envelopeId || 'none'} feedback=${feedback ?? 'none'} stillInLiked=${stillInLiked} visualFound=${visual.found} ariaPressed=${visual.pressed} activeAttr=${visual.activeAttr} filled=${visual.filled} upPressed=${upVisual.pressed}`,
+        `title=${titleBefore || 'unknown'} envelopeId=${resolvedEnvelopeId || envelopeId || 'none'} feedback=${feedback ?? 'none'} stillInLiked=${stillInLiked} visualFound=${visual.found} ariaPressed=${visual.pressed} activeAttr=${visual.activeAttr} filled=${visual.filled} upPressed=${upVisual.pressed}`,
       );
       return pass;
     }
@@ -2692,6 +2900,41 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         `playlistId=${liked.id} playlistName=${liked.name} tracks=${liked.tracks.length} track=${trackTitle} found=${pass} titles=${titles || 'none'}`,
       );
       return pass;
+    }
+    case 'probe-station-open': {
+      const tab = (params.get('tab') ?? '').trim() as E2eNavTab;
+      if (!ALL_STATION_TABS.includes(tab)) {
+        logE2eStationOpen('FAIL', `tab=${tab || 'missing'} interactive=false detail=invalid-tab`);
+        return false;
+      }
+      const cold = params.get('cold') === 'true' || params.get('cold') === '1';
+      const maxMsParam = Number(params.get('maxMs') ?? '');
+      const maxMs =
+        Number.isFinite(maxMsParam) && maxMsParam > 0
+          ? maxMsParam
+          : defaultStationOpenMaxMs(tab);
+      const outcome = await runProbeStationOpen(tab, { maxMs, cold });
+      return outcome === 'pass' || outcome === 'skip';
+    }
+    case 'probe-all-stations-open': {
+      const sequence: { tab: E2eNavTab; cold?: boolean }[] = [
+        { tab: 'home' },
+        { tab: 'locker', cold: true },
+        { tab: 'discover' },
+        { tab: 'search' },
+        { tab: 'settings' },
+        { tab: 'podcasts' },
+        { tab: 'audiobooks' },
+      ];
+      const outcomes: string[] = [];
+      let allPass = true;
+      for (const step of sequence) {
+        const outcome = await runProbeStationOpen(step.tab, { cold: step.cold });
+        outcomes.push(`${step.tab}=${outcome}`);
+        if (outcome === 'fail') allPass = false;
+      }
+      logE2e('station-open-all', allPass, `tabs=${outcomes.join(' ')}`);
+      return allPass;
     }
     case 'probe-track-radio': {
       const { TRACK_RADIO_PLAYLIST_ID, TRACK_RADIO_PLAYLIST_NAME } = await import(
