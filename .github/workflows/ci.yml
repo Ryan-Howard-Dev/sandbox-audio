@@ -47,18 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           npm run build:client
-          node -e "
-          const fs=require('fs');
-          const sw=fs.readFileSync('dist/sw.js','utf8');
-          const m=sw.match(/precacheAndRoute\(\[(.*?)\]/s);
-          if(!m) throw new Error('sw.js missing precache manifest');
-          const entries=JSON.parse('['+m[1]+']');
-          const total=entries.reduce((n,e)=>n+(e.size||0),0);
-          const max=Math.max(...entries.map(e=>e.size||0));
-          console.log('PWA precache:', entries.length, 'entries', (total/1024/1024).toFixed(2), 'MiB, max', (max/1024).toFixed(0), 'KiB');
-          if(total>3.5*1024*1024) throw new Error('PWA precache exceeds 3.5 MiB budget');
-          if(max>2.8*1024*1024) throw new Error('Single precache chunk exceeds 2.8 MiB');
-          "
+          node scripts/check-pwa-precache-budget.mjs
           echo "PASS: build:client (Vite production bundle)"
       - name: Bundle production server
         run: |
@@ -92,7 +81,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
-            patchelf libssl-dev
+            libasound2-dev patchelf libssl-dev
       - name: Install dependencies
         run: npm ci
       - name: Generate Tauri icons
@@ -236,7 +225,9 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
+          emulator-boot-timeout: 900000
           script: |
+            export SANDBOX_ANDROID_E2E=true
             npm run build:android:apk
             chmod +x scripts/android-smoke-e2e.sh
             SKIP_BUILD=1 scripts/android-smoke-e2e.sh
@@ -269,7 +260,9 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
+          emulator-boot-timeout: 900000
           script: |
+            export SANDBOX_ANDROID_E2E=true
             npm run build:android:apk
             chmod +x scripts/android-playback-e2e.sh
             SKIP_BUILD=1 scripts/android-playback-e2e.sh

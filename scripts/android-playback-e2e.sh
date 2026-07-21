@@ -78,7 +78,7 @@ assert_play_spine() {
 }
 
 if [[ "${SKIP_BUILD:-0}" != "1" ]]; then
-  npm run build:android:apk
+  SANDBOX_ANDROID_E2E=true npm run build:android:apk
 fi
 
 [[ -f "$APK" ]] || { echo "APK not found: $APK"; exit 1; }

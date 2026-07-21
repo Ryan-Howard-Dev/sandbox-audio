@@ -324,34 +324,20 @@ export async function syncAndroidBackgroundMedia(
   if (metadataChanged) {
     const artworkUrl = await resolveAndroidForegroundArtworkUrl(metadata.artworkUrl);
     if (syncGeneration !== metadataSyncGeneration) return;
-    if (nativeExoActive) {
-      const { nativeExoUpdateTrackMetadata } = await import('./androidNativePlayback');
-      await nativeExoUpdateTrackMetadata({
-        envelopeId: metadata.envelopeId,
-        title: metadata.title,
-        artist: metadata.artist,
-        album: metadata.album,
-        artworkUrl,
-        revision: 0,
-      });
-    } else {
-      const revision = nextAndroidMediaMetadataRevision();
-      await BackgroundMedia.updateMetadata({
-        title: metadata.title,
-        artist: metadata.artist,
-        album: metadata.album,
-        artworkUrl,
-        envelopeId: metadata.envelopeId,
-        revision,
-      });
-    }
+    const revision = nextAndroidMediaMetadataRevision();
+    await BackgroundMedia.updateMetadata({
+      title: metadata.title,
+      artist: metadata.artist,
+      album: metadata.album,
+      artworkUrl,
+      envelopeId: metadata.envelopeId,
+      revision,
+    });
     if (syncGeneration !== metadataSyncGeneration) return;
     lastSyncedMetadataKey = metadataKey;
   }
 
-  const playbackRevision = nativeExoActive
-    ? 0
-    : nextAndroidMediaMetadataRevision();
+  const playbackRevision = nextAndroidMediaMetadataRevision();
   await BackgroundMedia.updatePlaybackState({
     isPlaying,
     positionMs: Math.max(0, Math.round(positionMs)),

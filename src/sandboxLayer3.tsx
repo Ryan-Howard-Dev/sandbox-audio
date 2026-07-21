@@ -4860,7 +4860,7 @@ export default function SandboxShell() {
       listAlbumTracks: () =>
         albumDrillTracksRef.current.map((t) => ({ title: t.title, id: t.id })),
       getPlaybackProbe: () => {
-        const env = audioEnvelopeRef.current;
+        const env = audio.envelope ?? audioEnvelopeRef.current ?? sessionEnvelopeRef.current;
         return {
           title: env?.title?.trim() ?? audio.title?.trim() ?? '',
           artist: env?.artist?.trim() ?? audio.artist?.trim() ?? '',
@@ -5006,40 +5006,6 @@ export default function SandboxShell() {
       playLockerTrack: async (artistName, trackTitle, albumTitle) => {
         setHomeAwaitingUserResume(false);
         const snapshot = getLockerEntriesSnapshot() ?? [];
-        if (albumTitle?.trim()) {
-          const entry = findLockerEntryForTrack(
-            trackTitle,
-            artistName,
-            albumTitle,
-            snapshot,
-          );
-          const seeded = seedLockerAlbumPlayQueue(
-            snapshot,
-            albumTitle,
-            artistName,
-            entry?.id,
-            trackTitle,
-          );
-          if (seeded) {
-            logLockerQueueInstrumentation('e2e-offline', entry?.id, seeded.index, seeded.envs);
-            const target = seeded.envs[seeded.index]!;
-            const locker = await ensureLockerPlayable(target);
-            if (locker.kind !== 'playable' || !locker.envelope.url?.trim()) {
-              await attemptDeadLockerReacquire(trackTitle, artistName, albumTitle);
-              return false;
-            }
-            const playable = preserveTappedEnvelopeIdentity(target, locker.envelope);
-            const started = await playEnvelopeRef.current(playable, undefined, {
-              autoPlay: true,
-              preservePlayQueue: true,
-            });
-            if (started) {
-              await primeLockerNativeQueueFrom(seeded.envs, seeded.index);
-              await audio.flushNativeExoEnqueueChain();
-            }
-            return started;
-          }
-        }
         let entry = await findPlayableLockerEntryForTrack(
           trackTitle,
           artistName,
@@ -5081,7 +5047,7 @@ export default function SandboxShell() {
         );
         return playEnvelopeRef.current(playable, undefined, {
           autoPlay: true,
-          preservePlayQueue: true,
+          seedSearchQueue: true,
         });
       },
       playPlaylistTrack: async (playlistName, trackTitle) => {

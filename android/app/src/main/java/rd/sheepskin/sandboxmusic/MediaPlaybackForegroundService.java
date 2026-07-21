@@ -119,7 +119,7 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
         if (envelopeId != null && !envelopeId.isEmpty()) {
             activeEnvelopeId = envelopeId;
         }
-        android.util.Log.d(
+        android.util.Log.i(
             "MediaPlaybackFGS",
             "metadata rev=" + revision + " env=" + (envelopeId != null ? envelopeId : "") +
                 " title=" + (nextTitle != null ? nextTitle : "")
