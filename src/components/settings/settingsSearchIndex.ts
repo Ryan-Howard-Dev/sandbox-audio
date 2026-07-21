@@ -378,6 +378,12 @@ export function buildSettingsSearchIndex(t: Translate): SettingsSearchItem[] {
       keywords: ['podcast', 'rss', 'episodes'],
       anchorId: SETTINGS_SEARCH_ANCHORS.addonsBuiltin,
     }),
+    item('addons', 'addons-audiobook-acquire', t('audiobooks.acquirePluginsTitle'), {
+      sectionLabel: t('settings.addons.builtinStationsTitle'),
+      subtitle: t('audiobooks.acquirePluginsHint'),
+      keywords: ['audiobook', 'torrent', 'magnet', 'search plugin', 'acquire', 'debrid'],
+      anchorId: SETTINGS_SEARCH_ANCHORS.audiobookAcquirePlugins,
+    }),
     item('addons', 'addons-podcast-wifi', 'Podcast auto-save Wi-Fi only', {
       sectionLabel: t('settings.addons.builtinStationsTitle'),
       subtitle: 'Default Wi-Fi guard for per-show offline auto-save',

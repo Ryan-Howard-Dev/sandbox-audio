@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   AUDIOBOOK_CATALOG_ENVELOPE_PREFIX,
+  AUDIOBOOK_CATALOG_SOURCES,
+  AUDIOBOOK_TIER34_CHAPTER_SOURCES,
   catalogChapterEnvelope,
   isAudiobookCatalogEnvelopeId,
   type AudiobookCatalogBook,
@@ -39,5 +41,27 @@ describe('audiobookCatalog', () => {
     expect(env.album).toBe('Pride and Prejudice');
     expect(env.url).toContain('archive.org');
     expect(env.durationSeconds).toBe(1132);
+  });
+
+  it('lists all Discover sources including scrape-index and meta-search', () => {
+    const ids = AUDIOBOOK_CATALOG_SOURCES.map((s) => s.id);
+    expect(ids).toEqual([
+      'librivox',
+      'archive',
+      'gutenberg',
+      'loyalbooks',
+      'rss',
+      'ravebooksearch',
+      'learnoutloud',
+      'lit2go',
+      'goldenaudiobooks',
+      'audiobooks4soul',
+    ]);
+  });
+
+  it('marks scrape-index sources as Tier34-only for chapters', () => {
+    expect(AUDIOBOOK_TIER34_CHAPTER_SOURCES.has('lit2go')).toBe(true);
+    expect(AUDIOBOOK_TIER34_CHAPTER_SOURCES.has('learnoutloud')).toBe(true);
+    expect(AUDIOBOOK_TIER34_CHAPTER_SOURCES.has('librivox')).toBe(false);
   });
 });

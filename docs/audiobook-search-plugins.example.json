@@ -1,0 +1,23 @@
+[
+  {
+    "_comment": "Example only — NOT loaded by the app. Copy fields into Settings → Add-ons → Audiobook search plugins.",
+    "id": "example-torznab-json",
+    "name": "Example JSON API",
+    "enabled": false,
+    "searchUrlTemplate": "https://your-indexer.example/api/search?q={query}",
+    "parserHint": "json",
+    "resultSelector": "results"
+  },
+  {
+    "_comment": "Custom HTML parser with regex row blocks",
+    "id": "example-html-custom",
+    "name": "Example HTML indexer",
+    "enabled": false,
+    "searchUrlTemplate": "https://your-indexer.example/search/%s",
+    "parserHint": "custom",
+    "resultSelector": "<tr class=\"result\">[\\s\\S]*?</tr>",
+    "titlePattern": "<a[^>]*>([^<]+)</a>",
+    "magnetPattern": "(magnet:\\?xt=urn:btih:[^\"'\\s]+)",
+    "torrentUrlPattern": "(https?://[^\"'\\s]+\\.torrent)"
+  }
+]

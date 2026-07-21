@@ -37,6 +37,7 @@ export const SETTINGS_SEARCH_ANCHORS = {
   addonsAcquisition: 'anchor-addons-acquisition',
   addonsMobileResolvers: 'anchor-addons-mobile-resolvers',
   addonsExperimental: 'anchor-addons-experimental',
+  audiobookAcquirePlugins: 'anchor-audiobook-acquire-plugins',
   securityMain: 'anchor-security-main',
   diagnosticsMain: 'anchor-diagnostics-main',
   telemetryMain: 'anchor-telemetry-main',

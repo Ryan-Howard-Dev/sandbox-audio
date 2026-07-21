@@ -9135,6 +9135,11 @@ export default function SandboxShell() {
               onPrimePlay={(env) => audio.primePlaybackGesture(env)}
               activeEnvelopeId={audio.envelope?.envelopeId}
               onError={(msg) => showAppToast(msg, 5000)}
+              onSuccess={(msg) => showAppToast(msg, 6000)}
+              onOpenAcquireSettings={() => {
+                setSettingsInitialTab('addons');
+                setStation('settings');
+              }}
               drillBackRef={audiobooksDrillBackRef}
             />,
             'audiobooks',

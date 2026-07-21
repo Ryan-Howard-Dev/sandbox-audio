@@ -1,21 +1,32 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
+  ChevronDown,
   Globe,
   Loader2,
   Play,
+  Plus,
+  Rss,
   Search,
 } from 'lucide-react';
 import type { MediaEnvelope } from '../../sandboxLayer1';
 import {
   AUDIOBOOK_CATALOG_SOURCES,
+  audiobookSourceLabel,
   catalogChapterEnvelope,
   fetchAudiobookCatalogChapters,
   searchAudiobookCatalog,
   type AudiobookCatalogBook,
   type AudiobookCatalogChapter,
+  type AudiobookCatalogSource,
 } from '../../audiobookCatalog';
+import {
+  addUserAudiobookRssFeed,
+  loadUserAudiobookRssFeeds,
+  subscribeAudiobookRssFeeds,
+} from '../../audiobookRssFeeds';
+import { probeAudiobookRssFeed } from '../../audiobookRssProvider';
 import { proxiedArtworkUrl } from '../../displaySanitize';
 import { seedGradient } from '../../seedGradient';
 import { formatTime } from '../../stations/theme';
@@ -31,6 +42,8 @@ export interface AudiobookDiscoverPanelProps {
   /** Android hardware back — pop book detail drill-down. */
   drillBackRef?: React.MutableRefObject<(() => boolean) | null>;
 }
+
+type SourceFilter = 'all' | AudiobookCatalogSource;
 
 function BookCard({
   book,
@@ -68,7 +81,7 @@ function BookCard({
           <p className="podcasts-discover-card-desc line-clamp-3">{book.description}</p>
         ) : null}
         <p className="font-mono text-[9px] uppercase tracking-wider text-[var(--text-dim)] mt-1">
-          {book.source === 'librivox' ? 'LibriVox' : 'Internet Archive'}
+          {audiobookSourceLabel(book.source)}
           {book.chapterCount ? ` · ${book.chapterCount} chapters` : ''}
         </p>
       </div>
@@ -128,7 +141,7 @@ function BookDetailView({
             </p>
           ) : null}
           <p className="font-mono text-[10px] text-[var(--text-dim)] mt-1">
-            {book.source === 'librivox' ? 'LibriVox' : 'Internet Archive'}
+            {audiobookSourceLabel(book.source)}
             {chapters.length > 0
               ? ` · ${t('audiobooks.chaptersCount', { count: chapters.length })}`
               : ''}
@@ -199,9 +212,20 @@ export default function AudiobookDiscoverPanel({
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<AudiobookCatalogBook[]>([]);
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [selectedBook, setSelectedBook] = useState<AudiobookCatalogBook | null>(null);
   const [chapters, setChapters] = useState<AudiobookCatalogChapter[]>([]);
   const [loadingChapters, setLoadingChapters] = useState(false);
+  const [rssExpanded, setRssExpanded] = useState(false);
+  const [rssUrl, setRssUrl] = useState('');
+  const [rssAdding, setRssAdding] = useState(false);
+  const [userFeedCount, setUserFeedCount] = useState(() => loadUserAudiobookRssFeeds().length);
+
+  useEffect(() => {
+    return subscribeAudiobookRssFeeds(() => {
+      setUserFeedCount(loadUserAudiobookRssFeeds().length);
+    });
+  }, []);
 
   useEffect(() => {
     if (!drillBackRef) return;
@@ -217,6 +241,11 @@ export default function AudiobookDiscoverPanel({
       drillBackRef.current = null;
     };
   }, [drillBackRef, selectedBook]);
+
+  const filteredResults = useMemo(() => {
+    if (sourceFilter === 'all') return results;
+    return results.filter((b) => b.source === sourceFilter);
+  }, [results, sourceFilter]);
 
   const runSearch = useCallback(
     async (q: string) => {
@@ -238,6 +267,29 @@ export default function AudiobookDiscoverPanel({
     },
     [onError, t],
   );
+
+  const handleAddRssFeed = useCallback(async () => {
+    const url = rssUrl.trim();
+    if (!url) return;
+    setRssAdding(true);
+    onError?.('');
+    try {
+      const probe = await probeAudiobookRssFeed(url);
+      if (!probe) {
+        onError?.(t('audiobooks.rssAddFailed'));
+        return;
+      }
+      addUserAudiobookRssFeed({ url, label: probe.title, kind: probe.episodeCount > 1 ? 'book' : 'anthology' });
+      setRssUrl('');
+      if (query.trim().length >= 2) {
+        await runSearch(query);
+      }
+    } catch (e) {
+      onError?.(e instanceof Error ? e.message : t('audiobooks.rssAddFailed'));
+    } finally {
+      setRssAdding(false);
+    }
+  }, [onError, query, rssUrl, runSearch, t]);
 
   const openBook = useCallback(
     async (book: AudiobookCatalogBook) => {
@@ -334,6 +386,36 @@ export default function AudiobookDiscoverPanel({
         </button>
       </form>
 
+      {results.length > 0 ? (
+        <div className="audiobooks-source-filter flex flex-wrap gap-2 mb-3">
+          <button
+            type="button"
+            className={`font-mono text-[9px] uppercase tracking-wider px-2 py-1 rounded border touch-manipulation ${
+              sourceFilter === 'all'
+                ? 'border-accent text-accent'
+                : 'border-[var(--border)] text-[var(--text-dim)]'
+            }`}
+            onClick={() => setSourceFilter('all')}
+          >
+            {t('audiobooks.filterAll')}
+          </button>
+          {AUDIOBOOK_CATALOG_SOURCES.map((src) => (
+            <button
+              key={src.id}
+              type="button"
+              className={`font-mono text-[9px] uppercase tracking-wider px-2 py-1 rounded border touch-manipulation ${
+                sourceFilter === src.id
+                  ? 'border-accent text-accent'
+                  : 'border-[var(--border)] text-[var(--text-dim)]'
+              }`}
+              onClick={() => setSourceFilter(src.id)}
+            >
+              {src.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className="podcasts-discover-section-head">
         <BookOpen className="w-4 h-4 text-accent" aria-hidden />
         <h2 className="podcasts-discover-section-title">
@@ -351,11 +433,63 @@ export default function AudiobookDiscoverPanel({
               {src.label}
             </p>
           ))}
+          {userFeedCount > 0 ? (
+            <p className="font-mono text-[10px] text-[var(--text-dim)]">
+              {t('audiobooks.userRssFeeds', { count: userFeedCount })}
+            </p>
+          ) : null}
           <p className="font-mono text-xs text-[var(--text-dim)] mt-3">
             {t('audiobooks.discoverHint')}
           </p>
         </div>
       ) : null}
+
+      <section className="podcasts-manual-subscribe mb-4">
+        <button
+          type="button"
+          className="podcasts-manual-subscribe-toggle touch-manipulation"
+          aria-expanded={rssExpanded}
+          onClick={() => setRssExpanded((v) => !v)}
+        >
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-dim)]">
+            {t('audiobooks.addRssFeed')}
+          </span>
+          <ChevronDown
+            className={`w-4 h-4 text-[var(--text-dim)] transition-transform${rssExpanded ? ' rotate-180' : ''}`}
+            aria-hidden
+          />
+        </button>
+        {rssExpanded ? (
+          <div className="podcasts-manual-subscribe-body space-y-2 mt-2">
+            <p className="font-mono text-[9px] text-[var(--text-dim)]">
+              {t('audiobooks.addRssFeedHint')}
+            </p>
+            <div className="podcasts-subscribe-card">
+              <Rss className="w-5 h-5 shrink-0 mt-2.5 text-accent" />
+              <input
+                type="url"
+                value={rssUrl}
+                onChange={(e) => setRssUrl(e.target.value)}
+                placeholder="https://example.com/audiobook-feed.xml"
+                className="input-elevated flex-1 min-w-0 px-3 py-2.5 font-mono text-xs focus-accent"
+              />
+              <button
+                type="button"
+                onClick={() => void handleAddRssFeed()}
+                disabled={rssAdding || !rssUrl.trim()}
+                className="btn-accent touch-manipulation h-10 px-3 rounded-lg font-mono text-[10px] uppercase tracking-wider inline-flex items-center gap-1.5"
+              >
+                {rssAdding ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5" />
+                )}
+                {t('audiobooks.addRssFeedBtn')}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </section>
 
       {results.length === 0 && !searching && query.trim().length >= 2 ? (
         <p className="podcasts-discover-empty font-mono text-xs text-[var(--text-dim)]">
@@ -363,14 +497,18 @@ export default function AudiobookDiscoverPanel({
         </p>
       ) : null}
 
-      {results.length > 0 ? (
+      {filteredResults.length > 0 ? (
         <div className="podcasts-discover-grid">
-          {results.map((book) => (
+          {filteredResults.map((book) => (
             <div key={book.id}>
               <BookCard book={book} onOpen={() => void openBook(book)} />
             </div>
           ))}
         </div>
+      ) : results.length > 0 && filteredResults.length === 0 ? (
+        <p className="podcasts-discover-empty font-mono text-xs text-[var(--text-dim)]">
+          {t('audiobooks.filterEmpty')}
+        </p>
       ) : null}
     </div>
   );

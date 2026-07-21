@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, BookOpen, Play, RefreshCw, Search, ShieldAlert, Smartphone } from 'lucide-react';
+import { ArrowLeft, BookOpen, Magnet, Play, RefreshCw, Search, ShieldAlert, Smartphone } from 'lucide-react';
 import type { MediaEnvelope } from '../sandboxLayer1';
 import AudiobookDiscoverPanel from '../components/audiobooks/AudiobookDiscoverPanel';
+import AudiobookAcquirePanel from '../components/audiobooks/AudiobookAcquirePanel';
 import {
   checkDeviceMusicScanPermission,
   isDeviceMusicScanAvailable,
@@ -31,6 +32,8 @@ export interface AudiobooksViewProps {
   onPrimePlay?: (envelope: MediaEnvelope) => void;
   activeEnvelopeId?: string | null;
   onError?: (message: string) => void;
+  onSuccess?: (message: string) => void;
+  onOpenAcquireSettings?: () => void;
   /** Android hardware back — pop book detail drill-down. */
   drillBackRef?: React.MutableRefObject<(() => boolean) | null>;
 }
@@ -47,10 +50,12 @@ export default function AudiobooksView({
   onPrimePlay,
   activeEnvelopeId,
   onError,
+  onSuccess,
+  onOpenAcquireSettings,
   drillBackRef,
 }: AudiobooksViewProps) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<'discover' | 'device'>('discover');
+  const [tab, setTab] = useState<'discover' | 'acquire' | 'device'>('discover');
   const discoverDrillBackRef = useRef<(() => boolean) | null>(null);
   const [books, setBooks] = useState<AudiobookBook[]>([]);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -290,7 +295,11 @@ export default function AudiobooksView({
             {t('audiobooks.title')}
           </h1>
           <p className="font-mono text-[10px] text-[var(--text-dim)] mt-1 max-w-md">
-            {tab === 'discover' ? t('audiobooks.discoverTabNote') : t('audiobooks.isolationNote')}
+            {tab === 'discover'
+              ? t('audiobooks.discoverTabNote')
+              : tab === 'acquire'
+                ? t('audiobooks.acquireTabNote')
+                : t('audiobooks.isolationNote')}
           </p>
         </div>
         {tab === 'device' ? (
@@ -328,6 +337,16 @@ export default function AudiobooksView({
         <button
           type="button"
           role="tab"
+          aria-selected={tab === 'acquire'}
+          className={`podcasts-tab touch-manipulation${tab === 'acquire' ? ' podcasts-tab--active' : ''}`}
+          onClick={() => setTab('acquire')}
+        >
+          <Magnet className="w-3.5 h-3.5" aria-hidden />
+          {t('audiobooks.tabAcquire')}
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={tab === 'device'}
           className={`podcasts-tab touch-manipulation${tab === 'device' ? ' podcasts-tab--active' : ''}`}
           onClick={() => setTab('device')}
@@ -345,6 +364,12 @@ export default function AudiobooksView({
           onError={onError}
           activeEnvelopeId={activeEnvelopeId}
           drillBackRef={discoverDrillBackRef}
+        />
+      ) : tab === 'acquire' ? (
+        <AudiobookAcquirePanel
+          onOpenSettings={onOpenAcquireSettings}
+          onError={onError}
+          onSuccess={onSuccess}
         />
       ) : (
         <>

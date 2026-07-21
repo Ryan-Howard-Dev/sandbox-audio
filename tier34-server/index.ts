@@ -27,9 +27,16 @@ import {
   searchPodcastCatalogShows,
 } from './lib/podcastCatalog.js';
 import {
+  AUDIOBOOK_CATALOG_SOURCES,
   fetchAudiobookCatalogChapters,
   searchAudiobookCatalog,
 } from './lib/audiobookCatalog.js';
+import {
+  downloadResolvedAudiobook,
+  resolveAudiobookAcquire,
+  searchAudiobookPlugins,
+} from './lib/audiobookAcquire.js';
+import type { AudiobookSearchPlugin } from './lib/audiobookAcquireCore.js';
 import { fetchPodcastFeedXml, podcastFeedUrlAllowed } from './lib/podcastFeedProxy.js';
 import { fetchPodcastEpisodeMeta } from './lib/podcastEpisodeMeta.js';
 import {
@@ -682,7 +689,7 @@ app.get('/api/podcast/trending', async (req, res) => {
   }
 });
 
-/** Free audiobook discovery — LibriVox + Internet Archive. */
+/** Free audiobook discovery — multi-provider catalog (LibriVox, Archive, Gutenberg, Loyal Books, RSS, Meta-search, scrape-index). */
 app.get('/api/audiobook/search', async (req, res) => {
   const q = String(req.query.q ?? '').trim();
   const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit ?? '25'), 10) || 25));
@@ -696,14 +703,73 @@ app.get('/api/audiobook/search', async (req, res) => {
   }
 });
 
+/** Config-driven audiobook torrent/magnet search plugins (user-supplied; no bundled indexers). */
+app.post('/api/audiobook/acquire/search', async (req, res) => {
+  const query = String(req.body?.query ?? '').trim();
+  const plugins = Array.isArray(req.body?.plugins) ? (req.body.plugins as AudiobookSearchPlugin[]) : [];
+  if (!query) return res.status(400).json({ error: 'query required', hits: [] });
+  try {
+    const hits = await searchAudiobookPlugins(query, plugins);
+    res.json({ hits });
+  } catch (e) {
+    console.error('[tier34] audiobook/acquire/search', e);
+    res.status(502).json({ hits: [], error: 'audiobook acquire search failed' });
+  }
+});
+
+app.post('/api/audiobook/acquire/resolve', async (req, res) => {
+  const magnet = String(req.body?.magnet ?? '').trim();
+  const torrentUrl = String(req.body?.torrentUrl ?? '').trim();
+  if (!magnet && !torrentUrl) {
+    return res.status(400).json({ error: 'magnet or torrentUrl required' });
+  }
+  try {
+    const resolved = await resolveAudiobookAcquire({
+      magnet,
+      torrentUrl,
+      title: String(req.body?.title ?? '').trim() || undefined,
+      realDebridApiKey: String(req.body?.realDebridApiKey ?? process.env.REALDEBRID_API_KEY ?? ''),
+    });
+    res.json({ resolved });
+  } catch (e) {
+    console.error('[tier34] audiobook/acquire/resolve', e);
+    res.status(502).json({ error: e instanceof Error ? e.message : 'resolve failed' });
+  }
+});
+
+app.post('/api/audiobook/acquire/download', async (req, res) => {
+  const resolved = req.body?.resolved;
+  if (!resolved || typeof resolved !== 'object') {
+    return res.status(400).json({ error: 'resolved payload required' });
+  }
+  try {
+    const out = await downloadResolvedAudiobook(
+      resolved as import('./lib/audiobookAcquireCore.js').ResolvedAcquire,
+      String(req.body?.realDebridApiKey ?? process.env.REALDEBRID_API_KEY ?? ''),
+    );
+    res.json({ resolved: out });
+  } catch (e) {
+    console.error('[tier34] audiobook/acquire/download', e);
+    res.status(502).json({ error: e instanceof Error ? e.message : 'download failed' });
+  }
+});
+
 app.get('/api/audiobook/chapters', async (req, res) => {
   const source = String(req.query.source ?? '').trim();
   const id = String(req.query.id ?? '').trim();
-  if (!id || (source !== 'librivox' && source !== 'archive')) {
-    return res.status(400).json({ error: 'source (librivox|archive) and id required' });
+  const feedUrl = String(req.query.feedUrl ?? '').trim();
+  const allowed = new Set(AUDIOBOOK_CATALOG_SOURCES.map((s) => s.id));
+  if (!id || !allowed.has(source as (typeof AUDIOBOOK_CATALOG_SOURCES)[number]['id'])) {
+    return res.status(400).json({
+      error: `source (${AUDIOBOOK_CATALOG_SOURCES.map((s) => s.id).join('|')}) and id required`,
+    });
   }
   try {
-    const chapters = await fetchAudiobookCatalogChapters(source, id);
+    const chapters = await fetchAudiobookCatalogChapters(
+      source as (typeof AUDIOBOOK_CATALOG_SOURCES)[number]['id'],
+      id,
+      feedUrl || undefined,
+    );
     res.json({ chapters });
   } catch (e) {
     console.error('[tier34] audiobook/chapters', e);

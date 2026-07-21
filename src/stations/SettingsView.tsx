@@ -433,6 +433,7 @@ import {
   loadAudiobooksEnabled,
   saveAudiobooksEnabled,
 } from '../audiobooksSettings';
+import AudiobookSearchPluginsSettings from '../components/audiobooks/AudiobookSearchPluginsSettings';
 import {
   loadLibraryStationEnabled,
   saveLibraryStationEnabled,
@@ -3396,6 +3397,7 @@ export default function SettingsView({
                     aria-label="Audiobooks station"
                   />
                 </div>
+                {audiobooksEnabled ? <AudiobookSearchPluginsSettings /> : null}
                 {podcastsEnabled ? (
                   <div
                     className="p-4 border rounded-xl space-y-4"

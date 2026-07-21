@@ -1,30 +1,38 @@
 /**
- * Free audiobook catalog — LibriVox API + Internet Archive (LibriVox collection).
+ * Audiobook catalog provider registry — Tier34 server.
  */
 
-export type AudiobookCatalogSource = 'librivox' | 'archive';
+import {
+  dedupeAudiobookBooks,
+  type AudiobookCatalogBook,
+  type AudiobookCatalogChapter,
+  type AudiobookCatalogSource,
+} from './audiobookRssCore.js';
+import { fetchGutenbergChapters, searchGutenbergAudiobooks } from './audiobookGutenbergProvider.js';
+import { fetchLoyalbooksChapters, searchLoyalbooksAudiobooks } from './audiobookLoyalbooksProvider.js';
+import { fetchRssAudiobookChapters, searchRssAudiobooks } from './audiobookRssProvider.js';
+import { searchRaveBookSearch } from './audiobookRaveBookSearchProvider.js';
+import { extractArchiveIdentifierFromUrl, raveBookSearchId } from './audiobookRaveBookSearchCore.js';
+import {
+  fetchAudiobooks4soulChapters,
+  searchAudiobooks4soul,
+} from './audiobookAudiobooks4soulProvider.js';
+import {
+  fetchGoldenAudiobooksChapters,
+  searchGoldenAudiobooks,
+} from './audiobookGoldenAudiobooksProvider.js';
+import {
+  fetchLearnoutloudChapters,
+  searchLearnoutloudAudiobooks,
+} from './audiobookLearnoutloudProvider.js';
+import { fetchLit2goChapters, searchLit2goAudiobooks } from './audiobookLit2goProvider.js';
 
-export interface AudiobookCatalogBook {
-  id: string;
-  title: string;
-  author: string;
-  description?: string;
-  artworkUrl?: string;
-  chapterCount?: number;
-  durationSeconds?: number;
-  source: AudiobookCatalogSource;
-  sourceId: string;
-  detailUrl?: string;
-}
+export type { AudiobookCatalogBook, AudiobookCatalogChapter, AudiobookCatalogSource };
 
-export interface AudiobookCatalogChapter {
-  id: string;
-  bookId: string;
-  title: string;
-  audioUrl: string;
-  durationSeconds?: number;
-  chapterNumber?: number;
-  source: AudiobookCatalogSource;
+export interface AudiobookCatalogProvider {
+  id: AudiobookCatalogSource;
+  label: string;
+  search(query: string, opts?: { limit?: number }): Promise<AudiobookCatalogBook[]>;
 }
 
 const LIBRIVOX_API = 'https://librivox.org/api/feed/audiobooks';
@@ -43,30 +51,6 @@ function stripHtml(raw: string | undefined): string {
     .trim();
 }
 
-function normalizeTitleKey(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
-function dedupeBooks(books: AudiobookCatalogBook[]): AudiobookCatalogBook[] {
-  const seen = new Set<string>();
-  const out: AudiobookCatalogBook[] = [];
-  for (const book of books) {
-    const key = `${book.source}:${normalizeTitleKey(book.title)}:${normalizeTitleKey(book.author)}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(book);
-  }
-  return out;
-}
-
-type LibrivoxAuthor = {
-  first_name?: string;
-  last_name?: string;
-};
-
 type LibrivoxBook = {
   id?: string;
   title?: string;
@@ -76,16 +60,28 @@ type LibrivoxBook = {
   url_rss?: string;
   url_librivox?: string;
   url_iarchive?: string;
-  authors?: LibrivoxAuthor[];
+  authors?: Array<{ first_name?: string; last_name?: string }>;
+  sections?: Array<{
+    id?: string;
+    section_number?: string;
+    title?: string;
+    listen_url?: string;
+    playtime?: string;
+  }>;
 };
 
-type LibrivoxSection = {
-  id?: string;
-  section_number?: string;
-  title?: string;
-  listen_url?: string;
-  playtime?: string;
-};
+function extractArchiveIdentifier(url: string): string {
+  try {
+    const parsed = new URL(url.trim());
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    const idx = parts.findIndex((p) => p === 'details' || p === 'download');
+    if (idx >= 0 && parts[idx + 1]) return parts[idx + 1]!;
+    return parts[parts.length - 1] ?? '';
+  } catch {
+    const m = url.match(/\/details\/([^/?#]+)/i);
+    return m?.[1] ?? '';
+  }
+}
 
 async function searchLibrivox(query: string, limit: number): Promise<AudiobookCatalogBook[]> {
   const url = `${LIBRIVOX_API}?title=${encodeURIComponent(query)}&format=json&limit=${Math.min(limit, 50)}`;
@@ -121,19 +117,6 @@ async function searchLibrivox(query: string, limit: number): Promise<AudiobookCa
     });
 }
 
-function extractArchiveIdentifier(url: string): string {
-  try {
-    const parsed = new URL(url.trim());
-    const parts = parsed.pathname.split('/').filter(Boolean);
-    const idx = parts.findIndex((p) => p === 'details' || p === 'download');
-    if (idx >= 0 && parts[idx + 1]) return parts[idx + 1]!;
-    return parts[parts.length - 1] ?? '';
-  } catch {
-    const m = url.match(/\/details\/([^/?#]+)/i);
-    return m?.[1] ?? '';
-  }
-}
-
 async function searchInternetArchive(query: string, limit: number): Promise<AudiobookCatalogBook[]> {
   const q = `(title:(${query}) OR creator:(${query})) AND mediatype:audio AND collection:librivox`;
   const url = `${IA_SEARCH}?q=${encodeURIComponent(q)}&fl[]=identifier,title,creator,description&rows=${Math.min(limit, 25)}&output=json`;
@@ -162,18 +145,50 @@ async function searchInternetArchive(query: string, limit: number): Promise<Audi
     });
 }
 
+export const AUDIOBOOK_CATALOG_PROVIDERS: AudiobookCatalogProvider[] = [
+  { id: 'librivox', label: 'LibriVox', search: (q, opts) => searchLibrivox(q, opts?.limit ?? 25) },
+  { id: 'archive', label: 'Internet Archive', search: (q, opts) => searchInternetArchive(q, opts?.limit ?? 25) },
+  { id: 'gutenberg', label: 'Project Gutenberg', search: (q, opts) => searchGutenbergAudiobooks(q, opts?.limit ?? 25) },
+  { id: 'loyalbooks', label: 'Loyal Books', search: (q, opts) => searchLoyalbooksAudiobooks(q, opts?.limit ?? 25) },
+  { id: 'rss', label: 'RSS', search: (q, opts) => searchRssAudiobooks(q, opts?.limit ?? 25) },
+  { id: 'ravebooksearch', label: 'Meta-search', search: (q, opts) => searchRaveBookSearch(q, opts?.limit ?? 25) },
+  { id: 'learnoutloud', label: 'LearnOutLoud', search: (q, opts) => searchLearnoutloudAudiobooks(q, opts?.limit ?? 25) },
+  { id: 'lit2go', label: 'Lit2Go', search: (q, opts) => searchLit2goAudiobooks(q, opts?.limit ?? 25) },
+  {
+    id: 'goldenaudiobooks',
+    label: 'Golden Audiobooks',
+    search: (q, opts) => searchGoldenAudiobooks(q, opts?.limit ?? 25),
+  },
+  {
+    id: 'audiobooks4soul',
+    label: 'Audiobooks4Soul',
+    search: (q, opts) => searchAudiobooks4soul(q, opts?.limit ?? 25),
+  },
+];
+
+export const AUDIOBOOK_CATALOG_SOURCES = AUDIOBOOK_CATALOG_PROVIDERS.map((p) => ({
+  id: p.id,
+  label: p.label,
+}));
+
 export async function searchAudiobookCatalog(
   query: string,
   limit = 25,
 ): Promise<AudiobookCatalogBook[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const perSource = Math.max(8, Math.ceil(limit / 2));
-  const [librivox, archive] = await Promise.all([
-    searchLibrivox(q, perSource),
-    searchInternetArchive(q, perSource),
-  ]);
-  return dedupeBooks([...librivox, ...archive]).slice(0, limit);
+  const perSource = Math.max(6, Math.ceil(limit / AUDIOBOOK_CATALOG_PROVIDERS.length));
+  const batches = await Promise.all(
+    AUDIOBOOK_CATALOG_PROVIDERS.map(async (p) => {
+      try {
+        return await p.search(q, { limit: perSource });
+      } catch (err) {
+        console.warn(`[audiobook] provider ${p.id} search failed`, err);
+        return [] as AudiobookCatalogBook[];
+      }
+    }),
+  );
+  return dedupeAudiobookBooks(batches.flat()).slice(0, limit);
 }
 
 async function fetchLibrivoxChapters(bookId: string): Promise<AudiobookCatalogChapter[]> {
@@ -183,7 +198,7 @@ async function fetchLibrivoxChapters(bookId: string): Promise<AudiobookCatalogCh
     signal: AbortSignal.timeout(20_000),
   });
   if (!res.ok) return [];
-  const data = (await res.json()) as { books?: Array<LibrivoxBook & { sections?: LibrivoxSection[] }> };
+  const data = (await res.json()) as { books?: LibrivoxBook[] };
   const book = data.books?.[0];
   if (!book?.sections?.length) return [];
   return book.sections
@@ -207,7 +222,7 @@ async function fetchArchiveChapters(identifier: string): Promise<AudiobookCatalo
   });
   if (!res.ok) return [];
   const data = (await res.json()) as {
-    files?: Array<{ name?: string; format?: string; length?: string }>;
+    files?: Array<{ name?: string; length?: string }>;
   };
   const mp3s = (data.files ?? [])
     .filter((f) => {
@@ -231,12 +246,35 @@ async function fetchArchiveChapters(identifier: string): Promise<AudiobookCatalo
   });
 }
 
+async function fetchRaveBookSearchChapters(detailUrl: string): Promise<AudiobookCatalogChapter[]> {
+  const url = detailUrl.trim();
+  if (!url) return [];
+  const archiveId = extractArchiveIdentifierFromUrl(url);
+  if (!archiveId) return [];
+  const bookId = raveBookSearchId(url);
+  const chapters = await fetchArchiveChapters(archiveId);
+  return chapters.map((ch) => ({
+    ...ch,
+    bookId,
+    source: 'ravebooksearch' as const,
+  }));
+}
+
 export async function fetchAudiobookCatalogChapters(
   source: AudiobookCatalogSource,
   sourceId: string,
+  feedUrl?: string,
 ): Promise<AudiobookCatalogChapter[]> {
   const id = sourceId.trim();
   if (!id) return [];
   if (source === 'librivox') return fetchLibrivoxChapters(id);
-  return fetchArchiveChapters(id);
+  if (source === 'archive') return fetchArchiveChapters(id);
+  if (source === 'ravebooksearch') return fetchRaveBookSearchChapters(id);
+  if (source === 'gutenberg') return fetchGutenbergChapters(id);
+  if (source === 'loyalbooks') return fetchLoyalbooksChapters(id);
+  if (source === 'learnoutloud') return fetchLearnoutloudChapters(id);
+  if (source === 'lit2go') return fetchLit2goChapters(id);
+  if (source === 'goldenaudiobooks') return fetchGoldenAudiobooksChapters(id);
+  if (source === 'audiobooks4soul') return fetchAudiobooks4soulChapters(id);
+  return fetchRssAudiobookChapters(id, feedUrl);
 }
