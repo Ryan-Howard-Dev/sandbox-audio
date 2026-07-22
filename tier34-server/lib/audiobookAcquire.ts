@@ -149,19 +149,17 @@ export async function resolveAudiobookAcquire(input: {
   const infoHash = extractInfoHash(link) ?? undefined;
   const rdKey = input.realDebridApiKey?.trim() ?? process.env.REALDEBRID_API_KEY?.trim() ?? '';
 
-  if (rdKey) {
-    const files = await listRdTorrentFiles(rdKey, link);
-    if (files.length > 0) {
-      return { title, infoHash, files };
-    }
+  if (!rdKey) {
+    throw new Error(
+      'Configure Real-Debrid in Settings → Add-ons for torrent downloads (optional). Search still works without it.',
+    );
   }
 
-  // Without RD: return magnet/torrent link as single pseudo-file for manual handling
-  return {
-    title,
-    infoHash,
-    files: [{ path: title, url: link }],
-  };
+  const files = await listRdTorrentFiles(rdKey, link);
+  if (files.length === 0) {
+    throw new Error('Real-Debrid did not return playable audio files for this torrent');
+  }
+  return { title, infoHash, files };
 }
 
 function safeFilename(name: string): string {
@@ -173,6 +171,11 @@ export async function downloadResolvedAudiobook(
   realDebridApiKey?: string,
 ): Promise<ResolvedAcquire> {
   const rdKey = realDebridApiKey?.trim() ?? process.env.REALDEBRID_API_KEY?.trim() ?? '';
+  if (!rdKey) {
+    throw new Error(
+      'Configure Real-Debrid in Settings → Add-ons for torrent downloads (optional). Search still works without it.',
+    );
+  }
   const albumDir = join(INGEST_DIR, safeFilename(resolved.title));
   mkdirSync(albumDir, { recursive: true });
 
@@ -180,7 +183,6 @@ export async function downloadResolvedAudiobook(
   for (const file of resolved.files) {
     let downloadUrl = file.url;
     if (downloadUrl.startsWith('magnet:') || /\.torrent(\?|$)/i.test(downloadUrl)) {
-      if (!rdKey) continue;
       const unrestrict = await realDebridUnrestrict(rdKey, downloadUrl);
       if (!unrestrict) continue;
       downloadUrl = unrestrict;

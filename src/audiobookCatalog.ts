@@ -1,9 +1,8 @@
 /**
- * Free audiobook discovery — provider registry via Tier34 with client fallbacks.
- * Tier34 searches all sources (LibriVox, Archive, Gutenberg, Loyal Books, RSS,
- * Meta-search, LearnOutLoud, Lit2Go, Golden Audiobooks, Audiobooks4Soul).
- * Client fallbacks cover librivox / rss / gutenberg / loyalbooks / archive / ravebooksearch(IA).
- * Scrape-index sources require Tier34 for search + chapters.
+ * Free audiobook discovery — on-device catalogs with optional Tier34 boost.
+ * Client covers LibriVox, RSS, Gutenberg, Loyal Books, Archive/meta (IA), and
+ * scrape-index sources (LearnOutLoud, Lit2Go, Golden Audiobooks, Audiobooks4Soul).
+ * Tier34 is optional when Sandbox Server is reachable.
  */
 
 import type { MediaEnvelope } from './sandboxLayer1';
@@ -16,6 +15,13 @@ import { fetchGutenbergChaptersClient, searchGutenbergAudiobooksClient } from '.
 import { fetchLoyalbooksChaptersClient, searchLoyalbooksAudiobooksClient } from './audiobookLoyalbooksProvider';
 import { fetchRssAudiobookChapters, searchRssAudiobooks } from './audiobookRssProvider';
 import { AUDIOBOOK_CURATED_RSS_FEEDS } from './audiobookRssFeeds';
+import {
+  fetchAudiobooks4soulChaptersClient,
+  fetchGoldenAudiobooksChaptersClient,
+  fetchLearnoutloudChaptersClient,
+  fetchLit2goChaptersClient,
+  searchScrapeAudiobooksClient,
+} from './audiobookScrapeClient';
 
 export type AudiobookCatalogSource =
   | 'librivox'
@@ -29,13 +35,8 @@ export type AudiobookCatalogSource =
   | 'goldenaudiobooks'
   | 'audiobooks4soul';
 
-/** Scrape-index + other sources that need Tier34 for chapter resolution. */
-export const AUDIOBOOK_TIER34_CHAPTER_SOURCES: ReadonlySet<AudiobookCatalogSource> = new Set([
-  'learnoutloud',
-  'lit2go',
-  'goldenaudiobooks',
-  'audiobooks4soul',
-]);
+/** @deprecated Scrape sources now resolve on-device; kept for tests/compat. */
+export const AUDIOBOOK_TIER34_CHAPTER_SOURCES: ReadonlySet<AudiobookCatalogSource> = new Set();
 
 export interface AudiobookCatalogBook {
   id: string;
@@ -194,36 +195,54 @@ export async function searchAudiobookCatalog(
   if (q.length < 2 || isAirGapEnabled()) return [];
 
   const perSource = Math.max(4, Math.ceil(limit / AUDIOBOOK_CATALOG_SOURCES.length));
-  const [remote, rssLocal, gutenbergLocal, loyalbooksLocal] = await Promise.all([
+  const [remote, rssLocal, gutenbergLocal, loyalbooksLocal, scrapeLocal] = await Promise.all([
     searchViaTier34(q, limit),
     searchRssAudiobooks(q, perSource),
     searchGutenbergAudiobooksClient(q, perSource),
     searchLoyalbooksAudiobooksClient(q, perSource),
+    searchScrapeAudiobooksClient(q, perSource),
   ]);
 
   if (remote.length > 0) {
-    // Prefer Tier34 for all remote sources; merge client RSS/Gutenberg/Loyal Books
-    // so user-added feeds and direct fallbacks stay available.
+    // Prefer Tier34 when available; always merge on-device RSS / Gutenberg / Loyal Books /
+    // scrape so the phone works without Sandbox Server and can beat Cloudflare from home IP.
     const remoteRss = remote.filter((b) => b.source === 'rss');
-    const remoteOther = remote.filter((b) => b.source !== 'rss');
+    const remoteScrape = remote.filter(
+      (b) =>
+        b.source === 'learnoutloud' ||
+        b.source === 'lit2go' ||
+        b.source === 'goldenaudiobooks' ||
+        b.source === 'audiobooks4soul',
+    );
+    const remoteOther = remote.filter(
+      (b) =>
+        b.source !== 'rss' &&
+        b.source !== 'learnoutloud' &&
+        b.source !== 'lit2go' &&
+        b.source !== 'goldenaudiobooks' &&
+        b.source !== 'audiobooks4soul',
+    );
     const mergedRss = dedupeAudiobookBooks([...remoteRss, ...rssLocal]);
+    const mergedScrape = dedupeAudiobookBooks([...remoteScrape, ...scrapeLocal]);
     const merged = dedupeAudiobookBooks([
       ...remoteOther,
       ...mergedRss,
       ...gutenbergLocal,
       ...loyalbooksLocal,
+      ...mergedScrape,
     ]);
     return merged.slice(0, limit);
   }
 
-  // Tier34 offline — client-capable sources only (scrape-index needs Tier34).
-  const [librivox, rss, gutenberg, loyalbooks] = await Promise.all([
-    searchLibrivoxClient(q, perSource),
-    searchRssAudiobooks(q, perSource),
-    searchGutenbergAudiobooksClient(q, perSource),
-    searchLoyalbooksAudiobooksClient(q, perSource),
-  ]);
-  return dedupeAudiobookBooks([...librivox, ...rss, ...gutenberg, ...loyalbooks]).slice(0, limit);
+  // Tier34 offline — reuse on-device results already fetched + LibriVox API.
+  const librivox = await searchLibrivoxClient(q, perSource);
+  return dedupeAudiobookBooks([
+    ...librivox,
+    ...rssLocal,
+    ...gutenbergLocal,
+    ...loyalbooksLocal,
+    ...scrapeLocal,
+  ]).slice(0, limit);
 }
 
 export function catalogChapterEnvelope(
@@ -294,8 +313,18 @@ export async function fetchAudiobookCatalogChapters(
   );
   if (remote?.chapters?.length) return remote.chapters;
 
-  // Scrape-index chapters only resolve through Tier34.
-  if (AUDIOBOOK_TIER34_CHAPTER_SOURCES.has(book.source)) return [];
+  if (book.source === 'learnoutloud') {
+    return fetchLearnoutloudChaptersClient(book.sourceId || book.detailUrl || '');
+  }
+  if (book.source === 'lit2go') {
+    return fetchLit2goChaptersClient(book.sourceId || book.detailUrl || '');
+  }
+  if (book.source === 'goldenaudiobooks') {
+    return fetchGoldenAudiobooksChaptersClient(book.sourceId || book.detailUrl || '');
+  }
+  if (book.source === 'audiobooks4soul') {
+    return fetchAudiobooks4soulChaptersClient(book.sourceId || book.detailUrl || '');
+  }
 
   if (book.source === 'rss') {
     return fetchRssAudiobookChapters(book);

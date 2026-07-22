@@ -59,9 +59,10 @@ describe('audiobookCatalog', () => {
     ]);
   });
 
-  it('marks scrape-index sources as Tier34-only for chapters', () => {
-    expect(AUDIOBOOK_TIER34_CHAPTER_SOURCES.has('lit2go')).toBe(true);
-    expect(AUDIOBOOK_TIER34_CHAPTER_SOURCES.has('learnoutloud')).toBe(true);
-    expect(AUDIOBOOK_TIER34_CHAPTER_SOURCES.has('librivox')).toBe(false);
+  it('no longer requires Tier34 for scrape-index chapters (on-device scrape client)', () => {
+    expect(AUDIOBOOK_TIER34_CHAPTER_SOURCES.size).toBe(0);
+    expect(AUDIOBOOK_TIER34_CHAPTER_SOURCES.has('lit2go')).toBe(false);
+    expect(AUDIOBOOK_TIER34_CHAPTER_SOURCES.has('learnoutloud')).toBe(false);
   });
 });
+
