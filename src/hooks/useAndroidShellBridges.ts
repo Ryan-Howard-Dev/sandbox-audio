@@ -16,11 +16,22 @@ import {
   buildAndroidAutoLibraryPayload,
   teardownAndroidAutoBridge,
 } from '../androidAuto';
+import { runAfterBootInteractive } from '../bootInteractivity';
 import { getLockerEntriesSnapshot, subscribeLockerCache } from '../lockerStorage';
 import { lockerEntryToEnvelope } from '../smartPlaylistEngine';
 import { loadPlaylists, subscribePlaylists } from '../playlistStorage';
 import { runUnifiedSearch } from '../unifiedSearch';
 import type { ConnectCommand } from '../tier34/connectProtocol';
+
+const ANDROID_AUTO_LIBRARY_SYNC_DEBOUNCE_MS = 2500;
+
+function scheduleIdleWork(task: () => void, timeoutMs = 5000): void {
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(() => task(), { timeout: timeoutMs });
+    return;
+  }
+  setTimeout(task, 0);
+}
 
 export type AndroidShellShortcutCtx = {
   play: (options?: { userGesture?: boolean; system?: boolean }) => void;
@@ -185,16 +196,35 @@ export function useAndroidShellBridges({
 
   useEffect(() => {
     if (!isAndroid()) return;
-    const syncAndroidAutoLibrary = () => {
+    let cancelled = false;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const pushAndroidAutoLibrary = () => {
+      if (cancelled) return;
       const entries = getLockerEntriesSnapshot();
       if (!entries) return;
-      const payload = buildAndroidAutoLibraryPayload(entries, loadPlaylists());
-      void syncAndroidAutoBrowseLibrary(payload);
+      scheduleIdleWork(() => {
+        if (cancelled) return;
+        const payload = buildAndroidAutoLibraryPayload(entries, loadPlaylists());
+        void syncAndroidAutoBrowseLibrary(payload);
+      });
     };
-    syncAndroidAutoLibrary();
-    const unsubLocker = subscribeLockerCache(syncAndroidAutoLibrary);
-    const unsubPlaylists = subscribePlaylists(syncAndroidAutoLibrary);
+
+    const scheduleAndroidAutoLibrarySync = () => {
+      if (cancelled) return;
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        pushAndroidAutoLibrary();
+      }, ANDROID_AUTO_LIBRARY_SYNC_DEBOUNCE_MS);
+    };
+
+    runAfterBootInteractive(scheduleAndroidAutoLibrarySync);
+    const unsubLocker = subscribeLockerCache(scheduleAndroidAutoLibrarySync);
+    const unsubPlaylists = subscribePlaylists(scheduleAndroidAutoLibrarySync);
     return () => {
+      cancelled = true;
+      if (debounceTimer) clearTimeout(debounceTimer);
       unsubLocker();
       unsubPlaylists();
     };

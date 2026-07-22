@@ -158,7 +158,10 @@ export async function verifyLockerIntegrityOnBoot(): Promise<{
   let markedHollow = 0;
   let reacquireQueued = 0;
 
-  for (const row of rows) {
+  const { yieldToMain } = await import('./yieldToMain');
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+    const row = rows[rowIndex]!;
+    if (rowIndex > 0 && rowIndex % 16 === 0) await yieldToMain();
     const id = row.id.trim();
     if (!id) continue;
     const blob = await getLockerAudioBlob(id);
@@ -212,14 +215,26 @@ export async function verifyLockerIntegrityOnBoot(): Promise<{
 }
 
 /** User-visible durability snapshot for Settings / pre-trip check. */
-export async function getOfflineLibraryDurabilityReport(): Promise<OfflineLibraryDurabilityReport> {
+export async function getOfflineLibraryDurabilityReport(options?: {
+  /** Fast path for Settings mount — manifest sum instead of per-blob IDB reads. */
+  estimateBlobBytes?: boolean;
+}): Promise<OfflineLibraryDurabilityReport> {
   const health = await auditLockerVaultHealth();
   const native = await auditNativeLockerStorage();
   const rows = await readLockerEntriesForDurability();
   let idbBlobBytes = 0;
-  for (const row of rows) {
-    const blob = await getLockerAudioBlob(row.id);
-    if (blob?.size) idbBlobBytes += blob.size;
+  if (options?.estimateBlobBytes) {
+    const manifest = loadManifest();
+    for (const entry of Object.values(manifest.entries)) {
+      idbBlobBytes += entry.blobBytes ?? 0;
+    }
+  } else {
+    const { yieldToMain } = await import('./yieldToMain');
+    for (let i = 0; i < rows.length; i += 1) {
+      if (i > 0 && i % 16 === 0) await yieldToMain();
+      const blob = await getLockerAudioBlob(rows[i]!.id);
+      if (blob?.size) idbBlobBytes += blob.size;
+    }
   }
 
   return {

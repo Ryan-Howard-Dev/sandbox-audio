@@ -957,9 +957,18 @@ export default function SettingsView({
       setLockerUsageBytes(bytes);
       setLockerTrackCount(trackCount);
     });
-    void getOfflineLibraryDurabilityReport().then(setDurabilityReport).catch(() => {
-      setDurabilityReport(null);
-    });
+    const loadDurability = () => {
+      void getOfflineLibraryDurabilityReport({ estimateBlobBytes: true })
+        .then(setDurabilityReport)
+        .catch(() => {
+          setDurabilityReport(null);
+        });
+    };
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(loadDurability, { timeout: 8000 });
+    } else {
+      setTimeout(loadDurability, 250);
+    }
   }, []);
 
   const refreshStreamCacheUsage = useCallback(() => {

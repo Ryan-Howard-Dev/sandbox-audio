@@ -142,6 +142,7 @@ export function buildAndroidAutoLibraryPayload(
     .map((col) => {
       const edition = resolvePreferredEdition(col, prefs);
       const tracks = edition.tracks
+        .slice(0, 8)
         .map((entry) => browseItemFromEnvelope(lockerEntryToEnvelope(entry)))
         .filter((item): item is AndroidAutoBrowseItem => item != null);
       return {
