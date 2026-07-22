@@ -157,16 +157,19 @@ export async function searchGoldenAudiobooksClient(
 ): Promise<AudiobookCatalogBook[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const [index, searchHtml] = await Promise.all([
-    getOrBuildScrapeIndex('client-goldenaudiobooks', async () => {
-      const xml = await fetchHtml(`${GOLDEN}/post-sitemap.xml`);
-      return xml ? parseSitemapLocs(xml, 'goldenaudiobooks.com').slice(0, 2500) : [];
-    }),
-    fetchHtml(`${GOLDEN}/?s=${encodeURIComponent(q)}`),
-  ]);
+  // Prefer WordPress `?s=` — avoid fetching/parsing post-sitemap (up to 2500 locs) on the UI thread.
+  const searchHtml = await fetchHtml(`${GOLDEN}/?s=${encodeURIComponent(q)}`);
   const fromSearch = searchHtml
     ? parseGoldenSearchPage(searchHtml).map((entry) => scrapeEntryToBook(entry, 'goldenaudiobooks'))
     : [];
+  if (fromSearch.length >= limit) {
+    return dedupeAudiobookBooks(fromSearch).slice(0, limit);
+  }
+  // Fallback index only when search HTML is thin — capped well below server sitemap size.
+  const index = await getOrBuildScrapeIndex('client-goldenaudiobooks', async () => {
+    const xml = await fetchHtml(`${GOLDEN}/post-sitemap.xml`);
+    return xml ? parseSitemapLocs(xml, 'goldenaudiobooks.com').slice(0, 400) : [];
+  });
   const fromIndex = searchScrapeIndex(index, q, 'goldenaudiobooks', limit);
   return dedupeAudiobookBooks([...fromSearch, ...fromIndex]).slice(0, limit);
 }
@@ -196,32 +199,34 @@ export async function searchAudiobooks4soulClient(
 ): Promise<AudiobookCatalogBook[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const [index, searchHtml] = await Promise.all([
-    getOrBuildScrapeIndex('client-audiobooks4soul', async () => {
-      const urls = [`${SOUL}/`, `${SOUL}/audiobooks/`, `${SOUL}/category/audiobooks/`];
-      const entries = [];
-      for (const url of urls) {
-        const html = await fetchHtml(url);
-        if (html) entries.push(...parseAudiobooks4soulCatalogPage(html));
-        await sleep(SCRAPE_FETCH_DELAY_MS);
-      }
-      const sitemap = await fetchHtml(`${SOUL}/sitemap.xml`);
-      if (sitemap) entries.push(...parseSitemapLocs(sitemap, 'audiobooks4soul.com'));
-      const seen = new Set<string>();
-      return entries.filter((entry) => {
-        const key = entry.url.toLowerCase();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-    }),
-    fetchHtml(`${SOUL}/?s=${encodeURIComponent(q)}`),
-  ]);
+  // Prefer `?s=` search HTML; only warm a small catalog/sitemap index when results are thin.
+  const searchHtml = await fetchHtml(`${SOUL}/?s=${encodeURIComponent(q)}`);
   const fromSearch = searchHtml
     ? parseAudiobooks4soulCatalogPage(searchHtml).map((entry) =>
         scrapeEntryToBook(entry, 'audiobooks4soul'),
       )
     : [];
+  if (fromSearch.length >= limit) {
+    return dedupeAudiobookBooks(fromSearch).slice(0, limit);
+  }
+  const index = await getOrBuildScrapeIndex('client-audiobooks4soul', async () => {
+    const urls = [`${SOUL}/`, `${SOUL}/audiobooks/`, `${SOUL}/category/audiobooks/`];
+    const entries = [];
+    for (const url of urls) {
+      const html = await fetchHtml(url);
+      if (html) entries.push(...parseAudiobooks4soulCatalogPage(html));
+      await sleep(SCRAPE_FETCH_DELAY_MS);
+    }
+    const sitemap = await fetchHtml(`${SOUL}/sitemap.xml`);
+    if (sitemap) entries.push(...parseSitemapLocs(sitemap, 'audiobooks4soul.com').slice(0, 400));
+    const seen = new Set<string>();
+    return entries.filter((entry) => {
+      const key = entry.url.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  });
   const fromIndex = searchScrapeIndex(index, q, 'audiobooks4soul', limit);
   return dedupeAudiobookBooks([...fromSearch, ...fromIndex]).slice(0, limit);
 }
@@ -245,17 +250,24 @@ export async function fetchAudiobooks4soulChaptersClient(
   }));
 }
 
-/** Parallel on-device scrape search across all four catalogs. */
+/** Parallel on-device scrape search across all four catalogs (bounded concurrency). */
 export async function searchScrapeAudiobooksClient(
   query: string,
   limit: number,
 ): Promise<AudiobookCatalogBook[]> {
   const per = Math.max(3, Math.ceil(limit / 4));
-  const batches = await Promise.all([
-    searchLearnoutloudClient(query, per).catch(() => []),
-    searchLit2goClient(query, per).catch(() => []),
-    searchGoldenAudiobooksClient(query, per).catch(() => []),
-    searchAudiobooks4soulClient(query, per).catch(() => []),
-  ]);
+  const runners: Array<() => Promise<AudiobookCatalogBook[]>> = [
+    () => searchLearnoutloudClient(query, per),
+    () => searchLit2goClient(query, per),
+    () => searchGoldenAudiobooksClient(query, per),
+    () => searchAudiobooks4soulClient(query, per),
+  ];
+  const batches: AudiobookCatalogBook[][] = [];
+  // Cap concurrency at 2 so four HTML/XML parsers do not hit the WebView main thread together.
+  for (let i = 0; i < runners.length; i += 2) {
+    const slice = runners.slice(i, i + 2);
+    const part = await Promise.all(slice.map((run) => run().catch(() => [] as AudiobookCatalogBook[])));
+    batches.push(...part);
+  }
   return dedupeAudiobookBooks(batches.flat()).slice(0, limit);
 }

@@ -298,7 +298,7 @@ import {
   hasPlayableAudiobookCatalogStreamUrl,
   resolveAudiobookCatalogEnvelopeForPlayback,
 } from './audiobookCatalogPlayback';
-import { isAudiobookCatalogEnvelopeId } from './audiobookCatalog';
+import { isAudiobookCatalogEnvelopeId } from './audiobookCatalogIds';
 import { tapHaptic, yieldToMain } from './uiTapFeedback';
 import {
   playbackSwitchRequiresHardPreempt,

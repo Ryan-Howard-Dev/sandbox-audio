@@ -119,6 +119,13 @@ export default defineConfig(() => {
               if (id.includes('/src/stations/CollectionView')) return 'station-locker';
               if (id.includes('/src/stations/DJStationView')) return 'station-dj';
               if (id.includes('/src/stations/PodcastsView')) return 'station-podcasts';
+              if (id.includes('/src/stations/AudiobooksView')) return 'station-audiobooks';
+              if (
+                id.includes('/src/audiobookScrapeClient') ||
+                id.includes('/tier34-server/lib/audiobookScrapeCore')
+              ) {
+                return 'audiobook-scrape';
+              }
               if (id.includes('/src/stations/ArtistDetailView')) return 'station-artist';
               if (id.includes('/src/stations/SonicLockerStationView')) return 'station-sonic';
               if (id.includes('/src/stations/ListeningStatsView')) return 'station-insights';

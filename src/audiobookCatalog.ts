@@ -15,13 +15,12 @@ import { fetchGutenbergChaptersClient, searchGutenbergAudiobooksClient } from '.
 import { fetchLoyalbooksChaptersClient, searchLoyalbooksAudiobooksClient } from './audiobookLoyalbooksProvider';
 import { fetchRssAudiobookChapters, searchRssAudiobooks } from './audiobookRssProvider';
 import { AUDIOBOOK_CURATED_RSS_FEEDS } from './audiobookRssFeeds';
-import {
-  fetchAudiobooks4soulChaptersClient,
-  fetchGoldenAudiobooksChaptersClient,
-  fetchLearnoutloudChaptersClient,
-  fetchLit2goChaptersClient,
-  searchScrapeAudiobooksClient,
-} from './audiobookScrapeClient';
+import { AUDIOBOOK_CATALOG_ENVELOPE_PREFIX } from './audiobookCatalogIds';
+
+export {
+  AUDIOBOOK_CATALOG_ENVELOPE_PREFIX,
+  isAudiobookCatalogEnvelopeId,
+} from './audiobookCatalogIds';
 
 export type AudiobookCatalogSource =
   | 'librivox'
@@ -71,12 +70,6 @@ export interface AudiobookCatalogProvider {
   id: AudiobookCatalogSource;
   label: string;
   search(query: string, opts?: { limit?: number }): Promise<AudiobookCatalogBook[]>;
-}
-
-export const AUDIOBOOK_CATALOG_ENVELOPE_PREFIX = 'audiobook-catalog:';
-
-export function isAudiobookCatalogEnvelopeId(envelopeId: string | null | undefined): boolean {
-  return (envelopeId?.trim() ?? '').startsWith(AUDIOBOOK_CATALOG_ENVELOPE_PREFIX);
 }
 
 export const AUDIOBOOK_CATALOG_SOURCES = [
@@ -195,12 +188,16 @@ export async function searchAudiobookCatalog(
   if (q.length < 2 || isAirGapEnabled()) return [];
 
   const perSource = Math.max(4, Math.ceil(limit / AUDIOBOOK_CATALOG_SOURCES.length));
+  // Scrape client is dynamically imported so shell/Podcasts never pay for sitemap parsers.
+  const scrapeSearch = import('./audiobookScrapeClient').then((m) =>
+    m.searchScrapeAudiobooksClient(q, perSource),
+  );
   const [remote, rssLocal, gutenbergLocal, loyalbooksLocal, scrapeLocal] = await Promise.all([
     searchViaTier34(q, limit),
     searchRssAudiobooks(q, perSource),
     searchGutenbergAudiobooksClient(q, perSource),
     searchLoyalbooksAudiobooksClient(q, perSource),
-    searchScrapeAudiobooksClient(q, perSource),
+    scrapeSearch,
   ]);
 
   if (remote.length > 0) {
@@ -313,17 +310,23 @@ export async function fetchAudiobookCatalogChapters(
   );
   if (remote?.chapters?.length) return remote.chapters;
 
-  if (book.source === 'learnoutloud') {
-    return fetchLearnoutloudChaptersClient(book.sourceId || book.detailUrl || '');
-  }
-  if (book.source === 'lit2go') {
-    return fetchLit2goChaptersClient(book.sourceId || book.detailUrl || '');
-  }
-  if (book.source === 'goldenaudiobooks') {
-    return fetchGoldenAudiobooksChaptersClient(book.sourceId || book.detailUrl || '');
-  }
-  if (book.source === 'audiobooks4soul') {
-    return fetchAudiobooks4soulChaptersClient(book.sourceId || book.detailUrl || '');
+  if (
+    book.source === 'learnoutloud' ||
+    book.source === 'lit2go' ||
+    book.source === 'goldenaudiobooks' ||
+    book.source === 'audiobooks4soul'
+  ) {
+    const scrape = await import('./audiobookScrapeClient');
+    if (book.source === 'learnoutloud') {
+      return scrape.fetchLearnoutloudChaptersClient(book.sourceId || book.detailUrl || '');
+    }
+    if (book.source === 'lit2go') {
+      return scrape.fetchLit2goChaptersClient(book.sourceId || book.detailUrl || '');
+    }
+    if (book.source === 'goldenaudiobooks') {
+      return scrape.fetchGoldenAudiobooksChaptersClient(book.sourceId || book.detailUrl || '');
+    }
+    return scrape.fetchAudiobooks4soulChaptersClient(book.sourceId || book.detailUrl || '');
   }
 
   if (book.source === 'rss') {
