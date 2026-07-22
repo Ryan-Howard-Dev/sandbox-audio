@@ -80,6 +80,14 @@ import { useTranslation } from '../i18n';
 
 const SEARCH_RESULTS_TEXT = '#E6E8EE';
 
+function deferNonCriticalWork(run: () => void): void {
+  if (typeof requestIdleCallback !== 'undefined') {
+    requestIdleCallback(() => run(), { timeout: 2500 });
+  } else {
+    window.setTimeout(run, 0);
+  }
+}
+
 const searchResultsRowStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -851,17 +859,20 @@ export default function SearchResultsView({
       return;
     }
     let cancelled = false;
-    void fetchCatalogSupplementalArtistCredits(
-      albumContext.title,
-      albumContext.artist,
-      tracks.map((track) => ({ title: track.title, artist: track.artist })),
-    )
-      .then((names) => {
-        if (!cancelled) setCatalogSupplementCredits(names);
-      })
-      .catch(() => {
-        if (!cancelled) setCatalogSupplementCredits([]);
-      });
+    deferNonCriticalWork(() => {
+      if (cancelled) return;
+      void fetchCatalogSupplementalArtistCredits(
+        albumContext.title,
+        albumContext.artist,
+        tracks.map((track) => ({ title: track.title, artist: track.artist })),
+      )
+        .then((names) => {
+          if (!cancelled) setCatalogSupplementCredits(names);
+        })
+        .catch(() => {
+          if (!cancelled) setCatalogSupplementCredits([]);
+        });
+    });
     return () => {
       cancelled = true;
     };
@@ -940,10 +951,13 @@ export default function SearchResultsView({
       return;
     }
     let cancelled = false;
-    void fetchCatalogAlbumEditionVariants(albumContext).then((variants) => {
-      if (!cancelled) {
-        setAlbumEditionVariants(variants.length > 1 ? variants : []);
-      }
+    deferNonCriticalWork(() => {
+      if (cancelled) return;
+      void fetchCatalogAlbumEditionVariants(albumContext).then((variants) => {
+        if (!cancelled) {
+          setAlbumEditionVariants(variants.length > 1 ? variants : []);
+        }
+      });
     });
     return () => {
       cancelled = true;

@@ -245,7 +245,11 @@ function enqueueE2e<T>(fn: () => Promise<T>): Promise<T> {
 
 export function registerE2eHandlers(next: E2eHandlers): void {
   if (!isE2eBridgeEnabled()) return;
+  const hadNavigateTab = typeof handlers.navigateTab === 'function';
   handlers = { ...handlers, ...next };
+  if (!hadNavigateTab && typeof handlers.navigateTab === 'function') {
+    flushPendingE2eUrls();
+  }
 }
 
 /** Flush queued deep links once E2E stubs or sandbox handlers are registered. */
@@ -430,14 +434,19 @@ export function probeStationOpenFromDom(tab: E2eNavTab): { ready: boolean; detai
         return { ready: true, detail: 'search-results-page' };
       }
       const onSearchStation = document.querySelector('.shell-root--on-search-station');
+      const mobileSearchChrome = document.querySelector('.shell-header--mobile-search');
       const searchUi =
         document.querySelector('#shell-search-form') ?? document.querySelector('.shell-search');
-      const ready = Boolean(onSearchStation) && isDomElementVisible(searchUi);
+      const searchUiVisible = isDomElementVisible(searchUi);
+      const ready =
+        searchUiVisible && (Boolean(onSearchStation) || Boolean(mobileSearchChrome));
       return {
         ready,
         detail: ready
-          ? 'search-station-ui'
-          : `station=${Boolean(onSearchStation)} uiVisible=${isDomElementVisible(searchUi)}`,
+          ? onSearchStation
+            ? 'search-station-ui'
+            : 'mobile-search-ui'
+          : `station=${Boolean(onSearchStation)} mobile=${Boolean(mobileSearchChrome)} uiVisible=${searchUiVisible}`,
       };
     }
     case 'settings': {
@@ -2979,7 +2988,7 @@ function queueOrHandleE2eUrl(raw: string): void {
   markBootInteractiveFromAutomation();
   const parsed = parseE2eUrl(raw);
   // Bootstrap / probe actions must not wait behind the sandboxLayer3 chunk on large vaults.
-  if (parsed?.action === 'skip-onboarding' || parsed?.action === 'probe-handlers') {
+  if (parsed?.action === 'skip-onboarding' || parsed?.action === 'probe-handlers' || parsed?.action === 'probe-station-open' || parsed?.action === 'probe-all-stations-open') {
     void enqueueE2e(() => handleE2eAction(parsed.action, parsed.params));
     return;
   }

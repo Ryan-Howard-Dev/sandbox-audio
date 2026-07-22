@@ -1414,7 +1414,7 @@ export default function SandboxShell() {
     setMobileNowPlayingOpen(false);
     setMobileSearchOpen(true);
     setSearchDropdownOpen(true);
-    void import('./stations/ArtistDetailView');
+    void import('./stations/SearchResultsView');
     window.requestAnimationFrame(() => {
       searchInputRef.current?.focus();
     });
@@ -1897,11 +1897,13 @@ export default function SandboxShell() {
     registerE2eHandlers({
       runSearch: (q) => runSearch(q),
       navigateTab: (tab) => {
+        void import('./stations/SearchResultsView');
         if (tab === 'search') {
-          handleMobileTabNavigate('mobile-search');
-        } else {
-          handleMobileTabNavigate(tab);
+          transitionToSearchStation();
+          setNavOpen(false);
+          return;
         }
+        handleMobileTabNavigate(tab);
       },
       completeOnboarding: () => setOnboardingComplete(true),
       getSearchHitCount: () => {
@@ -2121,7 +2123,7 @@ export default function SandboxShell() {
         return false;
       },
     });
-  }, [runSearch, handleMobileTabNavigate, station]);
+  }, [runSearch, handleMobileTabNavigate, transitionToSearchStation, station]);
 
   const runExploreSearch = useCallback(
     async (label: string, group: ExploreGroup = 'quick') => {

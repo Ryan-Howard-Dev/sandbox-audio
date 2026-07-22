@@ -42,6 +42,12 @@ import './index.css';
 let sandboxShellImport: Promise<typeof import('./sandboxLayer3.tsx')> | null = null;
 if (__SANDBOX_ANDROID_E2E__) {
   sandboxShellImport = import('./sandboxLayer3.tsx');
+  void import('./stations/SearchResultsView');
+}
+
+/** Warm search station chunk off the critical nav path. */
+function preloadSearchStationChunk(): void {
+  void import('./stations/SearchResultsView');
 }
 
 const SandboxShell = lazy(() => sandboxShellImport ?? import('./sandboxLayer3.tsx'));
@@ -137,6 +143,14 @@ function runDeferredBootTasks(): void {
 }
 
 runAfterBootInteractive(() => {
+  if (Capacitor.isNativePlatform()) {
+    const warmSearch = () => preloadSearchStationChunk();
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(warmSearch, { timeout: 3500 });
+    } else {
+      window.setTimeout(warmSearch, 1500);
+    }
+  }
   if (typeof requestIdleCallback !== 'undefined') {
     requestIdleCallback(() => runDeferredBootTasks(), { timeout: 1200 });
   } else {
