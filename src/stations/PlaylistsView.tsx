@@ -19,6 +19,7 @@ import {
   CheckSquare,
 } from 'lucide-react';
 import type { MediaEnvelope } from '../sandboxLayer1';
+import type { LockerEntry } from '../lockerStorage';
 import { displayTrackTitle } from '../displaySanitize';
 import {
   formatAlbumDisplayName,
@@ -29,6 +30,7 @@ import { useDismissableOverlay } from '../hooks/useDismissableOverlay';
 import ModalOverlay from './ModalOverlay';
 import MobileShellBackButton from '../components/MobileShellBackButton';
 import PlaylistRowActions from '../components/playlists/PlaylistRowActions';
+import WeeklyGenreMixesShelf from '../components/playlists/WeeklyGenreMixesShelf';
 import AddToPlaylistPicker from '../components/AddToPlaylistPicker';
 import ConfirmDialog from '../components/ConfirmDialog';
 import PromptDialog from '../components/PromptDialog';
@@ -64,7 +66,7 @@ import {
   subscribeDownloadQueue,
   type DownloadJob,
 } from '../downloadQueue';
-import { lockerEntryIsPlayable } from '../lockerStorage';
+import { filterPlayableLockerIds } from '../lockerStorage';
 import {
   playlistTrackSearchQuery,
   unmatchedImportStubs,
@@ -147,6 +149,25 @@ import { imeTextInputProps, imeUrlInputProps } from '../imeInputProps';
 export type { StoredPlaylist };
 
 type ConsoleTab = 'manual' | 'smart' | 'ai' | 'external';
+
+/**
+ * Fingerprint of only what smart-playlist rules actually read.
+ *
+ * The refresh is subscribed to the locker cache, but that cache is also mutated by lazy album-art
+ * and blob-URL healing while covers render. Those notifications re-triggered a full ~2.1s
+ * evaluation, which rendered more covers, which healed more art — a feedback loop that kept the
+ * Playlists tab blocking long after it opened. Art and url are deliberately excluded here.
+ */
+function smartRefreshSignature(entries: LockerEntry[], historyLength: number): string {
+  let hash = 0;
+  for (const e of entries) {
+    const s = `${e.id}|${e.genre ?? ''}|${e.subGenre ?? ''}|${e.artist ?? ''}|${
+      e.albumName ?? ''
+    }|${e.releaseYear ?? ''}|${e.durationSeconds ?? 0}|${e.addedAt ?? 0}`;
+    for (let i = 0; i < s.length; i += 1) hash = (hash * 31 + s.charCodeAt(i)) | 0;
+  }
+  return `${entries.length}:${historyLength}:${hash}`;
+}
 
 const SMART_PLAYLIST_REFRESH_DEBOUNCE_MS = 500;
 const SMART_PLAYLIST_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
@@ -247,6 +268,39 @@ function writePlaylists(
 ): void {
   setPlaylists(next);
   savePlaylists(next);
+}
+
+/**
+ * Re-link playlist rows to locker audio: match import stubs, then repair stale sourceIds.
+ *
+ * Playability is resolved with one bulk pass. This used to `await lockerEntryIsPlayable()` per
+ * track, and that call reads the whole audio blob out of IndexedDB to test `size > 0` — over a
+ * 300-track locker plus ~450 playlist rows it froze the Playlists tab for 10s on open.
+ */
+async function relinkPlaylistsAgainstLocker(lockerTracks: MediaEnvelope[]): Promise<void> {
+  if (lockerTracks.length === 0) return;
+
+  const playableIds = await filterPlayableLockerIds(
+    lockerTracks.map((t) => t.sourceId?.trim() ?? ''),
+  );
+  const verified = lockerTracks.filter(
+    (t) =>
+      !(t.provider === 'local-vault' && t.sourceId) ||
+      playableIds.has(t.sourceId!.trim()),
+  );
+  if (verified.length === 0) return;
+
+  const stubPass = rematchAllPlaylistStubsFromLocker(loadPlaylists(), verified);
+  let next = stubPass.playlists;
+  let repaired = 0;
+  for (const pl of next) {
+    const { playlist, repaired: plRepaired } = await rematchPlaylistTracksFromLocker(pl);
+    if (plRepaired > 0) {
+      repaired += plRepaired;
+      next = next.map((p) => (p.id === pl.id ? playlist : p));
+    }
+  }
+  if (stubPass.totalMatched > 0 || repaired > 0) savePlaylists(next);
 }
 
 const FOLDER_STYLE_TITLE =
@@ -489,6 +543,7 @@ export default function PlaylistsView({
 
   const smartRefreshDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const smartRefreshIndicatorRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSmartRefreshSigRef = useRef<string | null>(null);
 
   const clearSmartRefreshIndicator = useCallback(() => {
     if (smartRefreshIndicatorRef.current) {
@@ -499,16 +554,39 @@ export default function PlaylistsView({
   }, []);
 
   const runSmartRefresh = useCallback(() => {
+    const history = getSmartPlaylistPlayHistory();
+    const signature = smartRefreshSignature(lockerEntriesRef.current, history.length);
+    if (signature === lastSmartRefreshSigRef.current) return;
+    lastSmartRefreshSigRef.current = signature;
+
     setSmartRefreshBusy(true);
     smartRefreshIndicatorRef.current = window.setTimeout(() => {
       smartRefreshIndicatorRef.current = null;
       setSmartRefreshing(true);
     }, SMART_PLAYLIST_REFRESH_INDICATOR_DELAY_MS);
 
-    const history = getSmartPlaylistPlayHistory();
     const refreshed = refreshSmartPlaylists(lockerEntriesRef.current, history);
     const withLiked = syncLikedPlaylist(lockerEntriesRef.current);
-    setPlaylists(withLiked.length ? withLiked : refreshed);
+
+    /*
+     * syncLikedPlaylist returns its own full playlist list, and that copy carries the
+     * PRE-refresh smart rows (0 tracks). Preferring it wholesale discarded everything
+     * refreshSmartPlaylists had just computed — measured: refresh produced Never Played
+     * 251 / Recently Added 100, then all of them came back 0. Keep syncLikedPlaylist's
+     * result (it owns Liked) but re-apply the freshly evaluated smart tracks over it.
+     */
+    const freshSmart = new Map(
+      refreshed
+        .filter((p) => p.type === 'smart' || p.builtInId)
+        .map((p) => [p.id, p.tracks]),
+    );
+    const base = withLiked.length ? withLiked : refreshed;
+    const merged = base.map((pl) => {
+      const tracks = freshSmart.get(pl.id);
+      if (!tracks || tracks.length === pl.tracks.length) return pl;
+      return { ...pl, tracks };
+    });
+    setPlaylists(merged);
     clearSmartRefreshIndicator();
     setSmartRefreshBusy(false);
   }, [clearSmartRefreshIndicator]);
@@ -523,8 +601,24 @@ export default function PlaylistsView({
     }, SMART_PLAYLIST_REFRESH_DEBOUNCE_MS);
   }, [runSmartRefresh]);
 
+  // Re-evaluate whenever the vault contents change. The mount-time run below can fire
+  // before useLockerVault() has hydrated, and if the locker was already cached no further
+  // cache event arrives — so every smart playlist stayed stuck at the empty first result
+  // (even "Recently Added", which has no conditions and should match everything).
   useEffect(() => {
-    runSmartRefresh();
+    if (lockerEntries.length === 0) return;
+    scheduleSmartRefresh();
+  }, [lockerEntries.length, scheduleSmartRefresh]);
+
+  useEffect(() => {
+    /*
+     * scheduleSmartRefresh, not runSmartRefresh: the effect above also fires on mount (the locker
+     * is usually already cached, so lockerEntries.length is non-zero immediately), so running here
+     * directly meant the whole evaluation ran TWICE on every open. Measured as two back-to-back
+     * ~2.4s main-thread blocks. Going through the debounce coalesces them into one run without
+     * losing any trigger.
+     */
+    scheduleSmartRefresh();
     const unsubLocker = subscribeLockerCache(scheduleSmartRefresh);
     const unsubHistory = subscribePlayHistory(scheduleSmartRefresh);
     const onLikedChange = () => scheduleSmartRefresh();
@@ -584,30 +678,9 @@ export default function PlaylistsView({
     if (lockerTracks.length === 0) return;
     if (downloadingPlaylistId) return;
     const timer = window.setTimeout(() => {
-      void (async () => {
-        const verified: MediaEnvelope[] = [];
-        for (const track of lockerTracksRef.current.length > 0
-          ? lockerTracksRef.current
-          : lockerTracks) {
-          if (track.provider === 'local-vault' && track.sourceId) {
-            if (await lockerEntryIsPlayable(track.sourceId)) verified.push(track);
-          } else {
-            verified.push(track);
-          }
-        }
-        if (verified.length === 0) return;
-        const stubPass = rematchAllPlaylistStubsFromLocker(loadPlaylists(), verified);
-        let next = stubPass.playlists;
-        let repaired = 0;
-        for (const pl of next) {
-          const { playlist, repaired: plRepaired } = await rematchPlaylistTracksFromLocker(pl);
-          if (plRepaired > 0) {
-            repaired += plRepaired;
-            next = next.map((p) => (p.id === pl.id ? playlist : p));
-          }
-        }
-        if (stubPass.totalMatched > 0 || repaired > 0) savePlaylists(next);
-      })();
+      void relinkPlaylistsAgainstLocker(
+        lockerTracksRef.current.length > 0 ? lockerTracksRef.current : lockerTracks,
+      );
     }, 4000);
     return () => window.clearTimeout(timer);
   }, [lockerTracks, downloadingPlaylistId]);
@@ -630,28 +703,7 @@ export default function PlaylistsView({
     const onSync = () => {
       if (downloadingPlaylistId) return;
       if (lockerTracksRef.current.length === 0) return;
-      void (async () => {
-        const verified: MediaEnvelope[] = [];
-        for (const track of lockerTracksRef.current) {
-          if (track.provider === 'local-vault' && track.sourceId) {
-            if (await lockerEntryIsPlayable(track.sourceId)) verified.push(track);
-          } else {
-            verified.push(track);
-          }
-        }
-        if (verified.length === 0) return;
-        const stubPass = rematchAllPlaylistStubsFromLocker(loadPlaylists(), verified);
-        let next = stubPass.playlists;
-        let repaired = 0;
-        for (const pl of next) {
-          const { playlist, repaired: plRepaired } = await rematchPlaylistTracksFromLocker(pl);
-          if (plRepaired > 0) {
-            repaired += plRepaired;
-            next = next.map((p) => (p.id === pl.id ? playlist : p));
-          }
-        }
-        if (stubPass.totalMatched > 0 || repaired > 0) savePlaylists(next);
-      })();
+      void relinkPlaylistsAgainstLocker(lockerTracksRef.current);
     };
     window.addEventListener(LOCKER_SYNC_COMPLETE_EVENT, onSync);
     return () => window.removeEventListener(LOCKER_SYNC_COMPLETE_EVENT, onSync);
@@ -733,8 +785,15 @@ export default function PlaylistsView({
     const manual: StoredPlaylist[] = [];
     for (const pl of playlists) {
       if (isSmartPlaylist(pl)) {
-        if (isCoreBuiltInSmartPlaylist(pl.builtInId)) auto.push(pl);
-        else userSmart.push(pl);
+        // Built-in auto playlists are derived, so an empty one carries no information —
+        // it just clutters the page with rows the user never created (e.g. "Forgotten
+        // Tracks" before enough history exists). Hide those until they have content.
+        // User-made playlists are never hidden, empty or not.
+        if (isCoreBuiltInSmartPlaylist(pl.builtInId)) {
+          if (pl.tracks.length > 0) auto.push(pl);
+        } else {
+          userSmart.push(pl);
+        }
       } else {
         manual.push(pl);
       }
@@ -1241,14 +1300,14 @@ export default function PlaylistsView({
   const rematchPlaylistFromLocker = async (pl: StoredPlaylist) => {
     setOpenMenuId(null);
     await new Promise((r) => window.setTimeout(r, 50));
-    const verifiedLockerTracks: MediaEnvelope[] = [];
-    for (const track of lockerTracks) {
-      if (track.provider === 'local-vault' && track.sourceId) {
-        if (await lockerEntryIsPlayable(track.sourceId)) verifiedLockerTracks.push(track);
-      } else {
-        verifiedLockerTracks.push(track);
-      }
-    }
+    const manualPlayableIds = await filterPlayableLockerIds(
+      lockerTracks.map((t) => t.sourceId?.trim() ?? ''),
+    );
+    const verifiedLockerTracks = lockerTracks.filter(
+      (t) =>
+        !(t.provider === 'local-vault' && t.sourceId) ||
+        manualPlayableIds.has(t.sourceId!.trim()),
+    );
     const stubTotal = pl.importTrackStubs?.length ?? 0;
     if (stubTotal > 0) {
       setImportMatchProgress({ matched: pl.tracks.length, total: stubTotal });
@@ -1589,6 +1648,7 @@ export default function PlaylistsView({
       )}
 
       <div className={`${embedded ? 'pt-2 mt-2' : 'pt-4 mt-4'} space-y-6 playlists-list-body`}>
+      <WeeklyGenreMixesShelf onPlayAlbum={onPlayAlbum} />
       {playlists.length === 0 ? (
         <p className="font-mono text-xs text-[var(--text-dim)]">Tap New playlist to create your first compilation.</p>
       ) : (

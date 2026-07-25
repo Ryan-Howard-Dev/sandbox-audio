@@ -6,8 +6,26 @@ import {
   getAllPlaySessions,
 } from './playHistory';
 import type { PlaySession } from './playHistory';
+import { isPodcastEnvelopeId } from './podcastStorage';
+import { isAudiobookEnvelopeId } from './audiobookPlayback';
+import { isAudiobookCatalogEnvelopeId } from './audiobookCatalogIds';
 
-export type TimeRange = 'week' | 'month' | 'year' | 'lifetime';
+export type TimeRange = 'day' | 'week' | 'month' | 'year' | 'lifetime';
+
+/** Listening format, classified from the envelope id (no schema/migration needed). */
+export type MediaKind = 'music' | 'podcast' | 'audiobook';
+
+export function playEventKind(event: { envelopeId: string }): MediaKind {
+  const id = event.envelopeId;
+  if (isPodcastEnvelopeId(id)) return 'podcast';
+  if (isAudiobookEnvelopeId(id) || isAudiobookCatalogEnvelopeId(id)) return 'audiobook';
+  return 'music';
+}
+
+function filterByKind(events: PlayEvent[], kind?: MediaKind): PlayEvent[] {
+  if (!kind) return events;
+  return events.filter((e) => playEventKind(e) === kind);
+}
 
 export type RankedItem = {
   key: string;
@@ -66,6 +84,8 @@ const REPEAT_SCORE_BONUS = 1.25;
 
 function rangeStartMs(range: TimeRange, now = Date.now()): number | null {
   switch (range) {
+    case 'day':
+      return now - MS_DAY;
     case 'week':
       return now - 7 * MS_DAY;
     case 'month':
@@ -370,6 +390,33 @@ export function getListeningStats(
   const filtered = filterByTimestamp(events, start);
   const listeningSessions = filterListeningSessions(getAllListeningSessions(), start);
   return aggregateEvents(filtered, listeningSessions, range, topN);
+}
+
+/** Stats for a single format (music/podcast/audiobook) over a range. */
+export function getFormatStats(
+  range: TimeRange,
+  kind?: MediaKind,
+  topN = 8,
+): ListeningStats {
+  const start = rangeStartMs(range);
+  const filtered = filterByKind(filterByTimestamp(resolveEvents(), start), kind);
+  const listeningSessions = filterListeningSessions(getAllListeningSessions(), start);
+  return aggregateEvents(filtered, listeningSessions, range, topN);
+}
+
+/** Per-format minutes for the Overview split (e.g. "6h music · 2h podcasts · 4h books"). */
+export function getFormatMinutes(range: TimeRange): Record<MediaKind, number> {
+  const start = rangeStartMs(range);
+  const events = filterByTimestamp(resolveEvents(), start);
+  const ms: Record<MediaKind, number> = { music: 0, podcast: 0, audiobook: 0 };
+  for (const e of events) {
+    ms[playEventKind(e)] += e.listenedMs;
+  }
+  return {
+    music: Math.round((ms.music / 60_000) * 10) / 10,
+    podcast: Math.round((ms.podcast / 60_000) * 10) / 10,
+    audiobook: Math.round((ms.audiobook / 60_000) * 10) / 10,
+  };
 }
 
 export function getWrappedSummary(

@@ -49,6 +49,15 @@ public final class AndroidAudioSessionHelper {
      * and respects duck/pause from calls and other media apps.
      */
     public static boolean requestAppAudioFocus(Context context) {
+        // MediaPlaybackForegroundService is the authoritative focus owner during playback: it is
+        // the only holder that pauses on loss and resumes on gain. Raising a second competing
+        // request here let the OS route the returning AUDIOFOCUS_GAIN to this listener instead,
+        // which only flips a flag — playback then stayed paused forever (e.g. after a keyboard
+        // click sound or notification briefly took transient focus).
+        if (MediaPlaybackForegroundService.serviceHoldsAudioFocus()) {
+            appHasAudioFocus = true;
+            return true;
+        }
         AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         if (audioManager == null || appHasAudioFocus) {
             return appHasAudioFocus;

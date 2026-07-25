@@ -130,6 +130,21 @@ export interface NativeExoPlaybackPlugin {
     cacheYtdlpCount?: number;
     cacheYtdlpBytes?: number;
   }>;
+  /**
+   * Garbage-collect durable locker_blobs whose id is referenced by no track.
+   * Pass dryRun:true to preview freed bytes. keepIds must be the full set of
+   * referenced track ids — native refuses to delete when it is empty.
+   */
+  /** Basenames (sanitised track ids) of every durable native locker blob file. */
+  listLockerBlobs(): Promise<{ ids: string[] }>;
+  pruneLockerBlobs(options: { keepIds: string[]; dryRun?: boolean }): Promise<{
+    deletedCount: number;
+    freedBytes: number;
+    keptCount: number;
+    totalCount: number;
+    dryRun: boolean;
+    refusedEmptyKeep: boolean;
+  }>;
   probeLocalFile(options: { path: string }): Promise<{ exists: boolean; bytes?: number }>;
   addListener(
     eventName: 'playbackEvent',
@@ -316,14 +331,18 @@ export type NativeExoPlayMetadata = {
   revision?: number;
 };
 
-async function waitForNativeExoPlaying(maxMs = 2500): Promise<void> {
+async function waitForNativeExoPlaying(maxMs = 2500, cancelled?: () => boolean): Promise<void> {
+  if (cancelled?.()) return;
   const deadline = Date.now() + maxMs;
   await nativeExoResume();
   while (Date.now() < deadline) {
+    if (cancelled?.()) return;
     const status = await nativeExoPlaybackStatus();
     if (status.state === 'playing') return;
+    if (cancelled?.()) return;
     await new Promise((resolve) => window.setTimeout(resolve, 80));
   }
+  if (cancelled?.()) return;
   await nativeExoResume();
 }
 
@@ -341,6 +360,8 @@ export async function nativeExoPlayUrl(
     resetQueue?: boolean;
     gaplessEnabled?: boolean;
     crossfade?: boolean;
+    /** Checked before/during the post-play resume watchdog — return true to skip forcing a resume (e.g. the user paused). */
+    cancelled?: () => boolean;
   } & NativeExoPlayMetadata,
 ): Promise<void> {
   const trimmed = url?.trim() ?? '';
@@ -377,7 +398,7 @@ export async function nativeExoPlayUrl(
       durationSeconds: options?.durationSeconds,
     });
     if (autoPlay) {
-      await waitForNativeExoPlaying();
+      await waitForNativeExoPlaying(2500, options?.cancelled);
     }
   } catch (err) {
     throw err instanceof Error ? err : new Error(String(err));
@@ -395,7 +416,21 @@ export async function nativeExoEnqueueNext(
     /^https?:\/\//i.test(proxied) && proxied.includes('/api/')
       ? appendSandboxClientQuery(proxied)
       : proxied;
-  const artworkUrl = await resolveNativeExoForegroundArtwork(options?.artworkUrl);
+  // Never send data:/blob: artwork to native enqueueNext — the native side can't
+  // load those anyway, and a 100KB+ base64 string forwarded for every upcoming
+  // album track floods the Capacitor bridge, freezing the UI (pause feels dead).
+  const rawArt = options?.artworkUrl?.trim() ?? '';
+  let artworkUrl: string | undefined;
+  if (rawArt && !rawArt.startsWith('data:') && !rawArt.startsWith('blob:')) {
+    try {
+      artworkUrl = await resolveNativeExoForegroundArtwork(rawArt);
+    } catch {
+      // Artwork is cosmetic — never let it block enqueueing the next track. Resolving
+      // it outside a try (and calling it even for empty art) meant a failure here threw
+      // before enqueueNext ran, silently breaking gapless queue advance.
+      artworkUrl = undefined;
+    }
+  }
   try {
     await NativeExoPlayback.enqueueNext({
       url: playUrl,

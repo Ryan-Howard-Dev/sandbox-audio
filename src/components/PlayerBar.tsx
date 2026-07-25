@@ -409,7 +409,14 @@ export default function PlayerBar({
     }
     if (connectRemote && onRemoteTogglePlay) onRemoteTogglePlay();
     else if (localPlaybackOverride) localPlaybackOverride.onTogglePlay();
-    else if (displayIsPlaying) {
+    else if (
+      // Pause whenever the track is actually playing by ANY signal. `displayIsPlaying`
+      // alone can be a false-negative (duration unknown / state briefly not "Playing"),
+      // which made the mini-player's button fall through to play() — so it never paused.
+      displayIsPlaying ||
+      audio.state === 'Playing' ||
+      audio.nativeExoEffectivePlaying
+    ) {
       setOptimisticPlaying(false);
       audio.pause();
     } else {

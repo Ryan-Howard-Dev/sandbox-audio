@@ -98,6 +98,11 @@ function stabilizeResolvedPlaybackArt(
     sessionPlaybackArtByScope.set(scope, candidate);
     return candidate;
   }
+  // Once a scope has a stable persistent cover, LOCK it — never switch to any
+  // other URL for the same track/album. The resolver otherwise alternates between
+  // sources (locker blob: vs envelope data:/http, or two different data: URIs)
+  // across renders, and that flip-flop is what made the player art flicker.
+  if (isPersistentAlbumArt(prev)) return prev;
   if (prev.startsWith('blob:') && candidate.startsWith('blob:')) return prev;
 
   sessionPlaybackArtByScope.set(scope, candidate);
@@ -177,15 +182,20 @@ export function resolvePlaybackCoverArt(
     ? [locker, envelope?.artworkUrl, parallelArtworkUrl]
     : [parallelArtworkUrl, envelope?.artworkUrl, locker];
 
+  const scope = playbackArtStabilizeScope(envelope);
   for (const url of candidates) {
     const canon = canonicalArtworkSrc(url) ?? url;
     const safe = coalesceArtworkUrl(canon);
     if (safe) {
       const resolved = proxiedArtworkUrl(safe) ?? safe;
-      return stabilizeResolvedPlaybackArt(playbackArtStabilizeScope(envelope), resolved);
+      return stabilizeResolvedPlaybackArt(scope, resolved);
     }
   }
-  return '';
+  // No safe candidate this render (locker re-minted its blob URLs mid-playback,
+  // so every source is momentarily empty). Fall back to the locked cover for this
+  // scope instead of returning '' — returning '' here is what blanked the art out
+  // a second after it loaded.
+  return stabilizeResolvedPlaybackArt(scope, '');
 }
 
 /** Retry cover after <img> error — skip the failed src, prefer locker vault art. */

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Download, Loader2, Magnet, Search, Settings2 } from 'lucide-react';
 import {
   audiobookAcquireResolver,
@@ -33,6 +33,9 @@ export default function AudiobookAcquirePanel({
   const pluginCount = loadAudiobookSearchPlugins().length;
   const enabledCount = getEnabledAudiobookSearchPlugins().length;
 
+  // Guards against a slower older search overwriting a newer one's results.
+  const searchGenerationRef = useRef(0);
+
   const runSearch = useCallback(async () => {
     const q = query.trim();
     if (q.length < 2) return;
@@ -41,16 +44,19 @@ export default function AudiobookAcquirePanel({
       onError?.(t('audiobooks.acquireNoPlugins'));
       return;
     }
+    const generation = ++searchGenerationRef.current;
     setSearching(true);
     try {
       const results = await audiobookAcquireResolver.searchPlugins(q, plugins);
+      if (searchGenerationRef.current !== generation) return;
       setHits(results);
       if (results.length === 0) onError?.(t('audiobooks.acquireSearchEmpty'));
     } catch (e) {
+      if (searchGenerationRef.current !== generation) return;
       onError?.(e instanceof Error ? e.message : t('audiobooks.acquireSearchFailed'));
       setHits([]);
     } finally {
-      setSearching(false);
+      if (searchGenerationRef.current === generation) setSearching(false);
     }
   }, [onError, query, t]);
 

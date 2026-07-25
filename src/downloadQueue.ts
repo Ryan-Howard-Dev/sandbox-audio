@@ -403,6 +403,17 @@ export function clearFinishedDownloadJobs(): void {
   notify();
 }
 
+/** Wipe the ENTIRE download queue (every status) and clear it from persistent storage. */
+export function clearAllDownloadJobs(): void {
+  jobs = [];
+  notify({ immediate: true });
+  try {
+    localStorage.removeItem(QUEUE_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function removeDownloadJob(id: string): void {
   jobs = jobs.filter((j) => j.id !== id);
   notify();
@@ -434,6 +445,10 @@ function trackIsActivelyDownloading(state: TrackDownloadState): boolean {
 
 /** True when the job or any track is mid-acquisition — must not pause/revalidate. */
 export function isDownloadJobActivelyRunning(job: DownloadJob): boolean {
+  // A failed/paused job is not running, even if a track was left stuck in a
+  // 'downloading'/'resolving' state by an interrupted run — otherwise that stale
+  // track status makes the retry button a no-op (it thinks the job is still live).
+  if (job.status === 'error' || job.status === 'paused') return false;
   if (
     job.status === 'resolving' ||
     job.status === 'downloading' ||
@@ -647,6 +662,9 @@ export function pruneStaleActiveDownloadJobs(now = Date.now()): number {
 
 /** Reset a failed or paused job for retry — keeps finished tracks, re-queues the rest. */
 export function resetDownloadJobForRetry(id: string): DownloadJob | undefined {
+  // A manual retry must bypass the auto-loop failure guard so timed-out tracks
+  // actually get another attempt.
+  void import('./mobileAcquisition').then((m) => m.clearRecentResolveFailures());
   let found: DownloadJob | undefined;
   jobs = jobs.map((j) => {
     if (j.id !== id) return j;

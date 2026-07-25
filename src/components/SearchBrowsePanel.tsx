@@ -14,6 +14,8 @@ export interface SearchBrowsePanelProps {
   onPickCategory: (label: string, group: ExploreGroup) => void;
   onQuickFilter: (filter: QuickBrowseFilter) => void;
   podcastsEnabled?: boolean;
+  /** Video discovery is desktop/tablet/TV only — off on phone and car by design. */
+  videosEnabled?: boolean;
 }
 
 function BrowseSection({
@@ -49,10 +51,15 @@ export default function SearchBrowsePanel({
   onPickCategory,
   onQuickFilter,
   podcastsEnabled = false,
+  videosEnabled = false,
 }: SearchBrowsePanelProps) {
-  const quickFilters = podcastsEnabled
-    ? [...SEARCH_QUICK_FILTERS, SEARCH_QUICK_FILTER_VIDEOS, SEARCH_QUICK_FILTER_PODCASTS]
-    : [...SEARCH_QUICK_FILTERS, SEARCH_QUICK_FILTER_VIDEOS];
+  // Videos are a screen activity — offered only on desktop/tablet/TV, never on phone or car,
+  // to keep the phone a listening-only device.
+  const quickFilters = [
+    ...SEARCH_QUICK_FILTERS,
+    ...(videosEnabled ? [SEARCH_QUICK_FILTER_VIDEOS] : []),
+    ...(podcastsEnabled ? [SEARCH_QUICK_FILTER_PODCASTS] : []),
+  ];
 
   return (
     <div className="search-browse-panel" role="region" aria-label="Browse music">

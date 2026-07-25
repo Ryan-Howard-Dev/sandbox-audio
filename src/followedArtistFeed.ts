@@ -7,7 +7,7 @@ import { isAirGapEnabled } from './airGapMode';
 import type { MediaEnvelope } from './sandboxLayer1';
 import { fetchWithTimeout } from './fetchWithTimeout';
 import { scheduleMusicBrainz } from './musicbrainzScheduler';
-import { getLockerEntriesSnapshot } from './lockerStorage';
+import { getLockerEntriesSnapshot, resolveLockerEntryGroupArt } from './lockerStorage';
 import { lockerEntryToEnvelope } from './smartPlaylistEngine';
 import type { FollowedArtist } from './followedArtists';
 import {
@@ -279,7 +279,9 @@ function fetchLockerReleases(artist: FollowedArtist): FollowedFeedRelease[] {
       title: entry.title,
       artist: entryArtist,
       detail: entry.albumName ? `${entry.albumName} · Your library` : 'Added to your library',
-      artworkUrl: entry.albumArt,
+      // entry.albumArt is usually empty because downloaded covers live in the blob
+      // store — resolve through the album group so these rows are not imageless.
+      artworkUrl: resolveLockerEntryGroupArt(entry, entries) ?? entry.albumArt,
       envelope: lockerEntryToEnvelope(entry),
       sortKey: entry.addedAt,
     });
@@ -571,7 +573,14 @@ export async function fetchFollowedArtistFeed(
         fetchMbArtistSlice(artist),
       ]);
 
-      allReleases.push(...catalog, ...locker, ...mbSlice.recent);
+      // This feed is for genuinely NEW releases, so tracks already sitting in the
+      // locker do not belong here — surfacing "Your library" rows made a discovery
+      // surface look like it was just replaying the library back at you. Keep them
+      // only as a last resort when an artist has no real release news at all.
+      const externalReleases = [...catalog, ...mbSlice.recent];
+      allReleases.push(
+        ...(externalReleases.length > 0 ? externalReleases : locker.slice(0, 1)),
+      );
       allEvents.push(...mbSlice.events);
       allAnnouncements.push(...mbSlice.announcements);
 

@@ -177,7 +177,7 @@ import {
   subscribePlayHistory,
 } from '../playHistory';
 import { formatMinutesHuman, getListeningStats } from '../listeningAnalytics';
-import { repairLockerAlbumGrouping, backfillMissingAlbumCovers, backfillLockerAlbumArt } from '../lockerAlbumBackfill';
+import { repairLockerAlbumGrouping, backfillMissingAlbumCovers, backfillLockerAlbumArt, propagateAlbumArtWithinGroups } from '../lockerAlbumBackfill';
 import { reconcileActiveDownloadJobsWithLocker } from '../downloadJobReconcile';
 import { autoResumePausedDownloadJobs } from '../acquisitionPipeline';
 import {
@@ -187,7 +187,6 @@ import {
 import {
   isLockerAlbumCompletionPending,
   queueLockerAlbumMissingTracks,
-  shouldAutoQueueLockerAlbumMissingTracks,
   shouldOfferLockerAlbumCompletion,
   summarizeLockerAlbumMissingTracks,
 } from '../lockerAlbumCompletion';
@@ -517,7 +516,6 @@ export default function LocalView({
   >(null);
   const [confirmDeleteBusy, setConfirmDeleteBusy] = useState(false);
   const [completeMissingBusy, setCompleteMissingBusy] = useState(false);
-  const autoCompleteAttemptedRef = useRef(new Set<string>());
 
   const isMobileShell = useMobileShell();
 
@@ -614,16 +612,27 @@ export default function LocalView({
       .finally(() => setEmbeddedCoverDone(true));
   }, [hydrated, refresh]);
 
+  // Global cover-heal: once the locker has hydrated, fetch + persist covers for
+  // every album group missing durable art. Previously this was gated behind an
+  // artist filter, so it only ran when you drilled into a specific artist page —
+  // leaving most of the locker (genres, playlists, album grid) with blank covers.
+  const globalCoverHealRan = useRef(false);
   useEffect(() => {
-    if (!artistFilter || !embeddedCoverDone) return;
+    if (!embeddedCoverDone || globalCoverHealRan.current) return;
+    globalCoverHealRan.current = true;
     let cancelled = false;
-    void backfillMissingAlbumCovers().then((fixed) => {
-      if (fixed > 0 && !cancelled) void refresh();
-    });
+    // Propagate art the locker already owns across each album group first (no network),
+    // then fetch covers for groups that still have none.
+    void propagateAlbumArtWithinGroups()
+      .then(async (filled) => {
+        const fetched = await backfillMissingAlbumCovers();
+        if ((filled > 0 || fetched > 0) && !cancelled) void refresh();
+      })
+      .catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [artistFilter, embeddedCoverDone, refresh]);
+  }, [embeddedCoverDone, refresh]);
 
   useEffect(() => {
     if (!libraryQuery || libraryQuery.trim().length < 2) {
@@ -1564,9 +1573,13 @@ export default function LocalView({
 
   const filteredArtists = useMemo(() => {
     const q = libraryQuery.trim().toLowerCase();
+    // Hide feature-only credits from the library artist list — a single guest spot like
+    // "Kanye West & Andre Troutman" should not become its own artist tile showing that
+    // album's cover. Searching still finds them (guests stay in the graph).
+    const headline = graph.artists.filter((a) => !a.guestOnly);
     let list = q
-      ? graph.artists.filter((a) => a.displayName.toLowerCase().includes(q))
-      : graph.artists;
+      ? headline.filter((a) => a.displayName.toLowerCase().includes(q))
+      : headline;
     if (artistListSort === 'tracks') {
       return [...list].sort(
         (a, b) =>
@@ -1831,44 +1844,11 @@ export default function LocalView({
     t,
   ]);
 
-  // Tidal-like: auto-queue hollow/missing tracks when user already started a full album download.
-  useEffect(() => {
-    if (!selectedAlbum || !hydrated || isAirGapEnabled()) return;
-    if (!shouldAutoQueueLockerAlbumMissingTracks(
-      selectedAlbum.name,
-      selectedAlbum.artist,
-      selectedAlbum.tracks,
-    )) {
-      return;
-    }
-    if (autoCompleteAttemptedRef.current.has(selectedAlbum.key)) return;
-    if (isLockerAlbumCompletionPending(selectedAlbum.name, selectedAlbum.artist)) {
-      autoCompleteAttemptedRef.current.add(selectedAlbum.key);
-      return;
-    }
-    autoCompleteAttemptedRef.current.add(selectedAlbum.key);
-    void queueLockerAlbumMissingTracks(
-      selectedAlbum.name,
-      selectedAlbum.artist,
-      selectedAlbum.tracks,
-    ).then((jobId) => {
-      if (jobId) {
-        setToast(
-          t('locker.completeMissingQueued', {
-            count: selectedAlbumMissing.missingCount,
-          }),
-        );
-      }
-    });
-  }, [
-    selectedAlbum?.key,
-    selectedAlbum?.name,
-    selectedAlbum?.artist,
-    selectedAlbum?.tracks,
-    hydrated,
-    selectedAlbumMissing.missingCount,
-    t,
-  ]);
+  // NOTE: Deliberately no auto-queue effect here. Merely opening an album view used to
+  // fire queueLockerAlbumMissingTracks, which — because the online-catalog↔locker title
+  // matching is fuzzy — re-flagged already-downloaded tracks as missing and re-downloaded
+  // whole albums on every visit ("keeps downloading the same albums over and over"). Album
+  // completion is now strictly opt-in via the explicit button (runCompleteMissingTracks).
 
   const selectedAlbumMeta = useMemo(() => {
     if (!selectedAlbum) return null;
@@ -2689,6 +2669,8 @@ export default function LocalView({
           albumName: values.albumName,
           composer: values.composer,
           genre: values.genre,
+          // '' (not undefined) so clearing the field actually clears it.
+          subGenre: values.subGenre ?? '',
         },
         { userEdit: true },
       );
@@ -2707,6 +2689,7 @@ export default function LocalView({
           releaseYear: values.releaseYear,
           discCount: values.discCount,
           ...(nextGenre ? { genre: nextGenre } : {}),
+          subGenre: values.subGenre ?? '',
         },
         { userEdit: true },
       );
@@ -3898,6 +3881,7 @@ export default function LocalView({
                   albumName: editTarget.entry.albumName,
                   composer: editTarget.entry.composer,
                   genre: editTarget.entry.genre,
+                  subGenre: editTarget.entry.subGenre,
                 }
               : {
                   albumName: editTarget.album.name,
@@ -3919,6 +3903,8 @@ export default function LocalView({
                   discCount:
                     editTarget.album.tracks.find((t) => t.discCount)?.discCount ?? '',
                   genre: editTarget.album.tracks.find((t) => t.genre)?.genre ?? '',
+                  subGenre:
+                    editTarget.album.tracks.find((t) => t.subGenre)?.subGenre ?? '',
                 }
         }
         trackCount={editTarget?.mode === 'album' ? editTarget.album.tracks.length : undefined}

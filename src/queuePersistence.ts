@@ -272,6 +272,17 @@ let pendingSave: QueueSaveInput | null = null;
 let lifecycleInstalled = false;
 let lifecycleGetState: (() => QueueSaveInput | null) | null = null;
 
+/**
+ * Never persist base64 `data:`/`blob:` artwork in the queue state. Locker tracks carry embedded
+ * cover art as multi-hundred-KB data URLs; a full radio/album queue of those overflowed
+ * localStorage (QuotaExceededError), which silently broke queue+state saves and cascaded into
+ * flaky playback. Only lightweight URL references are kept; real art is re-resolved on load.
+ */
+function persistableArtworkUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  return url.startsWith('data:') || url.startsWith('blob:') ? undefined : url;
+}
+
 export function envelopeToTrackRef(env: MediaEnvelope): PersistedTrackRef {
   return {
     envelopeId: env.envelopeId,
@@ -282,7 +293,7 @@ export function envelopeToTrackRef(env: MediaEnvelope): PersistedTrackRef {
     artist: env.artist,
     album: env.album,
     durationSeconds: env.durationSeconds,
-    artworkUrl: env.artworkUrl,
+    artworkUrl: persistableArtworkUrl(env.artworkUrl),
   };
 }
 
@@ -408,14 +419,31 @@ export function rehydrateQueueState(
   if (!state || state.playQueue.length === 0) return null;
 
   const playQueue: MediaEnvelope[] = [];
+  // Track where each original index landed (or -1 if its ref failed to rehydrate) so a saved
+  // queueIndex can be remapped correctly when earlier/other entries are dropped — a plain
+  // length-clamp would silently point at the wrong track once the array has shifted.
+  const originalToNewIndex: number[] = [];
   for (const ref of state.playQueue) {
     const env = rehydrateTrackRef(ref, ctx);
-    if (env) playQueue.push(env);
+    if (env) {
+      originalToNewIndex.push(playQueue.length);
+      playQueue.push(env);
+    } else {
+      originalToNewIndex.push(-1);
+    }
   }
   if (playQueue.length === 0) return null;
 
   const savedCurrent = state.currentTrackId;
-  let queueIndex = clampQueueIndex(state.queueIndex, playQueue.length);
+  const originalIndexClamped = Math.max(
+    0,
+    Math.min(state.queueIndex, state.playQueue.length - 1),
+  );
+  const remapped = originalToNewIndex[originalIndexClamped];
+  let queueIndex =
+    remapped != null && remapped >= 0
+      ? remapped
+      : clampQueueIndex(state.queueIndex, playQueue.length);
   if (savedCurrent) {
     const idx = playQueue.findIndex((e) => e.envelopeId === savedCurrent);
     if (idx >= 0) queueIndex = idx;

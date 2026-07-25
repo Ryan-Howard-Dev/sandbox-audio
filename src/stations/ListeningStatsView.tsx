@@ -8,18 +8,54 @@ import {
   formatCompletionPct,
   formatMinutesHuman,
   getAvailableWrappedYears,
-  getListeningStats,
+  getFormatMinutes,
+  getFormatStats,
   getWrappedSummary,
+  type MediaKind,
   type RankedItem,
   type TimeRange,
 } from '../listeningAnalytics';
 import { C } from './theme';
 
-const RANGE_TABS: Array<{ id: TimeRange; label: string }> = [
-  { id: 'week', label: 'Week' },
-  { id: 'month', label: 'Month' },
-  { id: 'year', label: 'Year' },
-  { id: 'lifetime', label: 'Lifetime' },
+type InsightSegment = 'overview' | 'music' | 'podcast' | 'audiobook';
+
+const SEGMENTS: Array<{ id: InsightSegment; label: string }> = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'music', label: 'Music' },
+  { id: 'podcast', label: 'Podcasts' },
+  { id: 'audiobook', label: 'Audiobooks' },
+];
+
+const RANGE_LABELS: Record<TimeRange, string> = {
+  day: 'Day',
+  week: 'Week',
+  month: 'Month',
+  year: 'Year',
+  lifetime: 'Lifetime',
+};
+
+// Cadence tuned to each format: music churns daily; books barely move week to week.
+const SEGMENT_RANGES: Record<InsightSegment, TimeRange[]> = {
+  overview: ['month', 'year'],
+  music: ['day', 'week', 'month', 'year'],
+  podcast: ['week', 'month', 'year'],
+  audiobook: ['month', 'year'],
+};
+
+const RANK_LABELS: Record<
+  InsightSegment,
+  { primary: string; secondary: string; tertiary: string }
+> = {
+  overview: { primary: 'Top artists', secondary: 'Top albums', tertiary: 'Top tracks' },
+  music: { primary: 'Top artists', secondary: 'Top albums', tertiary: 'Top tracks' },
+  podcast: { primary: 'Top shows', secondary: 'Top series', tertiary: 'Top episodes' },
+  audiobook: { primary: 'Top authors', secondary: 'Top books', tertiary: 'Top chapters' },
+};
+
+const FORMAT_SPLIT: Array<{ kind: MediaKind; label: string }> = [
+  { kind: 'music', label: 'Music' },
+  { kind: 'podcast', label: 'Podcasts' },
+  { kind: 'audiobook', label: 'Audiobooks' },
 ];
 
 function maxScore(items: RankedItem[]): number {
@@ -95,17 +131,76 @@ function RankList({
   );
 }
 
+function FormatSplit({ minutes }: { minutes: Record<MediaKind, number> }) {
+  const total = FORMAT_SPLIT.reduce((sum, f) => sum + minutes[f.kind], 0);
+  if (total <= 0) {
+    return (
+      <p className="font-mono text-xs" style={{ color: C.textDim }}>
+        No listening in this range yet.
+      </p>
+    );
+  }
+  return (
+    <ul className="space-y-3">
+      {FORMAT_SPLIT.map((f) => {
+        const mins = minutes[f.kind];
+        const pct = Math.round((mins / total) * 100);
+        return (
+          <li key={f.kind} className="space-y-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="font-mono text-xs font-semibold" style={{ color: C.text }}>
+                {f.label}
+              </span>
+              <span className="font-mono text-[10px]" style={{ color: C.textMid }}>
+                {formatMinutesHuman(mins)} · {pct}%
+              </span>
+            </div>
+            <div
+              className="h-1.5 rounded-full overflow-hidden"
+              style={{ backgroundColor: C.border }}
+            >
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${Math.max(2, pct)}%`,
+                  backgroundColor: 'hsl(var(--accent-h), var(--accent-s), var(--accent-l))',
+                }}
+              />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export interface ListeningStatsViewProps {
   onBack?: () => void;
 }
 
 export default function ListeningStatsView({ onBack }: ListeningStatsViewProps) {
+  const [segment, setSegment] = useState<InsightSegment>('overview');
   const [range, setRange] = useState<TimeRange>('month');
   const [tick, setTick] = useState(0);
   const [wrappedYear, setWrappedYear] = useState(() => new Date().getFullYear());
   useEffect(() => subscribePlayHistory(() => setTick((t) => t + 1)), []);
 
-  const stats = useMemo(() => getListeningStats(range), [range, tick]);
+  const rangeOptions = SEGMENT_RANGES[segment];
+  // Keep the range valid when switching segments (a book has no "Day" view).
+  useEffect(() => {
+    if (!rangeOptions.includes(range)) setRange(rangeOptions.includes('month') ? 'month' : rangeOptions[0]);
+  }, [rangeOptions, range]);
+
+  const kind: MediaKind | undefined = segment === 'overview' ? undefined : segment;
+  const stats = useMemo(
+    () => getFormatStats(range, kind),
+    [range, kind, tick],
+  );
+  const formatMinutes = useMemo(
+    () => (segment === 'overview' ? getFormatMinutes(range) : null),
+    [segment, range, tick],
+  );
+  const rankLabels = RANK_LABELS[segment];
   const years = useMemo(() => getAvailableWrappedYears(), [tick]);
   const wrapped = useMemo(() => getWrappedSummary(wrappedYear), [wrappedYear, tick]);
 
@@ -173,18 +268,41 @@ export default function ListeningStatsView({ onBack }: ListeningStatsViewProps) 
       </div>
 
       <section className="space-y-4">
+        <div className="flex flex-wrap gap-1">
+          {SEGMENTS.map((seg) => {
+            const active = segment === seg.id;
+            return (
+              <button
+                key={seg.id}
+                type="button"
+                onClick={() => setSegment(seg.id)}
+                className="font-mono text-[11px] font-semibold uppercase tracking-wider px-3.5 py-2 border rounded-sm touch-manipulation"
+                style={{
+                  borderColor: active ? 'hsl(var(--accent-h), var(--accent-s), var(--accent-l))' : C.border,
+                  color: active ? 'var(--accent-stroke)' : C.textMid,
+                  backgroundColor: active
+                    ? 'hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.12)'
+                    : 'transparent',
+                }}
+              >
+                {seg.label}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em]" style={{ color: C.textLabel }}>
             Time range
           </p>
           <div className="flex flex-wrap gap-1">
-            {RANGE_TABS.map((tab) => {
-              const active = range === tab.id;
+            {rangeOptions.map((id) => {
+              const active = range === id;
               return (
                 <button
-                  key={tab.id}
+                  key={id}
                   type="button"
-                  onClick={() => setRange(tab.id)}
+                  onClick={() => setRange(id)}
                   className="font-mono text-[10px] uppercase tracking-wider px-3 py-1.5 border rounded-sm touch-manipulation"
                   style={{
                     borderColor: active ? 'hsl(var(--accent-h), var(--accent-s), var(--accent-l))' : C.border,
@@ -194,12 +312,24 @@ export default function ListeningStatsView({ onBack }: ListeningStatsViewProps) 
                       : 'transparent',
                   }}
                 >
-                  {tab.label}
+                  {RANGE_LABELS[id]}
                 </button>
               );
             })}
           </div>
         </div>
+
+        {formatMinutes ? (
+          <div
+            className="rounded-sm border p-4"
+            style={{ backgroundColor: C.card, borderColor: C.border }}
+          >
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent mb-3">
+              By format
+            </p>
+            <FormatSplit minutes={formatMinutes} />
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <StatCard label="Minutes listened" value={formatMinutesHuman(stats.minutesListened)} />
@@ -216,29 +346,31 @@ export default function ListeningStatsView({ onBack }: ListeningStatsViewProps) 
           />
         </div>
 
-        <div
-          className="rounded-sm border p-4"
-          style={{ backgroundColor: C.card, borderColor: C.border }}
-        >
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent mb-3">
-            Listening sessions
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <SessionStat label="Sessions" value={String(stats.sessionStats.sessionCount)} />
-            <SessionStat
-              label="Total time"
-              value={formatMinutesHuman(stats.sessionStats.totalSessionMinutes)}
-            />
-            <SessionStat
-              label="Avg session"
-              value={formatMinutesHuman(stats.sessionStats.avgSessionMinutes)}
-            />
-            <SessionStat
-              label="Longest"
-              value={formatMinutesHuman(stats.sessionStats.longestSessionMinutes)}
-            />
+        {segment === 'overview' ? (
+          <div
+            className="rounded-sm border p-4"
+            style={{ backgroundColor: C.card, borderColor: C.border }}
+          >
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent mb-3">
+              Listening sessions
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <SessionStat label="Sessions" value={String(stats.sessionStats.sessionCount)} />
+              <SessionStat
+                label="Total time"
+                value={formatMinutesHuman(stats.sessionStats.totalSessionMinutes)}
+              />
+              <SessionStat
+                label="Avg session"
+                value={formatMinutesHuman(stats.sessionStats.avgSessionMinutes)}
+              />
+              <SessionStat
+                label="Longest"
+                value={formatMinutesHuman(stats.sessionStats.longestSessionMinutes)}
+              />
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div className="flex flex-wrap gap-2">
           <button
@@ -254,19 +386,19 @@ export default function ListeningStatsView({ onBack }: ListeningStatsViewProps) 
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <RankList
-            title="Top artists"
+            title={rankLabels.primary}
             items={stats.topArtists}
-            emptyLabel="Listen to build artist rankings"
+            emptyLabel="Nothing here yet for this range"
           />
           <RankList
-            title="Top albums"
+            title={rankLabels.secondary}
             items={stats.topAlbums}
-            emptyLabel="Album stats appear after sessions"
+            emptyLabel="Nothing here yet for this range"
           />
           <RankList
-            title="Top tracks"
+            title={rankLabels.tertiary}
             items={stats.topTracks}
-            emptyLabel="Track stats appear after sessions"
+            emptyLabel="Nothing here yet for this range"
           />
         </div>
       </section>

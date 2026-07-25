@@ -2350,6 +2350,13 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       logE2e('stop-downloads', true, `cancelled=${cancelled}`);
       return true;
     }
+    case 'clear-all-downloads': {
+      await cancelAllActiveDownloadJobs();
+      const { clearAllDownloadJobs, getDownloadJobs } = await import('./downloadQueue');
+      clearAllDownloadJobs();
+      logE2e('clear-all-downloads', true, `remaining=${getDownloadJobs().length}`);
+      return true;
+    }
     case 'verify-locker-album': {
       const artist = params.get('artist')?.trim();
       const album = params.get('album')?.trim();

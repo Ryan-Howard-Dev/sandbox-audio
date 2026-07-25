@@ -91,3 +91,7 @@ metadata.json
 .thumb-*
 .tmp_*
 _readonly_locker_check/
+
+# Stray QA dumps / duplicate manifest at repo root (real manifest: android/app/src/main/)
+.nav-playlists.xml
+/AndroidManifest.xml

@@ -63,7 +63,25 @@
             android:description="@string/media_playback_service_description"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback"
-        />
+        >
+            <!--
+                Required for lock-screen / headset transport. Without a MEDIA_BUTTON filter the
+                session reports mediaButtonReceiver=null and only receives buttons while the app
+                is the most-recently-active session; Tidal and YouTube Music both register one.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name="androidx.media.session.MediaButtonReceiver"
+            android:exported="true"
+        >
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
 
         <service
             android:name=".DownloadForegroundService"

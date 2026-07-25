@@ -49,6 +49,10 @@ export type PlayEvent = {
   repeat: boolean;
   timestamp: number;
   sessionId: string;
+  /** Where the audio came from — a downloaded track is a stronger taste signal than a stream. */
+  source?: 'download' | 'online';
+  /** How the user was listening — used to weight album vs single vs radio affinity. */
+  context?: 'album' | 'single' | 'radio' | 'playlist';
 };
 
 /** Continuous listening session (device-local). */
@@ -101,6 +105,8 @@ export type RecordPlayEventOptions = {
   completed?: boolean;
   skipped?: boolean;
   listenedMs?: number;
+  /** How the user was listening (album drill, single tap, radio, playlist). */
+  context?: PlayEvent['context'];
 };
 
 function readHistory(): StoredPlayHit[] {
@@ -397,6 +403,12 @@ function touchListeningSession(sessionId: string, listenedMs: number, now = Date
   writeListeningSessions(sessions);
 }
 
+/** Drop heavy base64/blob artwork before persisting — it overflows localStorage. */
+function lightArtworkUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  return url.startsWith('data:') || url.startsWith('blob:') ? undefined : url;
+}
+
 function isRepeatInSession(sessionId: string, envelopeId: string): boolean {
   return getAllPlayEvents().some(
     (e) => e.sessionId === sessionId && e.envelopeId === envelopeId,
@@ -423,6 +435,11 @@ export function recordPlayEvent(options: RecordPlayEventOptions): PlayEvent | nu
   const sessionId = resolveActiveListeningSessionId(now);
   const repeat = isRepeatInSession(sessionId, envelope.envelopeId);
 
+  // A track played from the offline vault was deliberately downloaded — treat it as a
+  // stronger taste signal than a one-off online stream.
+  const source: PlayEvent['source'] =
+    envelope.provider === 'local-vault' ? 'download' : 'online';
+
   const event: PlayEvent = {
     trackId: envelope.envelopeId,
     envelopeId: envelope.envelopeId,
@@ -436,6 +453,8 @@ export function recordPlayEvent(options: RecordPlayEventOptions): PlayEvent | nu
     repeat,
     timestamp: now,
     sessionId,
+    source,
+    context: options.context,
   };
 
   const events = readEventsRaw();
@@ -447,7 +466,7 @@ export function recordPlayEvent(options: RecordPlayEventOptions): PlayEvent | nu
   const sessions = readSessions();
   sessions.unshift({
     ...legacySession,
-    artworkUrl: envelope.artworkUrl,
+    artworkUrl: lightArtworkUrl(envelope.artworkUrl),
   });
   writeSessions(sessions);
 
@@ -460,8 +479,9 @@ export function recordPlaySession(
   listenedSeconds: number,
   completed = false,
   skipped?: boolean,
+  context?: PlayEvent['context'],
 ): void {
-  recordPlayEvent({ envelope, listenedSeconds, completed, skipped });
+  recordPlayEvent({ envelope, listenedSeconds, completed, skipped, context });
 }
 
 export function recordPlay(envelope: MediaEnvelope): void {
@@ -473,7 +493,7 @@ export function recordPlay(envelope: MediaEnvelope): void {
     envelopeId: envelope.envelopeId,
     title: envelope.title,
     artist: envelope.artist,
-    artworkUrl: envelope.artworkUrl,
+    artworkUrl: lightArtworkUrl(envelope.artworkUrl),
     provider: envelope.provider,
     sourceId: envelope.sourceId,
     url: envelope.url,

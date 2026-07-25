@@ -17,6 +17,7 @@ import androidx.media3.common.Player;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.DefaultLoadControl;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import com.getcapacitor.JSObject;
@@ -135,7 +136,26 @@ public class NativeExoPlaybackPlugin extends Plugin {
             key = "url:" + url.trim();
         }
         TrackMeta meta = trackMetaByKey.get(key);
-        if (meta == null) return;
+        if (meta == null) {
+            /*
+             * Lookup missed, so we have no metadata for the item now playing. Returning here used
+             * to leave lastTitle/lastArtist/lastAlbum/lastArtworkUrl holding the PREVIOUS track's
+             * values, and syncForegroundMetadata would then publish those to the MediaSession —
+             * so the lock screen kept the old title and, most visibly, the old cover (a VULTURES
+             * track showing BULLY - DELUXE artwork). Stale-but-plausible is worse than absent:
+             * drop the artwork so nothing wrong is displayed, and log the miss.
+             *
+             * This is the R-004 failure mode: transitions are matched by URL, and any difference
+             * between the URI ExoPlayer reports and the one JS registered breaks the match. The
+             * durable fix is to key off a stable track id (MediaItem.mediaId) instead of the URL.
+             */
+            android.util.Log.w(
+                "NativeExo",
+                "no track meta for key=" + key + " — clearing artwork to avoid showing the previous track's cover"
+            );
+            lastArtworkUrl = "";
+            return;
+        }
         if (!meta.title.isEmpty()) lastTitle = meta.title;
         if (!meta.artist.isEmpty()) lastArtist = meta.artist;
         if (!meta.album.isEmpty()) lastAlbum = meta.album;
@@ -396,12 +416,44 @@ public class NativeExoPlaybackPlugin extends Plugin {
             DefaultDataSource.Factory dataSourceFactory =
                 new DefaultDataSource.Factory(getContext(), httpFactory);
 
+            // Audio-only player: build NO video renderers at all. Many locker tracks are
+            // YouTube-sourced .mp4 containers with a video stream. setTrackSelectionParameters
+            // (disable video track) proved insufficient — the QTI video decoder was still
+            // instantiated and fed, decoding frames to nowhere (renderFps=0) until its pipeline
+            // jammed ("too many frames in pipeline"). Because ExoPlayer runs on the MAIN looper
+            // here, that jam blocked the main thread and froze the whole app mid-track. With no
+            // video renderer in the factory, the video stream is never decoded, period.
+            DefaultRenderersFactory renderersFactory =
+                new DefaultRenderersFactory(getContext()) {
+                    @Override
+                    protected void buildVideoRenderers(
+                        Context context,
+                        int extensionRendererMode,
+                        androidx.media3.exoplayer.mediacodec.MediaCodecSelector mediaCodecSelector,
+                        boolean enableDecoderFallback,
+                        Handler eventHandler,
+                        androidx.media3.exoplayer.video.VideoRendererEventListener eventListener,
+                        long allowedVideoJoiningTimeMs,
+                        java.util.ArrayList<androidx.media3.exoplayer.Renderer> out) {
+                        // Intentionally add nothing — audio-only.
+                    }
+                };
+
             player =
                 new ExoPlayer.Builder(getContext())
                     .setLooper(Looper.getMainLooper())
+                    .setRenderersFactory(renderersFactory)
                     .setMediaSourceFactory(new DefaultMediaSourceFactory(dataSourceFactory))
                     .setLoadControl(loadControl)
                     .build();
+
+            // Belt-and-suspenders: also disable video track selection.
+            player.setTrackSelectionParameters(
+                player.getTrackSelectionParameters()
+                    .buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
+                    .build()
+            );
 
             AudioAttributes attrs =
                 new AudioAttributes.Builder()
@@ -1483,6 +1535,39 @@ public class NativeExoPlaybackPlugin extends Plugin {
                     mainHandler.post(() -> call.resolve(audit));
                 } catch (Exception e) {
                     String msg = e.getMessage() != null ? e.getMessage() : "audit failed";
+                    mainHandler.post(() -> call.reject(msg));
+                }
+            });
+    }
+
+    @PluginMethod
+    public void listLockerBlobs(PluginCall call) {
+        playbackExecutor.execute(
+            () -> {
+                try {
+                    com.getcapacitor.JSArray ids = LockerBlobRegistry.listBlobIds(getContext());
+                    JSObject ret = new JSObject();
+                    ret.put("ids", ids);
+                    mainHandler.post(() -> call.resolve(ret));
+                } catch (Exception e) {
+                    String msg = e.getMessage() != null ? e.getMessage() : "list failed";
+                    mainHandler.post(() -> call.reject(msg));
+                }
+            });
+    }
+
+    @PluginMethod
+    public void pruneLockerBlobs(PluginCall call) {
+        final com.getcapacitor.JSArray keepIds = call.getArray("keepIds", null);
+        final boolean dryRun = Boolean.TRUE.equals(call.getBoolean("dryRun", true));
+        playbackExecutor.execute(
+            () -> {
+                try {
+                    JSObject result =
+                        LockerBlobRegistry.pruneOrphanBlobs(getContext(), keepIds, dryRun);
+                    mainHandler.post(() -> call.resolve(result));
+                } catch (Exception e) {
+                    String msg = e.getMessage() != null ? e.getMessage() : "prune failed";
                     mainHandler.post(() -> call.reject(msg));
                 }
             });

@@ -35,6 +35,39 @@ describe('trackPlaybackMatureForAdvance', () => {
       }),
     ).toBe(false);
   });
+
+  it('rejects reachedPlaying that flipped true only milliseconds ago (no peak proof either)', () => {
+    expect(
+      trackPlaybackMatureForAdvance({
+        reachedPlaying: true,
+        peakSeconds: 0,
+        currentSeconds: 0,
+        msSinceReachedPlaying: 15,
+      }),
+    ).toBe(false);
+  });
+
+  it('accepts reachedPlaying once it has held past the minimum window', () => {
+    expect(
+      trackPlaybackMatureForAdvance({
+        reachedPlaying: true,
+        peakSeconds: 0,
+        currentSeconds: 0,
+        msSinceReachedPlaying: 450,
+      }),
+    ).toBe(true);
+  });
+
+  it('still accepts on real listened time even if reachedPlaying flipped just now', () => {
+    expect(
+      trackPlaybackMatureForAdvance({
+        reachedPlaying: true,
+        peakSeconds: 2.1,
+        currentSeconds: 2.1,
+        msSinceReachedPlaying: 10,
+      }),
+    ).toBe(true);
+  });
 });
 
 describe('shouldSuppressJsAdvanceAfterNativeGapless', () => {

@@ -12,6 +12,11 @@ import {
 import { getLockerEntriesSnapshot } from './lockerStorage';
 import type { LockerEntry } from './lockerStorage';
 import type { MediaEnvelope } from './sandboxLayer1';
+import {
+  getLastFmSimilarTracks,
+  getSimilarArtistsBest,
+  isLastFmSimilarAvailable,
+} from './lastfmSimilar';
 import { fetchArtistTopTracks, fetchSearchCatalog } from './searchCatalog';
 import { lockerEntryToEnvelope } from './smartPlaylistEngine';
 import { getSessionVector, type SessionVector } from './sessionTaste';
@@ -163,6 +168,56 @@ export async function buildArtistMix(seed: MediaEnvelope): Promise<MediaEnvelope
 }
 
 /** Endless-style radio: seed artist + genre locker tracks + catalog + related genre picks. */
+/**
+ * Cross-genre expansion via "sounds like" similarity, resolved into playable envelopes through
+ * the catalog. Similar ARTISTS come from Deezer (keyless — works with zero setup) or Last.fm
+ * (richer, when a key exists). Similar TRACKS use Last.fm only, since Deezer has no track-level
+ * similarity. Fully best-effort — never blocks radio.
+ */
+async function crossGenreSimilarEnvelopes(seed: MediaEnvelope): Promise<MediaEnvelope[]> {
+  const artist = seed.artist?.trim();
+  const title = seed.title?.trim();
+  if (!artist) return [];
+
+  const out: MediaEnvelope[] = [];
+  try {
+    // Similar tracks (most precise) — Last.fm only, and only when a key is configured.
+    if (title && isLastFmSimilarAvailable()) {
+      const similarTracks = (await getLastFmSimilarTracks(artist, title, 12)).slice(0, 8);
+      const resolved = await Promise.all(
+        similarTracks.map(async (s) => {
+          try {
+            const result = await fetchSearchCatalog(`${s.artist} ${s.title}`);
+            return result.tracks
+              .map((t) => t.envelope)
+              .find((env): env is MediaEnvelope => Boolean(env?.url?.trim()));
+          } catch {
+            return undefined;
+          }
+        }),
+      );
+      for (const env of resolved) if (env) out.push(env);
+    }
+
+    // Similar artists (keyless via Deezer, or Last.fm when available) — pull a few top tracks
+    // each for breadth across the genre neighbourhood.
+    const similarArtists = (await getSimilarArtistsBest(artist, 8)).slice(0, 5);
+    const artistTracks = await Promise.all(
+      similarArtists.map(async (a) => {
+        try {
+          return catalogTracksToEnvelopes(await fetchArtistTopTracks(a.name, undefined, 4));
+        } catch {
+          return [] as MediaEnvelope[];
+        }
+      }),
+    );
+    for (const list of artistTracks) out.push(...list);
+  } catch {
+    /* similarity is best-effort — never block radio */
+  }
+  return out;
+}
+
 export async function buildTrackRadio(seed: MediaEnvelope): Promise<MediaEnvelope[]> {
   ensureSonicAnalysisForEnvelope(seed);
   const artist = seed.artist?.trim();
@@ -181,8 +236,12 @@ export async function buildTrackRadio(seed: MediaEnvelope): Promise<MediaEnvelop
 
   let catalog: MediaEnvelope[] = [];
   let related: MediaEnvelope[] = [];
+  let crossGenreSimilar: MediaEnvelope[] = [];
   try {
-    catalog = catalogTracksToEnvelopes(await fetchArtistTopTracks(artist, undefined, 35));
+    [catalog, crossGenreSimilar] = await Promise.all([
+      fetchArtistTopTracks(artist, undefined, 35).then(catalogTracksToEnvelopes),
+      crossGenreSimilarEnvelopes(seed),
+    ]);
     if (genre.trim()) {
       const result = await fetchSearchCatalog(genre);
       related = result.tracks
@@ -195,7 +254,14 @@ export async function buildTrackRadio(seed: MediaEnvelope): Promise<MediaEnvelop
     /* locker-only fallback */
   }
 
-  const combined = dedupeEnvelopes([seed, ...localArtist, ...genreTracks, ...catalog, ...related]);
+  const combined = dedupeEnvelopes([
+    seed,
+    ...localArtist,
+    ...genreTracks,
+    ...crossGenreSimilar,
+    ...catalog,
+    ...related,
+  ]);
   const rest = combined.filter((e) => trackKey(e) !== trackKey(seed));
   return rest.length > 0 ? [seed, ...orderMixRadioRest(rest, seed)] : [seed];
 }

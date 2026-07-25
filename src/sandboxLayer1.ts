@@ -798,7 +798,9 @@ export function useAudioFSM(): UseAudioFSMResult {
         ) {
           return;
         }
-        setCurrentTimeSeconds(audio.currentTime);
+        setCurrentTimeSeconds((prev) =>
+          Math.floor(prev) === Math.floor(audio.currentTime) ? prev : audio.currentTime,
+        );
         setBufferedEndSeconds(readBufferedEndSeconds(audio));
         if (Number.isFinite(audio.duration) && audio.duration > 0) {
           setDurationSeconds(preferEnvelopeDuration(audio.duration));
@@ -1118,18 +1120,23 @@ export function useAudioFSM(): UseAudioFSMResult {
           ) {
             if (gaplessOn) {
               await nativeExoSetGaplessEnabled(true);
+              if (isStalePlayLoad(next, options)) return;
               const status = await nativeExoPlaybackStatus();
+              if (isStalePlayLoad(next, options)) return;
               if (status.currentUrl === exoUrl && sameTrack) {
                 if (shouldAutoPlay) {
                   if (status.state !== 'playing') {
                     await nativeExoResume();
+                    if (isStalePlayLoad(next, options)) return;
                     const again = await nativeExoPlaybackStatus();
+                    if (isStalePlayLoad(next, options)) return;
                     setState(again.state === 'playing' ? 'Playing' : 'Connecting');
                     return;
                   }
                   setState('Playing');
                 } else {
                   await nativeExoPause();
+                  if (isStalePlayLoad(next, options)) return;
                   setState('Ready');
                 }
                 return;
@@ -1170,6 +1177,10 @@ export function useAudioFSM(): UseAudioFSMResult {
               album: next.album,
               artworkUrl: next.artworkUrl,
               durationSeconds: next.durationSeconds,
+              cancelled: () =>
+                isStalePlayLoad(next, options) ||
+                userPausedRef.current ||
+                systemPauseRef.current,
             });
             if (initialReplayGainRaw == null) {
               void resolveEnvelopeReplayGainDb(next).then((replayGainDb) => {
@@ -1182,15 +1193,22 @@ export function useAudioFSM(): UseAudioFSMResult {
             }
             if (isStalePlayLoad(next, options)) return;
             if (shouldAutoPlay) {
+              const stuckAutoPlayCancelled = () =>
+                isStalePlayLoad(next, options) ||
+                userPausedRef.current ||
+                systemPauseRef.current;
               window.setTimeout(() => {
                 void (async () => {
                   try {
+                    if (stuckAutoPlayCancelled()) return;
                     const s = await nativeExoPlaybackStatus();
+                    if (stuckAutoPlayCancelled()) return;
                     if (s.state === 'paused' || s.state === 'idle' || s.state === 'loading') {
                       await nativeExoResume();
                       await new Promise((r) => window.setTimeout(r, 500));
+                      if (stuckAutoPlayCancelled()) return;
                       const again = await nativeExoPlaybackStatus();
-                      if (again.state !== 'playing') {
+                      if (again.state !== 'playing' && !stuckAutoPlayCancelled()) {
                         await nativeExoResume();
                       }
                     }
@@ -1200,7 +1218,12 @@ export function useAudioFSM(): UseAudioFSMResult {
                 })();
               }, 500);
             }
+            if (isStalePlayLoad(next, options)) return;
             const status = await nativeExoPlaybackStatus();
+            if (isStalePlayLoad(next, options)) return;
+            // A pause landing while this reconciliation runs must win — forcing a resume
+            // here would silently undo a pause the user just issued.
+            const respectsUserPause = () => userPausedRef.current || systemPauseRef.current;
             if ((status.durationSecs ?? 0) > 0) {
               setDurationSeconds(preferEnvelopeDuration(status.durationSecs ?? 0));
             }
@@ -1218,7 +1241,10 @@ export function useAudioFSM(): UseAudioFSMResult {
             } else if ((status.positionSecs ?? 0) > 0) {
               setCurrentTimeSeconds(status.positionSecs ?? 0);
             }
-            if (shouldAutoPlay) {
+            if (shouldAutoPlay && respectsUserPause()) {
+              setState('Ready');
+              setNativeExoEffectivePlaying(false);
+            } else if (shouldAutoPlay) {
               const initialEffective = effectiveNativeExoState(
                 status,
                 nativeExoLastPosRef.current,
@@ -1230,7 +1256,9 @@ export function useAudioFSM(): UseAudioFSMResult {
                 setState('Connecting');
                 try {
                   await nativeExoResume();
+                  if (isStalePlayLoad(next, options) || respectsUserPause()) return;
                   const again = await nativeExoPlaybackStatus();
+                  if (isStalePlayLoad(next, options) || respectsUserPause()) return;
                   const againEffective = effectiveNativeExoState(
                     again,
                     status.positionSecs ?? 0,
@@ -1241,12 +1269,14 @@ export function useAudioFSM(): UseAudioFSMResult {
                     setCurrentTimeSeconds(again.positionSecs ?? 0);
                   }
                 } catch {
-                  setState('Failed');
+                  if (!isStalePlayLoad(next, options)) setState('Failed');
                 }
               } else if (status.state === 'paused') {
                 try {
                   await nativeExoResume();
+                  if (isStalePlayLoad(next, options) || respectsUserPause()) return;
                   const again = await nativeExoPlaybackStatus();
+                  if (isStalePlayLoad(next, options) || respectsUserPause()) return;
                   const againEffective = effectiveNativeExoState(
                     again,
                     status.positionSecs ?? 0,
@@ -1257,7 +1287,7 @@ export function useAudioFSM(): UseAudioFSMResult {
                     setCurrentTimeSeconds(again.positionSecs ?? 0);
                   }
                 } catch {
-                  setState('Ready');
+                  if (!isStalePlayLoad(next, options)) setState('Ready');
                 }
               } else if (status.state === 'error') {
                 setState('Failed');
@@ -1784,7 +1814,14 @@ export function useAudioFSM(): UseAudioFSMResult {
     displayPositionRafRef.current = requestAnimationFrame(() => {
       displayPositionRafRef.current = null;
       const pos = pendingDisplayPosRef.current;
-      if (pos != null) setCurrentTimeSeconds(pos);
+      // Routine playback ticks only need whole-second granularity — skipping the
+      // setState (and the shell-wide re-render it triggers) when the displayed
+      // second hasn't moved cuts re-render frequency without affecting anything
+      // that reads currentTimeSeconds, since all of it operates at 1s or coarser
+      // granularity. Seeks/scrubs/resets bypass this via the `immediate` branch above.
+      if (pos != null) {
+        setCurrentTimeSeconds((prev) => (Math.floor(prev) === Math.floor(pos) ? prev : pos));
+      }
     });
   }, []);
 
@@ -1843,6 +1880,10 @@ export function useAudioFSM(): UseAudioFSMResult {
 
     userPausedRef.current = true;
     pauseCooldownUntilRef.current = Date.now() + (systemPause ? 60_000 : 1200);
+    // Reflect the pause in the UI immediately. Without this the "effective playing"
+    // flag stays stale-true, so the play/pause button never flips and a second tap
+    // just re-pauses an already-paused track (looks like pause does nothing).
+    setNativeExoEffectivePlaying(false);
 
     if (state === 'Playing' || state === 'Connecting') {
       setState('Ready');

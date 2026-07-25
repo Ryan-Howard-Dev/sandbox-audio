@@ -97,6 +97,25 @@ const DEFAULT_YTDLP_INIT_TIMEOUT_MS = 45_000;
 const DEFAULT_YTDLP_RESOLVE_TIMEOUT_MS = 600_000;
 const DEFAULT_YTDLP_DOWNLOAD_TIMEOUT_MS = 600_000;
 
+/**
+ * Search YouTube via native yt-dlp (`ytsearch`) — keyless, finds mixtapes/singles/rare tracks
+ * and DJ sets that the iTunes catalog doesn't carry. Returns [] on web or when unavailable.
+ */
+export async function searchYtDlpMobile(
+  query: string,
+  limit = 15,
+): Promise<YtDlpMobileSearchHit[]> {
+  const q = query.trim();
+  if (!q || !isYtDlpMobileNativeAvailable()) return [];
+  try {
+    const result = await YtDlpMobile.search({ query: q, limit });
+    return (result?.results ?? []).filter((h) => h?.title?.trim() && h?.watchUrl?.trim());
+  } catch (err) {
+    lastYtDlpMobileError = err instanceof Error ? err.message : String(err);
+    return [];
+  }
+}
+
 /** Poll native yt-dlp init — safe to call before first on-device resolve. */
 export async function waitForYtDlpInit(
   timeoutMs = DEFAULT_YTDLP_INIT_TIMEOUT_MS,

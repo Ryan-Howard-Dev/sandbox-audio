@@ -9,6 +9,7 @@ import type {
   MediaProvider,
   MediaTransport,
 } from './sandboxLayer1';
+import { isAirGapEnabled } from './airGapMode';
 import { catalogSearchUrl } from './catalogApi';
 import { fetchCatalogApiResults } from './catalogFetch';
 import {
@@ -974,6 +975,8 @@ function buildArchiveSearchQuery(q: string): string {
 }
 
 export async function searchArchive(query: string): Promise<MediaEnvelope[]> {
+  // Air-gap means no outbound requests, full stop. This reached archive.org unguarded (R-009).
+  if (isAirGapEnabled()) return [];
   const q = query.trim();
   if (!q) return [];
 
@@ -1064,6 +1067,8 @@ function upscaleCatalogArtwork(url?: string): string | undefined {
 
 /** Music catalog search — metadata envelopes; full streams resolve via tier 3/4/addons. */
 export async function searchCatalogProvider(query: string): Promise<MediaEnvelope[]> {
+  // Air-gap means no outbound requests, full stop. This reached the catalog API unguarded (R-009).
+  if (isAirGapEnabled()) return [];
   const q = query.trim();
   if (!q) return [];
 

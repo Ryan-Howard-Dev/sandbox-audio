@@ -276,12 +276,21 @@ function resolveExploreSpec(group: ExploreGroup, label: string): ExploreSpec | u
     const genreId = GENRE_ITUNES_IDS[label];
     const searchOnly = GENRE_SEARCH_SPECS[label];
     if (!genreId && !searchOnly) return undefined;
+    const genreWord = label.split('/')[0].trim();
     return {
       displayQuery: `${label} essentials`,
       genreIds: genreId ? [genreId] : undefined,
       useCharts: Boolean(genreId),
+      // Genre accuracy beats recency here: a plain text search like "Hip-Hop 2026"
+      // matches loosely across the catalog and drags in country/worship releases that
+      // are not the genre at all. Freshness comes from the genre-FILTERED charts above
+      // (genreIds + useCharts), which are both current and on-genre; these terms are
+      // only the fallback when the chart path yields nothing.
       searchTerms:
-        searchOnly?.searchTerms ?? [`${label.split('/')[0].trim()} essentials`],
+        searchOnly?.searchTerms ?? [
+          `${genreWord} hits`,
+          `${genreWord} essentials`,
+        ],
     };
   }
 
@@ -303,6 +312,10 @@ function resolveExploreSpec(group: ExploreGroup, label: string): ExploreSpec | u
       return {
         displayQuery: newMusicSearchLabel(year),
         useCharts: true,
+        // Only surface genuinely recent releases. Without a year floor, an iTunes search for
+        // "new music 2026" loosely matches decades-old tracks (Billie Jean, Wonderwall,
+        // Marvin's Room). Require the last ~2 years so the shelf is actually new.
+        yearMin: year - 1,
         searchTerms: [
           newMusicSearchLabel(year),
           `new singles ${year}`,
@@ -335,21 +348,92 @@ function songMatchesFilters(
   return true;
 }
 
+/**
+ * Pick a varied window from a chart pool.
+ *
+ * Taking the top N in chart order meant a shelf showed the same handful of artists on
+ * every visit. Rotate the starting point once per day and allow at most two entries per
+ * artist so one act cannot fill the row.
+ */
+function diversifyChartPool<T extends { artistName?: string }>(
+  pool: T[],
+  limit: number,
+  dayIndex = Math.floor(Date.now() / 86_400_000),
+): T[] {
+  if (pool.length <= limit) return pool;
+  const offset = (dayIndex * limit) % pool.length;
+  const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
+  const perArtist = new Map<string, number>();
+  const picked: T[] = [];
+  const overflow: T[] = [];
+  for (const row of rotated) {
+    const key = (row.artistName ?? '').trim().toLowerCase();
+    const seen = perArtist.get(key) ?? 0;
+    if (key && seen >= 2) {
+      overflow.push(row);
+      continue;
+    }
+    perArtist.set(key, seen + 1);
+    picked.push(row);
+    if (picked.length >= limit) break;
+  }
+  // Backfill from overflow if diversity capping left the shelf short.
+  for (const row of overflow) {
+    if (picked.length >= limit) break;
+    picked.push(row);
+  }
+  return picked;
+}
+
+/** Allow at most two tracks per artist in a shelf, backfilling to keep it full. */
+export function diversifyEnvelopesByArtist(
+  rows: MediaEnvelope[],
+  limit: number,
+  maxPerArtist = 2,
+): MediaEnvelope[] {
+  const perArtist = new Map<string, number>();
+  const picked: MediaEnvelope[] = [];
+  const overflow: MediaEnvelope[] = [];
+  for (const row of rows) {
+    const key = (row.artist ?? '').trim().toLowerCase();
+    const seen = perArtist.get(key) ?? 0;
+    if (key && seen >= maxPerArtist) {
+      overflow.push(row);
+      continue;
+    }
+    perArtist.set(key, seen + 1);
+    picked.push(row);
+    if (picked.length >= limit) return picked;
+  }
+  for (const row of overflow) {
+    if (picked.length >= limit) break;
+    picked.push(row);
+  }
+  return picked;
+}
+
+/** @internal test seam for shelf variety logic. */
+export const __testDiversifyChartPool = diversifyChartPool;
+
 async function fetchFilteredChartEnvelopes(
   spec: ExploreSpec,
   limit = 50,
 ): Promise<MediaEnvelope[]> {
-  const poolSize = spec.genreIds?.length || spec.yearMin ? 100 : limit;
+  // Always pull a pool well beyond what we display. Fetching only `limit` rows left
+  // diversifyChartPool nothing to choose from (it returns the pool untouched when it is
+  // not larger than the limit), so shelves like Top charts still repeated one artist.
+  const poolSize = Math.max(limit * 4, 100);
   const data = await fetchCatalogChartsPayload(poolSize, {
     genre: spec.genreIds?.[0],
     yearMin: spec.yearMin,
     yearMax: spec.yearMax,
   });
   if (!data) return [];
-  const filtered = (data.feed?.results ?? []).filter((song) =>
+  const pool = (data.feed?.results ?? []).filter((song) =>
     songMatchesFilters(song, spec.genreIds, spec.yearMin, spec.yearMax),
   );
-  if (filtered.length === 0) return [];
+  if (pool.length === 0) return [];
+  const filtered = diversifyChartPool(pool, limit);
 
   const ids = filtered.map((s) => s.id).filter((id): id is string => Boolean(id));
   const lookupItems = await fetchCatalogApiResults(
@@ -502,6 +586,16 @@ async function fetchTasteGenreNewReleases(
   return collected;
 }
 
+/** Return a randomly shuffled window of `limit` items from a cached pool (fresh each visit). */
+function shuffleExplorePool(pool: MediaEnvelope[], limit: number): MediaEnvelope[] {
+  const out = [...pool];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out.slice(0, limit);
+}
+
 /** Fetch curated catalog previews for an Explore category pick. */
 export async function fetchExploreEnvelopes(
   group: ExploreGroup,
@@ -521,7 +615,11 @@ export async function fetchExploreEnvelopes(
   const cacheTtl =
     group === 'quick' ? EXPLORE_QUICK_FRESH_TTL_MS : undefined;
   const cached = readResponseCache<MediaEnvelope[]>(cacheKey);
-  if (cached?.isFresh) return cached.data;
+  if (cached?.isFresh) {
+    // New-music shelf: present a freshly shuffled window of the cached pool each visit so it
+    // doesn't look frozen, while still avoiding a network round-trip every open.
+    return isNewMusicQuick ? shuffleExplorePool(cached.data, limit) : cached.data;
+  }
 
   const spec = resolveExploreSpec(group, label);
   if (!spec) return cached?.data ?? [];
@@ -542,7 +640,10 @@ export async function fetchExploreEnvelopes(
   }
 
   if (spec.searchTerms?.length) {
-    const perTerm = Math.max(8, Math.ceil(limit / spec.searchTerms.length));
+    // Over-fetch per term so the per-artist cap has spare candidates to draw on.
+    // At exactly `limit` rows the cap had to backfill duplicates, which is how mood
+    // shelves (e.g. Chill) still came back as one artist four times over.
+    const perTerm = Math.max(12, Math.ceil((limit * 3) / spec.searchTerms.length));
     for (const term of spec.searchTerms) {
       collected.push(
         ...(await searchTermEnvelopes(term, perTerm, spec.yearMin, spec.yearMax)),
@@ -561,8 +662,18 @@ export async function fetchExploreEnvelopes(
   if (isNewMusicQuick && tasteGenres.length > 0) {
     envelopes = rankExploreEnvelopesByTaste(envelopes);
   }
-  envelopes = envelopes.slice(0, limit);
   if (envelopes.length > 0) {
+    // Cache a larger pool than we show, so each visit can present a different shuffled window
+    // (new-music only). Non-new-music shelves keep their deterministic taste ordering.
+    if (isNewMusicQuick) {
+      const pool = envelopes.slice(0, Math.max(limit * 2, limit));
+      writeResponseCache(cacheKey, pool, cacheTtl);
+      return shuffleExplorePool(pool, limit);
+    }
+    // Cap per-artist so a search-driven shelf cannot come back as the same act six
+    // times over (mood rows like "Chill" were returning one library-music artist for
+    // every slot). Chart-driven shelves get the same treatment in diversifyChartPool.
+    envelopes = diversifyEnvelopesByArtist(envelopes, limit);
     writeResponseCache(cacheKey, envelopes, cacheTtl);
     return envelopes;
   }
@@ -575,7 +686,7 @@ export async function fetchExploreEnvelopes(
   ];
   for (const term of fallbackTerms) {
     collected.push(...(await searchTermEnvelopes(term, limit)));
-    envelopes = dedupeEnvelopes(collected).slice(0, limit);
+    envelopes = diversifyEnvelopesByArtist(dedupeEnvelopes(collected), limit);
     if (envelopes.length > 0) {
       writeResponseCache(cacheKey, envelopes, cacheTtl);
       return envelopes;

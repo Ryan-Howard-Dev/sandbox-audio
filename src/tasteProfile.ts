@@ -35,6 +35,12 @@ const PLAYLIST_TRACK_BOOST = 2;
 const SKIP_PENALTY = -1.5;
 const EARLY_SKIP_EXTRA_PENALTY = -1;
 const EARLY_SKIP_PCT = 15;
+/** A play from the downloaded vault counts for more than a passing online stream. */
+const DOWNLOAD_LISTEN_MULTIPLIER = 1.4;
+/** Full album-affinity credit when the track was played inside its album. */
+const ALBUM_CONTEXT_MULTIPLIER = 1.25;
+/** A single-tap play barely implies you like the whole album. */
+const SINGLE_CONTEXT_ALBUM_MULTIPLIER = 0.4;
 export const EXPLICIT_LIKE_BOOST = 5;
 export const EXPLICIT_DISLIKE_PENALTY = -5;
 
@@ -205,10 +211,22 @@ export function rebuildTasteProfile(): TasteProfileV1 {
       addToMap(trackAffinity, trackId, penalty);
       addToMap(artistAffinity, aKey, penalty);
     } else {
-      const weight = meaningfulListenScore(event);
+      // Base weight from how much of the track was listened to.
+      let weight = meaningfulListenScore(event);
+      // Playing a track you deliberately downloaded is a stronger preference signal than a
+      // one-off online stream — nudge downloaded plays up.
+      if (event.source === 'download') weight *= DOWNLOAD_LISTEN_MULTIPLIER;
       addToMap(trackAffinity, trackId, weight);
       addToMap(artistAffinity, aKey, weight);
-      addToMap(albumAffinity, albKey, weight);
+      // Listening to a track as part of its album is album-affinity evidence; a single-tap play
+      // is track/artist evidence but says little about the whole album, so weight album lower.
+      const albumWeight =
+        event.context === 'album'
+          ? weight * ALBUM_CONTEXT_MULTIPLIER
+          : event.context === 'single'
+            ? weight * SINGLE_CONTEXT_ALBUM_MULTIPLIER
+            : weight;
+      addToMap(albumAffinity, albKey, albumWeight);
     }
   }
 

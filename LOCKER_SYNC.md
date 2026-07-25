@@ -66,7 +66,7 @@ flowchart LR
 
 1. **Sync manifest** (`LockerSyncManifest` in `src/lockerSync.ts`)
    - Track id, content hash (SHA-256 of audio bytes), metadata, `remoteBlobUrl`, version, `updatedAt`.
-   - Conflict rule (MVP): **last-write-wins** per track id; tombstone for deletes.
+   - Conflict rule (MVP): **last-write-wins** per track id. Deletes emit a tombstone, but tombstones are advisory only — a pull never deletes a local locker row (ADR-001).
 
 2. **Sync provider** (user picks in Settings → Device Capacity)
    - `none` — off (default).
@@ -127,7 +127,7 @@ flowchart LR
 **Still open:**
 
 - [x] Background sync (focus/visibility + 5 min interval when enabled).
-- [x] Delete propagation for locker track tombstones (`trackTombstones[]` in manifest).
+- [~] Locker track tombstones (`trackTombstones[]` in manifest) — **recorded and exported, never applied on pull.** `applyTrackTombstonesFromManifest()` in `src/lockerSync.ts` returns 0 and logs; this is deliberate, not unfinished. Auto-deleting locker rows from a remote signal is forbidden by ADR-001 and enforced by `src/lockerDeleteGuard.ts`, which lists tombstones as an auto-delete entry point that must never run in production. A track deleted on device A therefore stays on device B until the user deletes it there. Making this "functional" means adding a user-confirmed review step, not enabling the delete.
 - [x] Conflict UI for metadata edits on two devices (Settings → Device Capacity).
 - [x] Playlist import auto-match from locker after sync / import.
 - [ ] E2E encryption option for blobs (user passphrase).
@@ -191,4 +191,4 @@ flowchart LR
 
 **Quick start (Tier 3/4 audio sync):** Settings → Device Capacity → enable Cross-device locker sync → provider **Self-hosted Tier 3/4** (mode **full**; set `remoteBaseUrl` if tier34 is not `http://localhost:3001`). Run `npm run dev:tier34` on the sync host.
 
-**Phase 3 (functional):** Track delete tombstones, background sync (5 min + focus/visibility), metadata conflict panel, and playlist stub auto-match from locker after sync. E2E blob encryption remains future work.
+**Phase 3 (functional):** Background sync (5 min + focus/visibility), metadata conflict panel, and playlist stub auto-match from locker after sync. **Track delete tombstones are export-only** — they are recorded and shipped in the manifest but never applied on pull, by design (see Phase 3 list above). E2E blob encryption remains future work.

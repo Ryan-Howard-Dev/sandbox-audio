@@ -205,9 +205,24 @@ function syncAndroidDownloadForeground(): void {
   });
 }
 
+/**
+ * Queue-change events arrive in tight bursts (every per-track status patch fires one).
+ * Debounce so a burst becomes a single foreground sync instead of one bridge round-trip
+ * per event — an unthrottled burst previously flooded the Capacitor bridge and froze the UI.
+ */
+let foregroundSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleAndroidDownloadForegroundSync(): void {
+  if (foregroundSyncTimer) return;
+  foregroundSyncTimer = setTimeout(() => {
+    foregroundSyncTimer = null;
+    syncAndroidDownloadForeground();
+  }, 250);
+}
+
 if (typeof window !== 'undefined') {
   subscribeDownloadQueue(() => {
-    syncAndroidDownloadForeground();
+    scheduleAndroidDownloadForegroundSync();
   });
 
   // Native DownloadForegroundService posts this while backgrounded so the JS

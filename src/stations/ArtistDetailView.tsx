@@ -1045,11 +1045,17 @@ export default function ArtistDetailView({
                           </div>
                         ) : null}
                       </div>
-                      <p className="font-mono text-[11px] font-bold uppercase text-[var(--text)] group-hover:text-accent leading-snug">
-                        {displayTrackTitle(album.title)}
+                      <p className="font-mono text-[11px] font-bold uppercase text-[var(--text)] group-hover:text-accent leading-snug inline-flex items-center gap-1 flex-wrap">
+                        <span>{displayTrackTitle(album.title)}</span>
+                        {album.explicit || album.contentRating === 'explicit' ? (
+                          <ExplicitBadge />
+                        ) : null}
                       </p>
                       {versionLabel ? (
                         <p className="artist-catalog-version">{versionLabel}</p>
+                      ) : null}
+                      {album.contentRating === 'clean' ? (
+                        <p className="artist-catalog-version">Clean</p>
                       ) : null}
                       <p className="font-mono text-[9px] text-[var(--text-mid)] uppercase artist-catalog-year-below">
                         {album.releaseYear ?? '—'}

@@ -13,9 +13,13 @@ import {
 } from './albumCover';
 import {
   albumGroupHasPersistedCover,
+  applyArtBlobToEntries,
   clearLastFmBrandingAlbumArt,
   formatAlbumDisplayName,
+  getLockerArtBlob,
   getLockerEntries,
+  isPersistentAlbumArt,
+  listLockerArtBlobIds,
   lockerAlbumArtistConsensus,
   lockerAlbumGroupArtist,
   lockerAlbumGroupKey,
@@ -82,8 +86,12 @@ export async function ensureDownloadedAlbumCover(options: {
   if (groupTracks.length === 0) return false;
   if (await albumGroupHasPersistedCover(groupTracks)) return true;
 
+  // Derive from the whole group (consensus over all tracks), then fall back to the
+  // caller's album artist. A per-track artist here can fail to match the album group
+  // later, which silently skips the cover persist.
   const artist =
     lockerAlbumArtistConsensus(groupTracks) ||
+    lockerAlbumGroupArtist(groupTracks[0]!, groupTracks) ||
     options.albumArtist?.trim() ||
     groupTracks[0]?.artist?.trim() ||
     'Local Upload';
@@ -95,10 +103,98 @@ export async function ensureDownloadedAlbumCover(options: {
 
   if (!cover?.url) return false;
 
-  return persistAlbumCoverForGroup(albumName, artist, cover.url, {
+  const persisted = await persistAlbumCoverForGroup(albumName, artist, cover.url, {
     artist,
     releaseYear: cover.year ?? options.releaseYear,
   });
+  if (persisted) return true;
+
+  // The album-artist we guessed did not resolve to the group. Retry with the
+  // consensus artist of the tracks we already hold so the cover still lands.
+  const fallbackArtist = groupTracks[0]?.albumArtist?.trim() || groupTracks[0]?.artist?.trim();
+  if (fallbackArtist && fallbackArtist !== artist) {
+    return persistAlbumCoverForGroup(albumName, fallbackArtist, cover.url, {
+      artist: fallbackArtist,
+      releaseYear: cover.year ?? options.releaseYear,
+    });
+  }
+  return false;
+}
+
+/**
+ * Copy an album's existing cover onto every track in the same group.
+ *
+ * Most albums here have durable art on only one or two tracks (e.g. from the embedded
+ * cover pass), which made `albumGroupHasPersistedCover` report the whole group as
+ * covered — so the fetch heal skipped it while the album's other tracks still rendered
+ * blank in Genres/Playlists/album grids. Propagating the art the group already owns
+ * fixes those tiles without any network calls.
+ */
+export async function propagateAlbumArtWithinGroups(): Promise<number> {
+  const entries = await getLockerEntries();
+  // ONE bulk read of which ids hold art. Probing getLockerArtBlob() per track cost ~600
+  // IndexedDB opens on a 300-track library and made opening the locker visibly slow.
+  const artIds = await listLockerArtBlobIds();
+
+  /*
+   * Skip entirely once the library is essentially covered. This pass exists to repair a
+   * historically under-covered locker; re-walking every group on each locker open just to
+   * discover there is nothing to do is pure startup cost. Cheap inline count first.
+   */
+  const covered = entries.reduce(
+    (n, e) => n + (artIds.has(e.id) || isPersistentAlbumArt(e.albumArt) ? 1 : 0),
+    0,
+  );
+  if (entries.length > 0 && covered / entries.length >= 0.98) return 0;
+
+  const groups = new Map<string, LockerEntry[]>();
+  for (const entry of entries) {
+    const key = lockerAlbumGroupKey(entry);
+    if (!key) continue;
+    const bucket = groups.get(key);
+    if (bucket) bucket.push(entry);
+    else groups.set(key, [entry]);
+  }
+
+  let filled = 0;
+  for (const tracks of groups.values()) {
+    if (tracks.length < 2) continue;
+    const donor = tracks.find((t) => isPersistentAlbumArt(t.albumArt));
+    const donorUrl = donor?.albumArt?.trim();
+    // Only tracks with no usable art of their own need the copy.
+    const needy = tracks.filter(
+      (t) => !isPersistentAlbumArt(t.albumArt) && !t.albumArt?.trim(),
+    );
+    if (needy.length === 0 && !tracks.some((t) => !isPersistentAlbumArt(t.albumArt))) {
+      continue;
+    }
+
+    if (donorUrl) {
+      for (const t of needy) {
+        await updateLockerEntryMetadata(t.id, { albumArt: donorUrl });
+        filled += 1;
+      }
+      continue;
+    }
+
+    // No inline donor. Art is often held in the separate blob store rather than on the
+    // entry — use the bulk id set to find a donor and the tracks that need it, so this
+    // costs ONE blob read per group instead of two per track.
+    const donorId = tracks.find((t) => artIds.has(t.id))?.id;
+    if (!donorId) continue;
+    const needBlob = tracks.filter((t) => !artIds.has(t.id));
+    if (needBlob.length === 0) continue;
+    const donorBlob = await getLockerArtBlob(donorId);
+    if (!donorBlob || donorBlob.size === 0) continue;
+    // ONE transaction for the whole group — the per-entry write path opened a transaction
+    // each time and blocked the main thread for seconds on a large library.
+    filled += await applyArtBlobToEntries(
+      needBlob.map((t) => t.id),
+      donorBlob,
+    );
+    for (const t of needBlob) artIds.add(t.id);
+  }
+  return filled;
 }
 
 /** Fetch and persist missing album covers from catalog artwork search. */
@@ -119,18 +215,63 @@ export async function backfillMissingAlbumCovers(): Promise<number> {
     }
     groups.set(key, {
       albumName: entry.albumName!.trim(),
-      artist: lockerAlbumArtistConsensus([entry]),
+      artist: '',
       tracks: [entry],
     });
   }
 
+  // Bulk id set again — albumGroupHasPersistedCover() probes the blob store per track, so
+  // calling it for every group re-read the store hundreds of times.
+  const coveredIds = await listLockerArtBlobIds();
   let fixed = 0;
   for (const group of groups.values()) {
-    if (await albumGroupHasPersistedCover(group.tracks)) continue;
-    const ok = await backfillLockerAlbumArt(group.albumName, group.artist);
+    const hasInline = group.tracks.some((t) => isPersistentAlbumArt(t.albumArt));
+    if (hasInline || group.tracks.some((t) => coveredIds.has(t.id))) continue;
+    // Derive the artist from the WHOLE group, not one sample row. A single-entry
+    // consensus often yields a track-level/featured artist that no longer matches the
+    // album group, so the inner tracksForAlbumGroup() lookup found 0 tracks and bailed
+    // before any cover lookup ran (whole heal finished in ~50ms, fixing nothing).
+    const groupArtist =
+      lockerAlbumArtistConsensus(group.tracks) ||
+      lockerAlbumGroupArtist(group.tracks[0]!, group.tracks) ||
+      '';
+    const ok = await backfillLockerAlbumArtForTracks(
+      group.albumName,
+      groupArtist,
+      group.tracks,
+    );
     if (ok) fixed += 1;
   }
   return fixed;
+}
+
+/**
+ * Cover heal for an album group whose tracks are already known — avoids re-deriving
+ * the group by (albumName, artist), which can resolve to zero rows and silently skip.
+ */
+async function backfillLockerAlbumArtForTracks(
+  albumName: string,
+  artist: string,
+  tracks: LockerEntry[],
+): Promise<boolean> {
+  const canonicalName = tracks[0]?.albumName?.trim() || albumName.trim();
+  if (!canonicalName) return false;
+  const groupArtist =
+    resolveAlbumSearchArtist(canonicalName, artist, tracks) ||
+    lockerAlbumArtistConsensus(tracks) ||
+    artist.trim() ||
+    'Local Upload';
+  const searchAlbum = formatAlbumDisplayName(canonicalName) || canonicalName;
+  try {
+    const found = await findAlbumCoverForLockerGroup(searchAlbum, groupArtist, tracks);
+    if (!found?.url) return false;
+    return persistAlbumCoverForGroup(canonicalName, groupArtist, found.url, {
+      artist: groupArtist,
+      releaseYear: found.year,
+    });
+  } catch {
+    return false;
+  }
 }
 
 /** Fetch cover online and persist albumArtBlob + artUrl on every track in the album group. */

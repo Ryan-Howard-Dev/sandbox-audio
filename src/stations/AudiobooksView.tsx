@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, BookOpen, Magnet, Play, RefreshCw, Search, ShieldAlert, Smartphone } from 'lucide-react';
+import { ArrowLeft, BookOpen, Magnet, Play, Search, ShieldAlert, Smartphone } from 'lucide-react';
+import LockerMoreMenu from '../components/LockerMoreMenu';
 import type { MediaEnvelope } from '../sandboxLayer1';
 import AudiobookDiscoverPanel from '../components/audiobooks/AudiobookDiscoverPanel';
 import AudiobookAcquirePanel from '../components/audiobooks/AudiobookAcquirePanel';
@@ -14,8 +15,11 @@ import { filterAudiobookScanHits } from '../lockerUploadFilter';
 import { audiobookHitToEnvelope } from '../audiobookPlayback';
 import {
   applyAudiobookEnrichment,
+  audiobookOrigin,
   groupAudiobookHits,
+  saveAudiobookSeeds,
   type AudiobookBook,
+  type AudiobookOrigin,
 } from '../audiobookLibrary';
 import {
   enrichAudiobookList,
@@ -55,7 +59,15 @@ export default function AudiobooksView({
   drillBackRef,
 }: AudiobooksViewProps) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<'discover' | 'acquire' | 'device'>('discover');
+  // Pillar spine, matching Music (Library/Discover) and Podcasts (Library/Discover):
+  // 'device' is the Library tab, split by origin into Downloaded vs On device.
+  const [tab, setTab] = useState<'discover' | 'acquire' | 'device'>('device');
+  const [libraryOrigin, setLibraryOrigin] = useState<AudiobookOrigin | 'all'>('all');
+  const [libraryMenuOpen, setLibraryMenuOpen] = useState(false);
+  // Format-native grouping: books group by AUTHOR, not "artist" — the audiobook
+  // equivalent of the music locker's artist view.
+  const [libraryGroup, setLibraryGroup] = useState<'books' | 'authors'>('books');
+  const [openAuthor, setOpenAuthor] = useState<string | null>(null);
   const discoverDrillBackRef = useRef<(() => boolean) | null>(null);
   const [books, setBooks] = useState<AudiobookBook[]>([]);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -70,6 +82,49 @@ export default function AudiobooksView({
     () => books.find((b) => b.key === selectedKey) ?? null,
     [books, selectedKey],
   );
+
+  // Persist author/title seeds so the search sheet can build a personalised Books row
+  // without running its own device scan.
+  useEffect(() => {
+    if (books.length > 0) saveAudiobookSeeds(books);
+  }, [books]);
+
+  const originCounts = useMemo(() => {
+    let downloaded = 0;
+    for (const b of books) if (audiobookOrigin(b) === 'downloaded') downloaded += 1;
+    return { downloaded, uploaded: books.length - downloaded };
+  }, [books]);
+
+  const originFiltered = useMemo(
+    () =>
+      libraryOrigin === 'all'
+        ? books
+        : books.filter((b) => audiobookOrigin(b) === libraryOrigin),
+    [books, libraryOrigin],
+  );
+
+  /** Books grouped by author — the audiobook analogue of the music locker's artists. */
+  const authors = useMemo(() => {
+    const map = new Map<string, AudiobookBook[]>();
+    for (const b of originFiltered) {
+      const key = (b.author || 'Unknown author').trim();
+      const bucket = map.get(key);
+      if (bucket) bucket.push(b);
+      else map.set(key, [b]);
+    }
+    return [...map.entries()]
+      .map(([name, list]) => ({ name, books: list }))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  }, [originFiltered]);
+
+  const visibleBooks = useMemo(() => {
+    if (libraryGroup === 'authors' && openAuthor) {
+      return originFiltered.filter(
+        (b) => (b.author || 'Unknown author').trim() === openAuthor,
+      );
+    }
+    return originFiltered;
+  }, [originFiltered, libraryGroup, openAuthor]);
 
   const playBook = useCallback(
     (book: AudiobookBook) => {
@@ -302,28 +357,65 @@ export default function AudiobooksView({
                 : t('audiobooks.isolationNote')}
           </p>
         </div>
+        {/* Scan/library actions live behind ⋮ rather than a permanent button pinned to the
+            header — it dominated the page and left no room for other actions. */}
         {tab === 'device' ? (
-          <button
-            type="button"
-            className="btn-accent touch-manipulation h-10 px-3 rounded-lg font-mono text-[10px] uppercase tracking-wider flex items-center gap-2 shrink-0"
-            onClick={() => void runScan()}
-            disabled={phase === 'scanning' || phase === 'enriching'}
-          >
-            <RefreshCw
-              className={`w-3.5 h-3.5${
-                phase === 'scanning' || phase === 'enriching' ? ' animate-spin' : ''
-              }`}
-            />
-            {phase === 'scanning'
-              ? t('audiobooks.scanning')
-              : phase === 'enriching'
-                ? t('audiobooks.enriching')
-                : t('audiobooks.scan')}
-          </button>
+          <LockerMoreMenu
+            open={libraryMenuOpen}
+            onOpenChange={setLibraryMenuOpen}
+            alwaysVisible
+            align="right"
+            portaled
+            ariaLabel={t('audiobooks.title')}
+            actions={[
+              {
+                id: 'scan',
+                section: 'Library',
+                label:
+                  phase === 'scanning'
+                    ? t('audiobooks.scanning')
+                    : phase === 'enriching'
+                      ? t('audiobooks.enriching')
+                      : t('audiobooks.scan'),
+                disabled: phase === 'scanning' || phase === 'enriching',
+                onClick: () => void runScan(),
+              },
+              {
+                id: 'origin-all',
+                section: 'Show',
+                label: `All (${books.length})`,
+                active: libraryOrigin === 'all',
+                onClick: () => setLibraryOrigin('all'),
+              },
+              {
+                id: 'origin-downloaded',
+                label: `Downloaded (${originCounts.downloaded})`,
+                active: libraryOrigin === 'downloaded',
+                onClick: () => setLibraryOrigin('downloaded'),
+              },
+              {
+                id: 'origin-uploaded',
+                label: `On device (${originCounts.uploaded})`,
+                active: libraryOrigin === 'uploaded',
+                onClick: () => setLibraryOrigin('uploaded'),
+              },
+            ]}
+          />
         ) : null}
       </header>
 
+      {/* Library first, then Discover, then Acquire — same order as the other pillars. */}
       <div className="podcasts-tabs mb-4 px-1" role="tablist" aria-label={t('audiobooks.title')}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'device'}
+          className={`podcasts-tab touch-manipulation${tab === 'device' ? ' podcasts-tab--active' : ''}`}
+          onClick={() => setTab('device')}
+        >
+          <Smartphone className="w-3.5 h-3.5" aria-hidden />
+          {t('audiobooks.tabDevice')}
+        </button>
         <button
           type="button"
           role="tab"
@@ -343,16 +435,6 @@ export default function AudiobooksView({
         >
           <Magnet className="w-3.5 h-3.5" aria-hidden />
           {t('audiobooks.tabAcquire')}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'device'}
-          className={`podcasts-tab touch-manipulation${tab === 'device' ? ' podcasts-tab--active' : ''}`}
-          onClick={() => setTab('device')}
-        >
-          <Smartphone className="w-3.5 h-3.5" aria-hidden />
-          {t('audiobooks.tabDevice')}
         </button>
       </div>
 
@@ -450,12 +532,75 @@ export default function AudiobooksView({
               {t('audiobooks.yourBooks')}
             </p>
             <span className="podcasts-count-badge podcasts-count-badge--inline">
-              {books.length}
+              {visibleBooks.length}
             </span>
           </div>
 
-          <ul className="podcasts-library-grid" role="list">
-            {books.map((book) => {
+          {/* Books / Authors — format-native groupings (audiobooks have authors, not artists). */}
+          <div className="music-segment-bar" role="tablist" aria-label="Group books by">
+            {(
+              [
+                ['books', `Books ${originFiltered.length}`],
+                ['authors', `Authors ${authors.length}`],
+              ] as Array<['books' | 'authors', string]>
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={libraryGroup === id}
+                data-testid={`audiobook-group-${id}`}
+                className={`music-segment-tab touch-manipulation${
+                  libraryGroup === id ? ' music-segment-tab--active' : ''
+                }`}
+                onClick={() => {
+                  setLibraryGroup(id);
+                  setOpenAuthor(null);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {libraryGroup === 'authors' && !openAuthor ? (
+            <ul className="space-y-1" role="list">
+              {authors.map((a) => (
+                <li key={a.name}>
+                  <button
+                    type="button"
+                    className="universal-search-row touch-manipulation w-full"
+                    onClick={() => setOpenAuthor(a.name)}
+                  >
+                    <span className="universal-search-meta">
+                      <span className="universal-search-title">{a.name}</span>
+                      <span className="universal-search-sub">
+                        {a.books.length} {a.books.length === 1 ? 'book' : 'books'}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {libraryGroup === 'authors' && openAuthor ? (
+            <button
+              type="button"
+              className="universal-search-seeall touch-manipulation mb-2"
+              onClick={() => setOpenAuthor(null)}
+            >
+              ← All authors · {openAuthor}
+            </button>
+          ) : null}
+
+          <ul
+            className={`podcasts-library-grid${
+              libraryGroup === 'authors' && !openAuthor ? ' hidden' : ''
+            }`}
+            role="list"
+          >
+            {visibleBooks.map((book) => {
               const art = proxiedArtworkUrl(book.coverUrl);
               return (
                 <li key={book.key}>

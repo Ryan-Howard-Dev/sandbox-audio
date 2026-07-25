@@ -39,7 +39,17 @@ export default function MobileCombinedDock<T extends string>({
           onNavigate={onNavigate}
           badgeById={navBadges}
           compact
-          showLabels
+          /*
+           * Icon-only, always.
+           *
+           * Labels that come and go are worse than no labels: you cannot rely on them, so you
+           * learn the icons regardless — and their appearing/disappearing shifts the dock's height
+           * every time playback starts or stops. Five labels on a ~314px row also forces text down
+           * to a size that is barely readable ("Audiobooks" gets ~52px). The active burnt-orange
+           * pill is the "you are here" signal; aria-label still carries the full name for
+           * screen readers, so nothing is lost for accessibility.
+           */
+          showLabels={false}
         />
       </div>
     </div>

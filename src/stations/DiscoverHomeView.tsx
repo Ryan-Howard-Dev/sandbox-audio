@@ -9,6 +9,7 @@ import type { ExploreGroup } from '../exploreCatalog';
 import type { DiscoveryMix } from '../discoveryMixes';
 import type { FollowedFeedRelease } from '../followedArtistFeed';
 import MadeForYouShelf from '../components/discovery/MadeForYouShelf';
+import TasteDiscoverShelf from '../components/discovery/TasteDiscoverShelf';
 import { useTranslation } from '../i18n';
 
 export interface DiscoverHomeViewProps {
@@ -75,6 +76,28 @@ export default function DiscoverHomeView({
           mobile={mobile}
         />
       </div>
+
+      {/* Personalised discovery belongs on For You, not Browse: these are built from the
+          local taste profile (artists similar to the ones you actually play, minus what
+          you already own). Each renders nothing until there is a taste signal. */}
+      {onPlayTrack ? (
+        <>
+          <TasteDiscoverShelf
+            kind="daily"
+            title="Daily Discover"
+            subtitle="Fresh picks from artists like the ones you play"
+            onPlay={onPlayTrack}
+            limit={10}
+          />
+          <TasteDiscoverShelf
+            kind="weekly"
+            title="Weekly Discover"
+            subtitle="A wider sweep across your taste, refreshed weekly"
+            onPlay={onPlayTrack}
+            limit={10}
+          />
+        </>
+      ) : null}
 
       {onGoToExplore ? (
         <section className="feed-explore-cta">

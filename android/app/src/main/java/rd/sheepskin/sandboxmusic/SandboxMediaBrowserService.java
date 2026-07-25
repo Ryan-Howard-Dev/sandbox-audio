@@ -1,5 +1,6 @@
 package rd.sheepskin.sandboxmusic;
 
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -67,8 +68,36 @@ public class SandboxMediaBrowserService extends MediaBrowserServiceCompat {
                 }
             }
         );
+        /*
+         * Route this session's volume at STREAM_MUSIC like the real playback session does.
+         *
+         * Without it the fallback is an active media session with no stream attached, so when the
+         * system routes volume or media buttons here — which it can, because the fallback is
+         * created first and stays active — the hardware keys and the system volume slider have
+         * nothing to act on. That is the "turning the music down from outside the app does
+         * nothing" report.
+         */
+        fallbackSession.setPlaybackToLocal(AudioManager.STREAM_MUSIC);
         fallbackSession.setActive(true);
         setSessionToken(fallbackSession.getSessionToken());
+    }
+
+    /**
+     * Hand over to the real playback session once it exists.
+     *
+     * onCreate() runs once, and the browser service is usually created BEFORE playback starts, so
+     * the fallback used to win permanently: two sessions stayed active for the rest of the process
+     * and the browse tree pointed at the one that never plays anything. Called by
+     * MediaPlaybackForegroundService when it publishes its session.
+     */
+    public static void adoptPlaybackSession(MediaSessionCompat.Token token) {
+        SandboxMediaBrowserService instance = runningInstance;
+        if (instance == null || token == null) return;
+        if (instance.fallbackSession == null) return;
+        instance.setSessionToken(token);
+        instance.fallbackSession.setActive(false);
+        instance.fallbackSession.release();
+        instance.fallbackSession = null;
     }
 
     @Override

@@ -11,7 +11,9 @@ export function newMusicExploreCachePart(
   const week = Math.floor(
     (Date.now() - Date.UTC(year, 0, 1)) / (7 * 24 * 60 * 60 * 1000),
   );
-  return `${newMusicSearchLabel(year)}|w${week}|t:${tasteFingerprint}`;
+  // v2: bumped when the new-music query gained a release-year floor — invalidates old caches
+  // that still held decades-old tracks (Billie Jean, Wonderwall) matched by a loose search.
+  return `${newMusicSearchLabel(year)}|v2|w${week}|t:${tasteFingerprint}`;
 }
 
 /** True for explore-style new-music queries (any year). */

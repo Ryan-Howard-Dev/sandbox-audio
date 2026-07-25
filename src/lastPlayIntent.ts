@@ -63,7 +63,11 @@ export function saveLastPlayIntent(envelope: MediaEnvelope): void {
     title: envelope.title,
     artist: envelope.artist ?? '',
     album: envelope.album,
-    artworkUrl: envelope.artworkUrl,
+    // Don't persist heavy base64/blob artwork — it overflows localStorage (see queuePersistence).
+    artworkUrl:
+      envelope.artworkUrl?.startsWith('data:') || envelope.artworkUrl?.startsWith('blob:')
+        ? undefined
+        : envelope.artworkUrl,
     url: envelope.url,
     provider: envelope.provider,
     transport: envelope.transport,

@@ -132,6 +132,28 @@ export class NativeExoPlaybackWeb extends WebPlugin implements NativeExoPlayback
     };
   }
 
+  async listLockerBlobs(): Promise<{ ids: string[] }> {
+    return { ids: [] };
+  }
+
+  async pruneLockerBlobs(): Promise<{
+    deletedCount: number;
+    freedBytes: number;
+    keptCount: number;
+    totalCount: number;
+    dryRun: boolean;
+    refusedEmptyKeep: boolean;
+  }> {
+    return {
+      deletedCount: 0,
+      freedBytes: 0,
+      keptCount: 0,
+      totalCount: 0,
+      dryRun: true,
+      refusedEmptyKeep: false,
+    };
+  }
+
   async probeLocalFile(): Promise<{ exists: boolean; bytes?: number }> {
     return { exists: false };
   }

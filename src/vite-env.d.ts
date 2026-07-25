@@ -4,6 +4,9 @@
 /** Injected at Android debug APK build time (vite define). */
 declare const __SANDBOX_ANDROID_E2E__: boolean;
 
+/** App-level Last.fm API key baked in at build time (SANDBOX_LASTFM_API_KEY). Empty if unset. */
+declare const __LASTFM_APP_API_KEY__: string;
+
 interface ImportMetaEnv {
   readonly VITE_JAMENDO_CLIENT_ID?: string;
   /** Google Cast Developer Console App ID for custom visualizer receiver. */

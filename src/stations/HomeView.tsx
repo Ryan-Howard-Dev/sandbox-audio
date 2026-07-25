@@ -39,6 +39,8 @@ export interface HomeViewProps {
   envelope?: MediaEnvelope | null;
   /** Mobile: tap vinyl/meta to open full now playing. */
   onOpenNowPlaying?: () => void;
+  /** Idle home: tapping the vinyl opens universal search. */
+  onIdleSearch?: () => void;
   /** Mobile: collapse inline expanded hero. */
   onCloseNowPlaying?: () => void;
   /** Mobile shell: inline expanded hero (same page, no overlay). */
@@ -88,6 +90,7 @@ export default function HomeView({
   onGoToAlbum,
   envelope = null,
   onOpenNowPlaying,
+  onIdleSearch,
   onCloseNowPlaying,
   expanded = false,
   showMobileShell = false,
@@ -179,10 +182,12 @@ export default function HomeView({
         onGoToAlbum={onGoToAlbum}
         envelope={envelope}
         onExpand={onOpenNowPlaying}
+        onIdleSearch={onIdleSearch}
         onCollapse={onCloseNowPlaying}
         showMobileShell={showMobileShell}
         heroDisplayMode={heroDisplay}
         onHeroDisplayModeChange={setHeroDisplay}
+        flipOnArtworkTap
         onSkipBack={onSkipBack}
         onSkipForward={onSkipForward}
         moreMenu={moreMenu}

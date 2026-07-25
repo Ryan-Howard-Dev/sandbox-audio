@@ -36,10 +36,19 @@ final class YoutubeDlStreamResolver {
     /** Reject partial yt-dlp fragments and tiny preview clips in session cache. */
     private static final long MIN_CACHED_AUDIO_BYTES = 400_000L;
     private static final int MIN_FULL_TRACK_DURATION_SECS = 60;
-    /** Prefer full audio — relaxed fallbacks when m4a/http-only formats unavailable. */
+    /**
+     * AUDIO-ONLY. YouTube always exposes standalone audio streams, so we never fall back to a
+     * muxed video format: doing so downloaded full videos (100MB+ "songs" bloating storage) and
+     * produced a video track the audio-only ExoPlayer couldn't render. `worstaudio` is the final
+     * guarantee that *some* audio-only stream is chosen rather than a video container.
+     */
+    // With ffmpeg audio-extraction (-x) the stored file is always audio-only m4a,
+    // so the format only needs to *fetch* the smallest usable source: audio-only
+    // when it exists, else a size-capped muxed stream (whose video is discarded by
+    // the extraction). This never fails with "Requested format is not available".
     private static final String YTDLP_AUDIO_FORMAT =
-        "bestaudio[ext=m4a]/bestaudio/best[height<=0]/best";
-    private static final String YTDLP_AUDIO_FORMAT_FALLBACK = "bestaudio/best";
+        "bestaudio/best[height<=480]/best";
+    private static final String YTDLP_AUDIO_FORMAT_FALLBACK = "worst";
     /**
      * Public Piped/Invidious instances are frequently dead or rate-limited. Keep per-instance
      * timeouts short and race all instances in parallel so the fastest healthy one wins instead
@@ -400,9 +409,36 @@ final class YoutubeDlStreamResolver {
         }
     }
 
+    /**
+     * Directory yt-dlp is currently writing into, so the plugin's watchdog can tell a slow
+     * download from a stalled one by watching bytes land on disk. This is deliberately not
+     * based on yt-dlp's progress callback — that callback's signature varies between
+     * youtubedl-android releases, whereas file growth is stable and version-independent.
+     */
+    private static volatile File currentDownloadDir = null;
+
+    @Nullable
+    static File currentDownloadDir() {
+        return currentDownloadDir;
+    }
+
+    /** Total bytes currently on disk for the in-flight download (0 when none/unknown). */
+    static long currentDownloadBytes() {
+        File dir = currentDownloadDir;
+        if (dir == null || !dir.isDirectory()) return 0L;
+        File[] files = dir.listFiles();
+        if (files == null) return 0L;
+        long total = 0L;
+        for (File f : files) {
+            if (f.isFile()) total += f.length();
+        }
+        return total;
+    }
+
     @Nullable
     private static String executeDownload(String watchUrl, String outTemplate, String format) {
         try {
+            currentDownloadDir = new File(outTemplate).getParentFile();
             YoutubeDLRequest req = new YoutubeDLRequest(watchUrl);
             req.addOption("-f", format);
             req.addOption("-o", outTemplate);
@@ -410,7 +446,22 @@ final class YoutubeDlStreamResolver {
             req.addOption("--no-part");
             req.addOption("--no-warnings");
             req.addOption("--restrict-filenames");
+            // Extract audio to a clean m4a via ffmpeg. This guarantees the stored
+            // file is audio-only (never a muxed video), which both eliminates video
+            // downloads and fixes ExoPlayer choking on muxed mp4 containers.
+            req.addOption("-x");
+            req.addOption("--audio-format", "m4a");
+            req.addOption("--audio-quality", "0");
             req.addOption("--extractor-args", "youtube:player_client=android,web");
+            // Resilience + speed on mobile networks: retry transient failures instead of
+            // aborting the whole track, cap the time spent waiting on a dead socket, and
+            // fetch DASH fragments in parallel (the main win for slow downloads).
+            req.addOption("--retries", "3");
+            req.addOption("--fragment-retries", "3");
+            req.addOption("--socket-timeout", "20");
+            req.addOption("--concurrent-fragments", "4");
+            // Report progress so the caller can distinguish "slow but downloading" from
+            // "stalled" — a flat wall-clock timeout kills healthy long downloads.
             YoutubeDLResponse response = YoutubeDL.getInstance().execute(req);
             String err = response.getErr();
             if (err != null && err.toLowerCase(Locale.US).contains("error")) {

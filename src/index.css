@@ -40,13 +40,24 @@
   --orange: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
   --accent-stroke: var(--accent-focus);
   --orange-dim: #7a2b05;
-  --text-primary: #f0f0f0;
-  --text-heading: #f0f0f0;
-  --text-on-accent: #faf8f5;
+  /*
+   * Warm off-white, not #f0f0f0. Near-pure white on a near-black shell is ~17:1 contrast, which
+   * reads as glare on an OLED phone in a dark room. These match themePresets' base tokens (the
+   * engine overwrites them per preset anyway — the old values only ever showed before the first
+   * theme applied, and were harsher than every preset).
+   */
+  --text-primary: #e8e4df;
+  --text-heading: #f0ebe4;
+  --text-on-accent: #fbf7f2;
   --text: var(--text-primary);
   --text-mid: #8a8fa8;
-  --accent-burnt: hsl(18 85% 42%);
-  --app-outline: #B84708;
+  /*
+   * Follows the theme. This was pinned to hsl(18 85% 42%) across 35 usages, so a third of the
+   * app's orange ignored the chosen accent entirely — the main source of the brightness drift
+   * away from burnt orange.
+   */
+  --accent-burnt: var(--accent-brand);
+  --app-outline: var(--accent-brand);
   --text-label: #8a857c;
   --text-dim: #5c5850;
   --bg-input-elevated: #141820;
@@ -56,18 +67,13 @@
   --success: #22c55e;
   --warn: #f59e0b;
   --danger: #ef4444;
-  --cl-bg: oklch(8.5% 0.012 285);
-  --cl-surface: oklch(11% 0.016 285);
-  --cl-card: oklch(13% 0.018 285);
-  --cl-border: oklch(22% 0.025 285);
-  --cl-orange: oklch(58% 0.185 35);
-  --cl-orange-dim: oklch(28% 0.12 35);
-  --cl-text: oklch(91% 0.012 85);
-  --cl-text-mid: oklch(60% 0.02 75);
-  --cl-text-dim: oklch(38% 0.02 75);
-  --cl-success: oklch(62% 0.17 145);
-  --cl-warn: oklch(72% 0.16 75);
-  --cl-danger: oklch(58% 0.2 25);
+  /*
+   * The --cl-* OKLCH set was a second, parallel palette that the theme engine never wrote to, so
+   * anything using it stayed a fixed bright colour whatever theme was picked — --cl-orange was
+   * oklch(58% 0.185 35), noticeably brighter than the burnt --accent-brand. Only --cl-danger was
+   * ever referenced (AppErrorBoundary), so the rest are gone and that one now follows the theme.
+   */
+  --cl-danger: var(--danger);
   --keyboard-height: 0px;
   --search-bar-bottom: 60px;
   --player-bar-offset: 4.5rem;
@@ -2723,6 +2729,16 @@ input.shell-search.shell-search--has-value {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+}
+
+/*
+ * No vertical clearance for the top-right FABs — content shares that first row with them rather
+ * than starting below it, which is what created the empty band above the Music segment tabs.
+ * Anything that would collide horizontally reserves its own right-hand gap instead (see
+ * .music-segment-bar below).
+ */
+.shell-main--fab-clear {
+  margin-top: 0;
 }
 
 .shell-main:has(.home-view) {
@@ -13259,6 +13275,45 @@ body:has(#root > .onboarding-root) {
   color: var(--accent-brand);
 }
 
+/*
+ * Containing block for .mfy-mix-save. Without it that absolutely-positioned button resolved
+ * against #root (which is position: relative) and floated to the top-right of the whole page,
+ * landing on top of the Music segment tabs.
+ */
+.mfy-mix-card-inner {
+  position: relative;
+}
+
+/* Play badge is its own control now: tapping the tile opens the mix, this plays it. */
+.mfy-mix-play-btn {
+  position: absolute;
+  right: 0.625rem;
+  bottom: 3.25rem;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent-brand);
+  color: var(--text-on-accent);
+  box-shadow: 0 4px 14px hsl(0 0% 0% / 0.45);
+}
+
+.mfy-mix-play-btn:active {
+  transform: scale(0.94);
+}
+
+/* An opened mix is a page in the Discover flow, not an overlay — matches album drill-down. */
+.mfy-mix-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
 .mfy-mix-save {
   position: absolute;
   top: 0.5rem;
@@ -14232,6 +14287,400 @@ body:has(#root > .onboarding-root) {
   padding: 2rem 1rem;
 }
 
+/* ---- Locker Genres tab ---------------------------------------------------- */
+.locker-genre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.85rem;
+  padding: 0.25rem 0 1.5rem;
+}
+
+.locker-genre-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.locker-genre-tile-open {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.locker-genre-tile-open:active {
+  opacity: 0.8;
+}
+
+.locker-genre-mosaic {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  box-shadow: 0 6px 20px -12px rgba(0, 0, 0, 0.6);
+}
+
+.locker-genre-mosaic--single .locker-genre-mosaic-cell {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.locker-genre-mosaic--quad {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1px;
+}
+
+.locker-genre-mosaic--quad .locker-genre-mosaic-cell {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.locker-genre-tile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.locker-genre-tile-name {
+  font-family: var(--font-sans, Inter, system-ui, sans-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.locker-genre-tile-count {
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--text) 55%, transparent);
+}
+
+.locker-genre-tile-play {
+  position: absolute;
+  top: calc(100% - 3.2rem);
+  right: 0.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0b0b0d;
+  background: var(--accent, #fff);
+  box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transform: translateY(0.35rem);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+
+.locker-genre-tile:hover .locker-genre-tile-play,
+.locker-genre-tile:focus-within .locker-genre-tile-play {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (hover: none) {
+  /* Touch devices: keep the play button visible since there is no hover. */
+  .locker-genre-tile-play {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.locker-genre-empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: color-mix(in srgb, var(--text) 55%, transparent);
+}
+
+/* ---- Genre detail (drilled-in) ------------------------------------------- */
+.locker-genre-detail {
+  padding-bottom: 1.5rem;
+}
+
+.locker-genre-detail-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.25rem 0 1rem;
+}
+
+.locker-genre-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0;
+  color: color-mix(in srgb, var(--text) 65%, transparent);
+  font-size: 0.875rem;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.locker-genre-detail-title {
+  font-family: var(--font-display, var(--font-sans));
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0;
+}
+
+.locker-genre-detail-stats {
+  font-size: 0.8125rem;
+  color: color-mix(in srgb, var(--text) 55%, transparent);
+  margin: 0;
+}
+
+.locker-genre-detail-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.locker-genre-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.locker-genre-action--primary {
+  border-color: transparent;
+  background: var(--accent, #fff);
+  color: #0b0b0d;
+}
+
+.locker-genre-action:active {
+  opacity: 0.8;
+}
+
+.locker-genre-album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.85rem;
+}
+
+.locker-genre-album-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.locker-genre-album-card:active {
+  opacity: 0.8;
+}
+
+.locker-genre-album-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 0.7rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.locker-genre-album-cover img,
+.locker-genre-album-cover-img,
+.locker-genre-album-cover--empty {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.locker-genre-album-play {
+  position: absolute;
+  bottom: 0.4rem;
+  right: 0.4rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0b0b0d;
+  background: var(--accent, #fff);
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.locker-genre-album-card:hover .locker-genre-album-play,
+.locker-genre-album-card:focus-visible .locker-genre-album-play {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .locker-genre-album-play {
+    opacity: 1;
+  }
+}
+
+.locker-genre-album-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.locker-genre-album-artist {
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--text) 55%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Weekly genre mixes shelf (Playlists top) ---------------------------- */
+.weekly-mix-shelf {
+  margin: 0 0 0.5rem;
+}
+
+.weekly-mix-shelf-head {
+  margin-bottom: 0.6rem;
+}
+
+.weekly-mix-shelf-title {
+  font-family: var(--font-sans, Inter, system-ui, sans-serif);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 0;
+}
+
+.weekly-mix-shelf-sub {
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--text) 52%, transparent);
+  margin: 0.1rem 0 0;
+}
+
+.weekly-mix-row {
+  display: flex;
+  gap: 0.85rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.4rem;
+  scrollbar-width: none;
+}
+
+.weekly-mix-row::-webkit-scrollbar {
+  display: none;
+}
+
+.weekly-mix-card {
+  flex: 0 0 auto;
+  width: 8.5rem;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.weekly-mix-card:active {
+  opacity: 0.8;
+}
+
+.weekly-mix-cover {
+  position: relative;
+  width: 8.5rem;
+  height: 8.5rem;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  box-shadow: 0 8px 22px -14px rgba(0, 0, 0, 0.75);
+}
+
+.weekly-mix-cover-art {
+  width: 100%;
+  height: 100%;
+}
+
+.weekly-mix-cover-art--single img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.weekly-mix-cover-art--quad {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1px;
+}
+
+.weekly-mix-cover-art--quad img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.weekly-mix-play {
+  position: absolute;
+  bottom: 0.45rem;
+  right: 0.45rem;
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0b0b0d;
+  background: var(--accent, #fff);
+  box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.7);
+}
+
+.weekly-mix-genre {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.weekly-mix-meta {
+  font-size: 0.7rem;
+  color: color-mix(in srgb, var(--text) 52%, transparent);
+}
+
 .locker-artist-hub {
   margin-bottom: 1rem;
 }
@@ -14361,6 +14810,20 @@ body:has(#root > .onboarding-root) {
   max-width: none;
   padding: 0.75rem max(0.75rem, var(--safe-left)) 1.5rem max(0.75rem, var(--safe-right));
   background: var(--bg-void);
+}
+
+/*
+ * Music segments must share one page box. The locker page uses 1.5rem side padding while
+ * .discover-mobile uses 0.75rem, so switching Library -> Discover visibly shifted the
+ * whole window sideways. Align the locker page to the same box on handheld widths.
+ */
+@media (max-width: 767px) {
+  .locker-page {
+    max-width: none;
+    padding-left: max(0.75rem, var(--safe-left));
+    padding-right: max(0.75rem, var(--safe-right));
+    padding-top: 0.75rem;
+  }
 }
 
 .discover-mobile-header {
@@ -14617,6 +15080,296 @@ body:has(#root > .onboarding-root) {
 .discover-mobile-panel {
   width: 100%;
   min-width: 0;
+}
+
+/* Format chooser row at the very top of the search sheet. */
+.search-dropdown-formats {
+  padding: 0.5rem 0.75rem 0.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+/* Universal (cross-format) search results: Music / Pods / Books. */
+.universal-search {
+  width: 100%;
+  min-width: 0;
+  padding: 0 0.25rem;
+}
+
+.universal-search-tabs {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.25rem;
+  margin-bottom: 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-card) 55%, var(--bg-void));
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.universal-search-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 2.375rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.4rem 0.6rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-mid);
+  font-family: var(--font-ui, var(--font-mono));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.universal-search-tab--active {
+  background: var(--accent-burnt);
+  color: var(--text-on-accent);
+}
+
+.universal-search-tab-count {
+  font-size: 0.6875rem;
+  opacity: 0.75;
+}
+
+.universal-search-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.universal-search-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem;
+  border: 0;
+  border-radius: 0.625rem;
+  background: transparent;
+  text-align: left;
+  color: var(--text);
+}
+
+.universal-search-row:active {
+  background: color-mix(in srgb, var(--bg-card) 70%, transparent);
+}
+
+.universal-search-art {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background: var(--bg-void);
+}
+
+.universal-search-art-fallback {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.universal-search-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.universal-search-title,
+.universal-search-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.universal-search-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.universal-search-sub {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.universal-search-owned {
+  flex: 0 0 auto;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-stroke);
+}
+
+.universal-search-loading,
+.universal-search-empty,
+.universal-search-note {
+  padding: 0.75rem 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.universal-search-seeall {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text-mid);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Idle home: the whole vinyl is the search affordance. Transparent overlay so the
+   artwork/animation shows through, but the disc reads and behaves as one big button. */
+.home-vinyl-search-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-vinyl-search-hit:active {
+  transform: scale(0.985);
+}
+
+/* A touch larger when idle, so the disc clearly invites a tap. */
+.home-view--idle .home-vinyl-universe {
+  transform: scale(1.06);
+}
+
+/*
+ * Persistent search affordance on every mobile tab (Search left the bottom nav).
+ *
+ * Bottom-right, not top-right: four segment tabs plus two 2.5rem buttons cannot share a 314px
+ * row, so while these sat in the top-right corner the segment bar was forced onto a second row
+ * and the first row read as an empty black band. Down here the bar owns the full top row.
+ */
+.mobile-search-fab {
+  position: fixed;
+  bottom: var(--mobile-fab-bottom, 5.5rem);
+  right: calc(env(safe-area-inset-right, 0px) + 0.625rem);
+  z-index: 45;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-card) 82%, var(--bg-void));
+  color: var(--text);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 10px hsl(0 0% 0% / 0.28);
+}
+
+.mobile-search-fab:active {
+  transform: scale(0.94);
+}
+
+/* Downloads FAB — sits left of the search FAB, same bottom row. */
+.mobile-downloads-fab {
+  position: fixed;
+  bottom: var(--mobile-fab-bottom, 5.5rem);
+  right: calc(env(safe-area-inset-right, 0px) + 3.75rem);
+  z-index: 45;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-card) 82%, var(--bg-void));
+  color: var(--text);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 10px hsl(0 0% 0% / 0.28);
+}
+
+.mobile-downloads-fab:active {
+  transform: scale(0.94);
+}
+
+.mobile-downloads-fab .shell-downloads-btn-badge {
+  position: absolute;
+  top: -0.125rem;
+  right: -0.125rem;
+}
+
+/* Shared Music-tab segment switcher (Library / Genres / Playlists / Discover). */
+.music-segment-bar {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.25rem;
+  margin: 0 0 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-card) 55%, var(--bg-void));
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  /* No horizontal scroll: all four segments always share the row equally. Scrolling here
+     also defeated flex sizing, since children could overflow instead of shrinking. */
+  overflow: hidden;
+  /* The bar is rendered inside two different parents (locker page vs discover header) whose
+     padding differs, which made the same four tabs measure 60px on Library and 67px on
+     Discover. Box-size it identically wherever it appears. */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Neutralise the discover header's own inset so the bar matches the locker page exactly. */
+.discover-mobile-header .music-segment-bar {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+
+.music-segment-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.music-segment-tab {
+  /* Equal quarters at every width. Two earlier attempts were wrong: `min-width:max-content`
+     made width depend on the label (so the row shifted when the active tab changed), and
+     gating equal-width behind a 380px media query never applied on a ~320px bar, leaving
+     visibly different tab sizes (measured 69/70/77/80px). Padding is trimmed so the longest
+     label still fits inside its quarter. */
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 2.5rem;
+  /* Tight padding + a slightly smaller face so "Playlists"/"Discover" fit inside a quarter
+     of a ~290px bar without truncating. */
+  padding: 0.5rem 0.125rem;
+  font-size: 0.75rem;
+  letter-spacing: -0.01em;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--text-mid);
+  font-family: var(--font-ui, var(--font-mono));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.music-segment-tab--active {
+  background: var(--accent-burnt);
+  color: var(--text-on-accent);
+  box-shadow: 0 2px 12px hsl(18 85% 42% / 0.35);
 }
 
 .discover-mobile-section-title {
@@ -15214,11 +15967,32 @@ body:has(#root > .onboarding-root) {
   --shell-chrome-bottom: calc(var(--safe-top) + var(--shell-search-offset));
   --shell-mobile-bottom-tabs-only: calc(var(--mobile-tab-bar-height) + var(--safe-bottom) + 1.5rem);
   --shell-mobile-bottom-with-player: calc(var(--player-bar-offset) + var(--mobile-tab-bar-height));
+  /* Resting height of the bottom-right FAB cluster — just above the nav bar. */
+  --mobile-fab-bottom: calc(var(--mobile-tab-bar-height) + var(--safe-bottom) + 0.75rem);
 }
 
-.shell-root,
-#root {
-  padding-top: env(safe-area-inset-top, 0px);
+/*
+ * Mini player docks above the nav bar, so the FABs must clear the WHOLE dock — player row plus
+ * nav row — not just the nav bar. The previous offset put them inside the dock, landing in the
+ * player row's right-hand slot where transport controls belong, so a download icon and a
+ * magnifier read as player buttons.
+ */
+.shell-root--mobile-dock-mini {
+  --mobile-fab-bottom: calc(var(--shell-mobile-bottom-with-player) + 4.5rem);
+}
+
+/*
+ * NO top safe-area padding here.
+ *
+ * Verified on device by painting a marker at CSS y=0 and screenshotting: the WebView already
+ * starts below the status bar, so CSS y=0 IS the status bar's bottom edge. Android still reports
+ * env(safe-area-inset-top) as 36px, so adding it produced a 36px black band above every screen —
+ * and it was previously listed on `.shell-root, #root` together, which (since .shell-root is a
+ * child of #root) stacked it to 72px. Screens that genuinely draw under the status bar declare
+ * their own padding-top: env(safe-area-inset-top) — see the fullscreen overlays.
+ */
+#root,
+.shell-root {
   padding-right: env(safe-area-inset-right, 0px);
   padding-left: env(safe-area-inset-left, 0px);
   box-sizing: border-box;

@@ -42,6 +42,10 @@ export interface MobileDiscoverViewProps {
   onExploreInstantMix?: (tracks: MediaEnvelope[], label: string) => void;
   onSaveInstantPlaylist?: (tracks: MediaEnvelope[], name: string) => void;
   onOpenVideoFeed?: () => void;
+  /** Top-level back — returns to Home from the Discover station root. */
+  onExitToHome?: () => void;
+  /** Shared Music segment bar rendered above the Discover sub-tabs. */
+  segmentBar?: React.ReactNode;
 }
 
 const TABS: DiscoverTabId[] = ['feed', 'explore'];
@@ -98,6 +102,8 @@ export default function MobileDiscoverView({
   onExploreInstantMix,
   onSaveInstantPlaylist,
   onOpenVideoFeed,
+  onExitToHome,
+  segmentBar,
 }: MobileDiscoverViewProps) {
   const { t } = useTranslation();
   const isPlaylistsView = activeTab === 'playlists';
@@ -116,10 +122,16 @@ export default function MobileDiscoverView({
   return (
     <div className="discover-mobile discover-page">
       <header className="discover-mobile-header">
+        {segmentBar && !isDedicatedView ? segmentBar : null}
         {isDedicatedView ? (
           <div className="discover-mobile-toolbar">
             <MobileShellBackButton onClick={handleDrillBack} />
             <h1 className="discover-mobile-toolbar-title">{t(`discover.tabs.${activeTab}`)}</h1>
+          </div>
+        ) : segmentBar ? null : onExitToHome ? (
+          <div className="discover-mobile-toolbar">
+            <MobileShellBackButton onClick={onExitToHome} />
+            <h1 className="discover-mobile-title">{t('discover.title')}</h1>
           </div>
         ) : (
           <h1 className="discover-mobile-title">{t('discover.title')}</h1>

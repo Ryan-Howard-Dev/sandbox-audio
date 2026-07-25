@@ -22,6 +22,23 @@ function attr(el: Element | null | undefined, name: string): string {
   return el?.getAttribute(name)?.trim() ?? '';
 }
 
+/** Feed URL -> show website, when the export includes it (htmlUrl is optional in OPML). */
+export function parseOpmlSiteUrls(xml: string): Map<string, string> {
+  const sites = new Map<string, string>();
+  try {
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    if (doc.querySelector('parsererror')) return sites;
+    for (const outline of Array.from(doc.querySelectorAll('outline'))) {
+      const feed = attr(outline, 'xmlUrl') || attr(outline, 'xmlurl');
+      const site = attr(outline, 'htmlUrl') || attr(outline, 'htmlurl');
+      if (feed && /^https?:\/\//i.test(site)) sites.set(feed, site);
+    }
+  } catch {
+    /* site URLs are a nicety — never fail the import over them */
+  }
+  return sites;
+}
+
 export function parseOpmlFeedUrls(xml: string): string[] {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
   if (doc.querySelector('parsererror')) {
@@ -45,6 +62,8 @@ export async function importPodcastOpml(xml: string): Promise<OpmlImportResult> 
     throw new Error('OPML import is disabled while Air-Gap Mode is active.');
   }
   const feedUrls = parseOpmlFeedUrls(xml);
+  // Carry the show's website across from the export when present.
+  const siteUrls = parseOpmlSiteUrls(xml);
   const imported: PodcastSubscription[] = [];
   const failed: OpmlImportResult['failed'] = [];
   let skipped = 0;
@@ -57,6 +76,7 @@ export async function importPodcastOpml(xml: string): Promise<OpmlImportResult> 
         ...parsed.subscription,
         id: feedId,
         feedUrl,
+        siteUrl: siteUrls.get(feedUrl) ?? parsed.subscription.siteUrl,
         subscribedAt: Date.now(),
         lastFetchedAt: Date.now(),
       });

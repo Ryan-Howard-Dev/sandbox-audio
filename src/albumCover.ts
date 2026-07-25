@@ -19,6 +19,9 @@ import {
 } from './albumCoverProviders';
 import type { LockerEntry } from './lockerStorage';
 import { coverArtArchiveUrlForRelease } from './sandboxLayer2';
+import { fetchCatalogApiResults } from './catalogFetch';
+import { catalogSearchUrl } from './catalogApi';
+import { catalogArtworkUrl } from './catalogDirect';
 
 export type { CoverLookupResult, CoverArtSource };
 
@@ -69,6 +72,36 @@ export async function findAlbumCover(
   );
 }
 
+/**
+ * Fast, native-reliable cover via the catalog (iTunes) proxy/direct path.
+ * The full provider chain tries MusicBrainz/Deezer/Discogs FIRST and iTunes last;
+ * on Capacitor native those earlier hosts often hang against the 75s timeout, so a
+ * bulk locker heal barely progresses. iTunes (the catalog path) is fast and reliable
+ * on-device, so try it up front for the locker heal.
+ */
+async function catalogCoverForAlbum(
+  album: string,
+  artist: string,
+): Promise<string | undefined> {
+  const term = `${artist} ${album}`.trim();
+  if (!term) return undefined;
+  try {
+    const results = await raceTimeout(
+      fetchCatalogApiResults(catalogSearchUrl({ term, entity: 'album', limit: 6 })),
+      8_000,
+    );
+    if (!results?.length) return undefined;
+    const match =
+      results.find((r) => r.collectionName && titlesMatch(r.collectionName, album)) ??
+      results[0];
+    const raw = match?.artworkUrl100 ?? match?.artworkUrl60;
+    const upscaled = raw ? catalogArtworkUrl(raw) : undefined;
+    return sanitizeCoverArtUrl(upscaled) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Locker-aware cover lookup — prefers MusicBrainz release id from credits before catalog search. */
 export async function findAlbumCoverForLockerGroup(
   albumName: string,
@@ -84,6 +117,9 @@ export async function findAlbumCoverForLockerGroup(
     const fallbackUrl = coverArtArchiveUrlForRelease(releaseId);
     if (fallbackUrl) return { url: fallbackUrl, source: 'musicbrainz' };
   }
+  // iTunes-first fast path (see note above), then fall back to the full provider chain.
+  const catalogUrl = await catalogCoverForAlbum(albumName, artist);
+  if (catalogUrl) return { url: catalogUrl, source: 'catalog' };
   return findAlbumCover(albumName, artist);
 }
 

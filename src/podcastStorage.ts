@@ -47,6 +47,8 @@ export interface PodcastSubscription {
   rulesUpdatedAt?: number;
   /** Per-show Voice Boost default (undefined = use global toggle). */
   voiceBoostDefault?: boolean;
+  /** Show's own website, when an OPML export or feed provided one. */
+  siteUrl?: string;
 }
 
 export interface PodcastChapterRef {

@@ -264,6 +264,8 @@ export interface HomeHeroPlayerProps {
   fidelityLabel?: string;
   resolveElapsedSeconds?: number;
   onCancelResolve?: () => void;
+  /** Idle home: tapping the vinyl opens universal search (its signature gesture). */
+  onIdleSearch?: () => void;
   /** Render the floating album/vinyl toggle over the artwork. Default true (home). */
   inlineVinylSettings?: boolean;
   /** Tap the artwork to flip album cover ↔ vinyl (expanded now-playing). */
@@ -309,6 +311,7 @@ export default function HomeHeroPlayer({
   fidelityLabel,
   resolveElapsedSeconds = 0,
   onCancelResolve,
+  onIdleSearch,
   inlineVinylSettings = true,
   flipOnArtworkTap = false,
 }: HomeHeroPlayerProps) {
@@ -409,9 +412,9 @@ export default function HomeHeroPlayer({
     setHeroDisplayLocal(next);
     onHeroDisplayModeChange?.(next);
   };
-  const flipEnabled = Boolean(
-    flipOnArtworkTap && expanded && !compact && hasLoadedTrack && !isPodcast,
-  );
+  // Not gated on `expanded` — the Home hero's default (non-compact, non-expanded) view should
+  // flip on tap too, matching the Now Playing sheet. Compact/mini still taps-to-expand instead.
+  const flipEnabled = Boolean(flipOnArtworkTap && !compact && hasLoadedTrack && !isPodcast);
   const heroDisplayToggleLabel = showAlbumPoster
     ? t('settings.architect.heroDisplayVinylShades')
     : t('settings.architect.heroDisplayAlbumCover');
@@ -504,6 +507,15 @@ export default function HomeHeroPlayer({
             >
               <ChevronDown className="w-5 h-5" strokeWidth={2} />
             </button>
+          ) : null}
+          {trueIdle && onIdleSearch ? (
+            <button
+              type="button"
+              className="home-vinyl-search-hit touch-manipulation"
+              onClick={onIdleSearch}
+              aria-label={t('nav.search')}
+              data-testid="home-vinyl-search"
+            />
           ) : null}
           {showAlbumPoster ? (
             <div className="home-hero-poster-wrap shrink-0" style={trackGlowStyle}>

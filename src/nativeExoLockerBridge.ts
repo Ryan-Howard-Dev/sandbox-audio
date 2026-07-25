@@ -14,6 +14,30 @@ const NativeExoPlayback = registerPlugin<NativeExoPlaybackPlugin>('NativeExoPlay
 const CHUNK_BYTES = 512 * 1024;
 const HASH_RE = /^[a-f0-9]{64}$/i;
 
+// Native beginLockerBlob() unconditionally aborts+restarts any in-progress write for the same
+// id (LockerBlobRegistry.beginWrite -> abortWrite). Two independent callers registering the
+// same track concurrently (e.g. background prefetch vs. a direct play-now resolve, or a
+// post-download cache warm vs. playback) are NOT serialized against each other on the JS side,
+// so the second beginWrite can reset the native writer mid-stream while the first call's
+// still-in-flight chunk-append calls land on the new writer — producing a scrambled file whose
+// bytes belong to neither track's real content. Every write path shares this map, keyed by the
+// final on-disk locker id, so concurrent callers for the same track await one write instead of
+// racing.
+const pendingRegistrations = new Map<string, Promise<string | null>>();
+
+function dedupeLockerWrite(
+  id: string,
+  run: () => Promise<string | null>,
+): Promise<string | null> {
+  const inFlight = pendingRegistrations.get(id);
+  if (inFlight) return inFlight;
+  const task = run().finally(() => {
+    pendingRegistrations.delete(id);
+  });
+  pendingRegistrations.set(id, task);
+  return task;
+}
+
 export function lockerIdFromEnvelope(envelope: MediaEnvelope): string | null {
   if (envelope.sourceId?.trim()) {
     return envelope.sourceId.trim().replace(/^local-/, '');
@@ -137,12 +161,16 @@ export async function registerLockerBlobFromBlob(
   const cached = await cachedNativeLockerUri(id);
   if (cached) return cached;
 
-  try {
-    return await writeBlobToNativeCache(id, blob, mimeType ?? blob.type);
-  } catch (err) {
-    console.warn('[nativeExoLockerBridge] register from blob failed:', err);
-    return null;
-  }
+  return dedupeLockerWrite(id, async () => {
+    const alreadyCached = await cachedNativeLockerUri(id);
+    if (alreadyCached) return alreadyCached;
+    try {
+      return await writeBlobToNativeCache(id, blob, mimeType ?? blob.type);
+    } catch (err) {
+      console.warn('[nativeExoLockerBridge] register from blob failed:', err);
+      return null;
+    }
+  });
 }
 
 /**
@@ -161,31 +189,40 @@ export async function registerLockerBlobContentUri(
     if (cached) return cached;
   }
 
-  let blob: Blob | null = null;
-  for (const lockerId of candidates) {
-    blob = await getLockerAudioBlob(lockerId);
-    if (blob) break;
-  }
-  if (!blob && envelope.url?.startsWith('blob:')) {
-    try {
-      const res = await fetchWithTimeout(envelope.url, undefined, 60_000);
-      if (res.ok) blob = await res.blob();
-    } catch {
-      /* fall through */
-    }
-  }
-  if (!blob) {
-    console.warn('[nativeExoLockerBridge] no locker audio blob for', candidates.join(', '));
-    return null;
-  }
-
+  // The eventual write always targets candidates[0] (see below) — lock on that id so a
+  // concurrent registration for the same track (from another caller entirely, e.g.
+  // registerLockerBlobFromBlob warming the cache right after a download) shares this write
+  // instead of racing it.
   const lockerId = candidates[0]!;
-  try {
-    return await writeBlobToNativeCache(lockerId, blob, envelope.mimeType ?? blob.type);
-  } catch (err) {
-    console.warn('[nativeExoLockerBridge] register locker blob failed:', err);
-    return null;
-  }
+  return dedupeLockerWrite(lockerId, async () => {
+    const alreadyCached = await cachedNativeLockerUri(lockerId);
+    if (alreadyCached) return alreadyCached;
+
+    let blob: Blob | null = null;
+    for (const candidate of candidates) {
+      blob = await getLockerAudioBlob(candidate);
+      if (blob) break;
+    }
+    if (!blob && envelope.url?.startsWith('blob:')) {
+      try {
+        const res = await fetchWithTimeout(envelope.url, undefined, 60_000);
+        if (res.ok) blob = await res.blob();
+      } catch {
+        /* fall through */
+      }
+    }
+    if (!blob) {
+      console.warn('[nativeExoLockerBridge] no locker audio blob for', candidates.join(', '));
+      return null;
+    }
+
+    try {
+      return await writeBlobToNativeCache(lockerId, blob, envelope.mimeType ?? blob.type);
+    } catch (err) {
+      console.warn('[nativeExoLockerBridge] register locker blob failed:', err);
+      return null;
+    }
+  });
 }
 
 export function isNativeExoPlayableUrl(url: string): boolean {

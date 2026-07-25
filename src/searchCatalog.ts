@@ -6,6 +6,7 @@
  */
 
 import { isAirGapEnabled } from './airGapMode';
+import { memoizeStringFn } from './memoizeStringFn';
 import type { MediaEnvelope } from './sandboxLayer1';
 import {
   applyCachedArtistImages,
@@ -596,16 +597,17 @@ function mergeCatalogResults(
   };
 }
 
-function normalizeName(value: string): string {
-  return value
+/** Memoized: every album/track de-dupe loop re-normalizes the same artist and title strings. */
+const normalizeName = memoizeStringFn((value: string): string =>
+  value
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[ÿý]/g, 'y')
     .replace(/[¥$,]/g, ' ')
     .trim()
-    .replace(/\s+/g, ' ');
-}
+    .replace(/\s+/g, ' '),
+);
 
 /** iTunes billing splits (Ye vs Kanye West, JAŸ-Z vs Jay-Z, EsDeeKid spellings, …). */
 const ARTIST_ALIAS_GROUPS: readonly string[][] = [
@@ -1918,11 +1920,31 @@ function normalizeAlbumDedupeKey(title: string): string {
 
 /** Collapse billing variants (Future & Metro Boomin vs Future, Metro Boomin) for dedupe keys. */
 export function normalizeCatalogArtistKey(name: string): string {
-  return normalizeIdentityKey(name)
-    .replace(/\s*&\s*/g, ' and ')
-    .replace(/,/g, ' and ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  // Expand the separators on the RAW string: normalizeIdentityKey strips punctuation, so
+  // running it first destroys the "&" and "," that mark where one artist ends.
+  const withAnd = (name ?? '').replace(/\s*&\s*/g, ' and ').replace(/\s*,\s*/g, ' and ');
+  const expanded = normalizeIdentityKey(withAnd).replace(/\s+/g, ' ').trim();
+  // SORT the billed names so order cannot change identity: iTunes returns collaborations
+  // as "Future & Metro Boomin" and "Metro Boomin, Future" interchangeably, and unsorted
+  // keys treated those as two different albums. Matches normalizeLockerAlbumArtistKey.
+  const parts = expanded.split(/\s+and\s+/).map((p) => p.trim()).filter(Boolean);
+  return parts.length > 1 ? parts.sort().join(' and ') : expanded;
+}
+
+/**
+ * Lead billed name only.
+ *
+ * Collaboration albums come back from the catalog under inconsistent billings — the same
+ * release appears as "Future & Metro Boomin" on one entry and "Future" on another — so a
+ * full-billing key puts them in different buckets and the partial-duplicate collapse never
+ * compares them. That is why joint albums showed twice on the artist page (e.g. We Don't
+ * Trust You as 12 songs AND 4 songs). Keying identity on the lead artist makes those
+ * entries siblings so the collapse (and edition labelling) can see them together.
+ */
+function catalogPrimaryArtistKey(artist: string): string {
+  const key = normalizeCatalogArtistKey(artist);
+  const first = key.split(/\s+and\s+/)[0]?.trim();
+  return first || key;
 }
 
 function catalogAlbumDedupeKey(artist: string, title: string): string {
@@ -1999,7 +2021,9 @@ export function catalogAlbumIdentityKey(
   artist: string,
   title: string,
 ): string {
-  return catalogAlbumDedupeKey(artist, title);
+  // Lead-artist keyed (see catalogPrimaryArtistKey) so a collaboration billed differently
+  // across catalog entries still resolves to one album identity.
+  return `${catalogPrimaryArtistKey(artist)}::${normalizeAlbumDedupeKey(title)}`;
 }
 
 export function dedupeCatalogAlbums(albums: CatalogAlbum[]): CatalogAlbum[] {
@@ -2008,6 +2032,32 @@ export function dedupeCatalogAlbums(albums: CatalogAlbum[]): CatalogAlbum[] {
 
 /** Keep each iTunes collection visible (Deluxe, Standard, …) — only merge exact duplicates. */
 export function listCatalogAlbumEditions(albums: CatalogAlbum[]): CatalogAlbum[] {
+  // iTunes only exposes reliable explicitness on the artist *lookup* collections.
+  // Locker- and MusicBrainz-derived editions carry none, and when one of those wins
+  // the merge below (locker albums win via preferCatalogEdition / richer track counts)
+  // the E / Clean badge silently disappears for every album the user owns. Capture the
+  // rating by exact artist+title up front, then back-fill any survivor left ratingless.
+  const albumRatingKey = (a: CatalogAlbum) =>
+    `${normalizeCatalogArtistKey(a.artist)}::${normalizeName(a.title)}`;
+  const explicitTitleKeys = new Set<string>();
+  const cleanTitleKeys = new Set<string>();
+  // Locker albums often arrive without artworkUrl — downloaded covers live in the
+  // albumArtBlob, not the albumArt string field — so an owned album that wins the
+  // merge renders blank. Remember the best catalog cover by title to back-fill it.
+  const artByTitleKey = new Map<string, string>();
+  for (const album of albums) {
+    if (album.explicit || album.contentRating === 'explicit') {
+      explicitTitleKeys.add(albumRatingKey(album));
+    } else if (album.contentRating === 'clean') {
+      cleanTitleKeys.add(albumRatingKey(album));
+    }
+    const art = album.artworkUrl?.trim();
+    // Prefer stable https covers over transient blob:/data: locker URLs.
+    if (art && !/^(blob:|data:)/i.test(art) && !artByTitleKey.has(albumRatingKey(album))) {
+      artByTitleKey.set(albumRatingKey(album), art);
+    }
+  }
+
   const byCollectionId = new Map<number, CatalogAlbum>();
   const withoutId: CatalogAlbum[] = [];
 
@@ -2032,7 +2082,29 @@ export function listCatalogAlbumEditions(albums: CatalogAlbum[]): CatalogAlbum[]
     byExact.set(key, existing ? preferCatalogEdition(existing, album) : album);
   }
 
-  return collapsePartialAlbumReleases([...fromIds, ...byExact.values()]);
+  const merged = collapsePartialAlbumReleases([...fromIds, ...byExact.values()]);
+
+  // Restore explicitness dropped when a ratingless edition won the merge. Gap-fill
+  // only — never override an edition that already carries its own rating (the clean
+  // edition stays "Clean"). An explicit sibling anywhere for the same title means the
+  // album's content is explicit, so prefer that over a bare clean flag.
+  for (const album of merged) {
+    const key = albumRatingKey(album);
+    if (!album.explicit && !album.contentRating) {
+      if (explicitTitleKeys.has(key)) {
+        album.explicit = true;
+        album.contentRating = 'explicit';
+      } else if (cleanTitleKeys.has(key)) {
+        album.contentRating = 'clean';
+      }
+    }
+    const art = album.artworkUrl?.trim();
+    if (!art || /^(blob:|data:)/i.test(art)) {
+      const sibling = artByTitleKey.get(key);
+      if (sibling) album.artworkUrl = sibling;
+    }
+  }
+  return merged;
 }
 
 /** Drop obvious sampler/partial tiles when a much fuller sibling shares the same album identity. */
@@ -3360,6 +3432,19 @@ async function supplementDiscographyFromMusicBrainz(
   };
 }
 
+/** @internal diagnostic seam — inspect locker-derived albums for an artist on device. */
+export async function __debugLocalArtistDiscography(name: string) {
+  const disc = await fetchLocalArtistDiscography(name);
+  return disc.albums.map((a) => ({
+    title: a.title,
+    artist: a.artist,
+    trackCount: a.trackCount,
+    id: a.id,
+    isCollectionEdition: a.isCollectionEdition,
+    editionCount: a.editionCount,
+  }));
+}
+
 async function fetchLocalArtistDiscography(artistName: string): Promise<ArtistDiscography> {
   const name = artistName.trim();
   if (!name) return { albums: [], singles: [] };
@@ -4244,13 +4329,27 @@ export async function fetchArtistDiscography(
     return rememberDiscography(cacheKey, staleData);
   }
 
+  /*
+   * Cold path: paint what we already own FIRST.
+   *
+   * The locker's own albums for this artist are on local disk and cost nothing to read, but
+   * this path used to await the full catalog fetch (iTunes + MusicBrainz, up to the
+   * discography timeout) before returning anything — so opening an artist you have music by
+   * showed an empty page for seconds. The stale-cache branch above already renders
+   * immediately and supplements; do the same here.
+   */
+  const localFirst = await fetchLocalArtistDiscography(name);
+  if (onSupplement && discographyHasCatalogContent(localFirst)) {
+    onSupplement(sanitizeArtistDiscography(localFirst));
+  }
+
   const live = await raceTimeout(
     fetchArtistDiscographyLive(name, artistCatalogId, cacheKey, cached?.data, onSupplement),
     DISCOGRAPHY_FETCH_TIMEOUT_MS,
   );
   if (live) return live;
 
-  const fallback = staleData ?? (await fetchLocalArtistDiscography(name));
+  const fallback = staleData ?? localFirst;
   if (discographyHasCatalogContent(fallback)) {
     return rememberDiscography(cacheKey, {
       ...fallback,

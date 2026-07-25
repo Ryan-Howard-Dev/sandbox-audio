@@ -48,22 +48,32 @@ function MixArt({ mix }: { mix: DiscoveryMix }) {
   );
 }
 
+/**
+ * Tapping the tile OPENS the mix; the play badge is its own control.
+ *
+ * The whole card used to be one button wired to onPlay, so a tap started playback and there was
+ * no way to see what was in a mix first — a Daily Discovery tile behaved unlike every album and
+ * playlist tile in the app. Tile -> page, play badge -> play, matching how albums open.
+ */
 function MixCard({
   mix,
+  onOpen,
   onPlay,
   onSave,
 }: {
   mix: DiscoveryMix;
+  onOpen?: () => void;
   onPlay: () => void;
   onSave?: () => void;
 }) {
+  const empty = mix.tracks.length === 0;
   return (
     <article className="mfy-mix-card-inner">
       <button
         type="button"
         className="mfy-mix-card touch-manipulation"
-        onClick={onPlay}
-        disabled={mix.tracks.length === 0}
+        onClick={onOpen ?? onPlay}
+        disabled={empty}
       >
         <MixArt mix={mix} />
         <span className="mfy-mix-meta">
@@ -73,8 +83,20 @@ function MixCard({
             <span className="mfy-mix-count">{mix.tracks.length} tracks</span>
           ) : null}
         </span>
-        <Play className="w-4 h-4 mfy-mix-play" aria-hidden />
       </button>
+      {!empty ? (
+        <button
+          type="button"
+          className="mfy-mix-play-btn touch-manipulation"
+          aria-label={`Play ${mix.title}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPlay();
+          }}
+        >
+          <Play className="w-4 h-4 mfy-mix-play" aria-hidden />
+        </button>
+      ) : null}
       {onSave && mix.tracks.length > 0 ? (
         <button
           type="button"
@@ -140,6 +162,7 @@ export default function DiscoveryMixCarousel({
         <div className="mfy-mix-scroll hide-scrollbar">
           <MixCard
             mix={primary}
+            onOpen={onSeeAll ? () => onSeeAll(primary) : undefined}
             onPlay={() => onPlayMix(primary.tracks, primary)}
             onSave={onSaveMix ? () => onSaveMix(primary) : undefined}
           />
@@ -161,6 +184,7 @@ export default function DiscoveryMixCarousel({
           <div key={mix.id} className="mfy-mix-card-wrap">
             <MixCard
               mix={mix}
+              onOpen={onSeeAll ? () => onSeeAll(mix) : undefined}
               onPlay={() => onPlayMix(mix.tracks, mix)}
               onSave={onSaveMix ? () => onSaveMix(mix) : undefined}
             />

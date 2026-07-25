@@ -62,6 +62,30 @@ function isPrivateIpv4(host: string): boolean {
   return false;
 }
 
+/** Covers loopback, fc00::/7 (ULA), fe80::/10 (link-local), and IPv4-mapped tails. */
+function isPrivateIpv6(host: string): boolean {
+  const stripped = host.replace(/^\[|\]$/g, '');
+  if (!stripped.includes(':')) return false;
+  if (stripped === '::1' || stripped === '::' || stripped === '') return true;
+  const groups = stripped.split(':');
+  const firstGroup = groups[0] ?? '';
+  if (/^f[cd][0-9a-f]{0,2}$/.test(firstGroup)) return true;
+  if (/^fe[89ab][0-9a-f]?$/.test(firstGroup)) return true;
+  // Dotted-decimal IPv4 tail (rare — most parsers normalize this away, but check anyway).
+  const lastGroup = groups[groups.length - 1] ?? '';
+  if (lastGroup.includes('.') && isPrivateIpv4(lastGroup)) return true;
+  // IPv4-mapped IPv6 (::ffff:a.b.c.d) — the WHATWG URL parser normalizes the embedded
+  // IPv4 tail into two hex groups (e.g. "::ffff:10.0.0.1" -> "::ffff:a00:1"), so decode it.
+  const mapped = stripped.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i);
+  if (mapped) {
+    const h1 = parseInt(mapped[1]!, 16);
+    const h2 = parseInt(mapped[2]!, 16);
+    const embeddedIpv4 = `${(h1 >> 8) & 0xff}.${h1 & 0xff}.${(h2 >> 8) & 0xff}.${h2 & 0xff}`;
+    if (isPrivateIpv4(embeddedIpv4)) return true;
+  }
+  return false;
+}
+
 /** Public HTTPS only — search plugins are user responsibility; block SSRF targets. */
 export function isAllowedSearchPluginUrl(raw: string): boolean {
   let parsed: URL;
@@ -74,6 +98,7 @@ export function isAllowedSearchPluginUrl(raw: string): boolean {
   const host = parsed.hostname.toLowerCase();
   if (BLOCKED_HOSTS.has(host)) return false;
   if (isPrivateIpv4(host)) return false;
+  if (isPrivateIpv6(host)) return false;
   if (host.endsWith('.local') || host.endsWith('.internal')) return false;
   return true;
 }

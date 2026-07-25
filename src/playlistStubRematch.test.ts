@@ -3,14 +3,14 @@ import { rematchPlaylistStubsFromLocker, rematchPlaylistTracksFromLocker } from 
 import type { StoredPlaylist } from './playlistStorage';
 import type { MediaEnvelope } from './sandboxLayer1';
 
-const { isPlayableMock, resolveMock } = vi.hoisted(() => ({
-  isPlayableMock: vi.fn(async () => false),
+const { playableIdsMock, resolveMock } = vi.hoisted(() => ({
+  playableIdsMock: vi.fn(async (_ids: Iterable<string>) => new Set<string>()),
   resolveMock: vi.fn(async () => null as MediaEnvelope | null),
 }));
 
 vi.mock('./lockerStorage', () => ({
   getLockerEntries: vi.fn(async () => []),
-  lockerEntryIsPlayable: isPlayableMock,
+  filterPlayableLockerIds: playableIdsMock,
   resolveLockerEnvelopeForPlayback: resolveMock,
 }));
 
@@ -62,12 +62,12 @@ describe('rematchPlaylistStubsFromLocker', () => {
 
 describe('rematchPlaylistTracksFromLocker', () => {
   beforeEach(() => {
-    isPlayableMock.mockReset();
+    playableIdsMock.mockReset();
     resolveMock.mockReset();
   });
 
   it('repairs stale playlist sourceId to playable locker copy', async () => {
-    isPlayableMock.mockResolvedValue(false);
+    playableIdsMock.mockResolvedValue(new Set<string>());
     resolveMock.mockResolvedValue({
       envelopeId: 'local-locker-new',
       title: 'FRIED',
@@ -102,5 +102,61 @@ describe('rematchPlaylistTracksFromLocker', () => {
     expect(next.tracks[0]?.sourceId).toBe('locker-new');
     expect(next.tracks[0]?.envelopeId).toBe('playlist-row-fried');
     expect(next.tracks[0]?.url).toContain('content://');
+  });
+
+  /**
+   * Guards the fix for the 10s Playlists-tab freeze: playability was resolved with one
+   * lockerEntryIsPlayable() per track, and each of those reads the whole audio blob out of
+   * IndexedDB. It must stay a single bulk call no matter how long the playlist is.
+   */
+  it('resolves playability in one bulk call for the whole playlist', async () => {
+    playableIdsMock.mockResolvedValue(new Set(['a', 'b', 'c']));
+
+    const row = (id: string): MediaEnvelope => ({
+      envelopeId: `row-${id}`,
+      title: `Track ${id}`,
+      artist: 'Artist',
+      url: 'content://rd.sheepskin.sandboxmusic.locker/' + id,
+      durationSeconds: 200,
+      provider: 'local-vault',
+      transport: 'element-src',
+      sourceId: id,
+    });
+
+    await rematchPlaylistTracksFromLocker({
+      id: 'pl-bulk',
+      name: 'Bulk',
+      description: '',
+      tracks: [row('a'), row('b'), row('c')],
+    });
+
+    expect(playableIdsMock).toHaveBeenCalledTimes(1);
+    expect([...playableIdsMock.mock.calls[0]![0]!]).toEqual(['a', 'b', 'c']);
+  });
+
+  it('leaves rows untouched when the bulk set reports them playable', async () => {
+    playableIdsMock.mockResolvedValue(new Set(['locker-good']));
+
+    const { playlist: next, repaired } = await rematchPlaylistTracksFromLocker({
+      id: 'pl-ok',
+      name: 'Fine',
+      description: '',
+      tracks: [
+        {
+          envelopeId: 'row-good',
+          title: 'FRIED',
+          artist: '¥$',
+          url: 'content://rd.sheepskin.sandboxmusic.locker/locker-good',
+          durationSeconds: 200,
+          provider: 'local-vault',
+          transport: 'element-src',
+          sourceId: 'locker-good',
+        },
+      ],
+    });
+
+    expect(repaired).toBe(0);
+    expect(next.tracks[0]?.sourceId).toBe('locker-good');
+    expect(resolveMock).not.toHaveBeenCalled();
   });
 });

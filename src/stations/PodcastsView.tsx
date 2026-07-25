@@ -86,8 +86,10 @@ export default function PodcastsView({
   drillBackRef,
   episodeNotifCount = 0,
 }: PodcastsViewProps) {
-  const [tab, setTab] = useState<'discover' | 'library'>('discover');
-  const [libraryMounted, setLibraryMounted] = useState(false);
+  // Opens on the user's own shows (Library), like Music and Audiobooks — Discover is a
+  // deliberate step out, not the landing page for a pillar you already own content in.
+  const [tab, setTab] = useState<'discover' | 'library'>('library');
+  const [libraryMounted, setLibraryMounted] = useState(true);
   const [tabPending, startTabTransition] = useTransition();
   const [libraryView, setLibraryView] = useState<'shows' | 'downloaded'>('shows');
   const [offlineEpisodes, setOfflineEpisodes] = useState<OfflinePodcastEpisode[]>(
@@ -459,14 +461,8 @@ export default function PodcastsView({
 
       <div className="podcasts-station-toolbar">
         <div className="podcasts-tabs-row">
+        {/* Library first, then Discover — same spine as Music and Audiobooks. */}
         <nav className="podcasts-tabs" aria-label="Podcast sections">
-          <button
-            type="button"
-            className={`podcasts-tab touch-manipulation${tab === 'discover' ? ' podcasts-tab--active' : ''}`}
-            onClick={() => selectTab('discover')}
-          >
-            Discover
-          </button>
           <button
             type="button"
             className={`podcasts-tab touch-manipulation${tab === 'library' && libraryView === 'shows' ? ' podcasts-tab--active' : ''}${tabPending && tab === 'library' ? ' podcasts-tab--pending' : ''}`}
@@ -476,7 +472,14 @@ export default function PodcastsView({
               setOpenFeedId(null);
             }}
           >
-            Library{subscriptions.length > 0 ? ` (${subscriptions.length})` : ''}
+            Shows{subscriptions.length > 0 ? ` (${subscriptions.length})` : ''}
+          </button>
+          <button
+            type="button"
+            className={`podcasts-tab touch-manipulation${tab === 'discover' ? ' podcasts-tab--active' : ''}`}
+            onClick={() => selectTab('discover')}
+          >
+            Discover
           </button>
           <button
             type="button"
@@ -655,6 +658,13 @@ export default function PodcastsView({
                 onOpenShow={openShow}
                 onDiscoverMore={() => selectTab('discover')}
                 onUnsubscribe={handleUnsubscribe}
+              />
+              {/* Import lives with the user's own shows, not only under Discover — Library
+                  is the landing tab and importing an OPML is a library action. Collapsed
+                  by default so it never competes with the show grid. */}
+              <PodcastManualSubscribeSection
+                onSubscribed={handleManualSubscribed}
+                onError={setError}
               />
             </div>
           )}

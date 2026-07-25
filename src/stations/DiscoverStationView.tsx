@@ -49,6 +49,8 @@ export interface DiscoverStationViewProps {
   onExploreInstantMix?: (tracks: MediaEnvelope[], label: string) => void;
   onSaveInstantPlaylist?: (tracks: MediaEnvelope[], name: string) => void;
   onOpenVideoFeed?: () => void;
+  onExitToHome?: () => void;
+  segmentBar?: React.ReactNode;
 }
 
 function DiscoverTab({
@@ -102,6 +104,8 @@ export default function DiscoverStationView({
   onExploreInstantMix,
   onSaveInstantPlaylist,
   onOpenVideoFeed,
+  onExitToHome,
+  segmentBar,
 }: DiscoverStationViewProps) {
   const { t } = useTranslation();
   const isMobileShell = useMobileShell();
@@ -141,6 +145,8 @@ export default function DiscoverStationView({
           onExploreInstantMix={onExploreInstantMix}
           onSaveInstantPlaylist={onSaveInstantPlaylist}
           onOpenVideoFeed={onOpenVideoFeed}
+          onExitToHome={onExitToHome}
+          segmentBar={segmentBar}
         />
       </DiscoverTabSuspense>
     );

@@ -490,6 +490,49 @@ async function fromAudioDb(artistName: string): Promise<string | undefined> {
   return pickThumb(pickBestArtist(candidates, artistName) ?? candidates[0]);
 }
 
+type DeezerArtist = {
+  name?: string;
+  picture_xl?: string;
+  picture_big?: string;
+  picture_medium?: string;
+  nb_fan?: number;
+};
+
+/**
+ * Deezer artist search — free, no-auth, and has real photos for far more artists than
+ * TheAudioDB (including underground/independent hip-hop). Direct fetch works on native
+ * (CapacitorHttp bypasses CORS); on web dev it may be blocked, which is fine — it's a fallback.
+ */
+async function fromDeezer(artistName: string): Promise<string | undefined> {
+  const name = artistName.trim();
+  if (!name) return undefined;
+  try {
+    const url = `https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=8`;
+    const res = await fetchWithTimeout(url);
+    if (!res.ok) return undefined;
+    const contentType = res.headers.get('content-type') ?? '';
+    if (!isJsonLikeContentType(contentType)) return undefined;
+    const data = (await res.json()) as { data?: DeezerArtist[] | null };
+    const list = (data.data ?? []).filter((a) => a.name);
+    if (list.length === 0) return undefined;
+    // Prefer a strong name match; break ties by popularity (fan count).
+    const ranked = [...list].sort((a, b) => {
+      const scoreDelta =
+        artistMatchScore(b.name ?? '', name) - artistMatchScore(a.name ?? '', name);
+      if (scoreDelta !== 0) return scoreDelta;
+      return (b.nb_fan ?? 0) - (a.nb_fan ?? 0);
+    });
+    const best = ranked[0];
+    if (!best || artistMatchScore(best.name ?? '', name) < 300) return undefined;
+    const pic = best.picture_xl || best.picture_big || best.picture_medium;
+    // Deezer returns a placeholder image for artists with no photo — skip those.
+    if (!pic || /\/artist\/?$/.test(pic) || pic.includes('/images/artist//')) return undefined;
+    return pic;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Resolve artist photo + biography from TheAudioDB.
  */
@@ -525,6 +568,11 @@ async function lookupArtistImageUncached(artistName: string): Promise<string | u
     for (const candidate of artistLookupCandidates(name)) {
       const url =
         (await raceTimeout(fromAudioDb(candidate), LOOKUP_TIMEOUT_MS)) ?? undefined;
+      if (url) return url;
+    }
+    // TheAudioDB has no photo for many underground artists — fall back to Deezer.
+    for (const candidate of artistLookupCandidates(name)) {
+      const url = (await raceTimeout(fromDeezer(candidate), LOOKUP_TIMEOUT_MS)) ?? undefined;
       if (url) return url;
     }
     return undefined;

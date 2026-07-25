@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertCircle, Copy, Loader2, RotateCcw, X, Clock, PauseCircle } from 'lucide-react';
 import { retryDownloadJob } from '../acquisitionPipeline';
-import { scanAndQueueIncompleteAlbumDownloads } from '../lockerAlbumCompletion';
+import { cancelAllActiveDownloadJobs } from '../downloadLockerPrecheck';
 import {
-  clearFinishedDownloadJobs,
+  clearAllDownloadJobs,
   describeDownloadJobResume,
   formatDownloadJobDisplay,
   formatDownloadJobErrorDetail,
@@ -78,10 +78,10 @@ export default function DownloadActivitySheet({
 
   useEffect(() => subscribeDownloadQueue(() => setJobs(getDownloadJobs())), []);
 
-  useEffect(() => {
-    if (!open) return;
-    void scanAndQueueIncompleteAlbumDownloads();
-  }, [open]);
+  // Deliberately NO auto-scan on open. Opening the Downloads screen must be passive — it just
+  // shows status. Previously it called scanAndQueueIncompleteAlbumDownloads(), which re-ran the
+  // fuzzy catalog↔locker album diff and re-queued/retried the same "incomplete" albums every
+  // time the sheet was opened, so the same albums kept reappearing "needing download" forever.
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -337,12 +337,17 @@ export default function DownloadActivitySheet({
           </div>
         )}
 
-        {errors.length > 0 ? (
+        {jobs.length > 0 ? (
           <footer className="download-activity-sheet-footer">
             <button
               type="button"
               className="download-activity-sheet-clear touch-manipulation"
-              onClick={() => clearFinishedDownloadJobs()}
+              onClick={() => {
+                // Wipe EVERY job (active/queued/paused/error/done) and clear it from storage,
+                // so a stale/false backlog can't keep reappearing across reboots.
+                void cancelAllActiveDownloadJobs();
+                clearAllDownloadJobs();
+              }}
             >
               {t('download.activity.clearAll')}
             </button>

@@ -22,6 +22,7 @@ export type LockerReconcileOptions = {
 export type LockerPlayabilityMode = 'fast' | 'full';
 
 import { isBootUiInteractive } from './bootInteractivity';
+import { memoizeStringFn } from './memoizeStringFn';
 import {
   featuredArtistsFromTrackTitle,
   proxiedArtworkUrl,
@@ -49,6 +50,12 @@ export interface LockerEntry {
   title: string;
   artist: string;
   genre: string;
+  /**
+   * Specific style under `genre` (Trap under Hip-Hop, Nu Metal under Rock).
+   * Genre shelves group by this when present, so libraries don't collapse into
+   * two umbrella shelves. Set by enrichment or by hand in Edit info.
+   */
+  subGenre?: string;
   durationSeconds: number;
   url: string;
   addedAt: number;
@@ -97,8 +104,14 @@ export function isLockerCacheContentUri(path: string): boolean {
 function isStableNativeAudioPath(path: string): boolean {
   const trimmed = path?.trim() ?? '';
   if (!trimmed || isLockerCacheContentUri(trimmed)) return false;
+  // ytdlp-playback lives in cacheDir — genuinely ephemeral, reject.
   if (/\/ytdlp-playback\//i.test(trimmed)) return false;
-  if (/\/ytdlp-locker\//i.test(trimmed)) return false;
+  // ytdlp-locker under cache/ is the LEGACY temp location (migrated away on boot); reject it.
+  // But files/ytdlp-locker is the DURABLE download destination for locker acquisition
+  // (see YoutubeDlStreamResolver "Download audio for locker acquisition — uses durable
+  // files/ytdlp-locker"). Rejecting the durable copy made every downloaded track look absent,
+  // so offlineReady never latched true and the album auto-completer re-downloaded them forever.
+  if (/\/cache\/ytdlp-locker\//i.test(trimmed)) return false;
   return /^file:\/\//i.test(trimmed) || trimmed.startsWith('/');
 }
 
@@ -263,6 +276,16 @@ function storedAudioToBlob(value: unknown): Blob | null {
   return null;
 }
 
+/**
+ * One object URL PER ROW — deliberately not shared across an album.
+ *
+ * Sharing one URL per album was tried as a perf fix (it cut a 1274ms blocking pass to 79ms,
+ * since createObjectURL over IDB-backed blobs is slow in Android WebView) and had to be reverted:
+ * the art-heal paths below revoke an entry's previous blob: URL before minting a replacement, so
+ * a shared URL meant healing one track blanked the cover for every other track on that album —
+ * including the track currently playing. Any future attempt at this must make revocation
+ * refcount-aware first.
+ */
 function resolveAlbumArtForRow(row: {
   albumArt?: string;
   albumArtBlob?: Blob;
@@ -830,8 +853,19 @@ export function isTruncatedArtistName(
 }
 
 /** "Kanye West Bittersweet" — real artist name with song-title words glued on. */
+/** "A & B", "A, B", "A x B", "A feat. B" — a collaboration billing, not a mashup. */
+const COLLAB_BILLING_RE =
+  /(\s*&\s*|\s*,\s*|\s+and\s+|\s+x\s+|\s+feat\.?\s+|\s+ft\.?\s+|\s+featuring\s+|\s+with\s+|\s+vs\.?\s+)/i;
+
 export function isArtistTitleMashupName(name: string | undefined): boolean {
-  const key = normalizeLockerKeyPart((name ?? '').trim());
+  const raw = (name ?? '').trim();
+  // Check the RAW string first: normalizeLockerKeyPart strips "&" and ",", so by the time
+  // we have a key, "Future & Metro Boomin" is indistinguishable from an artist-plus-title
+  // mashup and the prefix test below wrongly rejects it. That rejection made
+  // isUsableArtistName() false for the album-artist tag, which pushed the tracks carrying
+  // featured artists into a second "Local Upload" album — the duplicate joint albums.
+  if (COLLAB_BILLING_RE.test(raw)) return false;
+  const key = normalizeLockerKeyPart(raw);
   if (!key) return false;
   for (const prefix of KNOWN_ARTIST_NAME_PREFIXES) {
     if (key === prefix) return false;
@@ -1066,14 +1100,15 @@ export function resolveLyricsSearchArtist(
 }
 
 /** Normalize album/artist strings for stable locker grouping keys. */
-export function normalizeLockerKeyPart(value: string): string {
-  return value
+/** Memoized: album/artist grouping calls this per row, repeatedly, on the same names. */
+export const normalizeLockerKeyPart = memoizeStringFn((value: string): string =>
+  value
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
+    .trim(),
+);
 
 /**
  * Collapse collab billing variants for locker album keys
@@ -1424,26 +1459,83 @@ export function resolveLockerEntryGroupArt(
 }
 
 /**
+ * Precompute one album cover per group in a single O(n) pass.
+ *
+ * `resolveLockerEntryGroupArt` re-filters the whole pool for every entry — O(n²), which on a
+ * large vault is seconds of synchronous main-thread work (both in the boot warm chain and in
+ * every shell cache-sync re-render). Build this map once, then resolve each row via
+ * `resolveLockerEntryGroupArtFromMap` for O(1) per-row lookup.
+ */
+export function buildLockerGroupArtMap(
+  entries: ReadonlyArray<LockerEntry>,
+): Map<string, string | undefined> {
+  const siblingsByKey = new Map<string, LockerEntry[]>();
+  for (const entry of entries) {
+    const key = lockerAlbumGroupKey(entry);
+    if (!key) continue;
+    const bucket = siblingsByKey.get(key);
+    if (bucket) bucket.push(entry);
+    else siblingsByKey.set(key, [entry]);
+  }
+  const artByKey = new Map<string, string | undefined>();
+  for (const [key, siblings] of siblingsByKey) {
+    // albumKey is always set here, so the entry arg only feeds the (unreachable) no-key branch.
+    artByKey.set(
+      key,
+      resolveLockerTrackThumbArt(siblings[0]!, key, siblings, undefined, undefined),
+    );
+  }
+  return artByKey;
+}
+
+/**
+ * O(1) per-row album art via a map from {@link buildLockerGroupArtMap}.
+ * Matches {@link resolveLockerEntryGroupArt} exactly: keyed rows return the group's resolved
+ * art (or undefined when the group has none — no per-row fallback), unkeyed rows sanitize their own.
+ */
+export function resolveLockerEntryGroupArtFromMap(
+  entry: Pick<LockerEntry, 'albumName' | 'albumArtist' | 'artist' | 'albumArt'>,
+  artByKey: ReadonlyMap<string, string | undefined>,
+): string | undefined {
+  const albumKey = lockerAlbumGroupKey(entry);
+  if (!albumKey) return sanitizeCoverArtUrl(entry.albumArt);
+  return artByKey.get(albumKey);
+}
+
+/**
  * In-memory heal: every track inherits album-group art when any sibling (or session cache) has cover.
  * Safe to call on every vault cache refresh — never deletes rows or blobs.
  */
 export function inheritLockerAlbumArt(entries: LockerEntry[]): LockerEntry[] {
   if (entries.length === 0) return entries;
 
-  const groupArtByKey = new Map<string, string>();
+  // Group siblings once (O(n)) instead of re-filtering the whole vault per entry (was O(n²)
+  // and the dominant multi-second cost of the boot vault-warm chain on large libraries).
+  const siblingsByKey = new Map<string, LockerEntry[]>();
   for (const entry of entries) {
     const key = lockerAlbumGroupKey(entry);
-    if (!key || groupArtByKey.has(key)) continue;
-    const siblings = entries.filter((row) => lockerAlbumGroupKey(row) === key);
+    if (!key) continue;
+    const bucket = siblingsByKey.get(key);
+    if (bucket) bucket.push(entry);
+    else siblingsByKey.set(key, [entry]);
+  }
+
+  // Seed the session known-good cache for every group first (unchanged ordering/behavior),
+  // then resolve one art per group so per-row resolution reads a fully-seeded cache.
+  for (const [key, siblings] of siblingsByKey) {
     const art = pickLockerAlbumCover(siblings);
-    if (art) {
-      groupArtByKey.set(key, art);
-      rememberKnownGoodAlbumArt(key, art);
-    }
+    if (art) rememberKnownGoodAlbumArt(key, art);
+  }
+  const artByKey = new Map<string, string | undefined>();
+  for (const [key, siblings] of siblingsByKey) {
+    artByKey.set(
+      key,
+      resolveLockerTrackThumbArt(siblings[0]!, key, siblings, undefined, undefined),
+    );
   }
 
   return entries.map((entry) => {
-    const resolved = resolveLockerEntryGroupArt(entry, entries);
+    const resolved = resolveLockerEntryGroupArtFromMap(entry, artByKey);
     if (!resolved) return entry;
     const current = sanitizeCoverArtUrl(entry.albumArt);
     if (!current) return { ...entry, albumArt: resolved };
@@ -1950,6 +2042,65 @@ export async function getLockerArtBlob(entryId: string): Promise<Blob | null> {
   return readEntryArtBlob(entryId);
 }
 
+/**
+ * Write one cover blob onto many entries in a SINGLE transaction.
+ *
+ * The per-entry path (updateLockerEntryMetadata) opens its own transaction each time, so
+ * propagating art across a few hundred tracks cost thousands of IndexedDB opens and blocked
+ * the main thread for seconds when the locker was opened.
+ */
+export async function applyArtBlobToEntries(ids: string[], blob: Blob): Promise<number> {
+  if (ids.length === 0 || blob.size === 0) return 0;
+  const db = await initDB();
+  if (!db.objectStoreNames.contains(BLOB_STORE_NAME)) return 0;
+  const written = await new Promise<number>((resolve) => {
+    let count = 0;
+    const tx = db.transaction(BLOB_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(BLOB_STORE_NAME);
+    for (const id of ids) {
+      const getReq = store.get(id);
+      getReq.onsuccess = () => {
+        const existing = (getReq.result ?? { id }) as TrackBlobRow;
+        store.put({ ...existing, id, albumArtBlob: blob });
+        count += 1;
+      };
+    }
+    tx.oncomplete = () => resolve(count);
+    tx.onerror = () => resolve(count);
+    tx.onabort = () => resolve(count);
+  });
+  for (const id of ids) dropCachedAlbumArt(id);
+  return written;
+}
+
+/**
+ * Ids in the blob store that actually hold cover art, read in ONE transaction.
+ *
+ * Callers that need to know "which of my 300 tracks have art?" must use this instead of
+ * calling getLockerArtBlob() per track — that pattern issued ~600 separate IndexedDB opens
+ * when the locker was opened (measured), which is what made the library feel slow.
+ */
+export async function listLockerArtBlobIds(): Promise<Set<string>> {
+  const db = await initDB();
+  if (!db.objectStoreNames.contains(BLOB_STORE_NAME)) return new Set();
+  return new Promise<Set<string>>((resolve) => {
+    const ids = new Set<string>();
+    const tx = db.transaction(BLOB_STORE_NAME, 'readonly');
+    const req = tx.objectStore(BLOB_STORE_NAME).openCursor();
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) {
+        resolve(ids);
+        return;
+      }
+      const row = cursor.value as TrackBlobRow | undefined;
+      if (row?.albumArtBlob && typeof cursor.key === 'string') ids.add(cursor.key);
+      cursor.continue();
+    };
+    req.onerror = () => resolve(ids);
+  });
+}
+
 /** Drop persisted cover bytes from the blob store (keeps audio blob when present). */
 async function clearEntryArtBlob(id: string): Promise<void> {
   const db = await initDB();
@@ -1981,6 +2132,104 @@ async function clearEntryArtBlob(id: string): Promise<void> {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+}
+
+export interface TrackBlobPruneResult {
+  /** Rows whose audio bytes were (or would be) removed. */
+  deleted: number;
+  freedBytes: number;
+  kept: number;
+  total: number;
+  /** True when a live prune was blocked because the keep-set was empty. */
+  refusedEmptyKeep: boolean;
+}
+
+/**
+ * Reclaim audio bytes from the IndexedDB blob store for tracks NOT in keepIds.
+ * Album-art bytes in the same row are preserved. `keepIds` must contain every
+ * track whose audio still lives in IndexedDB (no durable native copy) — a live
+ * prune is refused when keepIds is empty, since that usually means the locker
+ * index has not loaded yet rather than "delete every offline copy".
+ */
+export async function pruneTrackBlobs(
+  keepIds: Set<string>,
+  options: { dryRun?: boolean; allowEmptyKeep?: boolean } = {},
+): Promise<TrackBlobPruneResult> {
+  const dryRun = options.dryRun ?? true;
+  // An empty keep-set is legitimate when every track has a durable native copy
+  // (nothing needs its IndexedDB audio). Callers that have verified the locker
+  // index is loaded pass allowEmptyKeep:true; otherwise we refuse, since an empty
+  // keep usually means the index has not loaded yet.
+  const allowEmptyKeep = options.allowEmptyKeep ?? false;
+  const db = await initDB();
+  if (!db.objectStoreNames.contains(BLOB_STORE_NAME)) {
+    return { deleted: 0, freedBytes: 0, kept: 0, total: 0, refusedEmptyKeep: false };
+  }
+
+  const targets: Array<{ id: string; bytes: number }> = [];
+  let kept = 0;
+  let total = 0;
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(BLOB_STORE_NAME, 'readonly');
+    const req = tx.objectStore(BLOB_STORE_NAME).openCursor();
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) {
+        resolve();
+        return;
+      }
+      const row = cursor.value as TrackBlobRow;
+      const audio = storedAudioToBlob(row.audioBlob);
+      if (audio) {
+        total += 1;
+        const id = String(row.id);
+        if (keepIds.has(id)) kept += 1;
+        else targets.push({ id, bytes: audio.size });
+      }
+      cursor.continue();
+    };
+    req.onerror = () => reject(req.error);
+  });
+
+  const freedBytes = targets.reduce((sum, t) => sum + t.bytes, 0);
+  const refusedEmptyKeep =
+    !dryRun && !allowEmptyKeep && keepIds.size === 0 && total > 0;
+  if (dryRun || refusedEmptyKeep) {
+    return { deleted: targets.length, freedBytes, kept, total, refusedEmptyKeep };
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction([STORE_NAME, BLOB_STORE_NAME], 'readwrite');
+    const blobStore = tx.objectStore(BLOB_STORE_NAME);
+    const trackStore = tx.objectStore(STORE_NAME);
+    for (const target of targets) {
+      const getReq = blobStore.get(target.id);
+      getReq.onsuccess = () => {
+        const row = getReq.result as TrackBlobRow | undefined;
+        if (!row) return;
+        if (row.albumArtBlob) {
+          blobStore.put({ id: target.id, albumArtBlob: row.albumArtBlob } satisfies TrackBlobRow);
+        } else {
+          blobStore.delete(target.id);
+        }
+      };
+      const trackReq = trackStore.get(target.id);
+      trackReq.onsuccess = () => {
+        const row = trackReq.result as Record<string, unknown> | undefined;
+        if (!row) return;
+        // Reclaimed here because a durable native file exists — mark it so the
+        // boot healers don't re-import an IndexedDB copy (which undid the reclaim).
+        row.hasAudioBlob = false;
+        row.nativeDurable = true;
+        trackStore.put(row);
+      };
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+
+  await refreshLockerCache();
+  return { deleted: targets.length, freedBytes, kept, total, refusedEmptyKeep: false };
 }
 
 /** Backfill missing track lengths for existing locker uploads. */
@@ -2303,6 +2552,7 @@ function rowToEntry(t: {
   title: string;
   artist: string;
   genre?: string;
+  subGenre?: string;
   durationSeconds?: number;
   audioBlob?: Blob;
   hasAudioBlob?: boolean;
@@ -2342,6 +2592,7 @@ function rowToEntry(t: {
     title: formatDisplayTrackTitle(t.title ?? ''),
     artist: (t.artist ?? '').trim() || 'Local Upload',
     genre: t.genre ?? 'Local',
+    subGenre: t.subGenre,
     durationSeconds: t.durationSeconds ?? 0,
     url,
     addedAt: t.addedAt ?? Date.now(),
@@ -2807,6 +3058,49 @@ export async function lockerEntryIsPlayable(entryId: string): Promise<boolean> {
   return lockerEntryHasRecoverableAudio(entryId);
 }
 
+/**
+ * Bulk playability for many ids at once — returns the subset that can play.
+ *
+ * Prefer this over looping lockerEntryIsPlayable(). That call reads the entire audio blob out
+ * of IndexedDB just to test `size > 0`, then reads the row, then probes the native bridge; run
+ * sequentially over a 300-track locker it pulled ~1GB through IDB and blocked the Playlists tab
+ * for 10s. Here the whole answer comes from two cached passes (blob keys + row hints) plus a
+ * synchronous decision per id.
+ */
+export async function filterPlayableLockerIds(ids: Iterable<string>): Promise<Set<string>> {
+  const out = new Set<string>();
+  // Keep the caller's original id spelling in the result — callers pass both `x` and `local-x`.
+  const wanted = new Map<string, string[]>();
+  for (const raw of ids) {
+    const id = (raw ?? '').trim().replace(/^local-/, '');
+    if (!id) continue;
+    const bucket = wanted.get(id);
+    if (bucket) bucket.push(raw);
+    else wanted.set(id, [raw]);
+  }
+  if (wanted.size === 0) return out;
+
+  const blobIds = await ensureBlobStoreIdCache();
+  const hints = await ensureLockerRowHintCache();
+  for (const [id, originals] of wanted) {
+    const hint = hints.get(id);
+    const playable =
+      blobIds.has(id) ||
+      (hint !== undefined &&
+        lockerRowHasHealSignals(
+          {
+            id,
+            hasAudioBlob: hint.hasAudioBlob,
+            nativeAudioCached: hint.nativeAudioCached,
+            nativeSourcePath: hint.nativeSourcePath,
+          },
+          blobIds,
+        ));
+    if (playable) for (const original of originals) out.add(original);
+  }
+  return out;
+}
+
 function resolveLockerPlayabilityMode(
   mode?: LockerPlayabilityMode,
 ): LockerPlayabilityMode {
@@ -2846,7 +3140,10 @@ export async function enrichLockerEntriesPlayability(
     }
     out.push({ ...entry, url, offlineReady: ready });
     idx += 1;
-    if (mode === 'full' && idx % 24 === 0) await yieldToMain();
+    // 'fast' mode runs unconditionally on cold boot, before first interaction — with a large
+    // locker this loop was the actual multi-second main-thread block behind app-feels-frozen
+    // reports, since only 'full' mode used to yield here.
+    if (idx % 24 === 0) await yieldToMain();
   }
   return out;
 }
@@ -3190,6 +3487,23 @@ async function ensureBlobStoreIdCache(): Promise<Set<string>> {
     });
   }
   return blobStoreIdCachePromise;
+}
+
+/** Heal-signal hints per row, filled in by readLockerEntriesFromDb. */
+let cachedRowHints: Map<string, LockerRowHealHint> | null = null;
+
+async function ensureLockerRowHintCache(): Promise<Map<string, LockerRowHealHint>> {
+  if (cachedRowHints) return cachedRowHints;
+  /*
+   * getLockerEntries() fills cachedRowHints as a side effect of its row pass — but only when it
+   * actually reads. With the vault cache already warm it returns immediately and the hints stay
+   * empty, which would report every native-only track (nativeSourcePath, no IDB blob) as
+   * unplayable. So read the rows directly in that case.
+   */
+  await getLockerEntries();
+  if (cachedRowHints) return cachedRowHints;
+  await readLockerEntriesFromDb({ skipArtBlobPreload: true });
+  return cachedRowHints ?? new Map();
 }
 
 async function readAllBlobStoreIds(): Promise<string[]> {
@@ -3556,6 +3870,10 @@ export async function backfillLockerBlobStoreFromNativePaths(): Promise<number> 
     const rec = row as Record<string, unknown>;
     const id = String(rec.id ?? '').trim();
     if (!id || blobIds.has(id)) continue;
+    // Storage-reclaim marked this track as backed by a durable native file, so it
+    // needs no redundant IndexedDB copy — re-creating one here is what previously
+    // undid the reclaim (the 6GB kept coming back).
+    if (rec.nativeDurable === true) continue;
     const path = typeof rec.nativeSourcePath === 'string' ? rec.nativeSourcePath.trim() : '';
     if (!path || !isImportableLockerNativePath(path)) continue;
     if (await persistFileUriToBlobStore(id, path)) {
@@ -3584,6 +3902,9 @@ export async function healHollowRowsFromYtdlpTemps(): Promise<number> {
     const rec = row as Record<string, unknown>;
     const id = String(rec.id ?? '').trim();
     if (!id || blobIds.has(id)) continue;
+    // A reclaimed track already has durable native audio — not hollow. Skip so its
+    // IDB copy is not re-created (which previously undid the storage reclaim).
+    if (rec.nativeDurable === true) continue;
     const path = typeof rec.nativeSourcePath === 'string' ? rec.nativeSourcePath.trim() : '';
     if (!path || !/\/ytdlp-locker\//i.test(path)) continue;
     if (await persistFileUriToBlobStore(id, path)) {
@@ -3732,6 +4053,9 @@ async function readLockerEntriesFromDb(options?: {
         typeof rec.nativeSourcePath === 'string' ? rec.nativeSourcePath : undefined,
     });
   }
+  // Retain the hints: building them is free here (the rows are already in hand), and it lets
+  // filterPlayableLockerIds answer bulk playability without re-reading a single row.
+  cachedRowHints = rowHints;
 
   const artBlobs = new Map<string, Blob>();
   if (!options?.skipArtBlobPreload && db.objectStoreNames.contains(BLOB_STORE_NAME)) {
@@ -3747,12 +4071,18 @@ async function readLockerEntriesFromDb(options?: {
     }
   }
 
-  const entries = rows
-    .map((t) => {
-      const albumArtBlob = artBlobs.get(t.id) ?? t.albumArtBlob;
-      return rowToEntry({ ...t, albumArtBlob });
-    })
-    .filter((e): e is LockerEntry => e !== null);
+  // Plain .map() here used to run fully synchronously across the whole locker (each row does
+  // real work: Blob construction + URL.createObjectURL for embedded art) — on a large library
+  // this alone was multiple seconds of unbroken main-thread work before the first paint.
+  const { yieldToMain } = await import('./yieldToMain');
+  const entries: LockerEntry[] = [];
+  for (let i = 0; i < rows.length; i += 1) {
+    if (i > 0 && i % 24 === 0) await yieldToMain();
+    const t = rows[i]!;
+    const albumArtBlob = artBlobs.get(t.id) ?? t.albumArtBlob;
+    const entry = rowToEntry({ ...t, albumArtBlob });
+    if (entry) entries.push(entry);
+  }
 
   return { entries, rowHints };
 }
@@ -4275,6 +4605,7 @@ export async function updateLockerEntryMetadata(
     title?: string;
     artist?: string;
     genre?: string;
+    subGenre?: string;
     durationSeconds?: number;
     albumArtist?: string;
     composer?: string;
@@ -4978,6 +5309,7 @@ export async function updateAlbumGroupMetadata(
     composer?: string;
     discCount?: string;
     genre?: string;
+    subGenre?: string;
     performers?: string;
     producers?: string;
     engineers?: string;
