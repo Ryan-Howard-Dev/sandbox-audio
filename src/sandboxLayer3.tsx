@@ -160,7 +160,7 @@ import { computePlayQueueSeed } from './play/albumPlayQueue';
 import { startAutoSimilarRadioIfNeeded } from './play/standaloneSimilarRadio';
 import { ensureLockerPlayable, envelopeClaimsLocker, shouldRunLockerPlaybackGate } from './play/ensureLockerPlayable';
 import { attemptDeadLockerReacquire } from './lockerDeadTrackReacquire';
-import { findQueueIndexForExoTransition, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
+import { findQueueIndexForExoUrl, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
 import {
   estimateStreamDownloadMb,
   formatCellularDownloadNotice,
@@ -5976,7 +5976,19 @@ export default function SandboxShell() {
       if (!isExoMediaItemTransitionEvent(detail)) return;
       void (async () => {
         const queue = playQueueRef.current;
-        const idx = await findQueueIndexForExoTransition(queue, detail);
+        /*
+         * Deliberately URL matching, not findQueueIndexForExoTransition. Matching on the stable
+         * mediaId works *too* well here: it resolves the transition fired by a user-initiated
+         * skip, so this handler calls setQueueIndex a second time on top of the JS advance and
+         * the player visibly jumps between tracks before settling. URL matching often misses,
+         * and those misses were silently suppressing the R-004 double-advance race.
+         *
+         * This is a stopgap, not a design. The real fix is to extend
+         * shouldSuppressJsAdvanceAfterNativeGapless to cover user-initiated skips so the native
+         * transition cannot re-drive the index; then this can go back to mediaId matching.
+         * The native mediaId work is untouched — lock-screen metadata still resolves by key.
+         */
+        const idx = await findQueueIndexForExoUrl(queue, detail.url ?? '');
         if (idx < 0) return;
         const track = queue[idx];
         if (!track) return;
