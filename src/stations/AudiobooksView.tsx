@@ -86,6 +86,20 @@ export default function AudiobooksView({
   );
 
   /*
+   * Land on Discover only when there is genuinely no library to land on. Unlike podcasts the
+   * book list comes from an async device scan, so this cannot be decided at mount — it waits
+   * for the scan to settle, fires once, and bails if the user already navigated, so it can
+   * never yank a tab out from under them.
+   */
+  const landingResolvedRef = useRef(false);
+  useEffect(() => {
+    if (landingResolvedRef.current) return;
+    if (phase === 'scanning' || phase === 'enriching') return;
+    landingResolvedRef.current = true;
+    if (books.length === 0 && tab === 'device') setTab('discover');
+  }, [phase, books.length, tab]);
+
+  /*
    * File tags carry no synopsis, so the detail page had nothing to say about a book. Look one
    * up on open (cached, so once per book) and drop it if the user navigates away first.
    */

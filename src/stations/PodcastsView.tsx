@@ -91,7 +91,15 @@ export default function PodcastsView({
 }: PodcastsViewProps) {
   // Opens on the user's own shows (Library), like Music and Audiobooks — Discover is a
   // deliberate step out, not the landing page for a pillar you already own content in.
-  const [tab, setTab] = useState<'discover' | 'library'>('library');
+  /*
+   * Library is the right landing tab once you follow anything — the recurring job is "what's
+   * new in my shows", and Discover costs a network round trip that is useless offline. With
+   * zero subscriptions there is nothing to land on, so Discover is the only useful screen.
+   * Read synchronously so the first paint is already correct rather than switching under you.
+   */
+  const [tab, setTab] = useState<'discover' | 'library'>(() =>
+    loadSubscriptions().length === 0 ? 'discover' : 'library',
+  );
   const [libraryMounted, setLibraryMounted] = useState(true);
   const [tabPending, startTabTransition] = useTransition();
   const [libraryView, setLibraryView] = useState<'shows' | 'downloaded'>('shows');
