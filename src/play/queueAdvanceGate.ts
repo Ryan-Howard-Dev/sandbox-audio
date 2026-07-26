@@ -66,6 +66,52 @@ export function shouldSuppressJsAdvanceAfterNativeGapless(
   return input.queueIndex > endedIdx;
 }
 
+/** How long a JS-initiated navigation owns the queue index against native echo transitions. */
+export const JS_NAV_TRANSITION_OWNERSHIP_MS = 3000;
+
+export type NativeExoTransitionAuthorityInput = {
+  /** Envelope the native transition resolved to. */
+  transitionEnvelopeId: string;
+  /** Envelope JS currently believes is playing. */
+  activeEnvelopeId?: string;
+  /** Envelope JS last navigated to itself (skip, tap, advance), if any. */
+  pendingJsNavEnvelopeId?: string;
+  /** When that navigation was issued. */
+  pendingJsNavAtMs?: number;
+  nowMs?: number;
+  ownershipWindowMs?: number;
+};
+
+/**
+ * Whether a native mediaItemTransition should re-drive the JS queue index.
+ *
+ * Native fires a transition for *every* item change, including ones JS just caused. Adopting
+ * those means calling setQueueIndex a second time on top of the JS advance, which is what made
+ * the player visibly jump between tracks on skip. The active-track guard alone does not catch it:
+ * the transition can arrive before the JS advance has updated the active envelope ref, so the
+ * comparison is against the *previous* track and passes.
+ *
+ * So JS navigation claims ownership of the index for a short window, and native echoes inside it
+ * are ignored. A genuine gapless advance — the case this handler exists for — has no pending JS
+ * navigation and is still adopted. The window expires so a stale claim can never wedge the
+ * handler shut.
+ */
+export function shouldAdoptNativeExoTransition(
+  input: NativeExoTransitionAuthorityInput,
+): boolean {
+  const target = input.transitionEnvelopeId?.trim();
+  if (!target) return false;
+  if (target === input.activeEnvelopeId) return false;
+
+  const pending = input.pendingJsNavEnvelopeId?.trim();
+  if (pending && pending === target) {
+    const windowMs = input.ownershipWindowMs ?? JS_NAV_TRANSITION_OWNERSHIP_MS;
+    const elapsed = (input.nowMs ?? Date.now()) - (input.pendingJsNavAtMs ?? 0);
+    if (elapsed >= 0 && elapsed < windowMs) return false;
+  }
+  return true;
+}
+
 export type ResolveActivePlayQueueInput = {
   envEnvelopeId: string;
   refQueue: { envelopeId: string }[];

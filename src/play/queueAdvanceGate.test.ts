@@ -1,9 +1,104 @@
 import { describe, expect, it } from 'vitest';
 import {
+  JS_NAV_TRANSITION_OWNERSHIP_MS,
   resolveActivePlayQueue,
+  shouldAdoptNativeExoTransition,
   shouldSuppressJsAdvanceAfterNativeGapless,
   trackPlaybackMatureForAdvance,
 } from './queueAdvanceGate';
+
+/*
+ * Regression cover for the two playback breakages caused by keying the native queue off a stable
+ * mediaId (#36). URL matching missed often enough to hide a real defect: native fires a
+ * transition for every item change, including ones JS just caused, and adopting those re-drove
+ * the queue index on top of the JS advance. Reliable matching made every echo land, so skipping
+ * jumped between tracks and tapping a song played a different one.
+ *
+ * These enumerate the race directly, including the ordering an E2E cannot reach: the native echo
+ * arriving before the JS advance has updated the active envelope ref.
+ */
+describe('shouldAdoptNativeExoTransition', () => {
+  const now = 10_000;
+
+  it('adopts a genuine gapless advance JS did not initiate', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-1',
+        nowMs: now,
+      }),
+    ).toBe(true);
+  });
+
+  it('ignores a transition to the track already playing', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-1',
+        activeEnvelopeId: 'track-1',
+        nowMs: now,
+      }),
+    ).toBe(false);
+  });
+
+  it('ignores the native echo of a JS-initiated skip', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-2',
+        pendingJsNavEnvelopeId: 'track-2',
+        pendingJsNavAtMs: now - 50,
+        nowMs: now,
+      }),
+    ).toBe(false);
+  });
+
+  /*
+   * The case the active-envelope guard alone cannot catch, and the one that actually shipped
+   * broken: the echo lands before JS has updated its active ref, so activeEnvelopeId is still
+   * the *previous* track and the comparison passes. Only the navigation claim rejects it.
+   */
+  it('ignores the echo even when it beats the JS ref update', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-1',
+        pendingJsNavEnvelopeId: 'track-2',
+        pendingJsNavAtMs: now - 10,
+        nowMs: now,
+      }),
+    ).toBe(false);
+  });
+
+  it('adopts a native advance to a different track than JS navigated to', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-3',
+        activeEnvelopeId: 'track-2',
+        pendingJsNavEnvelopeId: 'track-2',
+        pendingJsNavAtMs: now - 10,
+        nowMs: now,
+      }),
+    ).toBe(true);
+  });
+
+  it('releases ownership once the window expires, so a stale claim cannot wedge it shut', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-1',
+        pendingJsNavEnvelopeId: 'track-2',
+        pendingJsNavAtMs: now - JS_NAV_TRANSITION_OWNERSHIP_MS,
+        nowMs: now,
+      }),
+    ).toBe(true);
+  });
+
+  it('rejects a transition with no resolvable envelope', () => {
+    expect(
+      shouldAdoptNativeExoTransition({ transitionEnvelopeId: '  ', nowMs: now }),
+    ).toBe(false);
+  });
+});
 
 describe('trackPlaybackMatureForAdvance', () => {
   it('accepts when Playing was reached', () => {

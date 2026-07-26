@@ -353,6 +353,21 @@ async function resolveNativeExoForegroundArtwork(
   return resolveAndroidForegroundArtworkUrl(artworkUrl);
 }
 
+let jsInitiatedNav: { envelopeId?: string; atMs: number } = { atMs: 0 };
+
+/**
+ * The track JS last asked native to play, and when.
+ *
+ * Native fires a mediaItemTransition for every item change, including the ones JS just caused by
+ * calling playUrl. The transition handler needs to tell those echoes apart from a real gapless
+ * advance, and comparing against the active envelope is not enough — the echo can arrive before
+ * JS has updated it. playUrl is the single point where JS drives native, so recording it here
+ * covers every navigation entry point without touching any of them.
+ */
+export function lastJsInitiatedNativeNav(): { envelopeId?: string; atMs: number } {
+  return jsInitiatedNav;
+}
+
 export async function nativeExoPlayUrl(
   url: string,
   options?: {
@@ -383,6 +398,8 @@ export async function nativeExoPlayUrl(
       : proxied;
   const autoPlay = options?.autoPlay !== false;
   const artworkUrl = await resolveNativeExoForegroundArtwork(options?.artworkUrl);
+  // Stamped before the call, so the claim is already in place when native echoes the transition.
+  jsInitiatedNav = { envelopeId: options?.envelopeId?.trim() || undefined, atMs: Date.now() };
   try {
     await NativeExoPlayback.playUrl({
       url: playUrl,

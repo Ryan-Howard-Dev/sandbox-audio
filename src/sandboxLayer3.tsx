@@ -141,6 +141,7 @@ import {
 } from './play/queueAdvancePolicy';
 import {
   resolveActivePlayQueue,
+  shouldAdoptNativeExoTransition,
   shouldSuppressJsAdvanceAfterNativeGapless,
   trackPlaybackMatureForAdvance,
 } from './play/queueAdvanceGate';
@@ -409,7 +410,12 @@ import { usePlaybackResolveElapsed } from './hooks/usePlaybackResolveElapsed';
 import { useStableEnvelopeId } from './hooks/useStableEnvelopeId';
 import { resolvePlaybackFidelityLabel } from './trackFidelityLabel';
 import { isOfflineUnplayableStreamUrl } from './nativeExoStreamResolver';
-import { getNativeExoPlaybackStatus, nativeExoPlaybackStatus, subscribeNativeExoStatus } from './androidNativePlayback';
+import {
+  getNativeExoPlaybackStatus,
+  lastJsInitiatedNativeNav,
+  nativeExoPlaybackStatus,
+  subscribeNativeExoStatus,
+} from './androidNativePlayback';
 import { isNativeExoAudible, clearLastPlayIntent, lastPlayIntentToEnvelope, loadLastPlayIntent } from './lastPlayIntent';
 import { getYtDlpMobileStatus, waitForYtDlpInit } from './ytDlpMobile';
 import {
@@ -5977,22 +5983,37 @@ export default function SandboxShell() {
       void (async () => {
         const queue = playQueueRef.current;
         /*
-         * Deliberately URL matching, not findQueueIndexForExoTransition. Matching on the stable
-         * mediaId works *too* well here: it resolves the transition fired by a user-initiated
-         * skip, so this handler calls setQueueIndex a second time on top of the JS advance and
-         * the player visibly jumps between tracks before settling. URL matching often misses,
-         * and those misses were silently suppressing the R-004 double-advance race.
+         * Still URL matching, not findQueueIndexForExoTransition. Matching on the stable mediaId
+         * works *too* well here: it resolves the transition fired by a user-initiated skip, so
+         * this handler called setQueueIndex a second time on top of the JS advance and the player
+         * visibly jumped between tracks before settling. URL matching often misses, and those
+         * misses were silently suppressing the R-004 double-advance race.
          *
-         * This is a stopgap, not a design. The real fix is to extend
-         * shouldSuppressJsAdvanceAfterNativeGapless to cover user-initiated skips so the native
-         * transition cannot re-drive the index; then this can go back to mediaId matching.
+         * shouldAdoptNativeExoTransition below is the actual fix for that race: playUrl records
+         * the track JS navigated to, and echoes of it are ignored regardless of how the
+         * transition was matched. Switching this line to findQueueIndexForExoTransition is the
+         * remaining half of #36 and should be a one-line change — but it cannot be verified in
+         * CI, because play-direct-queue drives native directly and leaves this handler inert with
+         * an empty play queue. It needs a device: play an album, skip across a boundary, confirm
+         * the right song plays and the index does not jump. Not landing it unverified a third time.
+         *
          * The native mediaId work is untouched — lock-screen metadata still resolves by key.
          */
         const idx = await findQueueIndexForExoUrl(queue, detail.url ?? '');
         if (idx < 0) return;
         const track = queue[idx];
         if (!track) return;
-        if (track.envelopeId === audioEnvelopeRef.current?.envelopeId) return;
+        const jsNav = lastJsInitiatedNativeNav();
+        if (
+          !shouldAdoptNativeExoTransition({
+            transitionEnvelopeId: track.envelopeId,
+            activeEnvelopeId: audioEnvelopeRef.current?.envelopeId,
+            pendingJsNavEnvelopeId: jsNav.envelopeId,
+            pendingJsNavAtMs: jsNav.atMs,
+          })
+        ) {
+          return;
+        }
         exoGaplessTransitionAtRef.current = Date.now();
         setQueueIndex(idx);
         syncThumbsFromFeedback(track.envelopeId);
