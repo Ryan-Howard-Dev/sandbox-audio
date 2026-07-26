@@ -14,6 +14,30 @@ deeplink() {
   sleep 2
 }
 
+# A bare "FAIL: <step>" cannot distinguish "the E2E bridge was compiled out of the APK" from
+# "the bridge is running and the step genuinely failed" — and those need opposite fixes. Dump
+# enough state to tell them apart on the spot instead of guessing from a one-line failure.
+diagnose_failure() {
+  local step="$1"
+  echo "--- diagnostics for ${step} ---"
+  local bridge
+  bridge="$(adb -s "$EMU_SERIAL" logcat -d 2>/dev/null | grep -c 'SandboxE2E' || true)"
+  echo "SandboxE2E log lines: ${bridge}"
+  if [[ "$bridge" == "0" ]]; then
+    echo "  -> No bridge output at all. Either __SANDBOX_ANDROID_E2E__ was false at build time"
+    echo "     (check SANDBOX_ANDROID_E2E reaches vite in scripts/vite-android-build.mjs),"
+    echo "     or the deep link never reached the app."
+  else
+    echo "  -> Bridge is alive; this step failed for an application reason."
+  fi
+  echo "app process: $(adb -s "$EMU_SERIAL" shell pidof "$PACKAGE" 2>/dev/null || echo 'NOT RUNNING')"
+  echo "last SandboxE2E lines:"
+  adb -s "$EMU_SERIAL" logcat -d 2>/dev/null | grep 'SandboxE2E' | tail -15 || true
+  echo "recent app errors:"
+  adb -s "$EMU_SERIAL" logcat -d 2>/dev/null | grep -E 'AndroidRuntime|Capacitor/Console.*(Error|error)' | tail -15 || true
+  echo "--- end diagnostics ---"
+}
+
 wait_logcat() {
   local pattern="$1"
   local timeout="${2:-120}"
@@ -90,10 +114,10 @@ sleep 2
 
 deeplink 'skip-onboarding'
 sleep 15
-wait_logcat 'SandboxE2E.*AREA=onboarding RESULT=PASS' 90 || { echo 'Playback E2E FAIL: skip-onboarding'; exit 1; }
+wait_logcat 'SandboxE2E.*AREA=onboarding RESULT=PASS' 90 || { echo 'Playback E2E FAIL: skip-onboarding'; diagnose_failure 'skip-onboarding'; exit 1; }
 
 deeplink 'probe-handlers'
-wait_logcat 'SandboxE2E.*AREA=handlers-probe RESULT=PASS' 90 || { echo 'Playback E2E FAIL: handlers-probe'; exit 1; }
+wait_logcat 'SandboxE2E.*AREA=handlers-probe RESULT=PASS' 90 || { echo 'Playback E2E FAIL: handlers-probe'; diagnose_failure 'handlers-probe'; exit 1; }
 
 deeplink 'clear-server'
 deeplink 'check-ytdlp'
@@ -105,9 +129,9 @@ track="$(python3 -c "import urllib.parse; print(urllib.parse.quote('FATHER'))")"
 adb -s "$EMU_SERIAL" logcat -c >/dev/null
 reset_play_spine_seen
 deeplink "play-artist-track?artist=${artist}&track=${track}&progressSeconds=25&integritySeconds=0"
-wait_logcat 'SandboxE2E.*AREA=artist-track-play RESULT=PASS' 360 || { echo 'Playback E2E FAIL: artist-track-play'; exit 1; }
-wait_logcat 'SandboxE2E.*AREA=playback-progress RESULT=PASS' 120 || { echo 'Playback E2E FAIL: playback-progress'; exit 1; }
-assert_play_spine || { echo 'Playback E2E FAIL: play spine'; exit 1; }
+wait_logcat 'SandboxE2E.*AREA=artist-track-play RESULT=PASS' 360 || { echo 'Playback E2E FAIL: artist-track-play'; diagnose_failure 'artist-track-play'; exit 1; }
+wait_logcat 'SandboxE2E.*AREA=playback-progress RESULT=PASS' 120 || { echo 'Playback E2E FAIL: playback-progress'; diagnose_failure 'playback-progress'; exit 1; }
+assert_play_spine || { echo 'Playback E2E FAIL: play spine'; diagnose_failure 'play spine'; exit 1; }
 
 {
   echo '# Android Playback E2E Report'
