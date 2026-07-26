@@ -1781,6 +1781,7 @@
     "requestPermission": "Allow audio access",
     "playAlbum": "Play {title}",
     "playBook": "Play",
+    "aboutLabel": "About this book",
     "playChapter": "Play chapter {title}",
     "yourBooks": "Your audiobooks",
     "chaptersCount": "{count, plural, one {# chapter} other {# chapters}}",

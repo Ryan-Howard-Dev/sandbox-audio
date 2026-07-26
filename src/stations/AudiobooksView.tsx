@@ -29,6 +29,7 @@ import { formatTime } from './theme';
 import { useTranslation } from '../i18n';
 import { proxiedArtworkUrl } from '../displaySanitize';
 import { seedGradient } from '../seedGradient';
+import { fetchAudiobookDescription } from '../audiobookDescription';
 
 export interface AudiobooksViewProps {
   onPlay: (envelope: MediaEnvelope) => void;
@@ -76,12 +77,29 @@ export default function AudiobooksView({
   const [enrichDone, setEnrichDone] = useState(0);
   const [enrichTotal, setEnrichTotal] = useState(0);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [bookDescription, setBookDescription] = useState<string | null>(null);
   const autoStartedRef = useRef(false);
 
   const selected = useMemo(
     () => books.find((b) => b.key === selectedKey) ?? null,
     [books, selectedKey],
   );
+
+  /*
+   * File tags carry no synopsis, so the detail page had nothing to say about a book. Look one
+   * up on open (cached, so once per book) and drop it if the user navigates away first.
+   */
+  useEffect(() => {
+    setBookDescription(null);
+    if (!selected) return;
+    let cancelled = false;
+    void fetchAudiobookDescription(selected.title, selected.author).then((text) => {
+      if (!cancelled) setBookDescription(text);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
 
   // Persist author/title seeds so the search sheet can build a personalised Books row
   // without running its own device scan.
@@ -314,6 +332,15 @@ export default function AudiobooksView({
               </div>
             </div>
           </header>
+
+          {bookDescription ? (
+            <section className="audiobooks-book-about" aria-label={t('audiobooks.aboutLabel')}>
+              <p className="podcasts-show-detail-episodes-label">
+                {t('audiobooks.aboutLabel')}
+              </p>
+              <p className="audiobooks-book-about-text">{bookDescription}</p>
+            </section>
+          ) : null}
 
           <p className="podcasts-show-detail-episodes-label mt-4">
             {t('audiobooks.chaptersLabel')}
