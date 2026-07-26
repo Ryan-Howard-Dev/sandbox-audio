@@ -45,15 +45,19 @@ export interface AudiobookDiscoverPanelProps {
 
 type SourceFilter = 'all' | AudiobookCatalogSource;
 
-function BookCard({
-  book,
-  onOpen,
-}: {
-  book: AudiobookCatalogBook;
-  onOpen: () => void;
-}) {
-  // Backfill a real cover from Open Library when the catalog gave none, so LibriVox / Golden
-  // Audiobooks titles don't show a blank gradient.
+/**
+ * Cover for a catalog book, backfilled from Open Library when the source gave none.
+ *
+ * This backfill used to live inline in BookCard only. Opening a book whose catalog entry has no
+ * artwork — every LibriVox result without an Archive.org id — then showed the gradient
+ * placeholder on the detail page with no lookup ever attempted, which is why the grid could show
+ * a cover the detail view could not. Shared so the two cannot drift again.
+ *
+ * Returns the raw URL for playback metadata (lock screen) and the proxied one for display.
+ */
+function useAudiobookCover(
+  book: Pick<AudiobookCatalogBook, 'title' | 'author' | 'artworkUrl'>,
+): { raw?: string; display?: string } {
   const [resolvedArt, setResolvedArt] = useState<string | undefined>(book.artworkUrl);
   useEffect(() => {
     setResolvedArt(book.artworkUrl);
@@ -67,7 +71,17 @@ function BookCard({
     };
   }, [book.artworkUrl, book.title, book.author]);
 
-  const art = proxiedArtworkUrl(resolvedArt);
+  return { raw: resolvedArt, display: proxiedArtworkUrl(resolvedArt) };
+}
+
+function BookCard({
+  book,
+  onOpen,
+}: {
+  book: AudiobookCatalogBook;
+  onOpen: () => void;
+}) {
+  const art = useAudiobookCover(book).display;
   return (
     <article
       className="podcasts-discover-card podcasts-discover-card--clickable touch-manipulation"
@@ -126,7 +140,11 @@ function BookDetailView({
   onError?: (message: string) => void;
 }) {
   const { t } = useTranslation();
-  const art = proxiedArtworkUrl(book.artworkUrl);
+  const cover = useAudiobookCover(book);
+  const art = cover.display;
+  // Carry the resolved cover into playback too, so these books get lock-screen art rather than
+  // inheriting the same blank the hero used to show.
+  const bookWithCover = cover.raw ? { ...book, artworkUrl: cover.raw } : book;
 
   return (
     <section className="podcasts-library-show-detail audiobooks-book-detail">
@@ -199,8 +217,8 @@ function BookDetailView({
               chapter={chapter}
               bookTitle={book.title}
               bookAuthor={book.author}
-              bookArtworkUrl={book.artworkUrl}
-              envelope={catalogChapterEnvelope(chapter, book)}
+              bookArtworkUrl={bookWithCover.artworkUrl}
+              envelope={catalogChapterEnvelope(chapter, bookWithCover)}
               activeEnvelopeId={activeEnvelopeId}
               onPlay={() => onPlayChapter(chapter)}
               onPrimePlay={
