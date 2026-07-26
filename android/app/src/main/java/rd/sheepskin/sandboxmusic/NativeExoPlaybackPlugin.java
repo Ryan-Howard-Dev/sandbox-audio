@@ -1268,7 +1268,14 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 Runnable finishSwitch =
                     () -> {
                         if (!resetQueue && gaplessEnabled && p.getMediaItemCount() > 0) {
-                            int idx = indexOfTrack(p, trackMetaKey(trimmed, lastEnvelopeId), trimmed);
+                            /*
+                             * URL only. This runnable is deferred by the crossfade fade, so
+                             * lastEnvelopeId may already belong to a LATER playUrl call by the
+                             * time it runs. Keying off it matched the wrong queue item and
+                             * seeked there — tapping one song played a different one. The URL
+                             * is the authoritative answer to "which track was asked for" here.
+                             */
+                            int idx = indexOfUrl(p, trimmed);
                             if (idx >= 0) {
                                 // Store before seeking: the seek fires onMediaItemTransition, which
                                 // reads this meta back out.
@@ -1402,7 +1409,9 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 }
 
                 String envelopeId = call.getString("envelopeId");
-                if (indexOfTrack(p, trackMetaKey(trimmed, envelopeId), trimmed) >= 0) {
+                // URL only here too, for the same reason: a dedupe false-positive silently drops
+                // a track from the queue, which is worse than enqueueing it twice.
+                if (indexOfUrl(p, trimmed) >= 0) {
                     JSObject ret = new JSObject();
                     ret.put("ok", true);
                     ret.put("alreadyQueued", true);
