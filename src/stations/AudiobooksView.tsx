@@ -304,9 +304,12 @@ export default function AudiobooksView({
                   type="button"
                   className="btn-accent touch-manipulation h-10 px-4 rounded-lg font-mono text-[10px] uppercase tracking-wider inline-flex items-center gap-2"
                   onClick={() => playBook(selected)}
+                  aria-label={t('audiobooks.playAlbum', { title: selected.title })}
                 >
-                  <Play className="w-3.5 h-3.5" />
-                  {t('audiobooks.playAlbum', { title: selected.title })}
+                  {/* Short visible label. Interpolating the full title made long book names
+                      overflow the button and overlap the text around it. */}
+                  <Play className="w-3.5 h-3.5 shrink-0" />
+                  {t('audiobooks.playBook')}
                 </button>
               </div>
             </div>

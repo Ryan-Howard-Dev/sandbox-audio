@@ -1780,6 +1780,7 @@
     "permissionDeniedHint": "Allow music and audio access, then scan again. Nothing is copied or deleted.",
     "requestPermission": "Allow audio access",
     "playAlbum": "Play {title}",
+    "playBook": "Play",
     "playChapter": "Play chapter {title}",
     "yourBooks": "Your audiobooks",
     "chaptersCount": "{count, plural, one {# chapter} other {# chapters}}",

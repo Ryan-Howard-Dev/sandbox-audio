@@ -444,9 +444,8 @@ export default function PodcastsView({
       <header className="page-header-row mb-0">
         <div className="min-w-0 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-accent mb-1">
-              Global discovery
-            </p>
+            {/* No eyebrow. "Global discovery" labelled the page for nobody — the tabs below
+                already say what this is, and Music has no equivalent. */}
             <h1 className="font-display text-[1.75rem] font-bold tracking-tight leading-none text-[var(--text)]">
               Podcasts
             </h1>
