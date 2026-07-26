@@ -5091,6 +5091,22 @@ export default function SandboxShell() {
                 : undefined,
         };
       },
+      getQueueProbe: () => {
+        const queue = playQueueRef.current ?? [];
+        return {
+          index: queueIndexRef.current,
+          length: queue.length,
+          envelopeIds: queue.map((t) => t?.envelopeId ?? ''),
+        };
+      },
+      // The same action the player button, car mode and media shortcuts call — routed through
+      // shortcutCtxRef like those do, so this probe cannot drift from what a user's tap does.
+      skipNext: () => {
+        const queue = playQueueRef.current ?? [];
+        if (queue.length < 2) return false;
+        shortcutCtxRef.current.skipForward();
+        return true;
+      },
       thumbUpCurrent: () => {
         const env = audio.envelope ?? audioEnvelopeRef.current ?? sessionEnvelopeRef.current;
         if (!env?.envelopeId?.trim()) return false;

@@ -100,6 +100,12 @@ export type E2ePlaybackProbe = {
   nativeState?: string;
 };
 
+export type E2eQueueProbe = {
+  index: number;
+  length: number;
+  envelopeIds: string[];
+};
+
 export type E2eNavTab =
   | 'home'
   | 'locker'
@@ -143,6 +149,10 @@ export type E2eHandlers = {
   /** Current album drill track list (after openAlbum). */
   listAlbumTracks?: () => { title: string; id: string }[];
   getPlaybackProbe?: () => E2ePlaybackProbe;
+  /** Current play queue identity — index, length, and envelope ids in order. */
+  getQueueProbe?: () => E2eQueueProbe;
+  /** The app's own next-track action, same one the player button and car mode call. */
+  skipNext?: () => boolean;
   toggleVinylMode?: () => HeroDisplayMode;
   setHeroDisplayMode?: (mode: HeroDisplayMode) => void;
   getHeroDisplayMode?: () => HeroDisplayMode;
@@ -1412,6 +1422,67 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         `index=${final.queueIndex ?? -1} title=${final.title ?? 'none'} envelopeId=${final.envelopeId ?? 'none'} indexChanges=${indexChanges} landed=${landedOnSecond} metadata=${metadataFollowed} settled=${settled}`,
       );
       return pass;
+    }
+    /*
+     * The skip assertion the emulator gate cannot make. play-direct-queue drives native directly,
+     * so the JS play queue is empty and the transition handler never runs — exactly the code that
+     * broke twice. This runs against whatever the app is actually playing, so it exercises the
+     * real queue, the real skip action, and the real native reconciliation.
+     *
+     * Asserts per skip: the index advances by exactly one, the playing track is the queue entry
+     * at that index, and the index does not land anywhere else on the way. "Jumped around then
+     * settled" is the symptom, so settling is not sufficient.
+     */
+    case 'queue-skip-probe': {
+      const skips = Math.max(1, Number(params.get('skips') ?? '1') || 1);
+      if (!handlers.getQueueProbe || !handlers.skipNext || !handlers.getPlaybackProbe) {
+        logE2e('queue-skip', false, 'queue probe handlers not registered');
+        return false;
+      }
+      const start = handlers.getQueueProbe();
+      if (start.length < 2) {
+        logE2e('queue-skip', false, `queue too short (length=${start.length}) — play an album first`);
+        return false;
+      }
+
+      for (let n = 0; n < skips; n++) {
+        const before = handlers.getQueueProbe();
+        const expectedIndex = before.index + 1;
+        if (expectedIndex >= before.length) break;
+        const expectedId = before.envelopeIds[expectedIndex];
+
+        if (!handlers.skipNext()) {
+          logE2e('queue-skip', false, `skip ${n + 1} refused at index=${before.index}`);
+          return false;
+        }
+
+        const deadline = Date.now() + 15_000;
+        const seen = new Set<number>();
+        let probe = handlers.getQueueProbe();
+        while (Date.now() < deadline) {
+          await new Promise((r) => setTimeout(r, 250));
+          probe = handlers.getQueueProbe();
+          if (probe.index !== before.index) seen.add(probe.index);
+          if (probe.index === expectedIndex && Date.now() > deadline - 13_000) break;
+        }
+
+        const strayIndexes = [...seen].filter((i) => i !== expectedIndex);
+        const playing = handlers.getPlaybackProbe();
+        const identityOk = !expectedId || playing.envelopeId === expectedId;
+        const ok = probe.index === expectedIndex && strayIndexes.length === 0 && identityOk;
+        if (!ok) {
+          logE2e(
+            'queue-skip',
+            false,
+            `skip ${n + 1}: index=${probe.index} expected=${expectedIndex} stray=[${strayIndexes.join(',')}] playing=${playing.envelopeId ?? 'none'} expectedId=${expectedId ?? 'none'} title=${playing.title}`,
+          );
+          return false;
+        }
+      }
+
+      const end = handlers.getQueueProbe();
+      logE2e('queue-skip', true, `${skips} skip(s) clean, index=${end.index}/${end.length}`);
+      return true;
     }
     case 'mobile-play': {
       const query = params.get('query')?.trim();
