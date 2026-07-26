@@ -235,8 +235,10 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 900000
           script: |
-            export SANDBOX_ANDROID_E2E=true
-            npm run build:android:apk
+            # NOTE: android-emulator-runner runs each script line in a separate
+            # `sh -c`, so `export` on its own line is lost before the build runs.
+            # The variable must be set inline on the command that needs it.
+            SANDBOX_ANDROID_E2E=true npm run build:android:apk
             chmod +x scripts/android-smoke-e2e.sh
             SKIP_BUILD=1 scripts/android-smoke-e2e.sh
 
@@ -278,8 +280,10 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 900000
           script: |
-            export SANDBOX_ANDROID_E2E=true
-            npm run build:android:apk
+            # NOTE: android-emulator-runner runs each script line in a separate
+            # `sh -c`, so `export` on its own line is lost before the build runs.
+            # The variable must be set inline on the command that needs it.
+            SANDBOX_ANDROID_E2E=true npm run build:android:apk
             chmod +x scripts/android-playback-e2e.sh
             SKIP_BUILD=1 scripts/android-playback-e2e.sh
       - name: Upload playback E2E report
