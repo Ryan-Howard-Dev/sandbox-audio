@@ -567,11 +567,24 @@ export async function fetchFollowedArtistFeed(
     const allAnnouncements: FollowedFeedAnnouncement[] = [];
 
     for (const artist of artists) {
-      const [catalog, locker, mbSlice] = await Promise.all([
-        fetchCatalogReleases(artist),
-        Promise.resolve(fetchLockerReleases(artist)),
-        fetchMbArtistSlice(artist),
-      ]);
+      /*
+       * Per-artist isolation. This loop used to sit bare inside the outer try, so one artist
+       * throwing — a MusicBrainz timeout, a malformed payload — discarded every result already
+       * gathered and dropped the whole feed back to stale cache. One bad artist should cost you
+       * that artist, not the feed.
+       */
+      let catalog: FollowedFeedRelease[] = [];
+      let locker: FollowedFeedRelease[] = [];
+      let mbSlice: MbArtistSlice = { recent: [], events: [], announcements: [] };
+      try {
+        [catalog, locker, mbSlice] = await Promise.all([
+          fetchCatalogReleases(artist),
+          Promise.resolve(fetchLockerReleases(artist)),
+          fetchMbArtistSlice(artist),
+        ]);
+      } catch {
+        continue;
+      }
 
       // This feed is for genuinely NEW releases, so tracks already sitting in the
       // locker do not belong here — surfacing "Your library" rows made a discovery
