@@ -34,6 +34,12 @@ import { lookupBundledTrackArtistLine } from './albumBundledCredits';
 import { catalogArtworkUrl, useDirectMediaUpstream } from './catalogDirect';
 import { extractEmbeddedCover } from './embeddedCover';
 import { fetchWithTimeout } from './fetchWithTimeout';
+import {
+  measureLoudness,
+  parseReplayGainPeakDbfs,
+  parseReplayGainTagDb,
+  trackGainFromLoudness,
+} from './replayGainIngest';
 import type { MediaEnvelope } from './sandboxLayer1';
 import { loadDeviceCapacity } from './sandboxSettings';
 import { DEVICE_CAPACITY_OPTIONS, type DeviceCapacity } from './stations/theme';
@@ -2308,6 +2314,10 @@ export interface Id3Tags {
   initialKey?: string;
   /** Unsynchronised lyrics (USLT frame). */
   lyrics?: string;
+  /** TXXX replaygain_track_gain, in dB. Authoritative when present — no estimate needed. */
+  replayGainTrackGainDb?: number;
+  /** TXXX replaygain_track_peak, converted from linear to dBFS. */
+  replayGainTrackPeakDbfs?: number;
   /** True only when IDB bytes or Android native cache exist — set at vault load. */
   offlineReady?: boolean;
 }
@@ -2321,18 +2331,39 @@ function readSynchsafeInt(view: DataView, offset: number): number {
   );
 }
 
+/** ID3 encodings 1 (UTF-16 + BOM) and 2 (UTF-16BE) use two-byte characters and terminators. */
+function isWideId3Encoding(encoding: number): boolean {
+  return encoding === 1 || encoding === 2;
+}
+
+/**
+ * Offset of the string terminator at or after `start`, or the end of the buffer.
+ *
+ * Scanning a UTF-16 string one byte at a time stops at the zero high byte of its first ASCII
+ * character, so `Test Track` decoded as `T`. Every UTF-16-tagged file — the Windows Media Player
+ * and older Mp3tag default — imported with one-character titles and artists.
+ */
+function id3TerminatorIndex(encoding: number, bytes: Uint8Array, start = 0): number {
+  if (isWideId3Encoding(encoding)) {
+    for (let i = start; i + 1 < bytes.length; i += 2) {
+      if (bytes[i] === 0 && bytes[i + 1] === 0) return i;
+    }
+    return bytes.length;
+  }
+  for (let i = start; i < bytes.length; i++) {
+    if (bytes[i] === 0) return i;
+  }
+  return bytes.length;
+}
+
 function decodeId3Bytes(encoding: number, bytes: Uint8Array): string {
   if (bytes.length === 0) return '';
-  let end = bytes.length;
-  for (let i = 0; i < bytes.length; i++) {
-    if (bytes[i] === 0) {
-      end = i;
-      break;
-    }
-  }
-  const slice = bytes.subarray(0, end);
-  if (encoding === 1 || encoding === 2) {
+  const slice = bytes.subarray(0, id3TerminatorIndex(encoding, bytes));
+  if (encoding === 1) {
     return new TextDecoder('utf-16').decode(slice).replace(/\0/g, '').trim();
+  }
+  if (encoding === 2) {
+    return new TextDecoder('utf-16be').decode(slice).replace(/\0/g, '').trim();
   }
   if (encoding === 3) {
     return new TextDecoder('utf-8').decode(slice).trim();
@@ -2349,10 +2380,28 @@ function decodeId3Text(data: Uint8Array): string {
 function decodeId3Lyrics(data: Uint8Array): string {
   if (data.length < 5) return '';
   const encoding = data[0];
-  let offset = 4;
-  while (offset < data.length && data[offset] !== 0) offset++;
-  if (offset < data.length) offset++;
-  return decodeId3Bytes(encoding, data.subarray(offset));
+  const terminator = id3TerminatorIndex(encoding, data, 4);
+  const textStart = terminator + (isWideId3Encoding(encoding) ? 2 : 1);
+  if (textStart >= data.length) return '';
+  return decodeId3Bytes(encoding, data.subarray(textStart));
+}
+
+/**
+ * TXXX: encoding + null-terminated description + value, both in that encoding.
+ *
+ * The terminator is two bytes wide for the UTF-16 encodings, so scanning byte-by-byte would
+ * split a description whose last character has a zero high byte.
+ */
+function decodeId3UserText(data: Uint8Array): { description: string; value: string } | null {
+  if (data.length < 2) return null;
+  const encoding = data[0];
+  const terminator = id3TerminatorIndex(encoding, data, 1);
+  if (terminator >= data.length) return null;
+  const valueStart = terminator + (isWideId3Encoding(encoding) ? 2 : 1);
+  return {
+    description: decodeId3Bytes(encoding, data.subarray(1, terminator)),
+    value: decodeId3Bytes(encoding, data.subarray(valueStart)),
+  };
 }
 
 /** Minimal ID3v2 tag reader for common text frames. */
@@ -2390,6 +2439,16 @@ export function parseId3v2Tags(buffer: ArrayBuffer): Id3Tags {
     else if (id === 'USLT' && !tags.lyrics) {
       const lyrics = decodeId3Lyrics(new Uint8Array(buffer, offset, frameSize));
       if (lyrics) tags.lyrics = lyrics;
+    } else if (id === 'TXXX') {
+      const user = decodeId3UserText(new Uint8Array(buffer, offset, frameSize));
+      const key = user?.description.trim().toLowerCase();
+      if (key === 'replaygain_track_gain' && tags.replayGainTrackGainDb == null) {
+        const gain = parseReplayGainTagDb(user?.value);
+        if (gain != null) tags.replayGainTrackGainDb = gain;
+      } else if (key === 'replaygain_track_peak' && tags.replayGainTrackPeakDbfs == null) {
+        const peak = parseReplayGainPeakDbfs(user?.value);
+        if (peak != null) tags.replayGainTrackPeakDbfs = peak;
+      }
     }
     offset += frameSize;
   }
@@ -2645,6 +2704,14 @@ type LockerRow = {
   trackSoloists?: string;
   lyrics?: string;
   addedAt?: number;
+  /**
+   * Loudness-normalization gain in dB, applied as-is at playback.
+   *
+   * Distinct from the legacy `replayGainDb`, which held peak dBFS despite the name and played
+   * back inverted. Rows written before this fix have no `trackGainDb`, so they read as "unknown"
+   * and get the documented fallback until re-imported — never the old wrong value.
+   */
+  trackGainDb?: number | null;
 };
 
 let lockerCache: LockerEntry[] | null = null;
@@ -4331,7 +4398,7 @@ export async function saveLockerBlobFromNativeFile(
     addedAt: existingRow?.addedAt ?? Date.now(),
     trackNumber: meta.trackNumber ?? existingRow?.trackNumber,
     discNumber: meta.discNumber ?? existingRow?.discNumber,
-    replayGainDb: (existingRow as LockerRow & { replayGainDb?: number | null })?.replayGainDb ?? null,
+    trackGainDb: existingRow?.trackGainDb ?? null,
     creditsJson: existingRow?.creditsJson,
     albumArt: existingRow?.albumArt,
   };
@@ -4377,25 +4444,34 @@ export async function saveLockerBlobFromNativeFile(
   return { entry: out, bytes: nativeBytes };
 }
 
-/** Lightweight peak scan — placeholder ReplayGain dB for future normalization. */
-async function estimateReplayGainDb(blob: Blob): Promise<number | undefined> {
+/**
+ * Loudness-based track gain, in dB, ready for playback to apply directly.
+ *
+ * Tags win when the file carries them: a tagger measured the whole file with a real R128/RG
+ * implementation, which beats an RMS estimate over the first few minutes and costs no decode.
+ * Otherwise measure. Returns undefined when neither is possible — playback then falls back to
+ * the documented flat gain rather than to a wrong number.
+ */
+async function deriveTrackGainDb(
+  blob: Blob,
+  tags?: Pick<Id3Tags, 'replayGainTrackGainDb' | 'replayGainTrackPeakDbfs'>,
+): Promise<number | undefined> {
+  const tagged = tags?.replayGainTrackGainDb;
+  if (tagged != null && Number.isFinite(tagged)) return tagged;
   if (typeof AudioContext === 'undefined') return undefined;
   // Full decode on large files OOMs mobile WebView during background downloads.
   if (blob.size > 6 * 1024 * 1024) return undefined;
   try {
     const ctx = new AudioContext();
     const audio = await ctx.decodeAudioData(await blob.slice(0, 6 * 1024 * 1024).arrayBuffer());
-    let peak = 0;
+    const channels: Float32Array[] = [];
     for (let ch = 0; ch < audio.numberOfChannels; ch++) {
-      const data = audio.getChannelData(ch);
-      for (let i = 0; i < data.length; i += 128) {
-        const v = Math.abs(data[i] ?? 0);
-        if (v > peak) peak = v;
-      }
+      channels.push(audio.getChannelData(ch));
     }
+    const measured = measureLoudness(channels);
     await ctx.close();
-    if (peak <= 0) return undefined;
-    return Math.round(20 * Math.log10(peak) * 10) / 10;
+    if (!measured) return undefined;
+    return trackGainFromLoudness(measured) ?? undefined;
   } catch {
     return undefined;
   }
@@ -4428,20 +4504,22 @@ export async function saveLockerBlob(
 
   await assertLockerCapacityForUpload(file.size);
 
-  const replayGainDb =
-    meta.skipHeavyAnalysis || file.size > 6 * 1024 * 1024
-      ? undefined
-      : await estimateReplayGainDb(file);
-
   let lyrics: string | undefined;
   let trackNumber = meta.trackNumber;
   let discNumber = meta.discNumber;
+  let id3: Id3Tags | undefined;
   if (file instanceof File) {
-    const id3 = await readId3FromFile(file);
+    id3 = await readId3FromFile(file);
     lyrics = id3.lyrics?.trim() || undefined;
     if (trackNumber == null) trackNumber = parseId3Position(id3.track).index;
     if (discNumber == null) discNumber = parseId3Position(id3.disc).index;
   }
+
+  // A ReplayGain tag is free to read, so honour it even when heavy analysis is off.
+  const trackGainDb =
+    meta.skipHeavyAnalysis || file.size > 6 * 1024 * 1024
+      ? id3?.replayGainTrackGainDb
+      : await deriveTrackGainDb(file, id3);
 
   if (isAndroid()) {
     const { registerLockerBlobFromBlob, probeNativeLockerContentUri } = await import(
@@ -4471,7 +4549,9 @@ export async function saveLockerBlob(
     addedAt: existingRow?.addedAt ?? Date.now(),
     trackNumber: trackNumber ?? existingRow?.trackNumber,
     discNumber: discNumber ?? existingRow?.discNumber,
-    replayGainDb: replayGainDb ?? (existingRow as LockerRow & { replayGainDb?: number | null })?.replayGainDb ?? null,
+    trackGainDb: trackGainDb ?? existingRow?.trackGainDb ?? null,
+    // Legacy peak-as-gain value. Preserved (locker rows are user data, ADR-001) but never read.
+    replayGainDb: (existingRow as LockerRow & { replayGainDb?: number | null })?.replayGainDb ?? null,
     lyrics: lyrics ?? existingRow?.lyrics,
     creditsJson: existingRow?.creditsJson,
     albumArt: existingRow?.albumArt,
@@ -4530,7 +4610,7 @@ export async function saveLockerFile(
 
   await assertLockerCapacityForUpload(file.size);
 
-  const replayGainDb = await estimateReplayGainDb(file);
+  const trackGainDb = await deriveTrackGainDb(file, id3);
 
   const resolvedTitle =
     title?.trim() ||
@@ -4554,7 +4634,7 @@ export async function saveLockerFile(
     audioBlob: file,
     url: URL.createObjectURL(file),
     addedAt: Date.now(),
-    replayGainDb: replayGainDb ?? null,
+    trackGainDb: trackGainDb ?? null,
     lyrics: id3.lyrics?.trim() || undefined,
     initialKey: id3.initialKey?.trim() || undefined,
   };
