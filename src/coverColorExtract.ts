@@ -142,6 +142,23 @@ function buildColorPalette(
 ): CoverArtPalette {
   const tertiaryHue = (primaryHue + 120) % 360;
   const accentHue = (primaryHue + 180) % 360;
+
+  /*
+   * Tint, not stage lighting. This used to emit 72% saturation at 50% lightness and 0.52 alpha
+   * — four times the opacity the monochrome path uses (0.12) — so any colourful cover lit the
+   * whole screen and glared in a dark room. Three changes keep the album's identity without
+   * the burn:
+   *
+   *  - Saturation well below the source hue. A wash reads as "this album's colour" long before
+   *    it reaches full chroma, and past roughly 45% it starts to vibrate against text.
+   *  - Lightness follows the artwork instead of sitting at a fixed 50%, so a dark cover gets a
+   *    dark wash rather than being brightened by its own tint.
+   *  - Alpha scales DOWN as the cover gets lighter. Bright art already carries the room; adding
+   *    an opaque wash on top is what made pale covers unreadable.
+   */
+  const lightness = clamp(avgLightness * 0.55 + 12, 16, 40);
+  const alpha = clamp(0.26 - (avgLightness / 100) * 0.12, 0.12, 0.26);
+
   return {
     isMonochrome: false,
     primaryHue,
@@ -149,11 +166,17 @@ function buildColorPalette(
     tertiaryHue,
     accentHue,
     avgLightness,
-    glowPrimary: `hsl(${primaryHue.toFixed(0)} 72% 50% / 0.52)`,
-    glowSecondary: `hsl(${secondaryHue.toFixed(0)} 55% 42% / 0.32)`,
+    glowPrimary: `hsl(${primaryHue.toFixed(0)} 42% ${lightness.toFixed(0)}% / ${alpha.toFixed(2)})`,
+    glowSecondary: `hsl(${secondaryHue.toFixed(0)} 32% ${(lightness * 0.8).toFixed(0)}% / ${(
+      alpha * 0.62
+    ).toFixed(2)})`,
     trackGlowA: `hsl(${primaryHue.toFixed(0)} 22% 12% / 0.08)`,
     trackGlowB: `hsl(${secondaryHue.toFixed(0)} 16% 9% / 0.05)`,
   };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 function analyzeCoverPixels(data: Uint8ClampedArray): CoverArtPalette {
@@ -276,8 +299,10 @@ export function seedFallbackGlowStyle(seed: string): Record<string, string> {
   const { primary, secondary } = seedGradientUniverseHues(seed);
   return {
     ...seedGradientGlowStyle(seed),
-    '--locker-cover-glow': `hsl(${primary} 72% 50% / 0.52)`,
-    '--locker-cover-glow-soft': `hsl(${secondary} 55% 42% / 0.32)`,
+    // Matched to buildColorPalette — an art-less album should not glare harder than one
+    // with a cover just because its colour came from a seed.
+    '--locker-cover-glow': `hsl(${primary} 42% 30% / 0.22)`,
+    '--locker-cover-glow-soft': `hsl(${secondary} 32% 24% / 0.14)`,
   };
 }
 

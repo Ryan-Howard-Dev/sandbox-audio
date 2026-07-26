@@ -3316,6 +3316,16 @@ export default function LocalView({
                             Missing
                           </span>
                         ) : null}
+                        {/* Downloaded tick. The row could only ever say what was WRONG
+                            ("Missing"); there was no way to see at a glance which tracks are
+                            actually on the device. Dim by default — it is reassurance, not an
+                            alert, and a row of bright ticks would fight the artwork. */}
+                        {groupHasPlayable ? (
+                          <Check
+                            className="locker-album-track-downloaded shrink-0"
+                            aria-label="Downloaded"
+                          />
+                        ) : null}
                       </span>
                       {trackArtistLine ? (
                         <span className="locker-album-track-subartist">

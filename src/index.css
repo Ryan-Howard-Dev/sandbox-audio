@@ -13864,6 +13864,21 @@ body:has(#root > .onboarding-root) {
   color: var(--accent-brand);
 }
 
+/* Downloaded tick on an album track row. Deliberately quiet: this is ambient reassurance on
+   the majority of rows in a locker, so it reads as texture rather than a row of alerts. No
+   accent colour, no fill, and it lifts only on the active row. */
+.locker-album-track-downloaded {
+  width: 0.75rem;
+  height: 0.75rem;
+  stroke-width: 3;
+  color: var(--text-dim);
+  opacity: 0.55;
+}
+
+.locker-album-track-row.is-active .locker-album-track-downloaded {
+  opacity: 0.85;
+}
+
 .local-offline-badge {
   display: inline-flex;
   align-items: center;
