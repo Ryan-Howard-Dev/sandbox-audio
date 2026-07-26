@@ -143,12 +143,18 @@ upstream_stream_unavailable() {
     | grep -Eq 'Received HTML instead of audio|no stream available|is not valid JSON'
 }
 
+# Asserts on markers that survive a production build. `[handlePlayEnvelope]` does not — it is
+# behind import.meta.env.DEV and is stripped from the APK CI actually tests, so the old spine
+# check could never pass here regardless of whether playback worked.
 assert_play_spine_reached() {
-  local spine
-  spine="$(adb -s "$EMU_SERIAL" logcat -d -s 'Capacitor/Console:I' 'Capacitor/Plugin:V' -t 12000 2>/dev/null || true)"
-  update_play_spine_seen "$spine"
-  (( SPINE_HANDLE == 1 )) || { echo 'spine: missing handlePlayEnvelope'; return 1; }
-  (( SPINE_PLAYURL == 1 )) || { echo 'spine: missing NativeExoPlayback.playUrl'; return 1; }
+  local logs
+  logs="$(adb -s "$EMU_SERIAL" logcat -d -t 12000 2>/dev/null || true)"
+  grep -Eq 'SandboxE2E.*AREA=play-spine.*invoke' <<<"$logs" \
+    || { echo 'spine: play-artist-track never invoked the play handler'; return 1; }
+  grep -Eq 'SandboxE2E.*AREA=play-spine.*returned true' <<<"$logs" \
+    || { echo 'spine: play handler did not resolve a playable envelope'; return 1; }
+  grep -Fq 'methodName: playUrl' <<<"$logs" \
+    || { echo 'spine: NativeExoPlayback.playUrl was never called'; return 1; }
   return 0
 }
 

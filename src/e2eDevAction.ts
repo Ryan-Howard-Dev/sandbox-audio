@@ -1490,7 +1490,16 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         logE2e('artist-track-play', false, 'missing artist/track or handler');
         return false;
       }
+      /*
+       * Spine markers. The gate used to assert the play path via `[handlePlayEnvelope]`, which
+       * is behind import.meta.env.DEV and therefore stripped from the production APK that CI
+       * builds — so that assertion could never pass on the artifact it tested. These go
+       * through logE2e, which ships whenever the E2E bridge does, and let the gate prove
+       * intent -> resolve -> play was driven even when the upstream audio fetch fails.
+       */
+      logE2e('play-spine', true, `invoke artist=${artist} track=${track}`);
       const played = await handlers.playArtistTrack(artist, track);
+      logE2e('play-spine', played, `playArtistTrack returned ${played}`);
       if (!played) {
         logE2e('artist-track-play', false, `artist=${artist} track=${track} play=false`);
         return false;
