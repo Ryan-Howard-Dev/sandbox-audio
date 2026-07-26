@@ -1043,11 +1043,22 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
   releaseBootGateForE2e();
   switch (action) {
     case 'skip-onboarding': {
-      saveOnboardingComplete(true);
-      saveServerSetupComplete(true);
-      handlers.completeOnboarding?.();
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('sandbox-e2e-onboarding-complete'));
+      /*
+       * The PASS log is last, so a throw anywhere above it made this step silently produce
+       * nothing — indistinguishable from the deep link never arriving. Report the failure
+       * instead of letting it vanish; the gate blocks on this step, so a mute failure here
+       * stops every later assertion from ever running.
+       */
+      try {
+        saveOnboardingComplete(true);
+        saveServerSetupComplete(true);
+        handlers.completeOnboarding?.();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('sandbox-e2e-onboarding-complete'));
+        }
+      } catch (err) {
+        logE2e('onboarding', false, err instanceof Error ? err.message : String(err));
+        return false;
       }
       logE2e('onboarding', true, 'skipped');
       return true;
@@ -2994,6 +3005,12 @@ export async function handleE2eUrl(raw: string): Promise<boolean> {
 function queueOrHandleE2eUrl(raw: string): void {
   markBootInteractiveFromAutomation();
   const parsed = parseE2eUrl(raw);
+  /*
+   * Log arrival before dispatch. Without this, a step that never reports PASS is ambiguous
+   * between "the deep link never reached the app" and "it arrived and the handler threw" —
+   * which need opposite fixes, and cost a CI round trip each time they are guessed at.
+   */
+  logE2e('deeplink', Boolean(parsed), `raw=${raw} action=${parsed?.action ?? 'UNPARSED'}`);
   // Bootstrap / probe actions must not wait behind the sandboxLayer3 chunk on large vaults.
   if (parsed?.action === 'skip-onboarding' || parsed?.action === 'probe-handlers' || parsed?.action === 'probe-station-open' || parsed?.action === 'probe-all-stations-open') {
     void enqueueE2e(() => handleE2eAction(parsed.action, parsed.params));
