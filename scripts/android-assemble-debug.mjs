@@ -13,4 +13,20 @@ const result = spawnSync(gradlew, ['assembleDebug'], {
   shell: isWin,
 });
 
+/*
+ * Report a failed *spawn* rather than exiting silently. With stdio:'inherit' a spawn error
+ * prints nothing at all, so `gradlew` missing its executable bit surfaced as exit 1 in ~170ms
+ * with an empty log — which is how every CI emulator job failed without saying why.
+ */
+if (result.error) {
+  console.error(`[android-assemble-debug] could not run ${gradlew}: ${result.error.message}`);
+  if (result.error.code === 'EACCES') {
+    console.error(
+      '[android-assemble-debug] android/gradlew is not executable. ' +
+        'Fix permanently with: git update-index --chmod=+x android/gradlew',
+    );
+  }
+  process.exit(1);
+}
+
 process.exit(result.status ?? 1);
