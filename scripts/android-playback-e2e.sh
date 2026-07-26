@@ -134,6 +134,17 @@ wait_logcat 'SandboxE2E.*AREA=direct-url-play RESULT=PASS' 120 \
   || { echo 'Playback E2E FAIL: direct-url-play (open-source audio did not decode)'; diagnose_failure 'direct-url-play'; exit 1; }
 echo 'DIRECT AUDIO PASS: Internet Archive stream decoded and advanced'
 
+# The gapless boundary — where both of today's playback regressions lived. Single-track
+# playback cannot see either: skipping jumped between tracks, and the previous item's metadata
+# followed the new one onto the lock screen. This queues two items with identical audio and
+# distinct metadata, seeks to the end of the first, and asserts the transition lands on index 1
+# exactly once with the SECOND item's metadata.
+adb -s "$EMU_SERIAL" logcat -c >/dev/null
+deeplink "play-direct-queue?url=${direct_url}"
+wait_logcat 'SandboxE2E.*AREA=direct-queue RESULT=PASS' 150 \
+  || { echo 'Playback E2E FAIL: direct-queue (gapless boundary)'; diagnose_failure 'direct-queue'; exit 1; }
+echo 'GAPLESS BOUNDARY PASS: advanced to index 1 once, with the correct metadata'
+
 artist="$(python3 -c "import urllib.parse; print(urllib.parse.quote('Kanye West'))")"
 track="$(python3 -c "import urllib.parse; print(urllib.parse.quote('FATHER'))")"
 

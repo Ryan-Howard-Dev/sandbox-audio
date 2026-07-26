@@ -15,7 +15,9 @@ export function isE2eBridgeEnabled(): boolean {
 import { detectTVPlatform } from './tvDetection';
 import {
   getNativeExoPlaybackStatus,
+  nativeExoEnqueueNext,
   nativeExoPlayUrl,
+  nativeExoSeek,
   nativeExoResume,
   nativeExoStop,
   prepareNativeExoPlayback,
@@ -1314,6 +1316,93 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         'direct-url-play',
         pass,
         `url=${url} state=${status.state ?? playing.state ?? 'unknown'} pos=${pos.toFixed(2)}`,
+      );
+      return pass;
+    }
+    /*
+     * Gapless boundary assertion — the regression test for today's two playback failures.
+     *
+     * Both bugs lived at the queue transition: skipping jumped between tracks, and metadata
+     * from the previous item followed the new one (the lock screen kept the old title and
+     * cover). Neither is visible to a single-track playback check, which is all the gate had.
+     *
+     * Queues two items with identical audio but DISTINCT metadata, seeks near the end of the
+     * first, and lets gapless auto-advance fire for real. Identical audio is deliberate: it
+     * isolates metadata keying from stream resolution, so a failure here can only mean the
+     * queue advanced to the wrong item or carried the wrong metadata across the boundary.
+     */
+    case 'play-direct-queue': {
+      const url = params.get('url')?.trim();
+      if (!url) {
+        logE2e('direct-queue', false, 'missing url param');
+        return false;
+      }
+      const firstId = 'e2e-queue-one';
+      const secondId = 'e2e-queue-two';
+      try {
+        await nativeExoPlayUrl(url, {
+          autoPlay: true,
+          resetQueue: true,
+          gaplessEnabled: true,
+          envelopeId: firstId,
+          title: 'E2E TRACK ONE',
+          artist: 'E2E',
+        });
+        await nativeExoEnqueueNext(url, {
+          envelopeId: secondId,
+          title: 'E2E TRACK TWO',
+          artist: 'E2E',
+        });
+      } catch (err) {
+        logE2e('direct-queue', false, err instanceof Error ? err.message : String(err));
+        return false;
+      }
+
+      const started = await waitForExoPlaying(45_000);
+      if (!started.ok) {
+        logE2e('direct-queue', false, `first item never played state=${started.state ?? 'unknown'}`);
+        return false;
+      }
+
+      const before = await getNativeExoPlaybackStatus();
+      if ((before.queueLength ?? 0) < 2) {
+        logE2e('direct-queue', false, `enqueue failed queueLength=${before.queueLength ?? 0}`);
+        return false;
+      }
+      const duration = before.durationSecs ?? 0;
+      if (duration <= 3) {
+        logE2e('direct-queue', false, `duration too short to seek: ${duration}`);
+        return false;
+      }
+
+      // Seek near the end so the real auto-advance runs, rather than forcing an index change.
+      await nativeExoSeek(Math.max(0, duration - 2));
+
+      const deadline = Date.now() + 30_000;
+      let indexChanges = 0;
+      let lastIndex = before.queueIndex ?? 0;
+      let final = before;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 500));
+        const now = await getNativeExoPlaybackStatus();
+        const idx = now.queueIndex ?? lastIndex;
+        if (idx !== lastIndex) {
+          indexChanges += 1;
+          lastIndex = idx;
+        }
+        final = now;
+        if (idx >= 1 && Date.now() > deadline - 24_000) break;
+      }
+
+      const landedOnSecond = (final.queueIndex ?? 0) === 1;
+      const metadataFollowed = final.title === 'E2E TRACK TWO' || final.envelopeId === secondId;
+      // More than one index change is the "jumped around then landed" symptom.
+      const settled = indexChanges <= 1;
+      const pass = landedOnSecond && metadataFollowed && settled;
+      logE2e(
+        'direct-queue',
+        pass,
+        `index=${final.queueIndex ?? -1} title=${final.title ?? 'none'} envelopeId=${final.envelopeId ?? 'none'} indexChanges=${indexChanges} landed=${landedOnSecond} metadata=${metadataFollowed} settled=${settled}`,
       );
       return pass;
     }
