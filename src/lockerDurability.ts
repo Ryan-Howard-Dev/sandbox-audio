@@ -3,8 +3,8 @@
  * Metadata rows are never deleted when blobs go missing; tracks are marked hollow and re-queued.
  */
 
-import { Capacitor, registerPlugin } from '@capacitor/core';
-import type { NativeExoPlaybackPlugin } from './androidNativePlayback';
+import { Capacitor } from '@capacitor/core';
+import { NativeExoPlayback } from './nativePluginHandles';
 import { isAndroid } from './platformEnv';
 import { queueDeadLockerTrackReacquire } from './lockerDeadTrackReacquire';
 import {
@@ -14,8 +14,6 @@ import {
   type LockerEntry,
   readLockerEntriesForDurability,
 } from './lockerStorage';
-
-const NativeExoPlayback = registerPlugin<NativeExoPlaybackPlugin>('NativeExoPlayback');
 
 const MANIFEST_KEY = 'locker-integrity-manifest-v1';
 const MANIFEST_VERSION = 1 as const;

@@ -2,7 +2,8 @@
  * Android native ExoPlayer bridge — default decode path outside the WebView.
  */
 
-import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core';
+import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
+import { NativeExoPlayback } from './nativePluginHandles';
 import {
   loadAndroidNativePlaybackEnabled,
   loadAndroidUsbBitPerfectEnabled,
@@ -169,10 +170,6 @@ export function isNativeExoQueueEndedEvent(
 ): evt is NativeExoPlaybackEvent & { event: 'queueEnded' } {
   return evt.event === 'queueEnded';
 }
-
-const NativeExoPlayback = registerPlugin<NativeExoPlaybackPlugin>('NativeExoPlayback', {
-  web: () => import('./androidNativePlayback.web').then((m) => new m.NativeExoPlaybackWeb()),
-});
 
 export { NativeExoPlayback };
 

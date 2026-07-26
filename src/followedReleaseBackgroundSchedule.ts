@@ -3,7 +3,8 @@
  * When the alarm fires, JS runs a forced feed fetch and shows notifications if needed.
  */
 
-import { Capacitor, registerPlugin } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
+import { FollowedReleaseNative } from './nativePluginHandles';
 import { isAndroid, isCapacitorNative } from './platformEnv';
 import { getFollowedArtists, FOLLOWED_ARTISTS_CHANGE_EVENT } from './followedArtists';
 import {
@@ -19,19 +20,6 @@ import { FOLLOWED_FEED_MIN_FETCH_GAP_MS } from './followedReleasePolling';
 
 export const FOLLOWED_RELEASE_BACKGROUND_CHECK_EVENT =
   'sandbox-followed-release-background-check';
-
-interface FollowedReleaseNativePlugin {
-  schedulePeriodicCheck(options: { intervalHours: number }): Promise<void>;
-  cancelPeriodicCheck(): Promise<void>;
-  addListener(
-    eventName: 'backgroundCheck',
-    listenerFunc: () => void,
-  ): Promise<{ remove: () => void }>;
-}
-
-const FollowedReleaseNative = registerPlugin<FollowedReleaseNativePlugin>(
-  'FollowedReleaseNative',
-);
 
 function releaseInputs(releases: FollowedFeedRelease[]) {
   return releases.map((r) => ({

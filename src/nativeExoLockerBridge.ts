@@ -3,13 +3,11 @@
  */
 
 import type { MediaEnvelope } from './sandboxLayer1';
-import { Capacitor, registerPlugin } from '@capacitor/core';
-import type { NativeExoPlaybackPlugin } from './androidNativePlayback';
+import { Capacitor } from '@capacitor/core';
+import { NativeExoPlayback } from './nativePluginHandles';
 import { isBootUiInteractive } from './bootInteractivity';
 import { fetchWithTimeout } from './fetchWithTimeout';
 import { getLockerAudioBlob } from './lockerStorage';
-
-const NativeExoPlayback = registerPlugin<NativeExoPlaybackPlugin>('NativeExoPlayback');
 
 const CHUNK_BYTES = 512 * 1024;
 const HASH_RE = /^[a-f0-9]{64}$/i;

@@ -81,8 +81,13 @@ describe('podcast play path', () => {
     vi.doMock('./platformEnv', () => ({ isCapacitorNative: () => true }));
     vi.doMock('./tier34/client', () => ({
       getTier34BaseUrl: () => '',
+      getTier34LanBaseUrl: () => '',
       isTier34ReachableCached: () => false,
     }));
+    // The warn is the documented behaviour here, not noise: podcastPlaybackUrl throws without a
+    // server and safePodcastPlaybackUrl catches. Assert on it so a warn for any *other* reason is
+    // a failure rather than a line nobody reads.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { episodeEnvelope } = await import('./podcastSearch');
     const env = episodeEnvelope(
       {
@@ -94,6 +99,8 @@ describe('podcast play path', () => {
       'Joe Rogan Experience',
     );
     expect(env.url).toContain('youtube.com');
+    expect(String(warn.mock.calls[0]?.[1])).toContain('Sandbox Server required');
+    warn.mockRestore();
   });
 });
 
@@ -103,6 +110,10 @@ describe('safePodcastPlaybackUrl', () => {
   });
 
   it('unwraps relative proxy paths on native instead of localhost proxy', async () => {
+    // Without the reset, podcastRss stays bound to the previous test's mocks, isCapacitorNative()
+    // reads false, and the assertion below is satisfied by safePodcastPlaybackUrl's catch instead
+    // of the native branch this test is named for.
+    vi.resetModules();
     vi.doMock('./platformEnv', () => ({ isCapacitorNative: () => true }));
     vi.doMock('./tier34/client', () => ({
       getTier34BaseUrl: () => '',
