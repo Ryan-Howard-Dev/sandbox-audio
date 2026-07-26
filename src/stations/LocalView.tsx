@@ -3037,8 +3037,10 @@ export default function LocalView({
             if (onPlayAlbum) onPlayAlbum(envs, shuffle);
             else if (envs[0]) onPlay(envs[0]);
           }}
-          onOpenCollection={(collection) => {
-            openCollectionDetail(collection.key);
+          onOpenCollection={(collection, editionKey) => {
+            // Forward the edition the tile rendered. Dropping it fell through to
+            // preferredEdition(), so tapping one album opened a different one.
+            openCollectionDetail(collection.key, editionKey ?? null);
           }}
           onPlayCollection={(album) => playAlbum(album, false)}
           albumArtSrc={albumArtSrc}
