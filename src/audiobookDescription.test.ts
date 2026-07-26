@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('./airGapMode', () => ({ isAirGapEnabled: vi.fn(() => false) }));
+vi.mock('./fetchWithTimeout', () => ({ fetchWithTimeout: vi.fn() }));
 
 import { isAirGapEnabled } from './airGapMode';
+import { fetchWithTimeout } from './fetchWithTimeout';
 import {
   audiobookDescriptionKey,
   buildGoogleBooksQueryUrl,
@@ -52,13 +54,13 @@ describe('buildGoogleBooksQueryUrl', () => {
 describe('fetchAudiobookDescription', () => {
   beforeEach(() => {
     localStorage.clear();
+    vi.mocked(fetchWithTimeout).mockReset();
     vi.mocked(isAirGapEnabled).mockReturnValue(false);
-    vi.restoreAllMocks();
   });
 
   it('returns a cached hit without hitting the network', async () => {
     cacheAudiobookDescription('Animal Farm', 'George Orwell', 'A satire.');
-    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const fetchSpy = vi.mocked(fetchWithTimeout);
     await expect(fetchAudiobookDescription('Animal Farm', 'George Orwell')).resolves.toBe(
       'A satire.',
     );
@@ -66,7 +68,7 @@ describe('fetchAudiobookDescription', () => {
   });
 
   it('caches a miss so a bookless title is not re-fetched every open', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+    vi.mocked(fetchWithTimeout).mockResolvedValue({
       ok: true,
       json: async () => ({ items: [] }),
     } as unknown as Response);
@@ -74,20 +76,20 @@ describe('fetchAudiobookDescription', () => {
     await expect(fetchAudiobookDescription('Chris Caulk Streams', 'Chris Caulk')).resolves.toBeNull();
     expect(getCachedAudiobookDescription('Chris Caulk Streams', 'Chris Caulk')).toBe('');
 
-    const second = vi.spyOn(globalThis, 'fetch');
+    vi.mocked(fetchWithTimeout).mockClear();
     await fetchAudiobookDescription('Chris Caulk Streams', 'Chris Caulk');
-    expect(second).not.toHaveBeenCalled();
+    expect(fetchWithTimeout).not.toHaveBeenCalled();
   });
 
   it('makes no network call in air-gap mode', async () => {
     vi.mocked(isAirGapEnabled).mockReturnValue(true);
-    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const fetchSpy = vi.mocked(fetchWithTimeout);
     await expect(fetchAudiobookDescription('Animal Farm', 'George Orwell')).resolves.toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it('resolves null rather than throwing when the lookup fails', async () => {
-    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
+    vi.mocked(fetchWithTimeout).mockRejectedValue(new Error('offline'));
     await expect(fetchAudiobookDescription('Animal Farm', 'George Orwell')).resolves.toBeNull();
   });
 

@@ -11,8 +11,10 @@
  */
 
 import { isAirGapEnabled } from './airGapMode';
+import { fetchWithTimeout } from './fetchWithTimeout';
 
 const CACHE_KEY = 'sandbox_audiobook_descriptions_v1';
+const LOOKUP_TIMEOUT_MS = 8000;
 /** Cache misses too, so a book with genuinely no entry is not re-fetched on every open. */
 const MISS = '';
 
@@ -96,7 +98,13 @@ export async function fetchAudiobookDescription(
   if (isAirGapEnabled()) return null;
 
   try {
-    const res = await fetch(buildGoogleBooksQueryUrl(trimmedTitle, author));
+    // fetchWithTimeout, not bare fetch: on device the WebView blocks a cross-origin request to
+    // googleapis.com, and this routes through native HTTP (and honours the air-gap block).
+    const res = await fetchWithTimeout(
+      buildGoogleBooksQueryUrl(trimmedTitle, author),
+      { headers: { Accept: 'application/json' } },
+      LOOKUP_TIMEOUT_MS,
+    );
     if (!res.ok) return null;
     const description = parseGoogleBooksDescription(await res.json());
     cacheAudiobookDescription(trimmedTitle, author, description ?? MISS);
