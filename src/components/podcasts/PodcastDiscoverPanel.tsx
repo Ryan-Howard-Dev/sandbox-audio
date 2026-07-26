@@ -385,13 +385,12 @@ export default function PodcastDiscoverPanel({
           className="podcasts-discover-search-input"
           aria-label="Search global podcasts"
         />
-        <button
-          type="submit"
-          className="podcasts-discover-search-btn touch-manipulation"
-          disabled={searching || query.trim().length < 2}
-        >
-          {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-        </button>
+        {/* No Search button: the keyboard's enter key already submits, and the button was
+            eating the width that truncated the placeholder. The spinner stays — that is
+            feedback, not an affordance. */}
+        {searching ? (
+          <Loader2 className="w-4 h-4 shrink-0 animate-spin text-accent" aria-hidden />
+        ) : null}
       </form>
 
       <div className="podcasts-discover-categories hide-scrollbar">

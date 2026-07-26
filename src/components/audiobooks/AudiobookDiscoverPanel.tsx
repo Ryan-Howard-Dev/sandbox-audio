@@ -552,13 +552,10 @@ export default function AudiobookDiscoverPanel({
           className="podcasts-discover-search-input"
           aria-label={t('audiobooks.searchPlaceholder')}
         />
-        <button
-          type="submit"
-          className="podcasts-discover-search-btn touch-manipulation"
-          disabled={searching || query.trim().length < 2}
-        >
-          {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : t('audiobooks.search')}
-        </button>
+        {/* No Search button — enter submits, and the button was eating the field's width. */}
+        {searching ? (
+          <Loader2 className="w-4 h-4 shrink-0 animate-spin text-accent" aria-hidden />
+        ) : null}
       </form>
 
       {/* Genre chips — mirrors the podcasts station's category row under the search bar. */}
