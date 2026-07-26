@@ -120,11 +120,26 @@ From [docs/audit/unknowns.md](./docs/audit/unknowns.md) and Pass 3:
 - Remote track tombstones: code does not delete local rows on sync pull; product docs disagree on intended semantics.
 - Bundled tier34 storage path on end-user machines vs dev tree is **medium confidence** only.
 - `scripts/spread-host.mjs` unified deploy orchestrator **does not exist** in the repository.
-- Linux/macOS packaged anchor depends on system Node without in-repo portable bundle.
+- ~~Linux/macOS packaged anchor depends on system Node without in-repo portable bundle.~~
+  **Resolved:** `scripts/fetch-portable-node.mjs` now bundles Node for linux and darwin
+  (x64/arm64), closing R-007. The Tauri Linux build passes CI.
 - Play Store publish automation from this repo is **unknown** (listing text only in `fastlane/`).
 - Air-gap mode does not block all client-direct catalog/archive calls (`sandboxLayer2`).
 
 See [docs/risk-register.md](./docs/risk-register.md) for prioritized risks.
+
+## Credits
+
+Created and directed by **Ryan Howard** — architecture, product decisions, and every call about
+what this app is for.
+
+Co-created with AI pair programming:
+
+- **Cursor** (`cursoragent@cursor.com`)
+- **Claude Code** (`Claude Opus 5`)
+
+Both appear as `Co-authored-by` trailers on the commits they contributed to, so the record is in
+`git log` rather than only here.
 
 ## License
 
