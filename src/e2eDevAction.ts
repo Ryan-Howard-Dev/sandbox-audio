@@ -1281,6 +1281,42 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       );
       return pass;
     }
+    /*
+     * Play a direct audio URL, bypassing catalog resolution entirely.
+     *
+     * The gate previously asserted real playback via YouTube, which blocks datacenter IPs, so
+     * CI could only ever prove the play spine and never that audio actually decoded. Pointing
+     * this at an open source with no bot wall (Internet Archive / LibriVox) gives genuine
+     * end-to-end coverage on a runner: ExoPlayer receives a stream, decodes it, and position
+     * advances. Resolution is exercised separately by the artist-track path.
+     */
+    case 'play-direct-url': {
+      const url = params.get('url')?.trim();
+      if (!url) {
+        logE2e('direct-url-play', false, 'missing url param');
+        return false;
+      }
+      const waitMsRaw = Number(params.get('playTimeoutMs') ?? '45000');
+      const waitMs = Number.isFinite(waitMsRaw) && waitMsRaw > 0 ? waitMsRaw : 45_000;
+      logE2e('play-spine', true, `invoke direct url=${url}`);
+      try {
+        await nativeExoPlayUrl(url, { autoPlay: true, resetQueue: true });
+      } catch (err) {
+        logE2e('direct-url-play', false, err instanceof Error ? err.message : String(err));
+        return false;
+      }
+      logE2e('play-spine', true, 'playArtistTrack returned true');
+      const playing = await waitForExoPlaying(waitMs);
+      const status = await getNativeExoPlaybackStatus();
+      const pos = playing.positionSecs ?? 0;
+      const pass = playing.ok && (pos > 0.2 || status.state === 'playing');
+      logE2e(
+        'direct-url-play',
+        pass,
+        `url=${url} state=${status.state ?? playing.state ?? 'unknown'} pos=${pos.toFixed(2)}`,
+      );
+      return pass;
+    }
     case 'mobile-play': {
       const query = params.get('query')?.trim();
       if (!query) {

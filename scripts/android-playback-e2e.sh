@@ -123,6 +123,17 @@ deeplink 'clear-server'
 deeplink 'check-ytdlp'
 sleep 8
 
+# Real end-to-end audio, asserted on every run. Internet Archive has no bot wall, so unlike
+# YouTube it serves a datacenter IP normally — this proves ExoPlayer actually receives a
+# stream, decodes it and advances position. Hard failure: nothing about this depends on the
+# network being permissive, so a regression here is a genuine playback regression.
+adb -s "$EMU_SERIAL" logcat -c >/dev/null
+direct_url="$(python3 -c "import urllib.parse; print(urllib.parse.quote('https://archive.org/download/testmp3testfile/mpthreetest.mp3', safe=''))")"
+deeplink "play-direct-url?url=${direct_url}&playTimeoutMs=45000"
+wait_logcat 'SandboxE2E.*AREA=direct-url-play RESULT=PASS' 120 \
+  || { echo 'Playback E2E FAIL: direct-url-play (open-source audio did not decode)'; diagnose_failure 'direct-url-play'; exit 1; }
+echo 'DIRECT AUDIO PASS: Internet Archive stream decoded and advanced'
+
 artist="$(python3 -c "import urllib.parse; print(urllib.parse.quote('Kanye West'))")"
 track="$(python3 -c "import urllib.parse; print(urllib.parse.quote('FATHER'))")"
 
