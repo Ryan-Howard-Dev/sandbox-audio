@@ -8,10 +8,13 @@ import { fetchWithTimeout } from './fetchWithTimeout';
 import {
   audiobookDescriptionKey,
   buildGoogleBooksQueryUrl,
+  buildOpenLibrarySearchUrl,
   cacheAudiobookDescription,
   fetchAudiobookDescription,
   getCachedAudiobookDescription,
   parseGoogleBooksDescription,
+  parseOpenLibraryDescription,
+  parseOpenLibraryWorkKey,
 } from './audiobookDescription';
 
 describe('audiobookDescriptionKey', () => {
@@ -36,6 +39,32 @@ describe('parseGoogleBooksDescription', () => {
     expect(parseGoogleBooksDescription({ items: [{ volumeInfo: { description: '   ' } }] })).toBeNull();
     expect(parseGoogleBooksDescription({ totalItems: 0 })).toBeNull();
     expect(parseGoogleBooksDescription(null)).toBeNull();
+  });
+});
+
+describe('Open Library parsing', () => {
+  it('takes the first work key from a search response', () => {
+    expect(
+      parseOpenLibraryWorkKey({ docs: [{ key: '/authors/OL1A' }, { key: '/works/OL262758W' }] }),
+    ).toBe('/works/OL262758W');
+    expect(parseOpenLibraryWorkKey({ docs: [] })).toBeNull();
+    expect(parseOpenLibraryWorkKey(null)).toBeNull();
+  });
+
+  it('reads a description given as a plain string or as { value }', () => {
+    expect(parseOpenLibraryDescription({ description: '  A satire.  ' })).toBe('A satire.');
+    expect(
+      parseOpenLibraryDescription({ description: { type: '/type/text', value: 'A satire.' } }),
+    ).toBe('A satire.');
+    expect(parseOpenLibraryDescription({})).toBeNull();
+    expect(parseOpenLibraryDescription({ description: { value: '  ' } })).toBeNull();
+  });
+
+  it('builds a title+author scoped search url', () => {
+    const url = buildOpenLibrarySearchUrl('Animal Farm', 'George Orwell');
+    expect(url).toContain('title=Animal+Farm');
+    expect(url).toContain('author=George+Orwell');
+    expect(buildOpenLibrarySearchUrl('Animal Farm', ' ')).not.toContain('author=');
   });
 });
 
@@ -95,5 +124,45 @@ describe('fetchAudiobookDescription', () => {
 
   it('ignores an untitled book', async () => {
     await expect(fetchAudiobookDescription('   ', 'Anon')).resolves.toBeNull();
+  });
+
+  it('prefers Open Library and never reaches Google Books when it answers', async () => {
+    const calls: string[] = [];
+    vi.mocked(fetchWithTimeout).mockImplementation(async (url) => {
+      calls.push(String(url));
+      const body = String(url).includes('search.json')
+        ? { docs: [{ key: '/works/OL262758W' }] }
+        : { description: { value: 'A satire.' } };
+      return { ok: true, json: async () => body } as unknown as Response;
+    });
+
+    await expect(fetchAudiobookDescription('Animal Farm', 'George Orwell')).resolves.toBe(
+      'A satire.',
+    );
+    expect(calls.every((u) => u.includes('openlibrary.org'))).toBe(true);
+    expect(calls.some((u) => u.includes('googleapis.com'))).toBe(false);
+  });
+
+  it('falls back to Google Books when Open Library has no description', async () => {
+    vi.mocked(fetchWithTimeout).mockImplementation(async (url) => {
+      const u = String(url);
+      const body = u.includes('search.json')
+        ? { docs: [{ key: '/works/OL1W' }] }
+        : u.includes('googleapis.com')
+          ? { items: [{ volumeInfo: { description: 'From Google.' } }] }
+          : {}; // work record exists but carries no description
+      return { ok: true, json: async () => body } as unknown as Response;
+    });
+
+    await expect(fetchAudiobookDescription('Underworld', 'Graham Hancock')).resolves.toBe(
+      'From Google.',
+    );
+  });
+
+  it('does not cache a miss when the lookup itself failed', async () => {
+    vi.mocked(fetchWithTimeout).mockRejectedValue(new Error('offline'));
+    await fetchAudiobookDescription('Animal Farm', 'George Orwell');
+    // A network blip must not permanently mark the book as having no description.
+    expect(getCachedAudiobookDescription('Animal Farm', 'George Orwell')).toBeNull();
   });
 });

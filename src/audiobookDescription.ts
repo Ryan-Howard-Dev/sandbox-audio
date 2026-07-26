@@ -73,6 +73,40 @@ export function parseGoogleBooksDescription(payload: unknown): string | null {
   return null;
 }
 
+export function buildOpenLibrarySearchUrl(title: string, author: string): string {
+  const params = new URLSearchParams({ title: title.trim(), limit: '5', fields: 'key' });
+  if (author.trim()) params.set('author', author.trim());
+  return `https://openlibrary.org/search.json?${params.toString()}`;
+}
+
+/** First work key (`/works/OL…W`) from an Open Library search response. */
+export function parseOpenLibraryWorkKey(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const docs = (payload as { docs?: unknown }).docs;
+  if (!Array.isArray(docs)) return null;
+  for (const doc of docs) {
+    const key = (doc as { key?: unknown })?.key;
+    if (typeof key === 'string' && key.trim().startsWith('/works/')) return key.trim();
+  }
+  return null;
+}
+
+export function buildOpenLibraryWorkUrl(workKey: string): string {
+  return `https://openlibrary.org${workKey.trim()}.json`;
+}
+
+/** Open Library returns description as either a plain string or `{ type, value }`. */
+export function parseOpenLibraryDescription(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const description = (payload as { description?: unknown }).description;
+  if (typeof description === 'string' && description.trim()) return description.trim();
+  if (description && typeof description === 'object') {
+    const value = (description as { value?: unknown }).value;
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return null;
+}
+
 export function buildGoogleBooksQueryUrl(title: string, author: string): string {
   const terms = [`intitle:${title.trim()}`];
   if (author.trim()) terms.push(`inauthor:${author.trim()}`);
@@ -97,19 +131,55 @@ export async function fetchAudiobookDescription(
 
   if (isAirGapEnabled()) return null;
 
+  // Open Library first: open data, no key, and aligned with the Gutenberg / Archive providers
+  // this app already leans on. Google Books stays as a fallback for modern titles Open Library
+  // has catalogued but not described.
+  const description =
+    (await lookupOpenLibrary(trimmedTitle, author)) ??
+    (await lookupGoogleBooks(trimmedTitle, author));
+
+  // Only cache a definite answer. A network failure must not poison the cache with a miss.
+  if (description !== undefined) {
+    cacheAudiobookDescription(trimmedTitle, author, description ?? MISS);
+  }
+  return description ?? null;
+}
+
+/** `undefined` = lookup failed (do not cache); `null` = no description exists. */
+async function getJson(url: string): Promise<unknown | undefined> {
   try {
-    // fetchWithTimeout, not bare fetch: on device the WebView blocks a cross-origin request to
-    // googleapis.com, and this routes through native HTTP (and honours the air-gap block).
+    // fetchWithTimeout, not bare fetch: on device the WebView blocks cross-origin requests,
+    // and this routes through native HTTP (and honours the air-gap block).
     const res = await fetchWithTimeout(
-      buildGoogleBooksQueryUrl(trimmedTitle, author),
+      url,
       { headers: { Accept: 'application/json' } },
       LOOKUP_TIMEOUT_MS,
     );
-    if (!res.ok) return null;
-    const description = parseGoogleBooksDescription(await res.json());
-    cacheAudiobookDescription(trimmedTitle, author, description ?? MISS);
-    return description;
+    if (!res.ok) return undefined;
+    return await res.json();
   } catch {
-    return null;
+    return undefined;
   }
+}
+
+async function lookupOpenLibrary(
+  title: string,
+  author: string,
+): Promise<string | null | undefined> {
+  const search = await getJson(buildOpenLibrarySearchUrl(title, author));
+  if (search === undefined) return undefined;
+  const workKey = parseOpenLibraryWorkKey(search);
+  if (!workKey) return null;
+  const work = await getJson(buildOpenLibraryWorkUrl(workKey));
+  if (work === undefined) return undefined;
+  return parseOpenLibraryDescription(work);
+}
+
+async function lookupGoogleBooks(
+  title: string,
+  author: string,
+): Promise<string | null | undefined> {
+  const payload = await getJson(buildGoogleBooksQueryUrl(title, author));
+  if (payload === undefined) return undefined;
+  return parseGoogleBooksDescription(payload);
 }
