@@ -59,6 +59,10 @@ export interface CollectionViewProps {
   homeResetKey?: number;
   /** Android hardware back — pop locker drill-down before leaving the station. */
   lockerDrillBackRef?: React.MutableRefObject<(() => boolean) | null>;
+  /** Open the download activity sheet from the Locker overflow menu. */
+  onOpenDownloads?: () => void;
+  /** Downloads queued/failed — surfaced on the overflow menu entry. */
+  downloadAttentionCount?: number;
   vm: LockerVm;
   activeEnvelopeId: string | null;
   meshResults: MediaEnvelope[];
@@ -110,6 +114,8 @@ export default function CollectionView({
   sectionBar,
   homeResetKey = 0,
   lockerDrillBackRef,
+  onOpenDownloads,
+  downloadAttentionCount = 0,
   vm,
   activeEnvelopeId,
   meshResults,
@@ -226,8 +232,21 @@ export default function CollectionView({
         },
       );
     }
+    if (onOpenDownloads) {
+      // Downloads land in the Locker, so this is where users look for them — the floating
+      // button is kept for the stations that have no overflow menu of their own.
+      items.push({
+        id: 'downloads',
+        label:
+          downloadAttentionCount > 0
+            ? t('locker.headerMenu.downloadsWithCount', { count: downloadAttentionCount })
+            : t('locker.headerMenu.downloads'),
+        divider: true,
+        onClick: onOpenDownloads,
+      });
+    }
     return items;
-  }, [airGap, t]);
+  }, [airGap, t, onOpenDownloads, downloadAttentionCount]);
 
   useEffect(() => {
     const syncSettings = () => setLockerSync(loadLockerSyncSettings());

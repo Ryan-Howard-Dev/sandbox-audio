@@ -41,6 +41,9 @@ export interface MobileDiscoverViewProps {
   onPickExploreCategory: (label: string, group: ExploreGroup) => void;
   onExploreInstantMix?: (tracks: MediaEnvelope[], label: string) => void;
   onSaveInstantPlaylist?: (tracks: MediaEnvelope[], name: string) => void;
+  onDownloadMix?: (mix: import('../discoveryMixes').DiscoveryMix) => void;
+  onShareMix?: (mix: import('../discoveryMixes').DiscoveryMix) => void;
+  mfyDrillBackRef?: React.MutableRefObject<(() => boolean) | null>;
   onOpenVideoFeed?: () => void;
   /** Top-level back — returns to Home from the Discover station root. */
   onExitToHome?: () => void;
@@ -101,6 +104,9 @@ export default function MobileDiscoverView({
   onPickExploreCategory,
   onExploreInstantMix,
   onSaveInstantPlaylist,
+  onDownloadMix,
+  onShareMix,
+  mfyDrillBackRef,
   onOpenVideoFeed,
   onExitToHome,
   segmentBar,
@@ -164,6 +170,9 @@ export default function MobileDiscoverView({
               onGoToExplore={() => handleTabChange('explore')}
               onPickExploreCategory={onPickExploreCategory}
               onSaveInstantPlaylist={onSaveInstantPlaylist}
+              onDownloadMix={onDownloadMix}
+              onShareMix={onShareMix}
+              mfyDrillBackRef={mfyDrillBackRef}
             />
           </DiscoverTabSuspense>
         ) : null}
@@ -179,6 +188,8 @@ export default function MobileDiscoverView({
               onPlayDiscoveryMix={onPlayDiscoveryMix}
               onPlayInstantMix={onExploreInstantMix}
               onSaveInstantPlaylist={onSaveInstantPlaylist}
+              onDownloadMix={onDownloadMix}
+              onShareMix={onShareMix}
               onOpenVideoFeed={onOpenVideoFeed}
               showMadeForYou={false}
             />

@@ -79,6 +79,8 @@ export interface NativeExoPlaybackPlugin {
   enqueueNext(options: {
     url: string;
     replayGainDb?: number;
+    /** Stable track id — native keys queue metadata off this, not the URL. */
+    envelopeId?: string;
     title?: string;
     artist?: string;
     album?: string;
@@ -158,6 +160,8 @@ export interface NativeExoPlaybackEvent {
   queueLength?: number;
   reason?: number;
   url?: string;
+  /** Stable key native stamped on the MediaItem — survives URL rewriting, unlike `url`. */
+  mediaId?: string;
 }
 
 export function isNativeExoQueueEndedEvent(
@@ -435,6 +439,10 @@ export async function nativeExoEnqueueNext(
     await NativeExoPlayback.enqueueNext({
       url: playUrl,
       replayGainDb: options?.replayGainDb,
+      // Without this the native side keys this track's metadata off the URL alone, and any
+      // rewrite between enqueue and playback loses the match — the lock screen then keeps the
+      // previous track's title and cover across an album boundary.
+      envelopeId: options?.envelopeId,
       title: options?.title,
       artist: options?.artist,
       album: options?.album,

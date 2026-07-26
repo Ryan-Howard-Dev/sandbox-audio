@@ -57,6 +57,12 @@ export interface FeedViewProps {
   onGoToExplore?: () => void;
   onPickExploreCategory?: (label: string, group: import('../exploreCatalog').ExploreGroup) => void;
   onSaveInstantPlaylist?: (tracks: MediaEnvelope[], name: string) => void;
+  /** Cache a mix's tracks for offline playback. */
+  onDownloadMix?: (mix: DiscoveryMix) => void;
+  /** Export/share a mix via the system share sheet. */
+  onShareMix?: (mix: DiscoveryMix) => void;
+  /** Android hardware back — pop the expanded mix page. */
+  mfyDrillBackRef?: React.MutableRefObject<(() => boolean) | null>;
   /** Inside Discover station tab (no duplicate page title). */
   embedded?: boolean;
   /** Mobile-native layout: carousels, artist-grouped followed feed. */
@@ -452,6 +458,9 @@ export default function FeedView({
   onGoToExplore,
   onPickExploreCategory,
   onSaveInstantPlaylist,
+  onDownloadMix,
+  onShareMix,
+  mfyDrillBackRef,
   embedded = false,
   mobile = false,
 }: FeedViewProps) {
@@ -860,6 +869,9 @@ export default function FeedView({
         lang={lang}
         onPlayDiscoveryMix={handlePlayDiscoveryMix}
         onSaveMix={onSaveInstantPlaylist ? handleSaveMix : undefined}
+        onDownloadMix={onDownloadMix}
+        onShareMix={onShareMix}
+        mfyDrillBackRef={mfyDrillBackRef}
         onPlayTrack={onPlay}
         onGoToExplore={onGoToExplore}
         onPickExploreCategory={onPickExploreCategory}

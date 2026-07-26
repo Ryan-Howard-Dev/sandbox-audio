@@ -1,5 +1,14 @@
 import React, { useMemo } from 'react';
-import { ChevronRight, Play, Save, Shuffle } from 'lucide-react';
+import {
+  ArrowDownCircle,
+  ArrowLeft,
+  ChevronRight,
+  Heart,
+  Play,
+  Save,
+  Share2,
+  Shuffle,
+} from 'lucide-react';
 import type { MediaEnvelope } from '../../sandboxLayer1';
 import { seedGradient } from '../../seedGradient';
 import type { DiscoveryMix } from '../../discoveryMixes';
@@ -200,47 +209,115 @@ export function DiscoveryMixFullPanel({
   onPlay,
   onShuffle,
   onSave,
+  onDownload,
+  onShare,
   onClose,
 }: {
   mix: DiscoveryMix;
   onPlay: () => void;
   onShuffle: () => void;
   onSave?: () => void;
+  onDownload?: () => void;
+  onShare?: () => void;
   onClose: () => void;
 }) {
+  /*
+   * Album-page layout, not a compact panel: full-bleed hero, big title + description, a pinned
+   * Play / Shuffle pair, a secondary icon row, then ordinary track rows. Matches how albums and
+   * playlists already open elsewhere in the app so a mix does not feel like a different species.
+   */
+  const heroArt = mix.tracks.find((t) => t.artworkUrl?.trim())?.artworkUrl?.trim();
+
   return (
     <div className="mfy-full-panel">
-      <div className="mfy-full-head">
-        <div>
-          <h3 className="mfy-full-title">{mix.title}</h3>
+      <div className="mfy-full-hero">
+        {heroArt ? (
+          <img className="mfy-full-hero-art" src={heroArt} alt="" aria-hidden />
+        ) : (
+          <span
+            className="mfy-full-hero-art mfy-full-hero-art--fallback"
+            style={{ background: seedGradient(mix.title) }}
+            aria-hidden
+          />
+        )}
+        <button
+          type="button"
+          className="mfy-full-back touch-manipulation"
+          onClick={onClose}
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div className="mfy-full-hero-text">
+          <h2 className="mfy-full-title">{mix.title}</h2>
           <p className="mfy-full-sub">{mix.subtitle}</p>
         </div>
-        <button type="button" className="mfy-full-close touch-manipulation" onClick={onClose}>
-          Close
-        </button>
       </div>
-      <div className="mfy-full-actions">
-        <button type="button" className="mfy-full-action touch-manipulation" onClick={onPlay}>
-          <Play className="w-4 h-4" />
+
+      {/* Stays put while the track list scrolls under it. */}
+      <div className="mfy-full-primary">
+        <button type="button" className="mfy-full-play touch-manipulation" onClick={onPlay}>
+          <Play className="w-4 h-4" fill="currentColor" />
           Play
         </button>
-        <button type="button" className="mfy-full-action touch-manipulation" onClick={onShuffle}>
+        <button type="button" className="mfy-full-shuffle touch-manipulation" onClick={onShuffle}>
           <Shuffle className="w-4 h-4" />
           Shuffle
         </button>
-        {onSave ? (
-          <button type="button" className="mfy-full-action touch-manipulation" onClick={onSave}>
-            <Save className="w-4 h-4" />
-            Save playlist
-          </button>
-        ) : null}
       </div>
+
+      {/*
+        Add · Download · Share, matching the reference. Add saves the mix as a playlist, Download
+        caches its tracks for offline, Share exports it. Each still degrades to a visibly disabled
+        button when its handler is absent — a control that silently does nothing is worse than one
+        that shows it is unavailable.
+      */}
+      <div className="mfy-full-secondary">
+        <button
+          type="button"
+          className="mfy-full-sec-btn touch-manipulation"
+          onClick={onSave}
+          disabled={!onSave}
+        >
+          <Heart className="w-5 h-5" />
+          <span>Add</span>
+        </button>
+        <button
+          type="button"
+          className="mfy-full-sec-btn touch-manipulation"
+          onClick={onDownload}
+          disabled={!onDownload}
+        >
+          <ArrowDownCircle className="w-5 h-5" />
+          <span>Download</span>
+        </button>
+        <button
+          type="button"
+          className="mfy-full-sec-btn touch-manipulation"
+          onClick={onShare}
+          disabled={!onShare}
+        >
+          <Share2 className="w-5 h-5" />
+          <span>Share</span>
+        </button>
+      </div>
+
       <ul className="mfy-full-tracks music-scrollbar">
-        {mix.tracks.map((track, i) => (
+        {mix.tracks.map((track) => (
           <li key={track.envelopeId} className="mfy-full-track">
-            <span className="mfy-full-track-num">{i + 1}</span>
-            <span className="mfy-full-track-title">{track.title}</span>
-            <span className="mfy-full-track-artist">{track.artist}</span>
+            {track.artworkUrl?.trim() ? (
+              <img className="mfy-full-track-art" src={track.artworkUrl} alt="" aria-hidden />
+            ) : (
+              <span
+                className="mfy-full-track-art"
+                style={{ background: seedGradient(track.album ?? track.title) }}
+                aria-hidden
+              />
+            )}
+            <span className="mfy-full-track-meta">
+              <span className="mfy-full-track-title">{track.title}</span>
+              <span className="mfy-full-track-artist">{track.artist}</span>
+            </span>
           </li>
         ))}
       </ul>

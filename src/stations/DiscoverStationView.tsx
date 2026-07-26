@@ -48,6 +48,9 @@ export interface DiscoverStationViewProps {
   onPickExploreCategory: (label: string, group: ExploreGroup) => void;
   onExploreInstantMix?: (tracks: MediaEnvelope[], label: string) => void;
   onSaveInstantPlaylist?: (tracks: MediaEnvelope[], name: string) => void;
+  onDownloadMix?: (mix: DiscoveryMix) => void;
+  onShareMix?: (mix: DiscoveryMix) => void;
+  mfyDrillBackRef?: React.MutableRefObject<(() => boolean) | null>;
   onOpenVideoFeed?: () => void;
   onExitToHome?: () => void;
   segmentBar?: React.ReactNode;
@@ -103,6 +106,9 @@ export default function DiscoverStationView({
   onPickExploreCategory,
   onExploreInstantMix,
   onSaveInstantPlaylist,
+  onDownloadMix,
+  onShareMix,
+  mfyDrillBackRef,
   onOpenVideoFeed,
   onExitToHome,
   segmentBar,
@@ -144,6 +150,9 @@ export default function DiscoverStationView({
           onPickExploreCategory={onPickExploreCategory}
           onExploreInstantMix={onExploreInstantMix}
           onSaveInstantPlaylist={onSaveInstantPlaylist}
+          onDownloadMix={onDownloadMix}
+          onShareMix={onShareMix}
+          mfyDrillBackRef={mfyDrillBackRef}
           onOpenVideoFeed={onOpenVideoFeed}
           onExitToHome={onExitToHome}
           segmentBar={segmentBar}
@@ -182,6 +191,9 @@ export default function DiscoverStationView({
               onGoToExplore={() => onTabChange('explore')}
               onPickExploreCategory={onPickExploreCategory}
               onSaveInstantPlaylist={onSaveInstantPlaylist}
+              onDownloadMix={onDownloadMix}
+              onShareMix={onShareMix}
+              mfyDrillBackRef={mfyDrillBackRef}
             />
           </DiscoverTabSuspense>
         ) : null}
@@ -195,6 +207,8 @@ export default function DiscoverStationView({
               onPlayDiscoveryMix={onPlayDiscoveryMix}
               onPlayInstantMix={onExploreInstantMix}
               onSaveInstantPlaylist={onSaveInstantPlaylist}
+              onDownloadMix={onDownloadMix}
+              onShareMix={onShareMix}
               onOpenVideoFeed={onOpenVideoFeed}
               showMadeForYou={false}
             />

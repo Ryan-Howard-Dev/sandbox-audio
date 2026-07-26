@@ -35,6 +35,31 @@ export async function findQueueIndexForExoUrl(
   return -1;
 }
 
+/**
+ * Native stamps each MediaItem with `env:<envelopeId>` (or `url:<url>` when the track was
+ * queued without a stable id). Reading the envelopeId back out of the mediaId matches a
+ * transition exactly, with none of the URL-rewriting fragility of `findQueueIndexForExoUrl`.
+ */
+export function envelopeIdFromExoMediaId(mediaId?: string): string | null {
+  const trimmed = mediaId?.trim() ?? '';
+  if (!trimmed.startsWith('env:')) return null;
+  const id = trimmed.slice(4).trim();
+  return id || null;
+}
+
+/** Resolve a native transition to a queue index — stable mediaId first, URL as fallback. */
+export async function findQueueIndexForExoTransition(
+  queue: MediaEnvelope[],
+  event: { mediaId?: string; url?: string },
+): Promise<number> {
+  const envelopeId = envelopeIdFromExoMediaId(event.mediaId);
+  if (envelopeId) {
+    const idx = queue.findIndex((track) => track?.envelopeId === envelopeId);
+    if (idx >= 0) return idx;
+  }
+  return findQueueIndexForExoUrl(queue, event.url ?? '');
+}
+
 export function isExoMediaItemTransitionEvent(
   detail: unknown,
 ): detail is NativeExoPlaybackEvent & { url: string } {

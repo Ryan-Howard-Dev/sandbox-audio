@@ -16,12 +16,16 @@ export interface DiscoverHomeViewProps {
   releases?: FollowedFeedRelease[];
   onPlayDiscoveryMix: (tracks: MediaEnvelope[], mix: DiscoveryMix) => void;
   onSaveMix?: (mix: DiscoveryMix) => void;
+  onDownloadMix?: (mix: DiscoveryMix) => void;
+  onShareMix?: (mix: DiscoveryMix) => void;
   onPlayTrack?: (env: MediaEnvelope) => void;
   onGoToExplore?: () => void;
   onPickExploreCategory?: (label: string, group: ExploreGroup) => void;
   lastUpdatedAt?: number | null;
   lastUpdatedLabel?: string;
   mobile?: boolean;
+  /** Android hardware back — pop the expanded mix page. */
+  mfyDrillBackRef?: React.MutableRefObject<(() => boolean) | null>;
   /** Force MFY shelf remount after taste feedback. */
   mfyReloadKey?: number;
   /** Hide section title when embedded in Feed. */
@@ -32,12 +36,15 @@ export default function DiscoverHomeView({
   releases = [],
   onPlayDiscoveryMix,
   onSaveMix,
+  onDownloadMix,
+  onShareMix,
   onPlayTrack,
   onGoToExplore,
   onPickExploreCategory,
   lastUpdatedAt,
   lastUpdatedLabel,
   mobile = false,
+  mfyDrillBackRef,
   mfyReloadKey = 0,
   showHeader = false,
 }: DiscoverHomeViewProps) {
@@ -71,6 +78,9 @@ export default function DiscoverHomeView({
           releases={releases}
           onPlayMix={handlePlayMix}
           onSaveMix={onSaveMix ? handleSaveMix : undefined}
+          onDownloadMix={onDownloadMix}
+          onShareMix={onShareMix}
+          drillBackRef={mfyDrillBackRef}
           lastUpdatedAt={lastUpdatedAt}
           lastUpdatedLabel={lastUpdatedLabel}
           mobile={mobile}

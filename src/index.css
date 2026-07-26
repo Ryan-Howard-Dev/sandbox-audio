@@ -13306,6 +13306,201 @@ body:has(#root > .onboarding-root) {
   transform: scale(0.94);
 }
 
+/* ---- Opened mix: album-style page (hero, pinned Play/Shuffle, track rows) ---- */
+.mfy-full-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+.mfy-full-hero {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 42vh;
+  overflow: hidden;
+  border-radius: 0 0 1.25rem 1.25rem;
+}
+
+.mfy-full-hero-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Text sits over the art, so it needs its own scrim to stay readable on any cover. */
+.mfy-full-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    hsl(0 0% 0% / 0.35) 0%,
+    transparent 35%,
+    hsl(0 0% 0% / 0.85) 100%
+  );
+}
+
+.mfy-full-back {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 999px;
+  background: hsl(0 0% 0% / 0.45);
+  color: #fff;
+  backdrop-filter: blur(6px);
+}
+
+.mfy-full-hero-text {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.875rem;
+  z-index: 2;
+}
+
+.mfy-full-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text-heading);
+}
+
+.mfy-full-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-mid);
+  /* One line, ellipsised — long generated blurbs must not push the buttons off screen. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * NOT sticky. Tidal pins Play/Shuffle, but this page already sits under two pinned rows — the
+ * Music segment bar and the For you / Browse tabs — so a third sticky element at top:0 stacked
+ * on top of them and covered the page title and the first track rows.
+ */
+.mfy-full-primary {
+  display: flex;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  background: var(--bg-void);
+}
+
+.mfy-full-play,
+.mfy-full-shuffle {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.9rem;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.mfy-full-play {
+  background: var(--accent-brand);
+  color: var(--text-on-accent);
+}
+
+.mfy-full-shuffle {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.mfy-full-play:active,
+.mfy-full-shuffle:active {
+  transform: scale(0.98);
+}
+
+.mfy-full-secondary {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  padding: 0.25rem 0 0.75rem;
+}
+
+.mfy-full-sec-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  border: none;
+  background: transparent;
+  color: var(--text-mid);
+  font-size: 0.7rem;
+}
+
+/* Download and Share have no mix-level handler yet — they must read as unavailable rather
+   than look identical to Add and do nothing when tapped. */
+.mfy-full-sec-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.mfy-full-tracks {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.875rem 1rem;
+}
+
+.mfy-full-track {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  min-width: 0;
+}
+
+.mfy-full-track-art {
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.375rem;
+  object-fit: cover;
+  display: block;
+}
+
+.mfy-full-track-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mfy-full-track-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mfy-full-track-artist {
+  font-size: 0.75rem;
+  color: var(--text-mid);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* An opened mix is a page in the Discover flow, not an overlay — matches album drill-down. */
 .mfy-mix-page {
   display: flex;

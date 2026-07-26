@@ -1403,6 +1403,8 @@
       "uploadMusic": "Upload music",
       "fixSongInfo": "Fix song info",
       "updateArtwork": "Update artwork",
+      "downloads": "Downloads",
+      "downloadsWithCount": "Downloads ({count})",
       "artworkUpdated": "Updated artwork on {count} album(s)",
       "artworkNone": "All albums already have artwork"
     },

@@ -19,6 +19,8 @@ export interface ExploreHubShelvesProps {
   onPlayDiscoveryMix?: (tracks: MediaEnvelope[], mix: DiscoveryMix) => void;
   onPlayInstantMix?: (tracks: MediaEnvelope[], label: string) => void;
   onSaveInstantPlaylist?: (tracks: MediaEnvelope[], name: string) => void;
+  onDownloadMix?: (mix: DiscoveryMix) => void;
+  onShareMix?: (mix: DiscoveryMix) => void;
   onSeeAll: (label: string, group: ExploreGroup) => void;
   releases?: FollowedFeedRelease[];
   mobile?: boolean;
@@ -32,6 +34,8 @@ export default function ExploreHubShelves({
   onPlayDiscoveryMix,
   onPlayInstantMix,
   onSaveInstantPlaylist,
+  onDownloadMix,
+  onShareMix,
   onSeeAll,
   releases = [],
   mobile = false,
@@ -80,6 +84,8 @@ export default function ExploreHubShelves({
           onPlayMix={handlePlayMix}
           onPlayAlbum={onPlayAlbum}
           onSaveMix={onSaveInstantPlaylist ? handleSaveMix : undefined}
+          onDownloadMix={onDownloadMix}
+          onShareMix={onShareMix}
           mobile={mobile}
           variant="compact"
         />

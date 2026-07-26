@@ -68,6 +68,21 @@ describe('nativeExoEnqueueNext', () => {
       artworkUrl: undefined,
     });
   });
+
+  it('forwards envelopeId so native can key metadata off a stable id', async () => {
+    // Dropping envelopeId here left native keying this track's metadata off the URL alone.
+    // Any rewrite between enqueue and playback then lost the match, and the lock screen kept
+    // the previous track's title and cover across an album boundary.
+    const uri = 'content://rd.sheepskin.sandboxmusic.locker/track-4';
+    await nativeExoEnqueueNext(uri, {
+      envelopeId: 'locker-vultures-03',
+      title: 'CARNIVAL',
+      album: 'VULTURES 1',
+    });
+    expect(mockEnqueue).toHaveBeenCalledWith(
+      expect.objectContaining({ url: uri, envelopeId: 'locker-vultures-03' }),
+    );
+  });
 });
 
 describe('nativeExoPlayUrl', () => {

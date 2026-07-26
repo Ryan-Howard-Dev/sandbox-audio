@@ -16,10 +16,16 @@ export interface MadeForYouShelfProps {
   releases?: FollowedFeedRelease[];
   onPlayMix: (tracks: MediaEnvelope[], mix: DiscoveryMix) => void;
   onSaveMix?: (mix: DiscoveryMix) => void;
+  /** Cache the mix's tracks for offline playback. */
+  onDownloadMix?: (mix: DiscoveryMix) => void;
+  /** Export/share the mix via the system share sheet. */
+  onShareMix?: (mix: DiscoveryMix) => void;
   onPlayAlbum?: (tracks: MediaEnvelope[], shuffle?: boolean) => void;
   lastUpdatedAt?: number | null;
   lastUpdatedLabel?: string;
   mobile?: boolean;
+  /** Android hardware back — pop the expanded mix page. */
+  drillBackRef?: React.MutableRefObject<(() => boolean) | null>;
   /** compact = Daily + My Mix only (Explore hub). */
   variant?: 'full' | 'compact';
 }
@@ -28,10 +34,13 @@ export default function MadeForYouShelf({
   releases = [],
   onPlayMix,
   onSaveMix,
+  onDownloadMix,
+  onShareMix,
   onPlayAlbum,
   lastUpdatedAt,
   lastUpdatedLabel,
   mobile,
+  drillBackRef,
   variant = 'full',
 }: MadeForYouShelfProps) {
   const [bundle, setBundle] = useState<MadeForYouBundle | null>(null);
@@ -54,6 +63,20 @@ export default function MadeForYouShelf({
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Without this, hardware back on the expanded mix page skipped every discover handler and
+  // dropped the user on Home instead of returning to the shelf.
+  useEffect(() => {
+    if (!drillBackRef) return;
+    drillBackRef.current = () => {
+      if (!expandedMix) return false;
+      setExpandedMix(null);
+      return true;
+    };
+    return () => {
+      drillBackRef.current = null;
+    };
+  }, [drillBackRef, expandedMix]);
 
   const handleGenreChip = async (genre: string) => {
     setSelectedGenre(genre);
@@ -116,6 +139,8 @@ export default function MadeForYouShelf({
             setExpandedMix(null);
           }}
           onSave={onSaveMix ? () => handleSave(expandedMix) : undefined}
+          onDownload={onDownloadMix ? () => onDownloadMix(expandedMix) : undefined}
+          onShare={onShareMix ? () => onShareMix(expandedMix) : undefined}
         />
       </section>
     );

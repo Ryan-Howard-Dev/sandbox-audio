@@ -160,7 +160,7 @@ import { computePlayQueueSeed } from './play/albumPlayQueue';
 import { startAutoSimilarRadioIfNeeded } from './play/standaloneSimilarRadio';
 import { ensureLockerPlayable, envelopeClaimsLocker, shouldRunLockerPlaybackGate } from './play/ensureLockerPlayable';
 import { attemptDeadLockerReacquire } from './lockerDeadTrackReacquire';
-import { findQueueIndexForExoUrl, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
+import { findQueueIndexForExoTransition, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
 import {
   estimateStreamDownloadMb,
   formatCellularDownloadNotice,
@@ -217,6 +217,8 @@ import {
 } from './playerMixRadio';
 import { buildDiscoveryMixContinuation } from './discoveryMixRadio';
 import type { DiscoveryMix } from './discoveryMixes';
+import { discoveryMixAsPlaylist } from './discoveryMixShare';
+import { shareOrDownloadPlaylist } from './playlistCollaborativeShare';
 import { initAndroidAppResume } from './androidAppResume';
 import { initAndroidWiredDacStability, resolveNativeExoTransitionPrefs } from './androidWiredDacPlayback';
 import {
@@ -929,6 +931,7 @@ export default function SandboxShell() {
   const settingsDrillBackRef = useRef<(() => boolean) | null>(null);
   const playlistsDrillBackRef = useRef<(() => boolean) | null>(null);
   const exploreDrillBackRef = useRef<(() => boolean) | null>(null);
+  const mfyDrillBackRef = useRef<(() => boolean) | null>(null);
   const lockerDrillBackRef = useRef<(() => boolean) | null>(null);
   const podcastsDrillBackRef = useRef<(() => boolean) | null>(null);
   const audiobooksDrillBackRef = useRef<(() => boolean) | null>(null);
@@ -2554,6 +2557,11 @@ export default function SandboxShell() {
       return true;
     }
     if (exploreDrillBackRef.current?.()) {
+      return true;
+    }
+    // Ahead of the tab-level resolver: the expanded mix page is a drill-down *inside* the Feed
+    // tab, so letting the resolver run first would leave it open and switch tabs underneath it.
+    if (mfyDrillBackRef.current?.()) {
       return true;
     }
     const discoverBack = resolveDiscoverHardwareBack({
@@ -5968,7 +5976,7 @@ export default function SandboxShell() {
       if (!isExoMediaItemTransitionEvent(detail)) return;
       void (async () => {
         const queue = playQueueRef.current;
-        const idx = await findQueueIndexForExoUrl(queue, detail.url);
+        const idx = await findQueueIndexForExoTransition(queue, detail);
         if (idx < 0) return;
         const track = queue[idx];
         if (!track) return;
@@ -6928,6 +6936,36 @@ export default function SandboxShell() {
       );
     },
     [findHitCandidates, showAppToast, t],
+  );
+
+  /*
+   * Mix-page Download and Share. Download reuses the travel prefetch — "download" on a mix means
+   * make it playable offline, not export a file — so it inherits the cellular/offline guards and
+   * progress toasts rather than growing a second, subtly different caching path.
+   */
+  const handleDownloadMix = useCallback(
+    (mix: DiscoveryMix) => {
+      if (mix.tracks.length === 0) return;
+      void handlePrepareForTravel(mix.tracks);
+    },
+    [handlePrepareForTravel],
+  );
+
+  const handleShareMix = useCallback(
+    async (mix: DiscoveryMix) => {
+      if (mix.tracks.length === 0) return;
+      try {
+        const result = await shareOrDownloadPlaylist(discoveryMixAsPlaylist(mix), 'm3u');
+        if (result === 'shared') showAppToast('Mix shared');
+        else if (result === 'clipboard') showAppToast('M3U copied to clipboard');
+        else showAppToast('M3U downloaded');
+      } catch (err) {
+        // The share sheet resolves as AbortError when the user backs out — not a failure.
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        showAppToast('Share failed', 4000);
+      }
+    },
+    [showAppToast],
   );
 
   const suggestedQueueTracks = useMemo(
@@ -8896,7 +8934,9 @@ export default function SandboxShell() {
       {/* Downloads: a fixed FAB rather than a shell-header row, so it costs no vertical space.
           It sat in the mobile header before, which forced a 52px empty band above the Music
           segments — and Discover, where most downloads start, could not reach it at all.
-          Home is excluded: nothing downloads from there, and the vinyl owns that corner. */}
+          Home is excluded: nothing downloads from there, and the vinyl owns that corner.
+          The Locker ⋮ also opens Downloads, but only on the artists list — every other locker
+          section has no overflow menu, so the FAB stays as the universal entry point. */}
       {showMobileShell && !mobileSearchOpen && station !== 'search' && station !== 'home' ? (
         <button
           type="button"
@@ -9274,6 +9314,9 @@ export default function SandboxShell() {
             onPickExploreCategory={(label, group) => void runExploreSearch(label, group ?? 'quick')}
             onExploreInstantMix={handleExploreInstantMix}
             onSaveInstantPlaylist={handleSaveInstantPlaylist}
+            onDownloadMix={handleDownloadMix}
+            onShareMix={(mix) => void handleShareMix(mix)}
+            mfyDrillBackRef={mfyDrillBackRef}
             onOpenVideoFeed={videosEnabled ? handleOpenVideoFeed : undefined}
             />,
           )}
@@ -9386,6 +9429,8 @@ export default function SandboxShell() {
             sectionBar={musicSegmentBar}
             homeResetKey={lockerHomeResetKey}
             lockerDrillBackRef={lockerDrillBackRef}
+            onOpenDownloads={() => setMobileDownloadSheetOpen(true)}
+            downloadAttentionCount={mobileDownloadBadge}
             vm={{
               url: audio.url,
               title: audio.title,

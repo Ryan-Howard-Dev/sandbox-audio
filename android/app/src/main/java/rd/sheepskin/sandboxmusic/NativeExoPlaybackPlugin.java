@@ -105,7 +105,8 @@ public class NativeExoPlaybackPlugin extends Plugin {
         return "";
     }
 
-    private void storeTrackMetaForUrl(
+    /** Returns the key the meta was stored under — set it as the MediaItem's mediaId. */
+    private String storeTrackMetaForUrl(
         @Nullable String url,
         @Nullable String envelopeId,
         @Nullable String title,
@@ -114,10 +115,22 @@ public class NativeExoPlaybackPlugin extends Plugin {
         @Nullable String artworkUrl
     ) {
         String key = trackMetaKey(url, envelopeId);
-        if (key.isEmpty()) return;
+        if (key.isEmpty()) return "";
         if (url != null && !url.trim().isEmpty() && envelopeId != null && !envelopeId.trim().isEmpty()) {
             urlToMetaKey.put(url.trim(), key);
         }
+        return storeTrackMetaByKey(key, title, artist, album, artworkUrl);
+    }
+
+    /** Store under an already-complete key (e.g. a MediaItem's mediaId) — no re-prefixing. */
+    private String storeTrackMetaByKey(
+        String key,
+        @Nullable String title,
+        @Nullable String artist,
+        @Nullable String album,
+        @Nullable String artworkUrl
+    ) {
+        if (key == null || key.isEmpty()) return "";
         TrackMeta meta = trackMetaByKey.get(key);
         if (meta == null) {
             meta = new TrackMeta();
@@ -127,6 +140,45 @@ public class NativeExoPlaybackPlugin extends Plugin {
         if (artist != null && !artist.trim().isEmpty()) meta.artist = artist.trim();
         if (album != null && !album.trim().isEmpty()) meta.album = album.trim();
         if (artworkUrl != null && !artworkUrl.trim().isEmpty()) meta.artworkUrl = artworkUrl.trim();
+        return key;
+    }
+
+    /**
+     * Carry the meta key on the MediaItem itself. Matching a transition by URL is fragile —
+     * local proxying, signing and query-param rewrites all mutate the URI between the value JS
+     * registered and the one ExoPlayer reports back, and the queue is also populated before the
+     * meta is stored on some paths. The mediaId round-trips through ExoPlayer untouched, so the
+     * lookup cannot miss (R-004).
+     */
+    private MediaItem buildMediaItem(String url, @Nullable String metaKey) {
+        MediaItem.Builder builder = new MediaItem.Builder().setUri(Uri.parse(url));
+        if (metaKey != null && !metaKey.isEmpty()) {
+            builder.setMediaId(metaKey);
+        }
+        return builder.build();
+    }
+
+    @Nullable
+    private String mediaIdKeyOf(@Nullable MediaItem item) {
+        if (item == null) return null;
+        String mediaId = item.mediaId;
+        if (mediaId == null || mediaId.isEmpty() || MediaItem.DEFAULT_MEDIA_ID.equals(mediaId)) {
+            return null;
+        }
+        return mediaId;
+    }
+
+    /** Prefer the stable mediaId; fall back to the URL for items queued before it was set. */
+    private void applyTrackMetaForMediaItem(@Nullable MediaItem item, @Nullable String url) {
+        String mediaId = mediaIdKeyOf(item);
+        if (mediaId != null) {
+            TrackMeta meta = trackMetaByKey.get(mediaId);
+            if (meta != null) {
+                applyTrackMeta(meta);
+                return;
+            }
+        }
+        applyTrackMetaForUrl(url);
     }
 
     private void applyTrackMetaForUrl(@Nullable String url) {
@@ -144,10 +196,6 @@ public class NativeExoPlaybackPlugin extends Plugin {
              * so the lock screen kept the old title and, most visibly, the old cover (a VULTURES
              * track showing BULLY - DELUXE artwork). Stale-but-plausible is worse than absent:
              * drop the artwork so nothing wrong is displayed, and log the miss.
-             *
-             * This is the R-004 failure mode: transitions are matched by URL, and any difference
-             * between the URI ExoPlayer reports and the one JS registered breaks the match. The
-             * durable fix is to key off a stable track id (MediaItem.mediaId) instead of the URL.
              */
             android.util.Log.w(
                 "NativeExo",
@@ -156,6 +204,10 @@ public class NativeExoPlaybackPlugin extends Plugin {
             lastArtworkUrl = "";
             return;
         }
+        applyTrackMeta(meta);
+    }
+
+    private void applyTrackMeta(TrackMeta meta) {
         if (!meta.title.isEmpty()) lastTitle = meta.title;
         if (!meta.artist.isEmpty()) lastArtist = meta.artist;
         if (!meta.album.isEmpty()) lastAlbum = meta.album;
@@ -536,12 +588,14 @@ public class NativeExoPlaybackPlugin extends Plugin {
                             evt.put("index", idx);
                             evt.put("queueLength", p.getMediaItemCount());
                             evt.put("reason", reason);
+                            String mediaId = mediaIdKeyOf(mediaItem);
+                            if (mediaId != null) evt.put("mediaId", mediaId);
                             if (mediaItem != null && mediaItem.localConfiguration != null) {
                                 Uri uri = mediaItem.localConfiguration.uri;
                                 if (uri != null) {
                                     String url = uri.toString();
                                     evt.put("url", url);
-                                    applyTrackMetaForUrl(url);
+                                    applyTrackMetaForMediaItem(mediaItem, url);
                                     syncForegroundMetadata(p, p.isPlaying());
                                 }
                             }
@@ -1214,8 +1268,18 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 Runnable finishSwitch =
                     () -> {
                         if (!resetQueue && gaplessEnabled && p.getMediaItemCount() > 0) {
-                            int idx = indexOfUrl(p, trimmed);
+                            int idx = indexOfTrack(p, trackMetaKey(trimmed, lastEnvelopeId), trimmed);
                             if (idx >= 0) {
+                                // Store before seeking: the seek fires onMediaItemTransition, which
+                                // reads this meta back out.
+                                storeTrackMetaForUrl(
+                                    trimmed,
+                                    lastEnvelopeId,
+                                    lastTitle,
+                                    lastArtist,
+                                    lastAlbum,
+                                    lastArtworkUrl
+                                );
                                 int currentIdx = p.getCurrentMediaItemIndex();
                                 if (idx != currentIdx) {
                                     p.seekTo(idx, 0);
@@ -1237,14 +1301,6 @@ public class NativeExoPlaybackPlugin extends Plugin {
                                     p.play();
                                     scheduleAutoPlayNudge(500);
                                 }
-                                storeTrackMetaForUrl(
-                                    trimmed,
-                                    lastEnvelopeId,
-                                    lastTitle,
-                                    lastArtist,
-                                    lastAlbum,
-                                    lastArtworkUrl
-                                );
                                 syncForegroundMetadata(p, autoPlay);
                                 return;
                             }
@@ -1259,7 +1315,18 @@ public class NativeExoPlaybackPlugin extends Plugin {
                         }
 
                         applyCombinedVolume(p);
-                        MediaItem item = MediaItem.fromUri(Uri.parse(trimmed));
+                        // Store the meta before the item enters the queue — adding/seeking fires
+                        // onMediaItemTransition, which looks the meta up by this key.
+                        String metaKey =
+                            storeTrackMetaForUrl(
+                                trimmed,
+                                lastEnvelopeId,
+                                lastTitle,
+                                lastArtist,
+                                lastAlbum,
+                                lastArtworkUrl
+                            );
+                        MediaItem item = buildMediaItem(trimmed, metaKey);
                         int newIndex;
                         if (resetQueue || p.getMediaItemCount() == 0) {
                             p.setMediaItem(item);
@@ -1271,14 +1338,6 @@ public class NativeExoPlaybackPlugin extends Plugin {
                         }
                         storeGainForIndex(newIndex, replayGainDb);
                         lastMediaItemIndex = newIndex;
-                        storeTrackMetaForUrl(
-                            trimmed,
-                            lastEnvelopeId,
-                            lastTitle,
-                            lastArtist,
-                            lastAlbum,
-                            lastArtworkUrl
-                        );
                         p.prepare();
                         pendingAutoPlay = autoPlay;
                         if (autoPlay) {
@@ -1342,7 +1401,8 @@ public class NativeExoPlaybackPlugin extends Plugin {
                     trimmed = LocalStreamProxy.getInstance().proxyUrlFor(trimmed);
                 }
 
-                if (indexOfUrl(p, trimmed) >= 0) {
+                String envelopeId = call.getString("envelopeId");
+                if (indexOfTrack(p, trackMetaKey(trimmed, envelopeId), trimmed) >= 0) {
                     JSObject ret = new JSObject();
                     ret.put("ok", true);
                     ret.put("alreadyQueued", true);
@@ -1356,10 +1416,11 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 String album = call.getString("album");
                 String artworkUrl = call.getString("artworkUrl");
                 int newIndex = p.getMediaItemCount();
-                p.addMediaItem(MediaItem.fromUri(Uri.parse(trimmed)));
+                // Store before enqueueing so the auto-advance transition can resolve this item.
+                String metaKey =
+                    storeTrackMetaForUrl(trimmed, envelopeId, title, artist, album, artworkUrl);
+                p.addMediaItem(buildMediaItem(trimmed, metaKey));
                 storeGainForIndex(newIndex, replayGainDb);
-                String envelopeId = call.getString("envelopeId");
-                storeTrackMetaForUrl(trimmed, envelopeId, title, artist, album, artworkUrl);
                 if (p.getPlaybackState() == Player.STATE_IDLE) {
                     p.prepare();
                 }
@@ -1370,6 +1431,25 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 ret.put("index", newIndex);
                 call.resolve(ret);
             });
+    }
+
+    /**
+     * Locate a queued item. Prefers the stable meta key stamped on the MediaItem — the URL scan
+     * below misses whenever proxying or query rewriting has changed the URI since the item was
+     * queued, which is the same fragility that broke metadata matching. A miss is not fatal here
+     * (callers fall through to enqueueing a fresh, properly keyed item), but it does mean a
+     * needless duplicate, so match on the key when we have one.
+     */
+    private int indexOfTrack(ExoPlayer p, @Nullable String metaKey, @Nullable String url) {
+        int count = p.getMediaItemCount();
+        if (metaKey != null && !metaKey.isEmpty()) {
+            for (int i = 0; i < count; i++) {
+                if (metaKey.equals(mediaIdKeyOf(p.getMediaItemAt(i)))) {
+                    return i;
+                }
+            }
+        }
+        return url != null ? indexOfUrl(p, url) : -1;
     }
 
     private int indexOfUrl(ExoPlayer p, String url) {
@@ -1599,14 +1679,31 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 applyTrackMetadata(call);
                 String url = currentMediaUri();
                 if (url != null) {
-                    storeTrackMetaForUrl(
-                        url,
-                        lastEnvelopeId,
-                        lastTitle,
-                        lastArtist,
-                        lastAlbum,
-                        lastArtworkUrl
-                    );
+                    String metaKey =
+                        storeTrackMetaForUrl(
+                            url,
+                            lastEnvelopeId,
+                            lastTitle,
+                            lastArtist,
+                            lastAlbum,
+                            lastArtworkUrl
+                        );
+                    // The queued item's mediaId was fixed when it was enqueued; if JS has since
+                    // re-keyed the track, mirror the update onto that id so seeking back to this
+                    // item still resolves.
+                    ExoPlayer current = player;
+                    String mediaId =
+                        current != null ? mediaIdKeyOf(current.getCurrentMediaItem()) : null;
+                    if (mediaId != null && !mediaId.equals(metaKey)) {
+                        urlToMetaKey.put(url.trim(), mediaId);
+                        storeTrackMetaByKey(
+                            mediaId,
+                            lastTitle,
+                            lastArtist,
+                            lastAlbum,
+                            lastArtworkUrl
+                        );
+                    }
                 }
                 Long revision = call.getLong("revision", 0L);
                 ExoPlayer p = player;
