@@ -9,6 +9,7 @@ import {
   audiobookDescriptionKey,
   buildGoogleBooksQueryUrl,
   buildOpenLibrarySearchUrl,
+  normalizeBookQuery,
   cacheAudiobookDescription,
   fetchAudiobookDescription,
   getCachedAudiobookDescription,
@@ -60,23 +61,53 @@ describe('Open Library parsing', () => {
     expect(parseOpenLibraryDescription({ description: { value: '  ' } })).toBeNull();
   });
 
-  it('builds a title+author scoped search url', () => {
+  it('searches free-text, since strict title/author returns nothing for scanned files', () => {
     const url = buildOpenLibrarySearchUrl('Animal Farm', 'George Orwell');
-    expect(url).toContain('title=Animal+Farm');
-    expect(url).toContain('author=George+Orwell');
-    expect(buildOpenLibrarySearchUrl('Animal Farm', ' ')).not.toContain('author=');
+    expect(url).toContain('q=Animal+Farm+George+Orwell');
+    expect(url).not.toContain('title=');
   });
 });
 
 describe('buildGoogleBooksQueryUrl', () => {
-  it('scopes the query to title and author', () => {
-    const url = buildGoogleBooksQueryUrl('Animal Farm', 'George Orwell');
-    expect(url).toContain(encodeURIComponent('intitle:Animal Farm'));
-    expect(url).toContain(encodeURIComponent('inauthor:George Orwell'));
+  it('uses the same normalized query as Open Library', () => {
+    expect(buildGoogleBooksQueryUrl('Animal Farm', 'George Orwell')).toContain(
+      encodeURIComponent('Animal Farm George Orwell'),
+    );
+  });
+});
+
+describe('normalizeBookQuery', () => {
+  // These are real titles from a device scan — the file names them, not the tags.
+  it('moves a trailing "by Author" out of the title and ignores the uploader', () => {
+    expect(
+      normalizeBookQuery(
+        'Underworld The Mysterious Origins Of Civilization by Graham Hancock',
+        'motivator8',
+      ),
+    ).toBe('Underworld The Mysterious Origins Of Civilization Graham Hancock');
   });
 
-  it('omits the author term when unknown', () => {
-    expect(buildGoogleBooksQueryUrl('Animal Farm', '  ')).not.toContain('inauthor');
+  it('drops placeholder authors instead of searching for them', () => {
+    expect(
+      normalizeBookQuery('The Silk Roads A New History of the World by Peter Frankopan', 'Unknown author'),
+    ).toBe('The Silk Roads A New History of the World Peter Frankopan');
+    expect(normalizeBookQuery('Animal Farm', 'Unknown')).toBe('Animal Farm');
+  });
+
+  it('splits run-together file names into searchable words', () => {
+    expect(normalizeBookQuery('TheSacredMushroom', 'Unknown author')).toBe('The Sacred Mushroom');
+  });
+
+  it('strips extensions, separators and rip noise', () => {
+    expect(normalizeBookQuery('Animal_Farm.unabridged.mp3', 'George Orwell')).toBe(
+      'Animal Farm George Orwell',
+    );
+  });
+
+  it('keeps a clean title and author untouched', () => {
+    expect(normalizeBookQuery('An Introduction to Zen Buddhism', 'Daisetsu Teitaro Suzuki')).toBe(
+      'An Introduction to Zen Buddhism Daisetsu Teitaro Suzuki',
+    );
   });
 });
 

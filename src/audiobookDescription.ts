@@ -73,9 +73,50 @@ export function parseGoogleBooksDescription(payload: unknown): string | null {
   return null;
 }
 
+const JUNK_AUTHORS = new Set(['', 'unknown', 'unknown author', 'various', 'va', 'n/a']);
+const FILE_NOISE =
+  /\b(un)?abridged\b|\bfull audiobook\b|\baudio ?book\b|\bpart \d+\b|\bcomplete\b/gi;
+
+/**
+ * Device files name themselves, not their contents: titles arrive as
+ * "Underworld The Mysterious Origins Of Civilization by Graham Hancock" with the author field
+ * holding the uploader ("motivator8") or nothing at all. Searching those verbatim returns zero
+ * results, which is why books with clean tags resolved and scanned files did not.
+ */
+export function normalizeBookQuery(title: string, author: string): string {
+  let work = title
+    .replace(/\.[a-z0-9]{2,4}$/i, '')
+    .replace(/[._]+/g, ' ')
+    // Split run-together names like "TheSacredMushroom" so the words are searchable.
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(FILE_NOISE, ' ');
+
+  // "<Title> by <Author>" — the trailing name is more trustworthy than the metadata field.
+  let credited = '';
+  const byMatch = work.match(/^(.*?)\s+by\s+([^-–—|]+)$/i);
+  if (byMatch?.[1]?.trim() && byMatch[2]?.trim()) {
+    work = byMatch[1];
+    credited = byMatch[2];
+  }
+
+  const tagged = author.trim();
+  const useTagged = !JUNK_AUTHORS.has(tagged.toLowerCase());
+  const who = credited.trim() || (useTagged ? tagged : '');
+
+  return [work, who]
+    .map((part) => part.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join(' ');
+}
+
 export function buildOpenLibrarySearchUrl(title: string, author: string): string {
-  const params = new URLSearchParams({ title: title.trim(), limit: '5', fields: 'key' });
-  if (author.trim()) params.set('author', author.trim());
+  // Free-text q, not title=/author=: the strict fields return nothing for filename-derived
+  // titles, while q finds the work from the same words.
+  const params = new URLSearchParams({
+    q: normalizeBookQuery(title, author),
+    limit: '5',
+    fields: 'key',
+  });
   return `https://openlibrary.org/search.json?${params.toString()}`;
 }
 
@@ -108,10 +149,8 @@ export function parseOpenLibraryDescription(payload: unknown): string | null {
 }
 
 export function buildGoogleBooksQueryUrl(title: string, author: string): string {
-  const terms = [`intitle:${title.trim()}`];
-  if (author.trim()) terms.push(`inauthor:${author.trim()}`);
   return `https://www.googleapis.com/books/v1/volumes?maxResults=5&q=${encodeURIComponent(
-    terms.join(' '),
+    normalizeBookQuery(title, author),
   )}`;
 }
 
