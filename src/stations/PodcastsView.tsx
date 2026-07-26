@@ -103,6 +103,8 @@ export default function PodcastsView({
   const [libraryMounted, setLibraryMounted] = useState(true);
   const [tabPending, startTabTransition] = useTransition();
   const [libraryView, setLibraryView] = useState<'shows' | 'downloaded'>('shows');
+  const [librarySearchOpen, setLibrarySearchOpen] = useState(false);
+  const [libraryQuery, setLibraryQuery] = useState('');
   const [offlineEpisodes, setOfflineEpisodes] = useState<OfflinePodcastEpisode[]>(
     loadOfflinePodcastEpisodes,
   );
@@ -258,6 +260,15 @@ export default function PodcastsView({
     void playbackTick;
     return getUnplayedCountsByFeed();
   }, [subscriptions, playbackTick]);
+
+  const visibleSubscriptions = useMemo(() => {
+    const q = libraryQuery.trim().toLowerCase();
+    if (!q) return subscriptions;
+    return subscriptions.filter(
+      (sub) =>
+        sub.title?.toLowerCase().includes(q) || sub.author?.toLowerCase().includes(q),
+    );
+  }, [subscriptions, libraryQuery]);
 
   // Recomputed on playbackTick so an episode leaves the strip as soon as it is played.
   const newEpisodes = useMemo(() => {
@@ -519,7 +530,35 @@ export default function PodcastsView({
             </span>
           </button>
         </nav>
+        {/* Magnifier, matching Music's Library. This filters shows already on the device, so
+            it is instant and needs no submit — unlike Discover's box, which fires a remote
+            query and keeps its field. Same icon, different job, deliberately. */}
+        {tab === 'library' ? (
+          <button
+            type="button"
+            className={`podcasts-library-search-btn touch-manipulation${librarySearchOpen ? ' is-active' : ''}`}
+            onClick={() => {
+              setLibrarySearchOpen((open) => !open);
+              if (librarySearchOpen) setLibraryQuery('');
+            }}
+            aria-label="Search your shows"
+            aria-expanded={librarySearchOpen}
+          >
+            <Search className="w-4 h-4" />
+          </button>
+        ) : null}
         </div>
+        {tab === 'library' && librarySearchOpen ? (
+          <input
+            type="search"
+            className="podcasts-library-search-input"
+            value={libraryQuery}
+            onChange={(e) => setLibraryQuery(e.target.value)}
+            placeholder="Search your shows"
+            aria-label="Search your shows"
+            autoFocus
+          />
+        ) : null}
       </div>
 
       {tab === 'discover' ? (
@@ -710,7 +749,7 @@ export default function PodcastsView({
                 </section>
               ) : null}
               <PodcastLibraryShowGrid
-                subscriptions={subscriptions}
+                subscriptions={visibleSubscriptions}
                 unplayedByFeed={unplayedByFeed}
                 episodeCountByFeed={episodeCountByFeed}
                 onOpenShow={openShow}

@@ -408,6 +408,8 @@ export default function PlaylistsView({
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [consoleTab, setConsoleTab] = useState<ConsoleTab>('manual');
   const [openPlaylistId, setOpenPlaylistId] = useState<string | null>(null);
+  const [playlistSearchOpen, setPlaylistSearchOpen] = useState(false);
+  const [playlistQuery, setPlaylistQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<StoredPlaylist | null>(null);
   const [editName, setEditName] = useState('');
@@ -786,7 +788,13 @@ export default function PlaylistsView({
     const auto: StoredPlaylist[] = [];
     const userSmart: StoredPlaylist[] = [];
     const manual: StoredPlaylist[] = [];
-    for (const pl of playlists) {
+    // Filter here rather than per-group: every section below derives from this one pass, so
+    // the query applies to pinned, auto, smart and manual without four separate filters.
+    const q = playlistQuery.trim().toLowerCase();
+    const searched = q
+      ? playlists.filter((pl) => displayPlaylistName(pl).toLowerCase().includes(q))
+      : playlists;
+    for (const pl of searched) {
       if (isSmartPlaylist(pl)) {
         // Built-in auto playlists are derived, so an empty one carries no information —
         // it just clutters the page with rows the user never created (e.g. "Forgotten
@@ -835,7 +843,7 @@ export default function PlaylistsView({
       manualPlaylists: filteredManual.filter((pl) => !pinnedIds.has(pl.id)),
       pinnedPlaylists: pinned,
     };
-  }, [playlists, selectedFolderId]);
+  }, [playlists, selectedFolderId, playlistQuery]);
 
   const renderPlaylistRow = (pl: StoredPlaylist) => {
     const pending = isImportedShellWithoutTracks(pl);
@@ -1628,6 +1636,20 @@ export default function PlaylistsView({
             Playlists
           </h1>
         ) : null}
+        {/* Magnifier beside New playlist, matching Music's Library — a local filter over
+            playlists already stored, so it is instant and needs no submit. */}
+        <button
+          type="button"
+          className={`playlists-search-btn touch-manipulation shrink-0${playlistSearchOpen ? ' is-active' : ''}`}
+          onClick={() => {
+            setPlaylistSearchOpen((open) => !open);
+            if (playlistSearchOpen) setPlaylistQuery('');
+          }}
+          aria-label="Search playlists"
+          aria-expanded={playlistSearchOpen}
+        >
+          <Search className="w-4 h-4" />
+        </button>
         <button
           type="button"
           onClick={() => setConsoleOpen(true)}
@@ -1636,6 +1658,18 @@ export default function PlaylistsView({
           New playlist
         </button>
       </header>
+
+      {playlistSearchOpen ? (
+        <input
+          type="search"
+          className="playlists-search-input"
+          value={playlistQuery}
+          onChange={(e) => setPlaylistQuery(e.target.value)}
+          placeholder="Search playlists"
+          aria-label="Search playlists"
+          autoFocus
+        />
+      ) : null}
 
       {toast && (
         <div

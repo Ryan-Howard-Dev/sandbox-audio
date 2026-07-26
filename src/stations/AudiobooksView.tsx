@@ -72,6 +72,8 @@ export default function AudiobooksView({
   const discoverDrillBackRef = useRef<(() => boolean) | null>(null);
   const [books, setBooks] = useState<AudiobookBook[]>([]);
   const [phase, setPhase] = useState<Phase>('idle');
+  const [librarySearchOpen, setLibrarySearchOpen] = useState(false);
+  const [libraryQuery, setLibraryQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<DeviceMusicScanProgress | null>(null);
   const [enrichDone, setEnrichDone] = useState(0);
@@ -150,13 +152,17 @@ export default function AudiobooksView({
   }, [originFiltered]);
 
   const visibleBooks = useMemo(() => {
-    if (libraryGroup === 'authors' && openAuthor) {
-      return originFiltered.filter(
-        (b) => (b.author || 'Unknown author').trim() === openAuthor,
-      );
-    }
-    return originFiltered;
-  }, [originFiltered, libraryGroup, openAuthor]);
+    const scoped =
+      libraryGroup === 'authors' && openAuthor
+        ? originFiltered.filter((b) => (b.author || 'Unknown author').trim() === openAuthor)
+        : originFiltered;
+    // Local filter over books already on the device — instant, no submit, matching Music.
+    const q = libraryQuery.trim().toLowerCase();
+    if (!q) return scoped;
+    return scoped.filter(
+      (b) => b.title.toLowerCase().includes(q) || b.author?.toLowerCase().includes(q),
+    );
+  }, [originFiltered, libraryGroup, openAuthor, libraryQuery]);
 
   const playBook = useCallback(
     (book: AudiobookBook) => {
@@ -398,6 +404,23 @@ export default function AudiobooksView({
         </div>
         {/* Scan/library actions live behind ⋮ rather than a permanent button pinned to the
             header — it dominated the page and left no room for other actions. */}
+        {/* Magnifier beside the ⋮, matching Music's Library. Filters books already scanned off
+            the device, so it is instant and needs no submit — Discover keeps its own box
+            because that one fires a remote query. */}
+        {tab === 'device' ? (
+          <button
+            type="button"
+            className={`audiobooks-library-search-btn touch-manipulation${librarySearchOpen ? ' is-active' : ''}`}
+            onClick={() => {
+              setLibrarySearchOpen((open) => !open);
+              if (librarySearchOpen) setLibraryQuery('');
+            }}
+            aria-label={t('audiobooks.searchPlaceholder')}
+            aria-expanded={librarySearchOpen}
+          >
+            <Search className="w-5 h-5" />
+          </button>
+        ) : null}
         {tab === 'device' ? (
           <LockerMoreMenu
             open={libraryMenuOpen}
@@ -451,6 +474,18 @@ export default function AudiobooksView({
           />
         ) : null}
       </header>
+
+      {tab === 'device' && librarySearchOpen ? (
+        <input
+          type="search"
+          className="audiobooks-library-search-input"
+          value={libraryQuery}
+          onChange={(e) => setLibraryQuery(e.target.value)}
+          placeholder={t('audiobooks.searchPlaceholder')}
+          aria-label={t('audiobooks.searchPlaceholder')}
+          autoFocus
+        />
+      ) : null}
 
       {/* Library first, then Discover, then Acquire — same order as the other pillars. */}
       <div className="podcasts-tabs mb-4 px-1" role="tablist" aria-label={t('audiobooks.title')}>

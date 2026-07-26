@@ -15505,6 +15505,44 @@ body:has(#root > .onboarding-root) {
   overflow: hidden;
 }
 
+/* Library magnifier — Podcasts, Audiobooks, Playlists. A local filter over content already on
+   the device, so it collapses to an icon the way Music's does. Discover keeps a visible box
+   because that one submits a remote query. */
+.podcasts-library-search-btn,
+.audiobooks-library-search-btn,
+.playlists-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: var(--text-mid);
+}
+
+.podcasts-library-search-btn.is-active,
+.audiobooks-library-search-btn.is-active,
+.playlists-search-btn.is-active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.podcasts-library-search-input,
+.audiobooks-library-search-input,
+.playlists-search-input {
+  width: 100%;
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.625rem;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--bg-card) 60%, transparent);
+  color: var(--text);
+  font-size: 0.8125rem;
+}
+
 /* Podcast "New episodes" strip — the landing tab needs something that changes, and unplayed
    episodes across subscriptions are it. */
 .podcasts-new-episodes {
