@@ -141,12 +141,10 @@ contributed to, so that record lives in `git log` rather than only here:
 - **Cursor** (`cursoragent@cursor.com`)
 - **Claude Code** (`Claude Opus 5`)
 
-Research and architecture exploration — these shaped decisions without writing commits, so they
-have no trailers:
+Research and architecture exploration — shaped decisions without writing commits, so no
+trailers:
 
 - **Google AI Studio** (Gemini)
-- **ChatGPT**
-- **Google Search AI**
 
 Research output was treated as input, not instruction. Several proposals were adopted (WAL and
 connection-pool design, `lofty`, envelope encryption, plugin sandboxing limits, Kokoro-82M for
