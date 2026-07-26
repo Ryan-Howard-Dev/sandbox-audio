@@ -286,9 +286,22 @@ export function logE2e(area: string, pass: boolean, detail?: string): void {
 export function parseE2eUrl(raw: string): { action: string; params: URLSearchParams } | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
+
+  /*
+   * Parsed by hand, deliberately. `new URL()` does not populate `hostname` for non-special
+   * schemes consistently — Android's WebView left it empty for sandboxmusic://, so
+   * `host !== 'e2e'` rejected every deep link on device while Node/jsdom parsed them fine and
+   * the unit tests stayed green. That silently disabled the entire E2E bridge.
+   */
+  const direct = trimmed.match(/^[a-z][a-z0-9+.-]*:\/\/e2e\/+([^?#]+)(?:\?([^#]*))?/i);
+  if (direct?.[1]) {
+    const action = direct[1].replace(/\/+$/, '');
+    if (action) return { action, params: new URLSearchParams(direct[2] ?? '') };
+  }
+
   try {
     const url = trimmed.includes('://') ? new URL(trimmed) : new URL(`sandboxmusic://${trimmed.replace(/^\/+/, '')}`);
-    const host = url.hostname.toLowerCase();
+    const host = (url.hostname || url.host).toLowerCase();
     const path = url.pathname.replace(/^\/+/, '');
     if (host !== 'e2e') return null;
     const action = path || url.host;
