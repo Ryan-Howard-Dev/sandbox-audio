@@ -86,6 +86,11 @@ jobs:
         run: npm ci
       - name: Generate Tauri icons
         run: node scripts/generate-tauri-icons.mjs
+      - name: Bundle portable Node
+        # tauri.conf.json lists resources/node/ unconditionally, and build:desktop does
+        # not run prebuild:desktop:assets — so without this the bundle aborts with
+        # "resource path 'resources/node' doesn't exist" (R-007).
+        run: node scripts/fetch-portable-node.mjs
       - name: Build desktop (Tauri)
         run: |
           set -euo pipefail
@@ -117,6 +122,11 @@ jobs:
         run: npm ci
       - name: Generate Tauri icons
         run: node scripts/generate-tauri-icons.mjs
+      - name: Bundle portable Node
+        # tauri.conf.json lists resources/node/ unconditionally, and build:desktop does
+        # not run prebuild:desktop:assets — so without this the bundle aborts with
+        # "resource path 'resources/node' doesn't exist" (R-007).
+        run: node scripts/fetch-portable-node.mjs
       - name: Build desktop (Tauri)
         run: npm run build:desktop
       - name: Upload Tauri Windows artifacts
