@@ -29,9 +29,22 @@ export function normalizeReplayGainDb(value: unknown): number {
   return 0;
 }
 
+/**
+ * Opened WITHOUT a version on purpose.
+ *
+ * This pinned version 2 while lockerStorage owns the same database at version 3. Opening an
+ * existing v3 database with a lower version throws VersionError, and the catch in
+ * lookupLockerReplayGainDb swallowed it — so every lookup silently returned null and playback
+ * fell back to the placeholder gain. ReplayGain never worked on an upgraded locker, and it
+ * failed quietly enough that nothing reported it.
+ *
+ * A read-only consumer has no business declaring the schema version. Omitting it opens
+ * whatever exists, which is both correct and immune to drift when lockerStorage next
+ * migrates. Schema ownership stays with lockerStorage.
+ */
 function openLockerDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(LOCKER_DB_NAME, 2);
+    const request = indexedDB.open(LOCKER_DB_NAME);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
