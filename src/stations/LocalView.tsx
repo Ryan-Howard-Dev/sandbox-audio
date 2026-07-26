@@ -2887,7 +2887,13 @@ export default function LocalView({
         </header>
       )}
 
-      {embedded && !showArtistHub && !(showArtistBrowse && isMobileShell) && (
+      {/*
+        Also hidden inside an album. showArtistHub requires !selectedAlbum, so opening an album
+        turned BOTH guards false and the browse controls came back — sort order, grid/list and
+        Upload have no meaning once you are looking at one album's tracks. They belong to the
+        list you came from.
+      */}
+      {embedded && !selectedAlbum && !showArtistHub && !(showArtistBrowse && isMobileShell) && (
         <div className="locker-embedded-bar locker-embedded-bar--controls">
           <span className="locker-embedded-bar-spacer" aria-hidden />
           <div className="locker-embedded-controls">
