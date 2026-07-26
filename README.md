@@ -133,13 +133,15 @@ See [docs/risk-register.md](./docs/risk-register.md) for prioritized risks.
 Created and directed by **Ryan Howard** — architecture, product decisions, and every call about
 what this app is for.
 
-Co-created with AI pair programming:
+Co-created with AI:
 
-- **Cursor** (`cursoragent@cursor.com`)
-- **Claude Code** (`Claude Opus 5`)
+- **Cursor** (`cursoragent@cursor.com`) — implementation
+- **Claude Code** (`Claude Opus 5`) — implementation
+- **Google AI Studio** (Gemini) — research and architecture exploration
 
-Both appear as `Co-authored-by` trailers on the commits they contributed to, so the record is in
-`git log` rather than only here.
+Cursor and Claude Code appear as `Co-authored-by` trailers on the commits they contributed to,
+so that record lives in `git log` rather than only here. Gemini's contribution was research
+rather than commits, which is why it has no trailers.
 
 ## License
 
