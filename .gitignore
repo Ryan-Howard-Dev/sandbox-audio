@@ -53,6 +53,14 @@ proof-screenshots/
 *.jpg
 *.mp4
 
+# Android resources are source, not media. The blanket *.png above silently excluded the
+# launcher icons, so every clean checkout failed :app:processDebugResources with
+# "resource mipmap/ic_launcher_foreground not found" -- builds worked locally only because
+# the files were already on disk. This is why CI could never build the APK.
+!android/app/src/main/res/**/*.png
+!android/app/src/main/res/**/*.jpg
+!ios/App/App/Assets.xcassets/**/*.png
+
 # OS
 .DS_Store
 Thumbs.db
