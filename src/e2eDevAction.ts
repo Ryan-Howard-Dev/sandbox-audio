@@ -1339,6 +1339,13 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       }
       const firstId = 'e2e-queue-one';
       const secondId = 'e2e-queue-two';
+      /*
+       * The second item needs a distinct URL: enqueueNext dedupes by URL, so passing the same
+       * one is silently refused and the queue never reaches length 2. An ignored query param
+       * keeps the audio byte-identical while making the URLs differ, which preserves the point
+       * of the test — only metadata and ordering vary, not the stream.
+       */
+      const secondUrl = url.includes('?') ? `${url}&e2e=2` : `${url}?e2e=2`;
       try {
         await nativeExoPlayUrl(url, {
           autoPlay: true,
@@ -1348,7 +1355,7 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
           title: 'E2E TRACK ONE',
           artist: 'E2E',
         });
-        await nativeExoEnqueueNext(url, {
+        await nativeExoEnqueueNext(secondUrl, {
           envelopeId: secondId,
           title: 'E2E TRACK TWO',
           artist: 'E2E',
