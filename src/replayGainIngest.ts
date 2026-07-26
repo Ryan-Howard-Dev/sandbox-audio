@@ -67,6 +67,21 @@ export function trackGainFromLoudness(measurement: LoudnessMeasurement): number 
   return Math.round(gain * 10) / 10;
 }
 
+/**
+ * Whether a just-resolved track warrants background loudness analysis.
+ *
+ * A resolved gain of exactly 0 means "nothing stored", which is every locker row imported before
+ * ingest measured loudness correctly. Only locker tracks qualify: remote sources have no row to
+ * write back to, and re-analysing them on every play would be pure waste.
+ */
+export function shouldBackfillLockerTrackGain(env: {
+  replayGainDb: number;
+  provider?: string;
+  sourceId?: string;
+}): boolean {
+  return env.replayGainDb === 0 && env.provider === 'local-vault' && !!env.sourceId?.trim();
+}
+
 /** Sum-of-squares and peak in one pass; callers hold the decoded buffer. */
 export function measureLoudness(channels: ArrayLike<number>[]): LoudnessMeasurement | null {
   let sumSquares = 0;

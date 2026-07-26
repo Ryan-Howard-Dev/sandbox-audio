@@ -33,6 +33,7 @@ import {
 import { lookupBundledTrackArtistLine } from './albumBundledCredits';
 import { catalogArtworkUrl, useDirectMediaUpstream } from './catalogDirect';
 import { extractEmbeddedCover } from './embeddedCover';
+import { isBatterySaverEnabled } from './batterySaverSettings';
 import { fetchWithTimeout } from './fetchWithTimeout';
 import {
   measureLoudness,
@@ -2455,7 +2456,7 @@ export function parseId3v2Tags(buffer: ArrayBuffer): Id3Tags {
   return tags;
 }
 
-async function readId3FromFile(file: File): Promise<Id3Tags> {
+async function readId3FromFile(file: Blob): Promise<Id3Tags> {
   try {
     const head = file.slice(0, Math.min(file.size, 256 * 1024));
     return parseId3v2Tags(await head.arrayBuffer());
@@ -2712,6 +2713,8 @@ type LockerRow = {
    * and get the documented fallback until re-imported — never the old wrong value.
    */
   trackGainDb?: number | null;
+  /** Set once loudness analysis has been attempted, successfully or not — stops re-decoding. */
+  trackGainAnalyzedAt?: number;
 };
 
 let lockerCache: LockerEntry[] | null = null;
@@ -4474,6 +4477,63 @@ async function deriveTrackGainDb(
     return trackGainFromLoudness(measured) ?? undefined;
   } catch {
     return undefined;
+  }
+}
+
+const trackGainBackfillInFlight = new Set<string>();
+
+async function writeTrackGainRow(id: string, trackGainDb: number | null): Promise<void> {
+  const existing = await readLockerRowById(id);
+  if (!existing) return;
+  const db = await initDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    // Re-read then spread: this must add two fields, never rewrite a row from stale values.
+    tx.objectStore(STORE_NAME).put({ ...existing, trackGainDb, trackGainAnalyzedAt: Date.now() });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * Fill in `trackGainDb` for a row imported before ingest measured loudness correctly.
+ *
+ * On demand for one track, never as a library sweep. Decoding audio is expensive, and a
+ * background pass over a full locker is exactly the kind of unrequested work this app avoids —
+ * so tracks the user actually plays get analysed and the rest cost nothing. Skipped under
+ * battery saver, since this is discretionary by definition.
+ *
+ * The result applies from the *next* play of the track: changing gain mid-track would be an
+ * audible volume jump on a song already playing.
+ *
+ * Marks the row analysed even when analysis fails, so an oversized or undecodable file is not
+ * re-decoded on every play. Only the two gain fields are touched — locker rows are user data
+ * (ADR-001) and this must never rewrite metadata.
+ */
+export async function backfillLockerTrackGain(entryId: string): Promise<number | null> {
+  const id = entryId?.trim();
+  if (!id || trackGainBackfillInFlight.has(id)) return null;
+  if (isBatterySaverEnabled()) return null;
+  trackGainBackfillInFlight.add(id);
+  try {
+    const row = await readLockerRowById(id);
+    if (!row) return null;
+    const existing = row.trackGainDb;
+    if (typeof existing === 'number' && Number.isFinite(existing)) return existing;
+    if (row.trackGainAnalyzedAt != null) return null;
+
+    const blob = await getLockerAudioBlob(id);
+    // No audio resident yet (native cache still warming) — leave the row unmarked and retry on a
+    // later play rather than recording a permanent failure for a track that is merely not ready.
+    if (!blob) return null;
+
+    const gain = await deriveTrackGainDb(blob, await readId3FromFile(blob));
+    await writeTrackGainRow(id, gain ?? null);
+    return gain ?? null;
+  } catch {
+    return null;
+  } finally {
+    trackGainBackfillInFlight.delete(id);
   }
 }
 

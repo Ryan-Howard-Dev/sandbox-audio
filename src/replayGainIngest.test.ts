@@ -6,6 +6,7 @@ import {
   measureLoudness,
   parseReplayGainPeakDbfs,
   parseReplayGainTagDb,
+  shouldBackfillLockerTrackGain,
   trackGainFromLoudness,
 } from './replayGainIngest';
 
@@ -82,6 +83,27 @@ describe('trackGainFromLoudness', () => {
     const quiet = trackGainFromLoudness({ rmsDbfs: -22, peakDbfs: -6 }) ?? 0;
     const loud = trackGainFromLoudness({ rmsDbfs: -8, peakDbfs: -0.5 }) ?? 0;
     expect(quiet).toBeGreaterThan(loud);
+  });
+});
+
+describe('shouldBackfillLockerTrackGain', () => {
+  const locker = { replayGainDb: 0, provider: 'local-vault', sourceId: 'locker-1' };
+
+  it('analyses a locker row that has no stored gain', () => {
+    expect(shouldBackfillLockerTrackGain(locker)).toBe(true);
+  });
+
+  it('leaves a row that already has a measured gain alone', () => {
+    expect(shouldBackfillLockerTrackGain({ ...locker, replayGainDb: -6.2 })).toBe(false);
+  });
+
+  it('skips remote sources, which have no locker row to write back to', () => {
+    expect(shouldBackfillLockerTrackGain({ ...locker, provider: 'stream-proxy' })).toBe(false);
+  });
+
+  it('skips a locker track with no id to key the write on', () => {
+    expect(shouldBackfillLockerTrackGain({ ...locker, sourceId: '  ' })).toBe(false);
+    expect(shouldBackfillLockerTrackGain({ ...locker, sourceId: undefined })).toBe(false);
   });
 });
 
