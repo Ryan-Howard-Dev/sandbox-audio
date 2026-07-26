@@ -345,17 +345,12 @@ export default function AudiobooksView({
     <div className="locker-page podcasts-view audiobooks-view">
       <header className="audiobooks-station-header flex items-start justify-between gap-3 mb-3 px-1">
         <div>
+          {/* Title only. The per-tab notes here listed every provider by name — capability
+              documentation that reads as noise on every visit, and that Music never needed. */}
           <h1 className="font-display text-xl font-black uppercase tracking-wider flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-accent" aria-hidden />
             {t('audiobooks.title')}
           </h1>
-          <p className="font-mono text-[10px] text-[var(--text-dim)] mt-1 max-w-md">
-            {tab === 'discover'
-              ? t('audiobooks.discoverTabNote')
-              : tab === 'acquire'
-                ? t('audiobooks.acquireTabNote')
-                : t('audiobooks.isolationNote')}
-          </p>
         </div>
         {/* Scan/library actions live behind ⋮ rather than a permanent button pinned to the
             header — it dominated the page and left no room for other actions. */}

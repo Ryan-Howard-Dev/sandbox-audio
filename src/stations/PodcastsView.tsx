@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState, useTransition } from 
 import {
   Download,
   Loader2,
+  Play,
   Podcast,
   Search,
 } from 'lucide-react';
 import type { MediaEnvelope } from '../sandboxLayer1';
 import { fetchPodcastFeed } from '../podcastRss';
+import { selectNewPodcastEpisodes } from '../podcastNewEpisodes';
 import {
   fetchPodcastMirrorStatus,
   requestPodcastMirrorPull,
@@ -22,6 +24,7 @@ import {
   getUnplayedCountsByFeed,
   isEpisodeUnplayed,
   loadEpisodesForFeed,
+  loadAllEpisodes,
   loadSubscriptions,
   removeSubscription,
   saveEpisodesForFeed,
@@ -248,6 +251,15 @@ export default function PodcastsView({
     return getUnplayedCountsByFeed();
   }, [subscriptions, playbackTick]);
 
+  // Recomputed on playbackTick so an episode leaves the strip as soon as it is played.
+  const newEpisodes = useMemo(() => {
+    void playbackTick;
+    if (subscriptions.length === 0) return [];
+    return selectNewPodcastEpisodes(loadAllEpisodes(), subscriptions, {
+      isUnplayed: isEpisodeUnplayed,
+    });
+  }, [subscriptions, playbackTick]);
+
   const downloadedCount = useMemo(() => {
     if (!openFeed) return 0;
     return episodes.filter((ep) =>
@@ -472,7 +484,7 @@ export default function PodcastsView({
               setOpenFeedId(null);
             }}
           >
-            Shows{subscriptions.length > 0 ? ` (${subscriptions.length})` : ''}
+            Library{subscriptions.length > 0 ? ` (${subscriptions.length})` : ''}
           </button>
           <button
             type="button"
@@ -486,10 +498,12 @@ export default function PodcastsView({
             className={`podcasts-tab podcasts-tab--downloaded touch-manipulation${tab === 'library' && libraryView === 'downloaded' ? ' podcasts-tab--active' : ''}`}
             onClick={goToDownloaded}
             aria-current={tab === 'library' && libraryView === 'downloaded' ? 'page' : undefined}
-            aria-label={`Offline episodes${offlineEpisodeCount > 0 ? `, ${offlineEpisodeCount}` : ''}`}
+            aria-label={`Downloaded episodes${offlineEpisodeCount > 0 ? `, ${offlineEpisodeCount}` : ''}`}
           >
             <Download className="w-3.5 h-3.5 shrink-0" aria-hidden />
-            <span className="podcasts-tab-label" aria-hidden>Offline</span>
+            {/* "Downloaded", not "Offline": this is a filter over the library (libraryView),
+                not a third section, and Music already calls that state downloaded. */}
+            <span className="podcasts-tab-label" aria-hidden>Downloaded</span>
             <span
               className={`podcasts-count-badge${offlineEpisodeCount === 0 ? ' podcasts-count-badge--empty' : ''}`}
               aria-hidden
@@ -651,6 +665,43 @@ export default function PodcastsView({
             />
           ) : (
             <div className="podcasts-content pt-4">
+              {/* New episodes before the show grid: the grid alone made the landing tab look
+                  static even when episodes had arrived, since counts sat on tiles you had to
+                  open. Episodes are what's perishable here. */}
+              {newEpisodes.length > 0 ? (
+                <section className="podcasts-new-episodes" aria-label="New episodes">
+                  <h2 className="podcasts-section-title">New episodes</h2>
+                  <ul className="podcasts-new-episodes-list">
+                    {newEpisodes.map(({ episode, showTitle, showArtworkUrl }) => (
+                      <li key={episode.id}>
+                        <button
+                          type="button"
+                          className="podcasts-new-episode touch-manipulation"
+                          onClick={() =>
+                            void onPlay(episodeEnvelope(episode, showTitle, showArtworkUrl))
+                          }
+                        >
+                          {showArtworkUrl ? (
+                            <img
+                              className="podcasts-new-episode-art"
+                              src={showArtworkUrl}
+                              alt=""
+                              aria-hidden
+                            />
+                          ) : (
+                            <span className="podcasts-new-episode-art" aria-hidden />
+                          )}
+                          <span className="podcasts-new-episode-text">
+                            <span className="podcasts-new-episode-title">{episode.title}</span>
+                            <span className="podcasts-new-episode-show">{showTitle}</span>
+                          </span>
+                          <Play className="w-4 h-4 text-accent shrink-0" aria-hidden />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
               <PodcastLibraryShowGrid
                 subscriptions={subscriptions}
                 unplayedByFeed={unplayedByFeed}

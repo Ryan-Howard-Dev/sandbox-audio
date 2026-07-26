@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ArrowLeft,
-  Globe,
   Loader2,
   Play,
   Plus,
@@ -368,16 +367,8 @@ export default function PodcastDiscoverPanel({
 
   return (
     <div className="podcasts-discover">
-      <div className="podcasts-discover-hero">
-        <Globe className="w-5 h-5 text-accent shrink-0" aria-hidden />
-        <div>
-          <p className="podcasts-discover-hero-title">Discover podcasts worldwide</p>
-          <p className="podcasts-discover-hero-lead">
-            Search millions of shows across open podcast directories and the global catalog. Tap a show to browse episodes.
-          </p>
-        </div>
-      </div>
-
+      {/* The search field and results say what this tab is. A hero card explaining it was
+          onboarding copy with no expiry — Music has no equivalent and does not need one. */}
       <form
         className="podcasts-discover-search"
         onSubmit={(e) => {

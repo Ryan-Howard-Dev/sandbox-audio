@@ -94,6 +94,9 @@ import { suggestPlaylistEnhancements } from '../playlistEnhance';
 import PlaylistShareDialog from '../components/playlists/PlaylistShareDialog';
 import { parsePlaylistShareFromHash, shareOrDownloadPlaylist } from '../playlistCollaborativeShare';
 import PlaylistPinnedRow from '../components/playlists/PlaylistPinnedRow';
+import CollectionDownloadBar from '../components/downloads/CollectionDownloadBar';
+import TrackDownloadProgress from '../components/downloads/TrackDownloadProgress';
+import { catalogTrackIdFromEnvelope } from '../catalogTrackId';
 import { seedGradient } from '../seedGradient';
 import { TASTE_FEEDBACK_CHANGE_EVENT } from '../tasteFeedback';
 import { isSystemLikedPlaylist, syncLikedPlaylist } from '../likedPlaylist';
@@ -2450,6 +2453,12 @@ export default function PlaylistsView({
           </header>
         ) : null}
         {openPlaylist ? (
+          <CollectionDownloadBar
+            playlistId={openPlaylist.id}
+            label={displayPlaylistName(openPlaylist)}
+          />
+        ) : null}
+        {openPlaylist ? (
           (() => {
             const stubs = openPlaylist.importTrackStubs ?? [];
             const hasStubs = stubs.length > 0;
@@ -3108,6 +3117,10 @@ export default function PlaylistsView({
                             ) : null;
                           })()}
                           </button>
+                          <TrackDownloadProgress
+                            trackId={catalogTrackIdFromEnvelope(track) ?? track.envelopeId}
+                            title={track.title}
+                          />
                         </div>
                       </li>
                     ))}

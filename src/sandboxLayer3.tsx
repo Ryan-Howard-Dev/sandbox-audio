@@ -8931,31 +8931,10 @@ export default function SandboxShell() {
         </button>
       ) : null}
 
-      {/* Downloads: a fixed FAB rather than a shell-header row, so it costs no vertical space.
-          It sat in the mobile header before, which forced a 52px empty band above the Music
-          segments — and Discover, where most downloads start, could not reach it at all.
-          Home is excluded: nothing downloads from there, and the vinyl owns that corner.
-          The Locker ⋮ also opens Downloads, but only on the artists list — every other locker
-          section has no overflow menu, so the FAB stays as the universal entry point. */}
-      {showMobileShell && !mobileSearchOpen && station !== 'search' && station !== 'home' ? (
-        <button
-          type="button"
-          className="mobile-downloads-fab touch-manipulation"
-          onClick={() => setMobileDownloadSheetOpen(true)}
-          aria-label={
-            mobileDownloadBadge > 0
-              ? t('download.activity.openWithCount', { count: mobileDownloadBadge })
-              : t('download.activity.open')
-          }
-        >
-          <Download className="w-5 h-5" strokeWidth={2} />
-          {mobileDownloadBadge > 0 ? (
-            <span className="shell-downloads-btn-badge" aria-hidden>
-              {mobileDownloadBadge > 9 ? '9+' : mobileDownloadBadge}
-            </span>
-          ) : null}
-        </button>
-      ) : null}
+      {/* No floating download button. Progress belongs with the content it describes — a bar at
+          the top of the collection and a chip on each track row (CollectionDownloadBar /
+          TrackDownloadProgress). The activity sheet remains reachable from the Locker ⋮ for the
+          queue-wide view: retries, failures, and clearing finished jobs. */}
 
       <main
         ref={shellMainRef}

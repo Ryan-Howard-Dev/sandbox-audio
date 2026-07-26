@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   BookOpen,
   ChevronDown,
-  Globe,
   Loader2,
   Play,
   Plus,
@@ -537,14 +536,6 @@ export default function AudiobookDiscoverPanel({
 
   return (
     <div className="podcasts-discover audiobooks-discover">
-      <div className="podcasts-discover-hero">
-        <Globe className="w-5 h-5 text-accent shrink-0" aria-hidden />
-        <div>
-          <p className="podcasts-discover-hero-title">{t('audiobooks.discoverTitle')}</p>
-          <p className="podcasts-discover-hero-lead">{t('audiobooks.discoverLead')}</p>
-        </div>
-      </div>
-
       <form
         className="podcasts-discover-search"
         onSubmit={(e) => {
