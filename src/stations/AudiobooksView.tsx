@@ -424,6 +424,15 @@ export default function AudiobooksView({
                 active: libraryOrigin === 'uploaded',
                 onClick: () => setLibraryOrigin('uploaded'),
               },
+              {
+                // Acquire is an action, not a way of browsing, so it does not belong beside
+                // Library and Discover as a peer tab. Music and Podcasts both get by with two.
+                id: 'acquire',
+                section: 'Get books',
+                label: t('audiobooks.tabAcquire'),
+                divider: true,
+                onClick: () => setTab('acquire'),
+              },
             ]}
           />
         ) : null}
@@ -451,16 +460,20 @@ export default function AudiobooksView({
           <Search className="w-3.5 h-3.5" aria-hidden />
           {t('audiobooks.tabDiscover')}
         </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'acquire'}
-          className={`podcasts-tab touch-manipulation${tab === 'acquire' ? ' podcasts-tab--active' : ''}`}
-          onClick={() => setTab('acquire')}
-        >
-          <Magnet className="w-3.5 h-3.5" aria-hidden />
-          {t('audiobooks.tabAcquire')}
-        </button>
+        {/* Acquire lives in the ⋮ now — see the menu above. Kept as a tab only while it is the
+            active view, so the tab strip still reflects where you are. */}
+        {tab === 'acquire' ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected
+            className="podcasts-tab podcasts-tab--active touch-manipulation"
+            onClick={() => setTab('device')}
+          >
+            <Magnet className="w-3.5 h-3.5" aria-hidden />
+            {t('audiobooks.tabAcquire')}
+          </button>
+        ) : null}
       </div>
 
       {tab === 'discover' ? (
