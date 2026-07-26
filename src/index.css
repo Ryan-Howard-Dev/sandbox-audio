@@ -15505,6 +15505,20 @@ body:has(#root > .onboarding-root) {
   overflow: hidden;
 }
 
+/* Album blurb under the banner meta. Clamped so a long Wikipedia lead cannot push the track
+   list off screen — the tracks are why you opened the page. */
+.locker-album-blurb {
+  margin-top: 0.5rem;
+  max-width: 46rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-mid);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Library magnifier — Podcasts, Audiobooks, Playlists. A local filter over content already on
    the device, so it collapses to an icon the way Music's does. Discover keeps a visible box
    because that one submits a remote query. */

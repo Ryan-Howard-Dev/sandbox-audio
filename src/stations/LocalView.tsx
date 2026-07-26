@@ -81,6 +81,7 @@ import {
 } from '../libraryMetadataAutoRepair';
 import { formatAlbumDuration, formatTime } from './theme';
 import { seedGradient } from '../seedGradient';
+import { fetchMusicDescription } from '../musicDescription';
 import { useCoverArtGlow } from '../hooks/useCoverArtGlow';
 import { extractEmbeddedCover, extractEmbeddedCoverFromAny } from '../embeddedCover';
 import { findAlbumCoverForLockerGroup } from '../albumCover';
@@ -1754,6 +1755,27 @@ export default function LocalView({
     ? (selectedAlbumGlowStyle as React.CSSProperties)
     : undefined;
 
+  /*
+   * Look the album up once per album, cached, and drop the result if the user navigates away
+   * before it lands — otherwise a slow lookup paints a blurb onto the next album they opened.
+   */
+  const [albumBlurb, setAlbumBlurb] = useState<string | null>(null);
+  useEffect(() => {
+    setAlbumBlurb(null);
+    if (!selectedAlbum) return;
+    let cancelled = false;
+    void fetchMusicDescription(
+      'album',
+      selectedAlbum.name,
+      selectedAlbum.artist ?? '',
+    ).then((text) => {
+      if (!cancelled) setAlbumBlurb(text);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAlbum]);
+
   const showAlbumAmbientWash =
     lockerTab !== 'videos' && viewMode === 'albums' && Boolean(selectedAlbum);
 
@@ -3185,6 +3207,9 @@ export default function LocalView({
                 {selectedAlbumMeta.releaseDate ? (
                   <p className="locker-album-banner-release">{selectedAlbumMeta.releaseDate}</p>
                 ) : null}
+                {/* Album blurb. File tags carry a title and an artist, never prose, so an album
+                    page could say what it contained but never what it was. */}
+                {albumBlurb ? <p className="locker-album-blurb">{albumBlurb}</p> : null}
                 {selectedCollection && selectedCollection.editionCount > 1 ? (
                   <div className="locker-edition-picker" role="group" aria-label="Album edition">
                     {selectedCollection.editions.map((edition) => {
