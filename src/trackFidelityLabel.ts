@@ -3,7 +3,7 @@
  */
 
 import type { MediaEnvelope } from './sandboxLayer1';
-import { loadFidelityPolicy, type FidelityPolicy } from './sandboxSettings';
+import type { FidelityPolicy } from './sandboxSettings';
 
 const LOSSLESS_EXT = /\.(flac|wav|aiff|aif|alac|ape)(\?|#|$)/i;
 const LOSSLESS_MIME = /flac|wav|aiff|alac|ape/i;
@@ -20,10 +20,15 @@ function losslessFormatFromHints(mime: string, url: string, title: string): Loss
   return null;
 }
 
-/** True when the active envelope is a lossless locker or debrid source. */
+/**
+ * True only when something about the source actually says lossless — mime type or extension.
+ *
+ * `provider === 'debrid'` used to return true on its own. Debrid sources are *often* lossless
+ * rips, but "often" is not "is", and the badge was presenting the guess as a measurement. A
+ * debrid URL that names a lossless format still matches on that format, which is the real signal.
+ */
 export function isLosslessEnvelope(envelope: MediaEnvelope | null | undefined): boolean {
   if (!envelope) return false;
-  if (envelope.provider === 'debrid') return true;
 
   const mime = (envelope.mimeType ?? '').toLowerCase();
   const url = (envelope.url ?? '').toLowerCase();
@@ -73,6 +78,19 @@ export function losslessBadgeLabel(
   return t('player.fidelity.losslessDefault');
 }
 
+/**
+ * What is playing — never what the user asked for.
+ *
+ * The lossy branch used to append `fidelityPolicyBitDepthLabel`, which describes the *configured
+ * fidelity policy*: "24-bit · lossless" for the LOSSLESS setting, regardless of the stream. So a
+ * 64 kbps LibriVox MP3 rendered "MOBILE · 24-BIT · LOSSLESS" on the now-playing screen. A
+ * preference is not a property of the audio, and stating it as one is the one thing an app that
+ * sells itself on audio honesty cannot do.
+ *
+ * Now: say the format when the source actually identifies one, otherwise say only where the
+ * stream came from. The policy label still exists for the settings menu, where it is a true
+ * statement about a setting.
+ */
 export function resolvePlaybackFidelityLabel(
   envelope: MediaEnvelope | null | undefined,
   options: {
@@ -87,12 +105,5 @@ export function resolvePlaybackFidelityLabel(
     return losslessBadgeLabel(envelope, options.t);
   }
 
-  const policyLabel = fidelityPolicyBitDepthLabel(
-    options.policy ?? loadFidelityPolicy(),
-    options.t,
-  );
-  if (options.streamLabel) {
-    return `${options.streamLabel} · ${policyLabel}`;
-  }
-  return policyLabel;
+  return options.streamLabel?.trim() || null;
 }

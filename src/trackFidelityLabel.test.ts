@@ -28,41 +28,81 @@ function env(partial: Partial<MediaEnvelope> & Pick<MediaEnvelope, 'envelopeId'>
   };
 }
 
+/*
+ * These assertions changed deliberately. The previous versions encoded three claims the app could
+ * not support: that a debrid source is lossless because of its provider, that unknown lossless is
+ * "24/44.1", and that a lossy stream carries the bit depth named by the user's fidelity *setting*.
+ * The badge now states only what the source actually identifies.
+ */
 describe('trackFidelityLabel', () => {
   it('detects FLAC locker paths', () => {
-    const flac = env({
-      envelopeId: 'local-1',
-      url: 'blob:https://x/y/track.flac',
-    });
+    const flac = env({ envelopeId: 'local-1', url: 'blob:https://x/y/track.flac' });
     expect(isLosslessEnvelope(flac)).toBe(true);
     expect(losslessBadgeLabel(flac, t)).toBe('Lossless · FLAC');
   });
 
-  it('shows default lossless badge when format unknown', () => {
+  it('detects lossless by mime as well as extension', () => {
+    const alac = env({ envelopeId: 'local-2', mimeType: 'audio/alac' });
+    expect(isLosslessEnvelope(alac)).toBe(true);
+    expect(losslessBadgeLabel(alac, t)).toBe('Lossless · ALAC');
+  });
+
+  /*
+   * Debrid sources are often lossless rips, but the provider alone is a guess. Claiming lossless
+   * from it presented that guess as a measurement.
+   */
+  it('does not claim lossless from the debrid provider alone', () => {
     const debrid = env({
       envelopeId: 'd-1',
       provider: 'debrid',
       url: 'https://cdn.example/stream',
     });
-    expect(isLosslessEnvelope(debrid)).toBe(true);
-    expect(losslessBadgeLabel(debrid, t)).toBe('Lossless · 24/44.1');
+    expect(isLosslessEnvelope(debrid)).toBe(false);
   });
 
-  it('combines stream label with policy for lossy streams', () => {
+  it('still detects a debrid source that names a lossless format', () => {
+    const debridFlac = env({
+      envelopeId: 'd-2',
+      provider: 'debrid',
+      url: 'https://cdn.example/rip.flac',
+    });
+    expect(isLosslessEnvelope(debridFlac)).toBe(true);
+    expect(losslessBadgeLabel(debridFlac, t)).toBe('Lossless · FLAC');
+  });
+
+  /*
+   * The regression this exists for: a 64 kbps LibriVox MP3 rendered "MOBILE · 24-BIT · LOSSLESS",
+   * because the lossy branch appended the configured fidelity policy. The policy describes a
+   * setting, not the audio.
+   */
+  it('never reports the fidelity policy as a property of a lossy stream', () => {
     const stream = env({
       envelopeId: 's-1',
       provider: 'proxy',
       transport: 'proxy',
-      url: 'https://cdn.example/track.m4a',
-      mimeType: 'audio/mp4',
+      url: 'https://archive.org/download/x/chapter_64kb.mp3',
+      mimeType: 'audio/mpeg',
     });
     expect(isLosslessEnvelope(stream)).toBe(false);
-    expect(
-      resolvePlaybackFidelityLabel(stream, {
-        streamLabel: 'YT',
-        t,
-        policy: 'STANDARD',
-      }),
-    ).toBe('YT · 16-bit · standard');
+    for (const policy of ['STANDARD', 'HIGH', 'LOSSLESS'] as const) {
+      expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'MOBILE', t, policy })).toBe(
+        'MOBILE',
+      );
+    }
+  });
+
+  it('shows nothing rather than a guess when the source is unknown', () => {
+    const stream = env({ envelopeId: 's-2', provider: 'proxy', url: 'https://cdn.example/a' });
+    expect(resolvePlaybackFidelityLabel(stream, { t, policy: 'LOSSLESS' })).toBeNull();
+    expect(resolvePlaybackFidelityLabel(stream, { streamLabel: '  ', t })).toBeNull();
+  });
+
+  it('prefers the real format over the stream label when both are known', () => {
+    const flac = env({ envelopeId: 'f-1', url: 'https://cdn.example/a.flac' });
+    expect(resolvePlaybackFidelityLabel(flac, { streamLabel: 'LAN', t })).toBe('Lossless · FLAC');
+  });
+
+  it('returns null without an envelope', () => {
+    expect(resolvePlaybackFidelityLabel(null, { streamLabel: 'LAN', t })).toBeNull();
   });
 });
