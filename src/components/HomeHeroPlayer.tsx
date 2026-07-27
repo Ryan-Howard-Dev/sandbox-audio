@@ -14,6 +14,7 @@ import type { RepeatMode } from '../queuePersistence';
 import MobileHomeVinylSettingsSheet from '../mobile/MobileHomeVinylSettingsSheet';
 import { shouldShowMobileHomeVinylSettings } from '../mobile/mobileHomeVinylLogic';
 import type { AudioFsmState, MediaEnvelope } from '../sandboxLayer1';
+import { isAnyAudiobookEnvelopeId } from '../spokenWordPlayback';
 import {
   applyHeroDisplayFromSettingsEvent,
   loadHeroDisplayMode,
@@ -352,6 +353,11 @@ export default function HomeHeroPlayer({
     : resolveHeroShowShades(effectiveHeroDisplay, hasArt, { idleHome: trueIdle });
   const gradientSeed = title?.trim() || album?.trim() || 'Sandbox';
   const heroArtist = displayHeroArtist(artist, album);
+  const bookTitle = album?.trim() ?? '';
+  const showBookLine =
+    isAnyAudiobookEnvelopeId(envelope?.envelopeId) &&
+    bookTitle.length > 0 &&
+    bookTitle !== title?.trim();
   const duration = durationSeconds > 0 ? durationSeconds : 0;
   const progress =
     duration > 0
@@ -597,6 +603,13 @@ export default function HomeHeroPlayer({
               <p className="home-hero-artist">{heroArtist}</p>
             )
           ) : null}
+          {/*
+            An audiobook's title is the chapter, so the book itself appeared nowhere on the
+            player — "CHAPTER 6" by "Jane Austen", with no Pride and Prejudice. For music the
+            album is already reachable through the artist line, so this is spoken-word only, and
+            it lands in the gap that otherwise sat empty between the artist and the transport.
+          */}
+          {showBookLine ? <p className="home-hero-book">{album}</p> : null}
 
           {!compact && (
             <>

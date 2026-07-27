@@ -1553,6 +1553,31 @@ body {
   word-break: break-word;
 }
 
+/*
+ * Spoken-word only: an audiobook's title is the chapter, so without this the book itself never
+ * appears on the player. Sits below the author, quieter than it, so the reading order stays
+ * chapter -> author -> book.
+ */
+.home-hero-book {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.72rem;
+  color: color-mix(in srgb, #8a8fa8 78%, transparent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+  width: 100%;
+  max-width: 100%;
+  margin: 0.35rem auto 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Chrome, not a call to action — see MobileNowPlayingView header. */
+.mobile-np-collapse-btn {
+  color: color-mix(in srgb, var(--accent-burnt) 62%, transparent);
+}
+
 .home-hero-artist {
   font-family: 'IBM Plex Mono', var(--font-mono);
   font-size: 0.85rem;
@@ -18699,7 +18724,7 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
    * space to their left. Giving the free space to the actions instead lets them distribute like
    * the transport row above, and an empty context column now collapses to nothing.
    */
-  grid-template-columns: 2.5rem minmax(0, auto) minmax(0, 1fr);
+  grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, max-content);
   grid-template-areas: 'leading context actions';
   align-items: center;
   justify-content: stretch;

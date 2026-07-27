@@ -74,6 +74,7 @@ import {
   searchArtistScrollKey,
 } from './scrollRestore';
 import { closeSandboxOverlay } from './hooks/useDismissableOverlay';
+import { isAnyAudiobookEnvelopeId, usesIntervalSeekTransport } from './spokenWordPlayback';
 import { installE2eLiveHandlers } from './e2eHandlerBootstrap';
 import { logE2e, markE2ePlaybackHandlersLive, registerE2eHandlers } from './e2eDevAction';
 import {
@@ -7134,7 +7135,9 @@ export default function SandboxShell() {
       sendConnectCommand({ cmd: 'SKIP_PREV' });
       return;
     }
-    if (audio.envelope && isPodcastEnvelopeId(audio.envelope.envelopeId)) {
+    // Audiobooks included: a twelve-hour book had music's transport, so this button jumped a
+    // whole chapter instead of stepping back a few seconds. See spokenWordPlayback.
+    if (audio.envelope && usesIntervalSeekTransport(audio.envelope.envelopeId)) {
       const interval = loadPodcastSeekIntervalSeconds();
       const dur =
         audio.streamDurationSeconds ||
@@ -7194,7 +7197,7 @@ export default function SandboxShell() {
       sendConnectCommand({ cmd: 'SKIP_NEXT' });
       return;
     }
-    if (audio.envelope && isPodcastEnvelopeId(audio.envelope.envelopeId)) {
+    if (audio.envelope && usesIntervalSeekTransport(audio.envelope.envelopeId)) {
       const interval = loadPodcastSeekIntervalSeconds();
       const dur =
         audio.streamDurationSeconds ||

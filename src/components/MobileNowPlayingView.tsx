@@ -231,6 +231,8 @@ export default function MobileNowPlayingView({
       t,
       policy: loadFidelityPolicy(),
     }) ?? undefined;
+  /** First character of the profile name — falls back to the generic glyph when unusable. */
+  const profileInitial = profileName?.trim().charAt(0).toUpperCase() ?? '';
 
   useEffect(() => {
     const sync = (event: Event) => {
@@ -383,6 +385,11 @@ export default function MobileNowPlayingView({
             <span />
           </div>
           <header className="mobile-np-header mobile-np-header--unified mobile-np-header--tidal">
+            {/*
+              A bare person glyph could mean profile, artist or account. The initial says which
+              profile you are in, which is the actual question, and reuses the bordered avatar
+              treatment already defined for it.
+            */}
             <button
               type="button"
               className="mobile-np-icon-btn touch-manipulation"
@@ -390,17 +397,28 @@ export default function MobileNowPlayingView({
               aria-label={t('shell.profile', { name: profileName })}
               title={profileName}
             >
-              <User className="w-5 h-5" strokeWidth={2} />
+              {profileInitial ? (
+                <span className="mobile-np-profile" aria-hidden>
+                  {profileInitial}
+                </span>
+              ) : (
+                <User className="w-5 h-5" strokeWidth={2} />
+              )}
             </button>
 
             <div className="mobile-np-header-center">
+              {/*
+                Collapsing the player is the least consequential action on this screen, and it was
+                the heaviest chrome on it: centre stage, and a larger glyph than its neighbours.
+                Matched to their size and muted so it reads as chrome rather than a call to action.
+              */}
               <button
                 type="button"
                 className="mobile-np-icon-btn touch-manipulation mobile-np-collapse-btn"
                 onClick={handleClose}
                 aria-label={t('nowPlaying.close')}
               >
-                <ChevronDown className="w-6 h-6" strokeWidth={2} />
+                <ChevronDown className="w-5 h-5" strokeWidth={2} />
               </button>
             </div>
 
