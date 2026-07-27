@@ -32,6 +32,7 @@ import { formatTime } from '../../stations/theme';
 import { useTranslation } from '../../i18n';
 import AudiobookChapterRow from './AudiobookChapterRow';
 import { getCachedDiscovery } from '../../discoveryRefresh';
+import { fetchLibrivoxChapters } from '../../librivoxCrossRef';
 import {
   classifyAudiobookFidelity,
   fetchTextByteLength,
@@ -175,8 +176,12 @@ function BookDetailView({
    * provider gave us a text to measure against.
    */
   const [fidelity, setFidelity] = useState<AudiobookFidelity>('unverified');
+  /** Chapters recovered from LibriVox, used in place of a fragmentary catalog listing. */
+  const [repaired, setRepaired] = useState<AudiobookCatalogChapter[] | null>(null);
+
   useEffect(() => {
     setFidelity('unverified');
+    setRepaired(null);
     if (loading) return;
     if (chapters.length > 1) {
       setFidelity('complete');
@@ -184,20 +189,45 @@ function BookDetailView({
     }
     if (!book.textUrl) return;
     let cancelled = false;
-    void fetchTextByteLength(book.textUrl).then((textBytes) => {
+    void fetchTextByteLength(book.textUrl).then(async (textBytes) => {
       if (cancelled) return;
-      setFidelity(
-        classifyAudiobookFidelity({
-          textBytes,
-          actualSeconds: chapters[0]?.durationSeconds ?? book.durationSeconds ?? null,
-          chapterCount: chapters.length,
-        }),
+      const verdict = classifyAudiobookFidelity({
+        textBytes,
+        actualSeconds: chapters[0]?.durationSeconds ?? book.durationSeconds ?? null,
+        chapterCount: chapters.length,
+      });
+      setFidelity(verdict);
+      if (verdict !== 'sample') return;
+
+      /*
+       * Detecting the fragment only warns; this repairs it. Most Gutenberg audio came from
+       * LibriVox volunteers, and LibriVox models the recording as the primary entity, so it has
+       * the real section list. A confident match replaces the single stub file with the whole
+       * book; anything less leaves the warning in place, because swapping in the wrong book
+       * would be worse than the fragment.
+       */
+      const found = await fetchLibrivoxChapters(book.title, book.author);
+      if (cancelled || !found) return;
+      setRepaired(
+        found.map((chapter, index) => ({
+          id: `librivox-xref-${index + 1}`,
+          bookId: book.id,
+          title: chapter.title,
+          audioUrl: chapter.audioUrl,
+          durationSeconds: chapter.durationSeconds,
+          chapterNumber: chapter.chapterNumber,
+          source: 'librivox' as const,
+        })),
       );
+      setFidelity('complete');
     });
     return () => {
       cancelled = true;
     };
-  }, [book.textUrl, book.durationSeconds, chapters, loading]);
+  }, [book.textUrl, book.durationSeconds, book.title, book.author, book.id, chapters, loading]);
+
+  // Everything below renders the repaired listing once there is one.
+  const shownChapters = repaired ?? chapters;
   // Carry the resolved cover into playback too, so these books get lock-screen art rather than
   // inheriting the same blank the hero used to show.
   const bookWithCover = cover.raw ? { ...book, artworkUrl: cover.raw } : book;
@@ -239,8 +269,8 @@ function BookDetailView({
           ) : null}
           <p className="font-mono text-[10px] text-[var(--text-dim)] mt-1">
             {audiobookSourceLabel(book.source)}
-            {chapters.length > 0
-              ? ` · ${t('audiobooks.chaptersCount', { count: chapters.length })}`
+            {shownChapters.length > 0
+              ? ` · ${t('audiobooks.chaptersCount', { count: shownChapters.length })}`
               : ''}
             {book.durationSeconds && book.durationSeconds > 0
               ? ` · ${formatTime(book.durationSeconds)}`
@@ -259,7 +289,7 @@ function BookDetailView({
               type="button"
               className="btn-accent touch-manipulation h-10 px-4 rounded-lg font-mono text-[10px] uppercase tracking-wider inline-flex items-center gap-2 whitespace-nowrap"
               onClick={onPlayAll}
-              disabled={loading || chapters.length === 0}
+              disabled={loading || shownChapters.length === 0}
               aria-label={t('audiobooks.playAlbum', { title: book.title })}
             >
               <Play className="w-3.5 h-3.5 shrink-0" />
@@ -278,13 +308,13 @@ function BookDetailView({
           <Loader2 className="w-4 h-4 animate-spin" />
           {t('audiobooks.loadingChapters')}
         </p>
-      ) : chapters.length === 0 ? (
+      ) : shownChapters.length === 0 ? (
         <p className="font-mono text-xs text-[var(--text-dim)] py-4">
           {t('audiobooks.noChapters')}
         </p>
       ) : (
         <ul className="podcasts-episode-list divide-y divide-[var(--border)]">
-          {chapters.map((chapter) => (
+          {shownChapters.map((chapter) => (
             <AudiobookChapterRow
               key={chapter.id}
               chapter={chapter}
