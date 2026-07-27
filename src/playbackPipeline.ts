@@ -233,13 +233,78 @@ function catalogTierMatchesPlayback(
   );
 }
 
+/*
+ * Mobile resolves are checked, but not by the tier rules.
+ *
+ * They used to be accepted unconditionally (R-001), which is how tapping one song could play
+ * another. They cannot simply be held to the thresholds below, though: a yt-dlp or Piped hit
+ * reports a decorated title — "Artist - Title (Official Video)" — and frequently the uploader as
+ * the artist, so dice similarity against a clean catalog title scores far under the tier minimum
+ * and would reject the correct stream. Rejecting a good stream reads to a listener as the app
+ * being broken, which is worse than the bug being fixed.
+ *
+ * So this rejects on positive evidence of divergence and abstains where there is no signal.
+ * Duration does most of the work: it is the field these resolvers report reliably, and a wrong
+ * hit is usually the wrong length — an hour-long mix, a live version, a snippet. When a resolver
+ * reports no metadata of its own, `envelopeFromResolved` falls back to the catalog's, so the
+ * comparison is against itself and correctly finds nothing wrong.
+ */
+const MOBILE_DURATION_MIN_RATIO = 0.7;
+const MOBILE_DURATION_MAX_RATIO = 1.4;
+const MOBILE_TITLE_MIN_SIM = 0.6;
+const MOBILE_ARTIST_CONFLICT_SIM = 0.35;
+
+export function mobileResolveMatchesCatalog(
+  catalog: MediaEnvelope,
+  resolved: MediaEnvelope,
+): boolean {
+  const catalogDur = catalog.durationSeconds ?? 0;
+  const resolvedDur = resolved.durationSeconds ?? 0;
+  if (catalogDur > 45 && resolvedDur > 0) {
+    const ratio = resolvedDur / catalogDur;
+    if (ratio < MOBILE_DURATION_MIN_RATIO || ratio > MOBILE_DURATION_MAX_RATIO) return false;
+  }
+
+  const catalogTitle = normalizeMatchText(catalog.title ?? '');
+  const resolvedTitle = normalizeMatchText(resolved.title ?? '');
+  const resolvedBlob = normalizeMatchText(
+    `${resolved.title ?? ''} ${resolved.artist ?? ''} ${resolved.album ?? ''}`,
+  );
+  if (catalogTitle && resolvedTitle) {
+    // Containment first: the catalog title sits inside the decorated one on a correct hit.
+    const titled =
+      resolvedBlob.includes(catalogTitle) ||
+      diceCoefficient(catalogTitle, resolvedTitle) >= MOBILE_TITLE_MIN_SIM;
+    if (!titled) return false;
+  }
+
+  /*
+   * Artist is a rejection signal only, and only when both sides are specific. A generic uploader
+   * says nothing about identity, and requiring a match would throw away the many correct streams
+   * that live on re-upload channels.
+   */
+  const catalogArtist = catalog.artist?.trim() ?? '';
+  const resolvedArtist = resolved.artist?.trim() ?? '';
+  if (catalogArtist && resolvedArtist && !isGenericStreamArtist(resolvedArtist)) {
+    const normalizedCatalogArtist = normalizeMatchText(catalogArtist);
+    const disagrees =
+      diceCoefficient(catalogArtist, resolvedArtist) < MOBILE_ARTIST_CONFLICT_SIM &&
+      !resolvedBlob.includes(normalizedCatalogArtist);
+    if (disagrees) return false;
+  }
+
+  return true;
+}
+
 /** Reject tier/full-stream hits whose resolved metadata diverges from catalog identity. */
 export function resolvedStreamMatchesCatalog(
   catalog: MediaEnvelope,
   resolved: MediaEnvelope,
 ): boolean {
   if (!resolved.url?.trim()) return false;
-  if (resolved.resolutionSource === 'mobile') return true;
+  if (resolved.resolutionSource === 'mobile') {
+    return mobileResolveMatchesCatalog(catalog, resolved);
+  }
   if (isCatalogPreviewUrl(resolved.url)) return allowCatalogPreviewPlayback();
 
   const catalogArtist = catalog.artist?.trim() ?? '';
