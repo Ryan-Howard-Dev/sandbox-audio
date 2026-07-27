@@ -75,6 +75,12 @@ import {
 } from './scrollRestore';
 import { closeSandboxOverlay } from './hooks/useDismissableOverlay';
 import { isAnyAudiobookEnvelopeId, usesIntervalSeekTransport } from './spokenWordPlayback';
+import {
+  audiobookBookKeyFromEnvelopeId,
+  getAudiobookProgress,
+  saveAudiobookProgress,
+  shouldPersistAudiobookProgress,
+} from './audiobookProgress';
 import { installE2eLiveHandlers } from './e2eHandlerBootstrap';
 import { logE2e, markE2ePlaybackHandlersLive, registerE2eHandlers } from './e2eDevAction';
 import {
@@ -6499,6 +6505,39 @@ export default function SandboxShell() {
       };
     });
   }, []);
+
+  /*
+   * Per-book listening position. The queue persistence below is one global slot: play a song and
+   * your place in a ten-hour book is gone. This keys on the book instead, so every title keeps its
+   * own position indefinitely.
+   *
+   * Polls refs on an interval rather than running per render — position updates fire several
+   * times a second and this must not drive React work. The cleanup write is what captures the
+   * position when the chapter changes, the player closes, or the app is backgrounded.
+   */
+  useEffect(() => {
+    const bookKey = audiobookBookKeyFromEnvelopeId(audio.envelope?.envelopeId);
+    if (!bookKey) return;
+    let last = getAudiobookProgress(bookKey) ?? undefined;
+    const persist = () => {
+      const next = {
+        bookKey,
+        chapterIndex: Math.max(0, queueIndexRef.current),
+        offsetSeconds: Math.max(0, Math.floor(audioCurrentTimeRef.current)),
+        durationSeconds: Math.max(0, Math.floor(audioDurationRef.current)),
+        chapterCount: playQueueRef.current.length,
+        updatedAt: Date.now(),
+      };
+      if (!shouldPersistAudiobookProgress(last, next)) return;
+      saveAudiobookProgress(next);
+      last = next;
+    };
+    const timer = window.setInterval(persist, 5000);
+    return () => {
+      window.clearInterval(timer);
+      persist();
+    };
+  }, [audio.envelope?.envelopeId]);
 
   useEffect(() => {
     if (!queuePersistReady || isConnectRemoteRef.current) return;
