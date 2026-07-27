@@ -29,6 +29,7 @@ import { formatTime } from './theme';
 import { useTranslation } from '../i18n';
 import { proxiedArtworkUrl } from '../displaySanitize';
 import { audiobookBookKeyFromEnvelopeId, getAudiobookProgress } from '../audiobookProgress';
+import DocumentNarrationPanel from '../components/audiobooks/DocumentNarrationPanel';
 import { seedGradient } from '../seedGradient';
 import { fetchAudiobookDescription } from '../audiobookDescription';
 
@@ -623,6 +624,13 @@ export default function AudiobooksView({
           <p className="font-mono text-xs text-[var(--text-mid)]">{t('audiobooks.empty')}</p>
         </div>
       )}
+
+      {/*
+        Reading a document belongs beside your own books rather than in Discover: it is your
+        file, not something found in a catalog. Shown whether or not the device scan found
+        anything, since a research paper does not depend on having an audiobook library.
+      */}
+      <DocumentNarrationPanel onError={onError} />
 
       {books.length > 0 && (phase === 'ready' || phase === 'enriching') && (
         <section className="podcasts-library-grid-section audiobooks-library-section">

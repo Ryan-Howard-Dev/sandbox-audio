@@ -22044,3 +22044,44 @@ input.shell-search:focus-visible {
   color: #fff;
 }
 
+
+/*
+ * Read-a-document panel. Sits with your own books, not in Discover — a research paper is your
+ * file, not a catalog find.
+ */
+.audiobook-doc-panel {
+  padding: 0 1rem 1.5rem;
+}
+
+.audiobook-doc-now {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
+}
+
+.audiobook-doc-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audiobook-doc-section {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent-burnt);
+  margin-top: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audiobook-doc-meta {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-top: 0.25rem;
+}
