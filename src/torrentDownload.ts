@@ -16,6 +16,7 @@
 import { isAirGapEnabled } from './airGapMode';
 import {
   archiveOrgTorrentUrl,
+  parseArchiveDownloadUrl,
   parseTorrent,
   webSeedUrlFor,
   type TorrentFile,
@@ -169,4 +170,42 @@ export async function fetchArchiveTorrent(identifier: string): Promise<TorrentMe
   } catch {
     return null;
   }
+}
+
+/*
+ * One torrent per item, not per file. A book is dozens of chapters and re-fetching the same
+ * manifest for each would turn one verified album into dozens of identical requests.
+ */
+const torrentCache = new Map<string, TorrentMeta | null>();
+
+export function resetArchiveTorrentCacheForTests(): void {
+  torrentCache.clear();
+}
+
+async function cachedArchiveTorrent(identifier: string): Promise<TorrentMeta | null> {
+  if (torrentCache.has(identifier)) return torrentCache.get(identifier) ?? null;
+  const meta = await fetchArchiveTorrent(identifier);
+  torrentCache.set(identifier, meta);
+  return meta;
+}
+
+/**
+ * Verified bytes for an archive.org URL, or null to fall back to an ordinary download.
+ *
+ * Null covers every ordinary case — not an archive URL, the item publishes no torrent, the file
+ * is not in the manifest, air-gapped. Verification is an upgrade on the normal path, so its
+ * absence must never stop a download that would otherwise have worked.
+ */
+export async function fetchVerifiedArchiveAudio(
+  url: string,
+  options?: { signal?: AbortSignal },
+): Promise<VerifiedDownload | null> {
+  const parsed = parseArchiveDownloadUrl(url);
+  if (!parsed) return null;
+  const meta = await cachedArchiveTorrent(parsed.identifier);
+  if (!meta) return null;
+  const file = meta.files.find((candidate) => candidate.path === parsed.path);
+  if (!file) return null;
+  const { file: verified } = await downloadVerifiedTorrentFile(meta, file, options);
+  return verified ?? null;
 }

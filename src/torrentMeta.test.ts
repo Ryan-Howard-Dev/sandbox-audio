@@ -3,6 +3,7 @@ import { bencodeDecode, bencodeText } from './bencode';
 import {
   archiveOrgTorrentUrl,
   audioFilesIn,
+  parseArchiveDownloadUrl,
   parseTorrent,
   readWebSeeds,
   splitPieceHashes,
@@ -212,5 +213,34 @@ describe('audioFilesIn', () => {
   it('keeps only playable audio', () => {
     const meta = parseTorrent(MULTI)!;
     expect(audioFilesIn(meta).map((f) => f.path)).toEqual(['audio/ch1.mp3']);
+  });
+});
+
+describe('parseArchiveDownloadUrl', () => {
+  it('splits an archive download URL into item and file', () => {
+    expect(
+      parseArchiveDownloadUrl('https://archive.org/download/my_item/audio/ch1.mp3'),
+    ).toEqual({ identifier: 'my_item', path: 'audio/ch1.mp3' });
+  });
+
+  /* LibriVox chapter URLs use the www host; treating it as a different site would silently
+     disable verification for that entire catalog. */
+  it('accepts the www host as the same site', () => {
+    expect(
+      parseArchiveDownloadUrl('https://www.archive.org/download/fairy_tales/ch1.mp3'),
+    ).toEqual({ identifier: 'fairy_tales', path: 'ch1.mp3' });
+  });
+
+  it('decodes escaped segments so the path matches the manifest', () => {
+    expect(
+      parseArchiveDownloadUrl('https://archive.org/download/my%20item/a%20b.mp3'),
+    ).toEqual({ identifier: 'my item', path: 'a b.mp3' });
+  });
+
+  it('returns null for anything that is not an archive download URL', () => {
+    expect(parseArchiveDownloadUrl('https://example.com/download/x/y.mp3')).toBeNull();
+    expect(parseArchiveDownloadUrl('https://archive.org/details/my_item')).toBeNull();
+    expect(parseArchiveDownloadUrl('https://archive.org/download/my_item')).toBeNull();
+    expect(parseArchiveDownloadUrl('not a url')).toBeNull();
   });
 });

@@ -137,3 +137,27 @@ export function archiveOrgTorrentUrl(identifier: string): string {
 export function audioFilesIn(meta: TorrentMeta): TorrentFile[] {
   return meta.files.filter((file) => /\.(mp3|m4a|m4b|flac|ogg|opus|wav|aac)$/i.test(file.path));
 }
+
+/**
+ * Split an archive.org download URL back into its item identifier and file path.
+ *
+ * Both `archive.org` and `www.archive.org` appear in the wild — LibriVox chapter URLs use the
+ * `www` form — and treating them as different hosts would silently disable verification for a
+ * whole catalog.
+ */
+export function parseArchiveDownloadUrl(
+  url: string,
+): { identifier: string; path: string } | null {
+  try {
+    const parsed = new URL(url);
+    if (!/^(www\.)?archive\.org$/i.test(parsed.hostname)) return null;
+    const segments = parsed.pathname.split('/').filter(Boolean);
+    if (segments[0] !== 'download' || segments.length < 3) return null;
+    return {
+      identifier: decodeURIComponent(segments[1]!),
+      path: segments.slice(2).map((s) => decodeURIComponent(s)).join('/'),
+    };
+  } catch {
+    return null;
+  }
+}
