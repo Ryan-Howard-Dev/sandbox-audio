@@ -53,9 +53,19 @@ export const AUDIOBOOK_PROGRESS_COMPLETE_RATIO = 0.97;
 /**
  * Book key for an audiobook envelope, or null when the envelope is not an audiobook.
  *
- * Catalog ids are `audiobook-catalog:<source>:<book...>:<chapter>`, so the book is everything but
- * the final segment. The book portion can itself contain colons (a hashed scrape id does), which
- * is why this drops one segment from the end rather than taking a fixed count from the front.
+ * Catalog ids are `audiobook-catalog:<source>:<book>:<chapter...>`, and the book is always exactly
+ * one segment — every provider builds its book id as `<source>:<sourceId>` with a numeric id or a
+ * base36 hash. The *chapter* is what can contain colons: Gutenberg's chapter ids are
+ * `gutenberg:<book>:<index>`, so a full envelope id reads
+ * `audiobook-catalog:gutenberg:1234:gutenberg:1234:0`.
+ *
+ * This originally dropped the last segment instead, on the assumption that the chapter was the
+ * only single segment. That produced `…:1234:gutenberg:1234` for every Gutenberg book while the
+ * card produced `…:1234`, so progress was written under one key and read under another: no badge,
+ * no shelf entry, no resume, and nothing failing loudly. Found by playing a book on a device.
+ *
+ * Taking a fixed three segments from the front makes this agree with
+ * `audiobookBookKeyFromCatalogBook` by construction rather than by coincidence.
  *
  * Device-library ids are `audiobook:<id>` with no chapter component — the file is the book — so
  * they key on themselves.
@@ -67,9 +77,10 @@ export function audiobookBookKeyFromEnvelopeId(
   if (!id) return null;
   if (id.startsWith('audiobook-catalog:')) {
     const parts = id.split(':');
-    // prefix + source + at least one book segment + chapter
+    // prefix + source + book + at least one chapter segment
     if (parts.length < 4) return null;
-    return parts.slice(0, -1).join(':');
+    if (!parts[1] || !parts[2]) return null;
+    return `${parts[0]}:${parts[1]}:${parts[2]}`;
   }
   if (id.startsWith('audiobook:')) return id;
   return null;
@@ -82,8 +93,9 @@ export function audiobookBookKeyFromEnvelopeId(
  * with `audiobookBookKeyFromEnvelopeId`, or a book would record progress under one key and read
  * it back under another — resume would silently never fire. The parity is asserted in tests.
  *
- * Catalog book ids are `<source>:<rest>`, and `catalogChapterEnvelope` drops that leading source
- * segment before re-prefixing, so this does the same.
+ * Catalog book ids are `<source>:<sourceId>`, and `catalogChapterEnvelope` drops that leading
+ * source segment before re-prefixing. Takes only the first segment after the source, so this and
+ * the envelope-derived key stay identical even if a provider ever emits a compound id.
  */
 export function audiobookBookKeyFromCatalogBook(
   source: string | null | undefined,
@@ -92,7 +104,7 @@ export function audiobookBookKeyFromCatalogBook(
   const src = source?.trim() ?? '';
   const id = bookId?.trim() ?? '';
   if (!src || !id) return null;
-  const rest = id.split(':').slice(1).join(':');
+  const rest = id.split(':')[1]?.trim();
   if (!rest) return null;
   return `audiobook-catalog:${src}:${rest}`;
 }

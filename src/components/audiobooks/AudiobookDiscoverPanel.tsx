@@ -430,9 +430,15 @@ export default function AudiobookDiscoverPanel({
    * on arrival, and re-ordering itself under the reader while a book plays would be noise.
    */
   const [inProgress, setInProgress] = useState<AudiobookProgress[]>([]);
+  /*
+   * Re-read on return from a book and when the playing track changes, not just on mount. Reading
+   * once on mount meant the shelf stayed empty for the whole session: coming back from a book you
+   * had just started does not remount this panel, so it kept showing the state from before you
+   * played anything.
+   */
   useEffect(() => {
     setInProgress(listAudiobooksInProgress(12));
-  }, []);
+  }, [selectedBook, activeEnvelopeId]);
 
   /**
    * Resume a book straight from the shelf: re-fetch its chapters from the stored locator, then

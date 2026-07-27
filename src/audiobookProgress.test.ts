@@ -33,12 +33,15 @@ describe('audiobookBookKeyFromEnvelopeId', () => {
   });
 
   /*
-   * A scraped book id is a hash that can itself contain colons, so the book portion is not a
-   * fixed number of segments — only the chapter is reliably last.
+   * The bug this file exists to prevent, found by playing a book on a device. Gutenberg chapter
+   * ids are themselves `gutenberg:<book>:<index>`, so a full envelope id has six segments. Keying
+   * off the *last* segment produced `…:1234:gutenberg:1234` while the book card produced
+   * `…:1234` — progress written under one key, read under another. No badge, no shelf entry, no
+   * resume, and nothing failing loudly.
    */
-  it('keeps multi-segment book ids intact', () => {
-    expect(audiobookBookKeyFromEnvelopeId('audiobook-catalog:goldenaudiobooks:a1b2:c3d4:7')).toBe(
-      'audiobook-catalog:goldenaudiobooks:a1b2:c3d4',
+  it('handles a chapter id that itself contains colons', () => {
+    expect(audiobookBookKeyFromEnvelopeId('audiobook-catalog:gutenberg:1234:gutenberg:1234:0')).toBe(
+      'audiobook-catalog:gutenberg:1234',
     );
   });
 
@@ -76,11 +79,19 @@ describe('audiobookBookKeyFromCatalogBook', () => {
     expect(fromCard).toBe(fromEnvelope);
   });
 
-  it('agrees for a multi-segment scraped id too', () => {
-    const fromCard = audiobookBookKeyFromCatalogBook('goldenaudiobooks', 'goldenaudiobooks:a1b2:c3');
+  /* The real-world case that was broken: Gutenberg, whose chapter ids carry colons. */
+  it('agrees for Gutenberg, whose chapter id repeats the book id', () => {
+    const fromCard = audiobookBookKeyFromCatalogBook('gutenberg', 'gutenberg:1234');
     const fromEnvelope = audiobookBookKeyFromEnvelopeId(
-      'audiobook-catalog:goldenaudiobooks:a1b2:c3:7',
+      'audiobook-catalog:gutenberg:1234:gutenberg:1234:0',
     );
+    expect(fromCard).toBe('audiobook-catalog:gutenberg:1234');
+    expect(fromCard).toBe(fromEnvelope);
+  });
+
+  it('agrees for a hashed scrape id', () => {
+    const fromCard = audiobookBookKeyFromCatalogBook('goldenaudiobooks', 'goldenaudiobooks:a1b2');
+    const fromEnvelope = audiobookBookKeyFromEnvelopeId('audiobook-catalog:goldenaudiobooks:a1b2:7');
     expect(fromCard).toBe(fromEnvelope);
   });
 
