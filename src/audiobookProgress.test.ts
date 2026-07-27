@@ -4,6 +4,7 @@ import {
   audiobookBookKeyFromCatalogBook,
   audiobookBookKeyFromEnvelopeId,
   audiobookProgressPercent,
+  canonicalAudiobookBookKey,
   clearAudiobookProgress,
   getAudiobookProgress,
   isAudiobookFinished,
@@ -282,5 +283,90 @@ describe('storage round trip', () => {
     localStorage.setItem('sandbox_audiobook_progress_v1', '{not json');
     expect(getAudiobookProgress('a')).toBeNull();
     expect(listAudiobooksInProgress()).toEqual([]);
+  });
+});
+
+/*
+ * The continue-listening duplicate, from the exact pair found on the device: one book stored under
+ * both the corrected key and the key the old derivation produced, showing twice at 21% and 10%.
+ */
+describe('legacy book key migration', () => {
+  const legacy: AudiobookProgress = {
+    bookKey: 'audiobook-catalog:gutenberg:26470:26470',
+    chapterIndex: 1,
+    offsetSeconds: 120,
+    durationSeconds: 900,
+    chapterCount: 20,
+    updatedAt: 1_000,
+    title: 'The Red House Mystery',
+    author: 'Milne, A. A. (Alan Alexander)',
+    locator: { source: 'gutenberg', sourceId: '26470' },
+  };
+  const current: AudiobookProgress = {
+    bookKey: 'audiobook-catalog:gutenberg:26470',
+    chapterIndex: 4,
+    offsetSeconds: 300,
+    durationSeconds: 900,
+    chapterCount: 20,
+    updatedAt: 2_000,
+    title: 'The Red House Mystery',
+  };
+
+  function storeBoth(): void {
+    localStorage.setItem(
+      'sandbox_audiobook_progress_v1',
+      JSON.stringify({ [legacy.bookKey]: legacy, [current.bookKey]: current }),
+    );
+  }
+
+  it('canonicalises a key that kept a chapter segment', () => {
+    expect(canonicalAudiobookBookKey('audiobook-catalog:gutenberg:26470:26470')).toBe(
+      'audiobook-catalog:gutenberg:26470',
+    );
+  });
+
+  it('leaves an already-canonical key and a device id alone', () => {
+    expect(canonicalAudiobookBookKey('audiobook-catalog:gutenberg:26470')).toBe(
+      'audiobook-catalog:gutenberg:26470',
+    );
+    expect(canonicalAudiobookBookKey('audiobook:local-42')).toBe('audiobook:local-42');
+  });
+
+  it('shows the book once, at the newer position', () => {
+    storeBoth();
+
+    const shelf = listAudiobooksInProgress();
+
+    expect(shelf).toHaveLength(1);
+    expect(shelf[0]!.bookKey).toBe('audiobook-catalog:gutenberg:26470');
+    expect(shelf[0]!.offsetSeconds).toBe(300);
+  });
+
+  /*
+   * The locator is written once when playback starts, so it usually lives on the older entry --
+   * taking the newer record wholesale would strip the shelf of what it needs to re-fetch.
+   */
+  it('keeps the locator from the older entry', () => {
+    storeBoth();
+
+    expect(getAudiobookProgress('audiobook-catalog:gutenberg:26470')?.locator).toEqual({
+      source: 'gutenberg',
+      sourceId: '26470',
+    });
+  });
+
+  it('rewrites storage so the duplicate does not come back', () => {
+    storeBoth();
+
+    listAudiobooksInProgress();
+
+    const stored = JSON.parse(localStorage.getItem('sandbox_audiobook_progress_v1')!);
+    expect(Object.keys(stored)).toEqual(['audiobook-catalog:gutenberg:26470']);
+  });
+
+  it('finds an entry when looked up by its legacy key', () => {
+    saveAudiobookProgress(current);
+
+    expect(getAudiobookProgress('audiobook-catalog:gutenberg:26470:26470')?.offsetSeconds).toBe(300);
   });
 });

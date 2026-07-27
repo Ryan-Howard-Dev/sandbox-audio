@@ -168,13 +168,74 @@ export function mergeAudiobookProgress(
   return merged;
 }
 
+/**
+ * Trim a stored key back to the canonical `audiobook-catalog:<source>:<book>` form.
+ *
+ * Keys written before the book-key fix kept a chapter segment: dropping only the *last* segment of
+ * `audiobook-catalog:gutenberg:26470:26470:0` left `…:26470:26470`. Correcting the derivation did
+ * nothing for entries already in storage, so a book read under both builds ends up stored twice
+ * and the continue-listening shelf shows it twice, at two different percentages. Observed on
+ * device: `…:gutenberg:26470` at 21% beside `…:gutenberg:26470:26470` at 10%.
+ *
+ * Device ids (`audiobook:<id>`) have no chapter component and are returned untouched.
+ */
+export function canonicalAudiobookBookKey(bookKey: string | null | undefined): string | null {
+  const key = bookKey?.trim() ?? '';
+  if (!key) return null;
+  if (!key.startsWith('audiobook-catalog:')) return key;
+  const parts = key.split(':');
+  if (parts.length <= 3) return key;
+  if (!parts[1] || !parts[2]) return key;
+  return `${parts[0]}:${parts[1]}:${parts[2]}`;
+}
+
+/**
+ * Fold legacy keys into their canonical entry.
+ *
+ * The newest position wins, but the fields are merged rather than replaced: the entry carrying the
+ * locator and display snapshot is often the *older* one, because those are written once when
+ * playback starts while positions tick over continuously. Taking the newer entry wholesale would
+ * drop the book off the shelf it was meant to fix.
+ */
+export function migrateAudiobookProgressKeys(map: AudiobookProgressMap): AudiobookProgressMap {
+  const migrated: AudiobookProgressMap = {};
+  for (const entry of Object.values(map)) {
+    const key = canonicalAudiobookBookKey(entry?.bookKey);
+    if (!key) continue;
+    const existing = migrated[key];
+    if (!existing) {
+      migrated[key] = { ...entry, bookKey: key };
+      continue;
+    }
+    const newer = entry.updatedAt > existing.updatedAt ? entry : existing;
+    const older = entry.updatedAt > existing.updatedAt ? existing : entry;
+    migrated[key] = {
+      ...older,
+      ...newer,
+      bookKey: key,
+      chapterCount: Math.max(newer.chapterCount ?? 0, older.chapterCount ?? 0),
+      title: newer.title ?? older.title,
+      author: newer.author ?? older.author,
+      artworkUrl: newer.artworkUrl ?? older.artworkUrl,
+      locator: newer.locator ?? older.locator,
+    };
+  }
+  return migrated;
+}
+
 function readMap(): AudiobookProgressMap {
   try {
     const raw = localStorage.getItem(AUDIOBOOK_PROGRESS_STORAGE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-    return parsed as AudiobookProgressMap;
+    const stored = parsed as AudiobookProgressMap;
+    const migrated = migrateAudiobookProgressKeys(stored);
+    // Write back once, so the duplicate is gone for good rather than re-folded on every read.
+    if (Object.keys(migrated).length !== Object.keys(stored).length) {
+      writeMap(migrated);
+    }
+    return migrated;
   } catch {
     return {};
   }
@@ -193,7 +254,7 @@ export function loadAudiobookProgressMap(): AudiobookProgressMap {
 }
 
 export function getAudiobookProgress(bookKey: string | null | undefined): AudiobookProgress | null {
-  const key = bookKey?.trim();
+  const key = canonicalAudiobookBookKey(bookKey);
   if (!key) return null;
   return readMap()[key] ?? null;
 }
@@ -206,7 +267,7 @@ export function getAudiobookProgress(bookKey: string | null | undefined): Audiob
  * display snapshot on the first tick, and the shelf would lose the book it is meant to show.
  */
 export function saveAudiobookProgress(progress: AudiobookProgress): void {
-  const key = progress.bookKey?.trim();
+  const key = canonicalAudiobookBookKey(progress.bookKey);
   if (!key) return;
   const map = readMap();
   const existing = map[key];
@@ -223,9 +284,11 @@ export function saveAudiobookProgress(progress: AudiobookProgress): void {
 }
 
 export function clearAudiobookProgress(bookKey: string): void {
+  const key = canonicalAudiobookBookKey(bookKey);
+  if (!key) return;
   const map = readMap();
-  if (!(bookKey in map)) return;
-  delete map[bookKey];
+  if (!(key in map)) return;
+  delete map[key];
   writeMap(map);
 }
 
