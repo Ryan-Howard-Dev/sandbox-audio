@@ -3,12 +3,15 @@ package rd.sheepskin.sandboxmusic;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import android.speech.tts.Voice;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Android's own TextToSpeech engine, exposed for document narration.
@@ -73,14 +76,67 @@ public class NativeTextToSpeechPlugin extends Plugin {
         call.resolve(ret);
     }
 
+    /**
+     * Installed voices, so the reader is not stuck with whatever the system default happens to be.
+     *
+     * Network voices are reported but flagged: they are usually the better-sounding ones, and they
+     * are also the ones that stop working on a train. The caller decides; it should not be a
+     * surprise.
+     */
+    @PluginMethod
+    public void getVoices(PluginCall call) {
+        JSArray voices = new JSArray();
+        if (tts != null && ready) {
+            try {
+                Set<Voice> available = tts.getVoices();
+                if (available != null) {
+                    for (Voice voice : available) {
+                        if (voice == null || voice.getName() == null) continue;
+                        JSObject entry = new JSObject();
+                        entry.put("id", voice.getName());
+                        entry.put("language", voice.getLocale() == null ? "" : voice.getLocale().toLanguageTag());
+                        entry.put("displayName", voice.getLocale() == null
+                            ? voice.getName()
+                            : voice.getLocale().getDisplayName());
+                        entry.put("networkRequired", voice.isNetworkConnectionRequired());
+                        entry.put("quality", voice.getQuality());
+                        voices.put(entry);
+                    }
+                }
+            } catch (Exception ignored) {
+                // An engine that cannot enumerate still speaks with its default voice.
+            }
+        }
+        JSObject ret = new JSObject();
+        ret.put("voices", voices);
+        call.resolve(ret);
+    }
+
     @PluginMethod
     public void speak(PluginCall call) {
         String text = call.getString("text", "");
         String utteranceId = call.getString("utteranceId", "");
+        String voiceId = call.getString("voiceId", "");
         Float rate = call.getFloat("rate", 1f);
         if (tts == null || !ready) {
             call.reject("Text-to-speech engine not ready");
             return;
+        }
+        if (voiceId != null && !voiceId.isEmpty()) {
+            try {
+                Set<Voice> available = tts.getVoices();
+                if (available != null) {
+                    for (Voice voice : available) {
+                        if (voice != null && voiceId.equals(voice.getName())) {
+                            tts.setVoice(voice);
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+                // A voice that has since been uninstalled falls back to the current one rather
+                // than failing the utterance — losing the preferred accent beats losing the read.
+            }
         }
         if (text == null || text.trim().isEmpty()) {
             // An empty chunk must still report completion, or the reader waits forever on it.
