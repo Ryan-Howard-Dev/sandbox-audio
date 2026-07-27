@@ -57,6 +57,26 @@
    * away from burnt orange.
    */
   --accent-burnt: var(--accent-brand);
+  /*
+   * Warm off-white for control glyphs — the paper white of a book cover, not a screen white.
+   * Transport icons were drawn in the accent, which left them competing with the accent-filled
+   * play button and gave an active toggle nothing to change to. Idle controls sit in this white
+   * and the accent now means "on".
+   */
+  /*
+   * Sampled off a book cover on the player screen (#cecdbb): parchment, not paper. The first
+   * attempt at this was #f1ebdd, which measured within a couple of points of the --text-heading
+   * the controls already used, so the change was invisible on device. Screen white glares against
+   * a near-black shell; a bone tone sits back and lets the accent be the only bright thing.
+   */
+  --control-ink: #cecdbb;
+  --control-ink-strong: #eae8d9;
+  /*
+   * Shared by every rail the user drags along — seek, volume, and the progress lines on cards.
+   * One token so the treatment cannot drift into a per-screen one-off.
+   */
+  --rail-outline: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.55);
+  --rail-bg: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.1);
   --app-outline: var(--accent-brand);
   --text-label: #8a857c;
   --text-dim: #5c5850;
@@ -1328,7 +1348,7 @@ body {
   border-radius: 0.375rem;
   border: none;
   background: transparent;
-  color: var(--accent-stroke);
+  color: var(--control-ink);
   opacity: 0.82;
   touch-action: manipulation;
   transition:
@@ -1392,7 +1412,9 @@ body {
 .player-scrub::-webkit-slider-runnable-track {
   height: 0.25rem;
   border-radius: 999px;
-  background: var(--border);
+  background: var(--rail-bg);
+  border: 1px solid var(--rail-outline);
+  box-sizing: border-box;
 }
 
 .player-scrub::-webkit-slider-thumb {
@@ -1408,8 +1430,9 @@ body {
 .player-scrub::-moz-range-track {
   height: 0.25rem;
   border-radius: 999px;
-  background: var(--border);
-  border: none;
+  background: var(--rail-bg);
+  border: 1px solid var(--rail-outline);
+  box-sizing: border-box;
 }
 
 .player-scrub::-moz-range-thumb {
@@ -1809,8 +1832,9 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: #e8500a;
-  color: var(--text-on-accent);
+  /* Burnt, not bright — #e8500a was a hardcoded lighter orange sitting on top of the theme. */
+  background: var(--accent-burnt);
+  color: var(--control-ink-strong);
   font-family: 'IBM Plex Mono', var(--font-mono);
   font-size: 0.75rem;
   line-height: 1;
@@ -1948,9 +1972,9 @@ body {
 }
 
 .home-hero-transport-btn--active {
-  color: hsl(18 85% 52%);
-  background: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.18);
-  border-color: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.55);
+  color: var(--accent-stroke, #e8500a);
+  background: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.12);
+  border-color: transparent;
 }
 
 .home-hero-repeat-one {
@@ -1970,10 +1994,15 @@ body {
   height: 2.5rem;
   min-width: 2.5rem;
   min-height: 2.5rem;
-  border: 1px solid hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.35);
+  /*
+   * No ring, no fill. Six outlined circles around six glyphs read as six competing buttons; the
+   * glyphs alone read as a transport. The filled play button is the only shape on the row, which
+   * is what makes it the primary action without needing to be bigger or louder.
+   */
+  border: 1px solid transparent;
   border-radius: 50%;
-  background: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.08);
-  color: var(--accent-stroke, #e8500a);
+  background: transparent;
+  color: var(--control-ink);
   cursor: pointer;
   padding: 0;
   margin: 0;
@@ -1987,8 +2016,8 @@ body {
 
 .home-hero-transport-btn:hover,
 .home-hero-transport-btn:focus-visible {
-  color: hsl(18 85% 52%);
-  background: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.14);
+  color: var(--control-ink-strong);
+  background: hsl(0 0% 100% / 0.06);
   outline: none;
 }
 
@@ -2121,10 +2150,17 @@ body {
   touch-action: none;
 }
 
+/*
+ * Burnt outline on the rail. The unplayed part of the track was --border, the same grey as every
+ * divider on the screen, so the seek bar dissolved into the layout and only the thumb showed the
+ * control existed. A hairline in the accent draws the whole span the thumb travels.
+ */
 .home-progress-slider::-webkit-slider-runnable-track {
   height: 0.25rem;
   border-radius: 9999px;
-  background: var(--border);
+  background: var(--rail-bg);
+  border: 1px solid var(--rail-outline);
+  box-sizing: border-box;
 }
 
 .home-progress-slider::-webkit-slider-thumb {
@@ -2141,8 +2177,9 @@ body {
 .home-progress-slider::-moz-range-track {
   height: 0.25rem;
   border-radius: 9999px;
-  background: var(--border);
-  border: none;
+  background: var(--rail-bg);
+  border: 1px solid var(--rail-outline);
+  box-sizing: border-box;
 }
 
 .home-progress-slider::-moz-range-thumb {
@@ -16622,7 +16659,7 @@ body:has(#root > .onboarding-root) {
 
 .player-bar--android .player-bar-btn.text-accent,
 .shell-root--mobile-nav .player-bar-btn.text-accent {
-  color: hsl(18 85% 52%);
+  color: var(--accent-brand);
   opacity: 1;
   background: hsl(18 85% 42% / 0.14);
   filter: none;
@@ -16662,7 +16699,7 @@ body:has(#root > .onboarding-root) {
 
 .player-bar--android .player-bar-volume-btn.text-accent,
 .shell-root--mobile-nav .player-bar-volume-btn.text-accent {
-  color: hsl(18 85% 52%);
+  color: var(--accent-brand);
   background: hsl(18 85% 42% / 0.14);
   filter: none;
 }
@@ -16679,7 +16716,7 @@ body:has(#root > .onboarding-root) {
 .shell-root--mobile-nav .player-bar-more-wrap .sandbox-menu-trigger:hover,
 .shell-root--mobile-nav .player-bar-more-wrap .sandbox-menu-trigger:focus-visible,
 .shell-root--mobile-nav .player-bar-more-wrap .sandbox-menu-trigger-open {
-  color: hsl(18 85% 52%);
+  color: var(--accent-brand);
   filter: brightness(1.08);
 }
 
@@ -16689,7 +16726,7 @@ body:has(#root > .onboarding-root) {
 }
 
 .player-bar--android .player-bar-title {
-  color: var(--text-heading);
+  color: var(--control-ink);
 }
 
 .player-bar--android .player-bar-meta {
@@ -17909,7 +17946,7 @@ body > footer.player-bar.player-bar--docked-mobile {
   min-height: 2rem;
   border: none;
   background: transparent;
-  color: var(--text-primary);
+  color: var(--control-ink);
   border-radius: 50%;
   padding: 0;
   opacity: 0.92;
@@ -18495,7 +18532,7 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
   border: none;
   border-radius: 9999px;
   background: transparent;
-  color: var(--accent-burnt);
+  color: var(--control-ink);
   cursor: pointer;
   transition:
     color 0.15s ease,
@@ -18505,7 +18542,7 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
 
 .mobile-np-icon-btn:hover,
 .mobile-np-icon-btn:focus-visible {
-  color: hsl(18 85% 52%);
+  color: var(--control-ink-strong);
   background: hsl(18 85% 42% / 0.12);
   filter: brightness(1.08);
 }
@@ -18515,7 +18552,7 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
 }
 
 .mobile-np-icon-btn--active {
-  color: hsl(18 85% 52%);
+  color: var(--accent-brand);
   background: hsl(18 85% 42% / 0.14);
 }
 
@@ -18527,7 +18564,7 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
 
 .player-bar-mini-btn--active,
 .player-bar-mini-btn.text-accent {
-  color: hsl(18 85% 52%);
+  color: var(--accent-brand);
   opacity: 1;
   background: hsl(18 85% 42% / 0.14);
 }
@@ -18552,9 +18589,9 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
   min-height: 2rem;
   padding: 0.375rem 1rem;
   border-radius: 9999px;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, var(--accent-brand) 20%);
-  background: color-mix(in srgb, var(--bg-surface) 75%, transparent);
-  color: var(--text);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--control-ink);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -18719,7 +18756,7 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
   border: none;
   border-radius: 9999px;
   background: transparent;
-  color: var(--accent-burnt);
+  color: var(--control-ink);
   cursor: pointer;
   transition:
     color 0.15s ease,
@@ -18729,7 +18766,7 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
 
 .mobile-np-control-btn:hover,
 .mobile-np-control-btn:focus-visible {
-  color: hsl(18 85% 52%);
+  color: var(--control-ink-strong);
   filter: brightness(1.12);
 }
 
@@ -18738,23 +18775,28 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
 }
 
 .mobile-np-control-btn--active {
-  color: hsl(18 85% 52%);
+  color: var(--accent-brand);
   background: hsl(18 85% 42% / 0.14);
   filter: none;
 }
 
+/*
+ * Deep, not bright. A large disc in a light accent with a coloured glow behind it reads as a toy
+ * button; the same shape in the burnt orange with no glow reads as hardware. Size comes down to
+ * where it still leads the row without dominating it.
+ */
 .mobile-np-play-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 4.25rem;
-  height: 4.25rem;
+  width: 3.5rem;
+  height: 3.5rem;
   border: none;
   border-radius: 9999px;
   background: var(--accent-burnt);
-  color: var(--text-on-accent);
+  color: var(--control-ink);
   cursor: pointer;
-  box-shadow: 0 8px 24px hsl(18 85% 42% / 0.4);
+  box-shadow: none;
 }
 
 .mobile-np-repeat-one {
@@ -18763,7 +18805,7 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
   right: 0.125rem;
   font-size: 0.5rem;
   font-weight: 700;
-  color: hsl(18 85% 52%);
+  color: var(--accent-brand);
 }
 
 .mobile-np-footer {
@@ -19216,7 +19258,7 @@ input.shell-search:focus-visible {
   .shell-root--mobile-nav .player-bar--mobile-mini .player-bar-now-playing .player-bar-title {
     font-size: 0.6875rem;
     font-weight: 600;
-    color: var(--text-heading);
+    color: var(--control-ink);
   }
 
   .shell-root--mobile-nav .player-bar--mobile-mini .player-bar-now-playing {
