@@ -69,13 +69,35 @@ describe('shouldAdoptNativeExoTransition', () => {
     ).toBe(false);
   });
 
-  it('adopts a native advance to a different track than JS navigated to', () => {
+  /*
+   * R-018. A skip calls playUrl with resetQueue, then the prefetch effect enqueues the next five
+   * tracks. Each enqueue produced a transition whose envelope was *not* the navigation target, so
+   * the old narrower rule adopted every one and each re-drove setQueueIndex — the observed
+   * overshoot of five to seven against a native queue of about six. Ownership now covers the
+   * whole window, not just the navigation's own envelope.
+   */
+  it('ignores prefetch transitions to tracks beyond the skip target', () => {
+    for (const ahead of ['track-3', 'track-4', 'track-5', 'track-6', 'track-7']) {
+      expect(
+        shouldAdoptNativeExoTransition({
+          transitionEnvelopeId: ahead,
+          activeEnvelopeId: 'track-2',
+          pendingJsNavEnvelopeId: 'track-2',
+          pendingJsNavAtMs: now - 40,
+          nowMs: now,
+        }),
+      ).toBe(false);
+    }
+  });
+
+  /* Once the window has passed, a genuine advance to a later track is adopted again. */
+  it('adopts a later track once the navigation window has expired', () => {
     expect(
       shouldAdoptNativeExoTransition({
         transitionEnvelopeId: 'track-3',
         activeEnvelopeId: 'track-2',
         pendingJsNavEnvelopeId: 'track-2',
-        pendingJsNavAtMs: now - 10,
+        pendingJsNavAtMs: now - JS_NAV_TRANSITION_OWNERSHIP_MS - 1,
         nowMs: now,
       }),
     ).toBe(true);

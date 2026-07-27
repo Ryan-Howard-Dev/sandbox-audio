@@ -95,6 +95,18 @@ export type NativeExoTransitionAuthorityInput = {
  * are ignored. A genuine gapless advance — the case this handler exists for — has no pending JS
  * navigation and is still adopted. The window expires so a stale claim can never wedge the
  * handler shut.
+ *
+ * Ownership covers *every* transition in the window, not only the one matching the navigation
+ * target. That is the R-018 fix, and the earlier narrower rule is why the bug survived this gate:
+ * a skip calls playUrl with resetQueue, then the prefetch effect immediately enqueues the next
+ * five tracks (PREFETCH_AHEAD = 5), and each of those produced a transition whose envelope was
+ * *not* the navigation target — so each was adopted and each re-drove setQueueIndex. That is
+ * exactly the observed overshoot of five to seven, against a native queue of about six.
+ *
+ * Nothing is lost by widening it. In that window JS has just reset the native queue and is
+ * re-priming it, so every transition is an artifact of the re-prime rather than a listener moving
+ * through a book, and a real gapless advance cannot occur three seconds into a track that is
+ * minutes long.
  */
 export function shouldAdoptNativeExoTransition(
   input: NativeExoTransitionAuthorityInput,
@@ -103,8 +115,7 @@ export function shouldAdoptNativeExoTransition(
   if (!target) return false;
   if (target === input.activeEnvelopeId) return false;
 
-  const pending = input.pendingJsNavEnvelopeId?.trim();
-  if (pending && pending === target) {
+  if (input.pendingJsNavEnvelopeId?.trim()) {
     const windowMs = input.ownershipWindowMs ?? JS_NAV_TRANSITION_OWNERSHIP_MS;
     const elapsed = (input.nowMs ?? Date.now()) - (input.pendingJsNavAtMs ?? 0);
     if (elapsed >= 0 && elapsed < windowMs) return false;
