@@ -74,6 +74,19 @@ import {
   searchArtistScrollKey,
 } from './scrollRestore';
 import { closeSandboxOverlay } from './hooks/useDismissableOverlay';
+import {
+  BASE_NAV,
+  NAV_PIN_META,
+  readAudiobooksEnabled,
+  readDiscoverStationEnabled,
+  readLibraryStationEnabled,
+  readPodcastsEnabled,
+  readProAudio,
+  readSonicLockerStationEnabled,
+  type MobileTabId,
+  type NavItemId,
+  type StationId,
+} from './shell/shellNav';
 import { isAnyAudiobookEnvelopeId, usesIntervalSeekTransport } from './spokenWordPlayback';
 import {
   audiobookBookKeyFromEnvelopeId,
@@ -629,73 +642,6 @@ const EMPTY_CATALOG: CatalogSearchResult = {
   albums: [],
   tracks: [],
 };
-
-type StationId =
-  | 'home'
-  | 'discover'
-  | 'library'
-  | 'sonic-locker'
-  | 'search'
-  | 'locker'
-  | 'podcasts'
-  | 'audiobooks'
-  | 'insights'
-  | 'settings'
-  | 'dj';
-
-type MobileTabId = StationId | 'mobile-search' | 'mobile-menu';
-type NavItemId = StationId | 'profile';
-
-const NAV_PIN_META: Record<
-  NavPinTabId,
-  { labelKey: string; shortLabelKey?: string; icon: React.ElementType }
-> = {
-  home: { labelKey: 'nav.home', icon: Home },
-  /*
-   * Music is a note, not a HardDrive — the drive glyph described where the files live, not what
-   * the tab is for. Audiobooks is BookAudio (book + waveform) rather than BookOpen, which read as
-   * "reading" and reinforced the wrong idea the "Books" label already gave. Both are solid-stroke
-   * shapes that stay legible on the light presets as well as the dark ones.
-   */
-  locker: { labelKey: 'nav.music', icon: MusicIcon },
-  discover: { labelKey: 'nav.discover', shortLabelKey: 'nav.discoverShort', icon: Compass },
-  search: { labelKey: 'nav.search', icon: Search },
-  podcasts: { labelKey: 'nav.podcasts', shortLabelKey: 'nav.podcastsShort', icon: Podcast },
-  audiobooks: { labelKey: 'nav.audiobooks', shortLabelKey: 'nav.audiobooksShort', icon: BookAudio },
-  settings: { labelKey: 'nav.settings', shortLabelKey: 'nav.settingsShort', icon: Settings },
-};
-
-
-const BASE_NAV: Array<{ id: StationId; labelKey: string; icon: React.ElementType }> = [
-  { id: 'home', labelKey: 'nav.home', icon: Home },
-  { id: 'locker', labelKey: 'nav.locker', icon: MusicIcon },
-  { id: 'discover', labelKey: 'nav.discover', icon: Compass },
-  { id: 'sonic-locker', labelKey: 'nav.sonicLocker', icon: Radio },
-];
-
-function readProAudio(): boolean {
-  return prefsGetItem('isProAudioEnabled') === 'true';
-}
-
-function readLibraryStationEnabled(): boolean {
-  return loadLibraryStationEnabled();
-}
-
-function readPodcastsEnabled(): boolean {
-  return loadPodcastsEnabled();
-}
-
-function readAudiobooksEnabled(): boolean {
-  return loadAudiobooksEnabled();
-}
-
-function readDiscoverStationEnabled(): boolean {
-  return loadDiscoverStationEnabled();
-}
-
-function readSonicLockerStationEnabled(): boolean {
-  return loadSonicLockerStationEnabled();
-}
 
 function SystemLogin({
   profiles,
