@@ -1866,6 +1866,7 @@
     "importDocument": "Import",
     "documentsEmpty": "Import a .txt or .md and it will be read aloud on this device. Nothing is uploaded.",
     "docParts": "{count, plural, one {# part} other {# parts}}",
-    "docRemove": "Remove document"
+    "docRemove": "Remove document",
+    "tabDocuments": "Documents"
   }
 }

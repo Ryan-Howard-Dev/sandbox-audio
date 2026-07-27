@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, BookOpen, Magnet, Play, Search, ShieldAlert, Smartphone } from 'lucide-react';
+import { ArrowLeft, BookOpen, FileText, Magnet, Play, Search, ShieldAlert, Smartphone } from 'lucide-react';
 import LockerMoreMenu from '../components/LockerMoreMenu';
 import type { MediaEnvelope } from '../sandboxLayer1';
 import AudiobookDiscoverPanel from '../components/audiobooks/AudiobookDiscoverPanel';
@@ -68,7 +68,7 @@ export default function AudiobooksView({
   const { t } = useTranslation();
   // Pillar spine, matching Music (Library/Discover) and Podcasts (Library/Discover):
   // 'device' is the Library tab, split by origin into Downloaded vs On device.
-  const [tab, setTab] = useState<'discover' | 'acquire' | 'device'>('device');
+  const [tab, setTab] = useState<'discover' | 'acquire' | 'device' | 'documents'>('device');
   const [libraryOrigin, setLibraryOrigin] = useState<AudiobookOrigin | 'all'>('all');
   const [libraryMenuOpen, setLibraryMenuOpen] = useState(false);
   // Format-native grouping: books group by AUTHOR, not "artist" — the audiobook
@@ -512,6 +512,21 @@ export default function AudiobooksView({
           <Smartphone className="w-3.5 h-3.5" aria-hidden />
           {t('audiobooks.tabDevice')}
         </button>
+        {/*
+          Documents is a pillar of its own, not a section inside the book library. A research
+          paper has no author catalog, no cover and no chapters until narration derives them —
+          putting it among audiobooks makes both lists misrepresent what they hold.
+        */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'documents'}
+          className={`podcasts-tab touch-manipulation${tab === 'documents' ? ' podcasts-tab--active' : ''}`}
+          onClick={() => setTab('documents')}
+        >
+          <FileText className="w-3.5 h-3.5" aria-hidden />
+          {t('audiobooks.tabDocuments')}
+        </button>
         <button
           type="button"
           role="tab"
@@ -553,6 +568,8 @@ export default function AudiobooksView({
           onError={onError}
           onSuccess={onSuccess}
         />
+      ) : tab === 'documents' ? (
+        <DocumentShelf onError={onError} />
       ) : (
         <>
       {phase === 'scanning' && (
@@ -769,12 +786,6 @@ export default function AudiobooksView({
         </section>
       )}
 
-      {/*
-        Its own shelf, below the books rather than wedged above them. A document is not an
-        audiobook — no author catalog, no cover, no chapters until narration derives them — so
-        filing the two together would make both lists misrepresent what they hold.
-      */}
-      <DocumentShelf onError={onError} />
         </>
       )}
     </div>

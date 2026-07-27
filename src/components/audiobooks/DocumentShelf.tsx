@@ -166,8 +166,7 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
     [openDoc, refresh],
   );
 
-  // Nothing imported and no engine to read with — say nothing rather than advertise a dead end.
-  if (docs.length === 0 && speechAvailable === false) return null;
+  // Its own tab now, so it always renders: an empty tab that hides itself is a dead end.
 
   const remaining = estimateNarrationSeconds(chunks.slice(chunkIndex));
 
