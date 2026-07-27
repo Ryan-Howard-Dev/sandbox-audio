@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   JS_NAV_TRANSITION_OWNERSHIP_MS,
   resolveActivePlayQueue,
+  EXO_TRANSITION_REASON_AUTO,
+  EXO_TRANSITION_REASON_PLAYLIST_CHANGED,
+  EXO_TRANSITION_REASON_SEEK,
   shouldAdoptNativeExoTransition,
   shouldSuppressJsAdvanceAfterNativeGapless,
   trackPlaybackMatureForAdvance,
@@ -28,6 +31,62 @@ describe('shouldAdoptNativeExoTransition', () => {
         nowMs: now,
       }),
     ).toBe(true);
+  });
+
+  /*
+   * R-018. Every spurious transition captured on device carried reason=3: a skip re-primes the
+   * native queue, and the rebuild reports items ahead of the target. The ownership window could
+   * only lose that race — one such transition was measured at 2133ms, so any slower decode pushes
+   * it past 3000ms and the index jumps a track or two. A rebuild is never proof a listener moved.
+   */
+  it('ignores a playlist-rebuild transition even long after the JS navigation', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-5',
+        activeEnvelopeId: 'track-3',
+        pendingJsNavEnvelopeId: 'track-3',
+        pendingJsNavAtMs: now - 9_000,
+        reason: EXO_TRANSITION_REASON_PLAYLIST_CHANGED,
+        nowMs: now,
+      }),
+    ).toBe(false);
+  });
+
+  it('ignores a seek-driven transition', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-4',
+        activeEnvelopeId: 'track-1',
+        reason: EXO_TRANSITION_REASON_SEEK,
+        nowMs: now,
+      }),
+    ).toBe(false);
+  });
+
+  it('still adopts an AUTO advance once the ownership window has passed', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-1',
+        pendingJsNavEnvelopeId: 'track-1',
+        pendingJsNavAtMs: now - 9_000,
+        reason: EXO_TRANSITION_REASON_AUTO,
+        nowMs: now,
+      }),
+    ).toBe(true);
+  });
+
+  it('keeps the window as a backstop for an AUTO echo of the JS navigation', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-1',
+        pendingJsNavEnvelopeId: 'track-2',
+        pendingJsNavAtMs: now - 200,
+        reason: EXO_TRANSITION_REASON_AUTO,
+        nowMs: now,
+      }),
+    ).toBe(false);
   });
 
   it('ignores a transition to the track already playing', () => {

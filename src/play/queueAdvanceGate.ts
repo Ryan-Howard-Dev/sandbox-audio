@@ -69,6 +69,15 @@ export function shouldSuppressJsAdvanceAfterNativeGapless(
 /** How long a JS-initiated navigation owns the queue index against native echo transitions. */
 export const JS_NAV_TRANSITION_OWNERSHIP_MS = 3000;
 
+/**
+ * Media3 MEDIA_ITEM_TRANSITION_REASON_*. Only AUTO means "the previous item finished and playback
+ * moved on" — the one case where native, not JS, is the authority on the queue position.
+ */
+export const EXO_TRANSITION_REASON_REPEAT = 0;
+export const EXO_TRANSITION_REASON_AUTO = 1;
+export const EXO_TRANSITION_REASON_SEEK = 2;
+export const EXO_TRANSITION_REASON_PLAYLIST_CHANGED = 3;
+
 export type NativeExoTransitionAuthorityInput = {
   /** Envelope the native transition resolved to. */
   transitionEnvelopeId: string;
@@ -78,6 +87,8 @@ export type NativeExoTransitionAuthorityInput = {
   pendingJsNavEnvelopeId?: string;
   /** When that navigation was issued. */
   pendingJsNavAtMs?: number;
+  /** Media3's reason for the transition, when native reported one. */
+  reason?: number;
   nowMs?: number;
   ownershipWindowMs?: number;
 };
@@ -107,6 +118,14 @@ export type NativeExoTransitionAuthorityInput = {
  * re-priming it, so every transition is an artifact of the re-prime rather than a listener moving
  * through a book, and a real gapless advance cannot occur three seconds into a track that is
  * minutes long.
+ *
+ * The reason check is what actually closes R-018, and the window is now only a backstop. Device
+ * traces of every spurious transition showed reason=3 (PLAYLIST_CHANGED): a skip re-primes the
+ * native queue, and rebuilding it emits transitions pointing at items *ahead* of the target. The
+ * timer alone could not separate those from a real advance — one was measured arriving 2133ms
+ * after the navigation, so a slower decode or a cache miss pushes it past the window and it gets
+ * adopted, which is the observed jump of one to two tracks. A queue rebuild is never evidence that
+ * a listener moved, whenever it lands, so only AUTO is treated as native's call to make.
  */
 export function shouldAdoptNativeExoTransition(
   input: NativeExoTransitionAuthorityInput,
@@ -114,6 +133,13 @@ export function shouldAdoptNativeExoTransition(
   const target = input.transitionEnvelopeId?.trim();
   if (!target) return false;
   if (target === input.activeEnvelopeId) return false;
+
+  if (
+    input.reason === EXO_TRANSITION_REASON_PLAYLIST_CHANGED ||
+    input.reason === EXO_TRANSITION_REASON_SEEK
+  ) {
+    return false;
+  }
 
   if (input.pendingJsNavEnvelopeId?.trim()) {
     const windowMs = input.ownershipWindowMs ?? JS_NAV_TRANSITION_OWNERSHIP_MS;

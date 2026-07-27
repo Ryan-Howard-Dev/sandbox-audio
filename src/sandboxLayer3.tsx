@@ -182,7 +182,7 @@ import { computePlayQueueSeed } from './play/albumPlayQueue';
 import { startAutoSimilarRadioIfNeeded } from './play/standaloneSimilarRadio';
 import { ensureLockerPlayable, envelopeClaimsLocker, shouldRunLockerPlaybackGate } from './play/ensureLockerPlayable';
 import { attemptDeadLockerReacquire } from './lockerDeadTrackReacquire';
-import { findQueueIndexForExoUrl, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
+import { findQueueIndexForExoTransition, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
 import {
   estimateStreamDownloadMb,
   formatCellularDownloadNotice,
@@ -636,6 +636,9 @@ import {
 const PLAYBACK_RESOLVE_STUCK_TIMEOUT_MS = 90_000;
 const PLAYBACK_CONNECT_STUCK_TIMEOUT_MS = 30_000;
 const MOBILE_EXECUTE_TRACK_TIMEOUT_MS = 300_000;
+
+/** Stations whose own layout opens with a search field — the floating button would duplicate it. */
+const STATIONS_WITH_OWN_SEARCH = new Set(['audiobooks', 'podcasts']);
 
 const EMPTY_CATALOG: CatalogSearchResult = {
   suggestions: [],
@@ -4991,9 +4994,10 @@ export default function SandboxShell() {
       // shortcutCtxRef like those do, so this probe cannot drift from what a user's tap does.
       skipNext: () => {
         const queue = playQueueRef.current ?? [];
-        if (queue.length < 2) return false;
+        if (queue.length < 2) return { ok: false, outcome: 'queue-too-short' };
         shortcutCtxRef.current.skipForward();
-        return true;
+        const outcome = lastSkipOutcomeRef.current;
+        return { ok: outcome === 'advance' || outcome === 'in-place', outcome };
       },
       thumbUpCurrent: () => {
         const env = audio.envelope ?? audioEnvelopeRef.current ?? sessionEnvelopeRef.current;
@@ -5887,35 +5891,47 @@ export default function SandboxShell() {
       void (async () => {
         const queue = playQueueRef.current;
         /*
-         * Still URL matching, not findQueueIndexForExoTransition. Matching on the stable mediaId
-         * works *too* well here: it resolves the transition fired by a user-initiated skip, so
-         * this handler called setQueueIndex a second time on top of the JS advance and the player
-         * visibly jumped between tracks before settling. URL matching often misses, and those
-         * misses were silently suppressing the R-004 double-advance race.
+         * mediaId first, URL as fallback — the remaining half of #36, now landed.
          *
-         * shouldAdoptNativeExoTransition below is the actual fix for that race: playUrl records
-         * the track JS navigated to, and echoes of it are ignored regardless of how the
-         * transition was matched. Switching this line to findQueueIndexForExoTransition is the
-         * remaining half of #36 and should be a one-line change — but it cannot be verified in
-         * CI, because play-direct-queue drives native directly and leaves this handler inert with
-         * an empty play queue. It needs a device: play an album, skip across a boundary, confirm
-         * the right song plays and the index does not jump. Not landing it unverified a third time.
+         * This was deliberately left on URL matching because mediaId resolved skip echoes too and
+         * caused a visible double-advance. shouldAdoptNativeExoTransition below is the real fix
+         * for that: playUrl records what JS navigated to and echoes are ignored however they were
+         * matched, so URL matching was only ever suppressing the race by accident.
          *
-         * The native mediaId work is untouched — lock-screen metadata still resolves by key.
+         * What forced the change: URL matching misses whenever the stream cache serves a track,
+         * because the queue holds an https URL and the transition reports content://…stream-cache.
+         * On a cached LibriVox book that meant JS adopted nothing — native advanced two chapters
+         * while envelopeId stayed frozen on the first, so the queue index never moved.
+         *
+         * Verified on device, which is what it was waiting for: queue-skip-probe across chapter
+         * boundaries on a 22-chapter book, index advancing by exactly one with no stray indexes.
          */
-        const idx = await findQueueIndexForExoUrl(queue, detail.url ?? '');
+        const idx = await findQueueIndexForExoTransition(queue, {
+          mediaId: detail.mediaId,
+          url: detail.url,
+        });
         if (idx < 0) return;
         const track = queue[idx];
         if (!track) return;
         const jsNav = lastJsInitiatedNativeNav();
-        if (
-          !shouldAdoptNativeExoTransition({
-            transitionEnvelopeId: track.envelopeId,
-            activeEnvelopeId: audioEnvelopeRef.current?.envelopeId,
-            pendingJsNavEnvelopeId: jsNav.envelopeId,
-            pendingJsNavAtMs: jsNav.atMs,
-          })
-        ) {
+        const adopt = shouldAdoptNativeExoTransition({
+          transitionEnvelopeId: track.envelopeId,
+          activeEnvelopeId: audioEnvelopeRef.current?.envelopeId,
+          pendingJsNavEnvelopeId: jsNav.envelopeId,
+          pendingJsNavAtMs: jsNav.atMs,
+          reason: typeof detail.reason === 'number' ? detail.reason : undefined,
+        });
+        /*
+         * Both sides of the R-018 race, in one line each. The probe can say the index overshot but
+         * not why: an adopted echo and a second JS advance land identically. This prints the gate's
+         * inputs at the moment it decides, so a failing run shows which one moved the index.
+         */
+        logE2e(
+          'exo-transition',
+          adopt,
+          `idx=${idx} from=${queueIndexRef.current} reason=${detail.reason ?? 'none'} adopt=${adopt} sinceJsNavMs=${Date.now() - (jsNav.atMs || 0)} jsNavEnv=${jsNav.envelopeId ?? 'none'} transitionEnv=${track.envelopeId} activeEnv=${audioEnvelopeRef.current?.envelopeId ?? 'none'}`,
+        );
+        if (!adopt) {
           return;
         }
         exoGaplessTransitionAtRef.current = Date.now();
@@ -7133,8 +7149,19 @@ export default function SandboxShell() {
     adoptInPlaceQueueTrack,
   ]);
 
+  /*
+   * Why the last skip did what it did. A skip that Up Next declines ('none') and a skip the queue
+   * loses look identical from outside — both leave the index where it was — so the probe could
+   * only ever report "did not advance". Recorded here so it can report which.
+   */
+  const lastSkipOutcomeRef = useRef<
+    '' | 'remote' | 'seek' | 'none' | 'no-track' | 'in-place' | 'advance'
+  >('');
+
   const skipForward = useCallback(() => {
+    lastSkipOutcomeRef.current = '';
     if (isConnectRemoteRef.current) {
+      lastSkipOutcomeRef.current = 'remote';
       sendConnectCommand({ cmd: 'SKIP_NEXT' });
       return;
     }
@@ -7146,6 +7173,7 @@ export default function SandboxShell() {
         audio.envelope.durationSeconds ||
         0;
       const next = audio.currentTimeSeconds + interval;
+      lastSkipOutcomeRef.current = 'seek';
       audio.seek(dur > 0 ? Math.min(next, dur) : next);
       return;
     }
@@ -7158,7 +7186,10 @@ export default function SandboxShell() {
       queue: playQueue,
       settings: upNextSettings,
     });
-    if (advance.action === 'none') return;
+    if (advance.action === 'none') {
+      lastSkipOutcomeRef.current = 'none';
+      return;
+    }
     const next =
       advance.action === 'repeat-one'
         ? queueIndex
@@ -7166,7 +7197,10 @@ export default function SandboxShell() {
           ? advance.index
           : queueIndex;
     const track = playQueue[next];
-    if (!track) return;
+    if (!track) {
+      lastSkipOutcomeRef.current = 'no-track';
+      return;
+    }
     if (!isPodcastEnvelopeId(track.envelopeId)) {
       sovereignUpNextPodcastCountRef.current = 0;
     }
@@ -7182,9 +7216,12 @@ export default function SandboxShell() {
     if (currentUrl && inPlaceSeek != null && !(inPlaceSeek < 0.25 && next > 0)) {
       setQueueIndex(next);
       syncThumbsFromFeedback(track.envelopeId);
+      lastSkipOutcomeRef.current = 'in-place';
       adoptInPlaceQueueTrack(track, inPlaceSeek);
       return;
     }
+    lastSkipOutcomeRef.current = 'advance';
+    logE2e('js-skip', true, `from=${queueIndex} to=${next} env=${track.envelopeId}`);
     setQueueIndex(next);
     void handlePlayEnvelope(track, findHitCandidates(track), { preservePlayQueue: true });
   }, [
@@ -8909,10 +8946,15 @@ export default function SandboxShell() {
       {/* Search lives on the Home vinyl (see onIdleSearch), but that hit area only exists
           while Home is idle — once a track is loaded the vinyl belongs to the player. So
           keep the floating button everywhere EXCEPT idle Home, otherwise Home would have
-          no way to reach search at all. */}
+          no way to reach search at all.
+
+          Also except the stations that carry their own search field. Audiobooks and Podcasts
+          each open with a full-width search input, so the floating button put a second search
+          affordance on a screen that already had one — hovering over the content, no less. */}
       {showMobileShell &&
       !mobileSearchOpen &&
       station !== 'search' &&
+      !STATIONS_WITH_OWN_SEARCH.has(station) &&
       !(station === 'home' && !homeHasLoadedTrack) ? (
         <button
           type="button"

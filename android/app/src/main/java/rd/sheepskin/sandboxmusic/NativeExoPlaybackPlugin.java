@@ -536,6 +536,9 @@ public class NativeExoPlaybackPlugin extends Plugin {
                             evt.put("index", idx);
                             evt.put("queueLength", p.getMediaItemCount());
                             evt.put("reason", reason);
+                            if (mediaItem != null && mediaItem.mediaId != null && !mediaItem.mediaId.isEmpty()) {
+                                evt.put("mediaId", mediaItem.mediaId);
+                            }
                             if (mediaItem != null && mediaItem.localConfiguration != null) {
                                 Uri uri = mediaItem.localConfiguration.uri;
                                 if (uri != null) {
@@ -1259,7 +1262,7 @@ public class NativeExoPlaybackPlugin extends Plugin {
                         }
 
                         applyCombinedVolume(p);
-                        MediaItem item = MediaItem.fromUri(Uri.parse(trimmed));
+                        MediaItem item = mediaItemFor(trimmed, lastEnvelopeId);
                         int newIndex;
                         if (resetQueue || p.getMediaItemCount() == 0) {
                             p.setMediaItem(item);
@@ -1355,10 +1358,10 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 String artist = call.getString("artist");
                 String album = call.getString("album");
                 String artworkUrl = call.getString("artworkUrl");
-                int newIndex = p.getMediaItemCount();
-                p.addMediaItem(MediaItem.fromUri(Uri.parse(trimmed)));
-                storeGainForIndex(newIndex, replayGainDb);
                 String envelopeId = call.getString("envelopeId");
+                int newIndex = p.getMediaItemCount();
+                p.addMediaItem(mediaItemFor(trimmed, envelopeId));
+                storeGainForIndex(newIndex, replayGainDb);
                 storeTrackMetaForUrl(trimmed, envelopeId, title, artist, album, artworkUrl);
                 if (p.getPlaybackState() == Player.STATE_IDLE) {
                     p.prepare();
@@ -1370,6 +1373,22 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 ret.put("index", newIndex);
                 call.resolve(ret);
             });
+    }
+
+    /**
+     * A MediaItem carrying the JS envelope id as its mediaId.
+     *
+     * The URL cannot identify a track. The same chapter plays from an https stream, a local proxy
+     * URL or a content:// stream-cache entry depending on what happens to be cached, so a
+     * transition matched by URL misses precisely when caching kicks in — and a miss means JS never
+     * learns the track changed. The envelope id is stable across all three.
+     */
+    private static MediaItem mediaItemFor(String url, String envelopeId) {
+        MediaItem.Builder builder = new MediaItem.Builder().setUri(Uri.parse(url));
+        if (envelopeId != null && !envelopeId.trim().isEmpty()) {
+            builder.setMediaId("env:" + envelopeId.trim());
+        }
+        return builder.build();
     }
 
     private int indexOfUrl(ExoPlayer p, String url) {
