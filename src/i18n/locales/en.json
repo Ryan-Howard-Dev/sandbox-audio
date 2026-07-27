@@ -1851,6 +1851,8 @@
     "acquirePastePlaceholder": "magnet:?xt=urn:btih:…",
     "acquireNoLink": "Hit has no magnet or torrent link.",
     "acquireFailed": "Acquire failed — configure Real-Debrid in Settings → Add-ons for torrent downloads (optional). Search still works without it.",
-    "acquireDone": "Saved {count} file(s) for “{title}”. {path}"
+    "acquireDone": "Saved {count} file(s) for “{title}”. {path}",
+    "continueListening": "Continue listening",
+    "continueUnavailable": "Could not reopen that book — try finding it in search."
   }
 }

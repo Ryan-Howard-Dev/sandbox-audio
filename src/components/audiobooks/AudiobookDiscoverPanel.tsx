@@ -32,7 +32,15 @@ import { formatTime } from '../../stations/theme';
 import { useTranslation } from '../../i18n';
 import AudiobookChapterRow from './AudiobookChapterRow';
 import { getCachedDiscovery } from '../../discoveryRefresh';
-import { audiobookBookKeyFromEnvelopeId, getAudiobookProgress } from '../../audiobookProgress';
+import {
+  audiobookBookKeyFromCatalogBook,
+  audiobookBookKeyFromEnvelopeId,
+  audiobookProgressPercent,
+  getAudiobookProgress,
+  listAudiobooksInProgress,
+  saveAudiobookProgress,
+  type AudiobookProgress,
+} from '../../audiobookProgress';
 
 export interface AudiobookDiscoverPanelProps {
   onPlay: (env: MediaEnvelope) => void;
@@ -90,6 +98,9 @@ function BookCard({
   onOpen: () => void;
 }) {
   const art = useAudiobookCover(book).display;
+  // Percentage read straight off the position store — no catalog call, works offline.
+  const progress = getAudiobookProgress(audiobookBookKeyFromCatalogBook(book.source, book.id));
+  const percent = progress ? audiobookProgressPercent(progress) : 0;
   return (
     <article
       className="podcasts-discover-card podcasts-discover-card--clickable touch-manipulation"
@@ -110,6 +121,7 @@ function BookCard({
         ) : (
           <div className="w-full h-full" style={{ background: seedGradient(book.title) }} />
         )}
+        {percent > 0 ? <span className="audiobook-progress-badge">{percent}%</span> : null}
       </div>
       <div className="podcasts-discover-card-body">
         <h3 className="podcasts-discover-card-title">{book.title}</h3>
@@ -413,6 +425,55 @@ export default function AudiobookDiscoverPanel({
   const [rssAdding, setRssAdding] = useState(false);
   const [userFeedCount, setUserFeedCount] = useState(() => loadUserAudiobookRssFeeds().length);
   const [featured, setFeatured] = useState<AudiobookCatalogBook[]>([]);
+  /*
+   * Read once per mount rather than subscribed: the shelf answers "what was I in the middle of"
+   * on arrival, and re-ordering itself under the reader while a book plays would be noise.
+   */
+  const [inProgress, setInProgress] = useState<AudiobookProgress[]>([]);
+  useEffect(() => {
+    setInProgress(listAudiobooksInProgress(12));
+  }, []);
+
+  /**
+   * Resume a book straight from the shelf: re-fetch its chapters from the stored locator, then
+   * play from the saved position. No search, no guessing which result was the one you were in.
+   */
+  const continueBook = useCallback(
+    async (entry: AudiobookProgress) => {
+      const locator = entry.locator;
+      if (!locator) {
+        onError?.(t('audiobooks.continueUnavailable'));
+        return;
+      }
+      const book: AudiobookCatalogBook = {
+        id: `${locator.source}:${locator.sourceId}`,
+        sourceId: locator.sourceId,
+        source: locator.source as AudiobookCatalogSource,
+        title: entry.title ?? '',
+        author: entry.author ?? '',
+        artworkUrl: entry.artworkUrl,
+        feedUrl: locator.feedUrl,
+        detailUrl: locator.detailUrl,
+      };
+      try {
+        const chapters = await fetchAudiobookCatalogChapters(book);
+        if (chapters.length === 0) {
+          onError?.(t('audiobooks.continueUnavailable'));
+          return;
+        }
+        const envs = chapters.map((ch) => catalogChapterEnvelope(ch, book));
+        const startIndex = Math.min(Math.max(0, entry.chapterIndex), envs.length - 1);
+        if (onPlayAlbum && envs.length > 1) {
+          onPlayAlbum(envs, false, { startIndex, startSeconds: entry.offsetSeconds });
+        } else if (envs[startIndex]) {
+          onPlay(envs[startIndex]);
+        }
+      } catch {
+        onError?.(t('audiobooks.continueUnavailable'));
+      }
+    },
+    [onError, onPlay, onPlayAlbum, t],
+  );
   const [loadingFeatured, setLoadingFeatured] = useState(false);
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
 
@@ -578,6 +639,30 @@ export default function AudiobookDiscoverPanel({
       saved && saved.chapterIndex < envs.length
         ? { startIndex: saved.chapterIndex, startSeconds: saved.offsetSeconds }
         : undefined;
+    /*
+     * Record what this book is while the catalog entry is in hand. The position updates that
+     * follow come from a playback envelope, which cannot say where the book came from, so the
+     * continue shelf would have nothing to re-fetch from.
+     */
+    if (bookKey) {
+      saveAudiobookProgress({
+        bookKey,
+        chapterIndex: saved?.chapterIndex ?? 0,
+        offsetSeconds: saved?.offsetSeconds ?? 0,
+        durationSeconds: saved?.durationSeconds ?? 0,
+        chapterCount: envs.length,
+        updatedAt: Date.now(),
+        title: bookForPlayback.title,
+        author: bookForPlayback.author,
+        artworkUrl: bookForPlayback.artworkUrl,
+        locator: {
+          source: bookForPlayback.source,
+          sourceId: bookForPlayback.sourceId,
+          feedUrl: bookForPlayback.feedUrl,
+          detailUrl: bookForPlayback.detailUrl,
+        },
+      });
+    }
     if (onPlayAlbum && envs.length > 1) onPlayAlbum(envs, false, resume);
     else if (envs[0]) onPlay(envs[0]);
   }, [chapters, onPlay, onPlayAlbum, bookForPlayback]);
@@ -671,6 +756,55 @@ export default function AudiobookDiscoverPanel({
             </button>
           ))}
         </div>
+      ) : null}
+
+      {/*
+        Continue listening. Above Featured on purpose: a book you are already inside beats
+        anything a catalog can suggest. Rendered entirely from the position store, so it works
+        offline and without re-querying a catalog that may have changed or gone away.
+      */}
+      {results.length === 0 && inProgress.length > 0 ? (
+        <>
+          <div className="podcasts-discover-section-head">
+            <BookOpen className="w-4 h-4 text-accent" aria-hidden />
+            <h2 className="podcasts-discover-section-title">
+              {t('audiobooks.continueListening')}
+            </h2>
+          </div>
+          <div className="audiobook-continue-row">
+            {inProgress.map((entry) => (
+              <button
+                key={entry.bookKey}
+                type="button"
+                className="audiobook-continue-card touch-manipulation"
+                onClick={() => void continueBook(entry)}
+                aria-label={entry.title ?? entry.bookKey}
+              >
+                <div className="audiobook-continue-art">
+                  {entry.artworkUrl ? (
+                    <img
+                      src={proxiedArtworkUrl(entry.artworkUrl)}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full"
+                      style={{ background: seedGradient(entry.title ?? entry.bookKey) }}
+                    />
+                  )}
+                  <span className="audiobook-progress-badge">
+                    {audiobookProgressPercent(entry)}%
+                  </span>
+                </div>
+                <p className="audiobook-continue-title">{entry.title ?? entry.bookKey}</p>
+                {entry.author ? (
+                  <p className="audiobook-continue-author">{entry.author}</p>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        </>
       ) : null}
 
       <div className="podcasts-discover-section-head">

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   AUDIOBOOK_PROGRESS_MIN_SECONDS,
+  audiobookBookKeyFromCatalogBook,
   audiobookBookKeyFromEnvelopeId,
   audiobookProgressPercent,
   clearAudiobookProgress,
@@ -60,6 +61,34 @@ describe('audiobookBookKeyFromEnvelopeId', () => {
 
   it('returns null for a malformed catalog id rather than a bogus key', () => {
     expect(audiobookBookKeyFromEnvelopeId('audiobook-catalog:librivox')).toBeNull();
+  });
+});
+
+describe('audiobookBookKeyFromCatalogBook', () => {
+  /*
+   * The invariant that matters: a badge derives the key from the book card, playback derives it
+   * from the envelope. If those ever disagree, a book records progress under one key and reads it
+   * back under another, and resume silently never fires — with nothing failing loudly.
+   */
+  it('agrees with the key derived from a playing envelope', () => {
+    const fromCard = audiobookBookKeyFromCatalogBook('librivox', 'librivox:19037');
+    const fromEnvelope = audiobookBookKeyFromEnvelopeId('audiobook-catalog:librivox:19037:601981');
+    expect(fromCard).toBe(fromEnvelope);
+  });
+
+  it('agrees for a multi-segment scraped id too', () => {
+    const fromCard = audiobookBookKeyFromCatalogBook('goldenaudiobooks', 'goldenaudiobooks:a1b2:c3');
+    const fromEnvelope = audiobookBookKeyFromEnvelopeId(
+      'audiobook-catalog:goldenaudiobooks:a1b2:c3:7',
+    );
+    expect(fromCard).toBe(fromEnvelope);
+  });
+
+  it('returns null rather than a malformed key', () => {
+    expect(audiobookBookKeyFromCatalogBook('', 'librivox:1')).toBeNull();
+    expect(audiobookBookKeyFromCatalogBook('librivox', '')).toBeNull();
+    // No segment after the source is not a usable book id.
+    expect(audiobookBookKeyFromCatalogBook('librivox', 'librivox')).toBeNull();
   });
 });
 
@@ -183,6 +212,29 @@ describe('storage round trip', () => {
   it('saves and reads back a position', () => {
     saveAudiobookProgress(entry({ bookKey: 'audiobook-catalog:librivox:19037', offsetSeconds: 42 }));
     expect(getAudiobookProgress('audiobook-catalog:librivox:19037')?.offsetSeconds).toBe(42);
+  });
+
+  /*
+   * Position updates come from a playback envelope, which knows nothing about the catalog. A
+   * blind write would erase the locator and display snapshot on the first tick, and the shelf
+   * would lose the book it exists to show.
+   */
+  it('keeps the locator and display snapshot when a position update omits them', () => {
+    saveAudiobookProgress(
+      entry({
+        bookKey: 'k',
+        title: 'The Red House Mystery',
+        author: 'A. A. Milne',
+        artworkUrl: 'https://x/cover.jpg',
+        locator: { source: 'gutenberg', sourceId: '1234' },
+      }),
+    );
+    saveAudiobookProgress(entry({ bookKey: 'k', offsetSeconds: 900, updatedAt: 2_000 }));
+    const saved = getAudiobookProgress('k');
+    expect(saved?.offsetSeconds).toBe(900);
+    expect(saved?.title).toBe('The Red House Mystery');
+    expect(saved?.author).toBe('A. A. Milne');
+    expect(saved?.locator?.sourceId).toBe('1234');
   });
 
   it('returns null for an unknown or blank key', () => {

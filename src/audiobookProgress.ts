@@ -20,6 +20,24 @@ export type AudiobookProgress = {
   /** Total chapters, when the book listing was known at save time. 0 when unknown. */
   chapterCount: number;
   updatedAt: number;
+  /*
+   * Snapshot of what was playing, so a continue-listening shelf renders from this store alone --
+   * offline, air-gapped, and without re-querying a catalog that may since have changed or gone.
+   */
+  title?: string;
+  author?: string;
+  artworkUrl?: string;
+  /*
+   * Enough to re-fetch the chapter list without a search. Written when playback starts, where the
+   * catalog book is in hand; the position updates that follow come from a playback envelope,
+   * which does not carry these, which is why saving merges rather than replaces.
+   */
+  locator?: {
+    source: string;
+    sourceId: string;
+    feedUrl?: string;
+    detailUrl?: string;
+  };
 };
 
 export type AudiobookProgressMap = Record<string, AudiobookProgress>;
@@ -55,6 +73,28 @@ export function audiobookBookKeyFromEnvelopeId(
   }
   if (id.startsWith('audiobook:')) return id;
   return null;
+}
+
+/**
+ * Book key for a catalog book, from its own fields rather than from a playing envelope.
+ *
+ * A shelf and a progress badge need the key before anything is playing. This must agree exactly
+ * with `audiobookBookKeyFromEnvelopeId`, or a book would record progress under one key and read
+ * it back under another — resume would silently never fire. The parity is asserted in tests.
+ *
+ * Catalog book ids are `<source>:<rest>`, and `catalogChapterEnvelope` drops that leading source
+ * segment before re-prefixing, so this does the same.
+ */
+export function audiobookBookKeyFromCatalogBook(
+  source: string | null | undefined,
+  bookId: string | null | undefined,
+): string | null {
+  const src = source?.trim() ?? '';
+  const id = bookId?.trim() ?? '';
+  if (!src || !id) return null;
+  const rest = id.split(':').slice(1).join(':');
+  if (!rest) return null;
+  return `audiobook-catalog:${src}:${rest}`;
 }
 
 /** Fraction of the whole book listened, 0–1. Falls back to chapter position when durations are unknown. */
@@ -146,12 +186,27 @@ export function getAudiobookProgress(bookKey: string | null | undefined): Audiob
   return readMap()[key] ?? null;
 }
 
-/** Persist unconditionally; callers gate on shouldPersistAudiobookProgress. */
+/**
+ * Persist unconditionally; callers gate on shouldPersistAudiobookProgress.
+ *
+ * Merges rather than replaces. Position updates come from a playback envelope, which knows
+ * nothing about the catalog the book came from — a blind write would erase the locator and the
+ * display snapshot on the first tick, and the shelf would lose the book it is meant to show.
+ */
 export function saveAudiobookProgress(progress: AudiobookProgress): void {
   const key = progress.bookKey?.trim();
   if (!key) return;
   const map = readMap();
-  map[key] = { ...progress, bookKey: key };
+  const existing = map[key];
+  map[key] = {
+    ...existing,
+    ...progress,
+    bookKey: key,
+    title: progress.title ?? existing?.title,
+    author: progress.author ?? existing?.author,
+    artworkUrl: progress.artworkUrl ?? existing?.artworkUrl,
+    locator: progress.locator ?? existing?.locator,
+  };
   writeMap(map);
 }
 

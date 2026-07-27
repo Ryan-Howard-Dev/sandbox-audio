@@ -6520,6 +6520,7 @@ export default function SandboxShell() {
     if (!bookKey) return;
     let last = getAudiobookProgress(bookKey) ?? undefined;
     const persist = () => {
+      const env = audioEnvelopeRef.current;
       const next = {
         bookKey,
         chapterIndex: Math.max(0, queueIndexRef.current),
@@ -6527,6 +6528,10 @@ export default function SandboxShell() {
         durationSeconds: Math.max(0, Math.floor(audioDurationRef.current)),
         chapterCount: playQueueRef.current.length,
         updatedAt: Date.now(),
+        // The book, not the chapter — album carries the book title for an audiobook envelope.
+        title: env?.album?.trim() || env?.title?.trim(),
+        author: env?.artist?.trim(),
+        artworkUrl: env?.artworkUrl,
       };
       if (!shouldPersistAudiobookProgress(last, next)) return;
       saveAudiobookProgress(next);
