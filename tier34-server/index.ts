@@ -310,6 +310,14 @@ app.put('/api/device/secrets', (req, res) => {
 });
 
 app.patch('/api/security/defense-protocol', (req, res) => {
+  /*
+   * This is the switch that turns the defence protocol *off*, and it had no auth at all while the
+   * secret-store endpoints beside it did. Anything on the network could disable strict mode. Uses
+   * the same gate as those endpoints, so it stays open under the self-hosted default and becomes
+   * real the moment TIER34_DEVICE_SYNC_SECRET is set.
+   */
+  const auth = verifyDeviceSyncAuth(req);
+  if (auth.ok === false) return res.status(auth.status).json({ error: auth.error });
   const enabled = req.body?.enabled;
   const interminableTide = req.body?.interminableTide;
   const defenseStrict = req.body?.defenseStrict;
