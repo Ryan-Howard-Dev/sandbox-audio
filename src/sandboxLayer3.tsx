@@ -6899,7 +6899,12 @@ export default function SandboxShell() {
     async (
       tracks: MediaEnvelope[],
       shuffle?: boolean,
-      options?: { fromMixRadio?: MixRadioSession },
+      options?: {
+        fromMixRadio?: MixRadioSession;
+        /** Resume point — chapter to open on, and where inside it to land. */
+        startIndex?: number;
+        startSeconds?: number;
+      },
     ) => {
       if (tracks.length === 0) return;
       if (!options?.fromMixRadio) {
@@ -6921,23 +6926,34 @@ export default function SandboxShell() {
       const ordered = shuffle
         ? [...tracks].sort(() => Math.random() - 0.5)
         : [...tracks];
+      const startIndex = Math.min(
+        Math.max(0, Math.floor(options?.startIndex ?? 0)),
+        ordered.length - 1,
+      );
       setPlayQueue(ordered);
-      setQueueIndex(0);
+      setQueueIndex(startIndex);
       playQueueRef.current = ordered;
-      queueIndexRef.current = 0;
+      queueIndexRef.current = startIndex;
       if (ordered.length > 1) {
         setRepeatMode((mode) => (mode === 'one' ? 'none' : mode));
       }
       if (options?.fromMixRadio) setMixRadioSession(options.fromMixRadio);
-      const first = ordered[0];
-      const primePromise = primeLockerNativeQueueFrom(ordered, 0);
+      const first = ordered[startIndex];
+      const primePromise = primeLockerNativeQueueFrom(ordered, startIndex);
       const started = await handlePlayEnvelope(first, findHitCandidates(first));
       await primePromise;
       if (started && ordered.length > 1) {
-        await primeLockerNativeQueueFrom(ordered, 0);
+        await primeLockerNativeQueueFrom(ordered, startIndex);
       }
+      /*
+       * Seek after playback starts, not before — the position is meaningless until the media is
+       * loaded. Below a couple of seconds is not worth a seek: it would trade a visible jump for
+       * nothing a listener would notice.
+       */
+      const startSeconds = options?.startSeconds ?? 0;
+      if (started && startSeconds > 2) audio.seek(startSeconds);
     },
-    [handlePlayEnvelope, findHitCandidates, sendConnectCommand, primeLockerNativeQueueFrom],
+    [handlePlayEnvelope, findHitCandidates, sendConnectCommand, primeLockerNativeQueueFrom, audio],
   );
 
   const handleExploreInstantMix = useCallback(
@@ -9562,7 +9578,9 @@ export default function SandboxShell() {
             {withStationSuspense(
               <LazyAudiobooksView
                 onPlay={(env) => void handlePlayEnvelope(env)}
-                onPlayAlbum={(tracks, shuffle) => void handlePlayAlbum(tracks, shuffle)}
+                onPlayAlbum={(tracks, shuffle, resume) =>
+                  void handlePlayAlbum(tracks, shuffle, resume)
+                }
                 onPrimePlay={(env) => audio.primePlaybackGesture(env)}
                 activeEnvelopeId={audio.envelope?.envelopeId}
                 onError={(msg) => showAppToast(msg, 5000)}

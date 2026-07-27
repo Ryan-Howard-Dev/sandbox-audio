@@ -28,12 +28,17 @@ import {
 import { formatTime } from './theme';
 import { useTranslation } from '../i18n';
 import { proxiedArtworkUrl } from '../displaySanitize';
+import { audiobookBookKeyFromEnvelopeId, getAudiobookProgress } from '../audiobookProgress';
 import { seedGradient } from '../seedGradient';
 import { fetchAudiobookDescription } from '../audiobookDescription';
 
 export interface AudiobooksViewProps {
   onPlay: (envelope: MediaEnvelope) => void;
-  onPlayAlbum?: (envelopes: MediaEnvelope[], shuffle?: boolean) => void;
+  onPlayAlbum?: (
+    envelopes: MediaEnvelope[],
+    shuffle?: boolean,
+    resume?: { startIndex: number; startSeconds: number },
+  ) => void;
   onPrimePlay?: (envelope: MediaEnvelope) => void;
   activeEnvelopeId?: string | null;
   onError?: (message: string) => void;
@@ -173,7 +178,14 @@ export default function AudiobooksView({
         artworkUrl: book.coverUrl,
       };
       const envs = book.tracks.map((hit) => audiobookHitToEnvelope(hit, opts));
-      if (onPlayAlbum && envs.length > 1) onPlayAlbum(envs, false);
+      // Device-library books resume from the same store as catalog books.
+      const bookKey = audiobookBookKeyFromEnvelopeId(envs[0]?.envelopeId);
+      const saved = bookKey ? getAudiobookProgress(bookKey) : null;
+      const resume =
+        saved && saved.chapterIndex < envs.length
+          ? { startIndex: saved.chapterIndex, startSeconds: saved.offsetSeconds }
+          : undefined;
+      if (onPlayAlbum && envs.length > 1) onPlayAlbum(envs, false, resume);
       else if (envs[0]) onPlay(envs[0]);
     },
     [onPlay, onPlayAlbum],

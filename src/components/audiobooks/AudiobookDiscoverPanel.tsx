@@ -32,10 +32,15 @@ import { formatTime } from '../../stations/theme';
 import { useTranslation } from '../../i18n';
 import AudiobookChapterRow from './AudiobookChapterRow';
 import { getCachedDiscovery } from '../../discoveryRefresh';
+import { audiobookBookKeyFromEnvelopeId, getAudiobookProgress } from '../../audiobookProgress';
 
 export interface AudiobookDiscoverPanelProps {
   onPlay: (env: MediaEnvelope) => void;
-  onPlayAlbum?: (envelopes: MediaEnvelope[], shuffle?: boolean) => void;
+  onPlayAlbum?: (
+    envelopes: MediaEnvelope[],
+    shuffle?: boolean,
+    resume?: { startIndex: number; startSeconds: number },
+  ) => void;
   onPrimePlay?: (env: MediaEnvelope) => void;
   onError?: (message: string) => void;
   activeEnvelopeId?: string | null;
@@ -563,7 +568,17 @@ export default function AudiobookDiscoverPanel({
   const playAll = useCallback(() => {
     if (!bookForPlayback || chapters.length === 0) return;
     const envs = chapters.map((ch) => catalogChapterEnvelope(ch, bookForPlayback));
-    if (onPlayAlbum && envs.length > 1) onPlayAlbum(envs, false);
+    /*
+     * Resume where the listener left off. Without this, pressing play on a book you are eight
+     * hours into starts it from chapter one — the position was being recorded and never used.
+     */
+    const bookKey = audiobookBookKeyFromEnvelopeId(envs[0]?.envelopeId);
+    const saved = bookKey ? getAudiobookProgress(bookKey) : null;
+    const resume =
+      saved && saved.chapterIndex < envs.length
+        ? { startIndex: saved.chapterIndex, startSeconds: saved.offsetSeconds }
+        : undefined;
+    if (onPlayAlbum && envs.length > 1) onPlayAlbum(envs, false, resume);
     else if (envs[0]) onPlay(envs[0]);
   }, [chapters, onPlay, onPlayAlbum, bookForPlayback]);
 
