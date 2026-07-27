@@ -22085,3 +22085,57 @@ input.shell-search:focus-visible {
   color: var(--text-dim);
   margin-top: 0.25rem;
 }
+
+.audiobook-doc-import {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-mid);
+  cursor: pointer;
+}
+
+.audiobook-doc-import:disabled { opacity: 0.5; }
+
+.audiobook-doc-list { display: flex; flex-direction: column; gap: 0.4rem; }
+
+.audiobook-doc-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
+}
+
+.audiobook-doc-open {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 0.7rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.audiobook-doc-open .audiobook-doc-name,
+.audiobook-doc-open .audiobook-doc-meta { display: block; }
+
+.audiobook-doc-remove {
+  flex: 0 0 auto;
+  padding: 0.6rem 0.7rem;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+}

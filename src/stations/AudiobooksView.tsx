@@ -29,7 +29,7 @@ import { formatTime } from './theme';
 import { useTranslation } from '../i18n';
 import { proxiedArtworkUrl } from '../displaySanitize';
 import { audiobookBookKeyFromEnvelopeId, getAudiobookProgress } from '../audiobookProgress';
-import DocumentNarrationPanel from '../components/audiobooks/DocumentNarrationPanel';
+import DocumentShelf from '../components/audiobooks/DocumentShelf';
 import { seedGradient } from '../seedGradient';
 import { fetchAudiobookDescription } from '../audiobookDescription';
 
@@ -625,12 +625,6 @@ export default function AudiobooksView({
         </div>
       )}
 
-      {/*
-        Reading a document belongs beside your own books rather than in Discover: it is your
-        file, not something found in a catalog. Shown whether or not the device scan found
-        anything, since a research paper does not depend on having an audiobook library.
-      */}
-      <DocumentNarrationPanel onError={onError} />
 
       {books.length > 0 && (phase === 'ready' || phase === 'enriching') && (
         <section className="podcasts-library-grid-section audiobooks-library-section">
@@ -774,6 +768,13 @@ export default function AudiobooksView({
           </ul>
         </section>
       )}
+
+      {/*
+        Its own shelf, below the books rather than wedged above them. A document is not an
+        audiobook — no author catalog, no cover, no chapters until narration derives them — so
+        filing the two together would make both lists misrepresent what they hold.
+      */}
+      <DocumentShelf onError={onError} />
         </>
       )}
     </div>

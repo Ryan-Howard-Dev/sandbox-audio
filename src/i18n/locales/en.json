@@ -1854,8 +1854,6 @@
     "acquireDone": "Saved {count} file(s) for “{title}”. {path}",
     "continueListening": "Continue listening",
     "continueUnavailable": "Could not reopen that book — try finding it in search.",
-    "readDocumentTitle": "Read a document",
-    "readDocumentHint": "Pick a .txt or .md file and it will be read aloud on this device. The file is never uploaded.",
     "chooseDocument": "Choose document",
     "docPosition": "Part {index} of {total}",
     "docLeft": "left",
@@ -1863,6 +1861,11 @@
     "docTooLarge": "That file is too large to read aloud (5 MB limit).",
     "docEmpty": "No readable text found in that file.",
     "docReadFailed": "Could not read that file.",
-    "docSpeechUnavailable": "This device has no speech voices available, so documents cannot be read aloud here."
+    "docSpeechUnavailable": "This device has no speech voices available, so documents cannot be read aloud here.",
+    "yourDocuments": "Your documents",
+    "importDocument": "Import",
+    "documentsEmpty": "Import a .txt or .md and it will be read aloud on this device. Nothing is uploaded.",
+    "docParts": "{count, plural, one {# part} other {# parts}}",
+    "docRemove": "Remove document"
   }
 }
