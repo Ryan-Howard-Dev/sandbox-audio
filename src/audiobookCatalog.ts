@@ -49,6 +49,8 @@ export interface AudiobookCatalogBook {
   sourceId: string;
   detailUrl?: string;
   feedUrl?: string;
+  /** Source text, when the provider has one. Used to sanity-check audio length. */
+  textUrl?: string;
 }
 
 export interface AudiobookCatalogChapter {

@@ -1867,6 +1867,9 @@
     "documentsEmpty": "Import a .txt or .md and it will be read aloud on this device. Nothing is uploaded.",
     "docParts": "{count, plural, one {# part} other {# parts}}",
     "docRemove": "Remove document",
-    "tabDocuments": "Documents"
+    "tabDocuments": "Documents",
+    "voiceLabel": "Voice",
+    "voiceOnline": "online",
+    "sampleOnly": "Sample — this recording is far shorter than the full text"
   }
 }

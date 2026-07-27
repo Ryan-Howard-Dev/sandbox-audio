@@ -95,3 +95,24 @@ export function classifyAudiobookFidelity(input: FidelityInput): AudiobookFideli
 export function canFeatureAudiobook(fidelity: AudiobookFidelity): boolean {
   return fidelity === 'complete';
 }
+
+/**
+ * Byte length of a text URL, from a HEAD request.
+ *
+ * A HEAD costs a header exchange; downloading a novel to count its bytes would cost megabytes on
+ * a phone to answer a question about a number the server already knows. Returns null on anything
+ * unexpected — a missing Content-Length, a redirect that drops it, CORS, or an offline device —
+ * because "unknown" has its own verdict and must not be mistaken for "short".
+ */
+export async function fetchTextByteLength(url: string): Promise<number | null> {
+  const trimmed = url?.trim();
+  if (!trimmed) return null;
+  try {
+    const res = await fetch(trimmed, { method: 'HEAD' });
+    if (!res.ok) return null;
+    const length = Number(res.headers.get('content-length'));
+    return Number.isFinite(length) && length > 0 ? length : null;
+  } catch {
+    return null;
+  }
+}

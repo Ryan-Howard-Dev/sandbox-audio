@@ -22139,3 +22139,44 @@ input.shell-search:focus-visible {
   color: var(--text-dim);
   cursor: pointer;
 }
+
+.audiobook-doc-voice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.25rem 0.6rem;
+}
+
+.audiobook-doc-voice-label {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  flex: 0 0 auto;
+}
+
+.audiobook-doc-voice-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
+  color: var(--text);
+}
+
+/* Stated, not hidden: this entry's audio cannot be the whole book. */
+.audiobook-sample-chip {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.3rem;
+  border: 1px solid color-mix(in srgb, var(--accent-burnt) 55%, transparent);
+  color: var(--accent-burnt);
+}

@@ -14,10 +14,19 @@ import { registerPlugin } from '@capacitor/core';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { isAndroid } from './platformEnv';
 import type { NarrationSpeechPort } from './narrationReader';
+import type { NarrationVoice } from './narrationVoices';
+
+interface NativeVoice {
+  id: string;
+  displayName: string;
+  language: string;
+  networkRequired: boolean;
+}
 
 export interface NativeTextToSpeechPlugin {
   isAvailable(): Promise<{ available: boolean }>;
-  speak(options: { text: string; utteranceId: string; rate: number }): Promise<void>;
+  speak(options: { text: string; utteranceId: string; rate: number; voiceId?: string }): Promise<void>;
+  getVoices(): Promise<{ voices: NativeVoice[] }>;
   stop(): Promise<void>;
   addListener(
     eventName: 'ttsDone' | 'ttsError',
@@ -66,12 +75,12 @@ export function createNativeTextToSpeechPort(): NarrationSpeechPort & { dispose:
   );
 
   return {
-    speak(text, { rate, onEnd, onError }) {
+    speak(text, { rate, voiceId, onEnd, onError }) {
       counter += 1;
       currentId = `sandbox-tts-${counter}`;
       onEndCurrent = onEnd;
       onErrorCurrent = onError;
-      void NativeTextToSpeech.speak({ text, utteranceId: currentId, rate }).catch(() => {
+      void NativeTextToSpeech.speak({ text, utteranceId: currentId, rate, voiceId }).catch(() => {
         settle(currentId, 'error');
       });
     },
@@ -97,4 +106,20 @@ export function createNativeTextToSpeechPort(): NarrationSpeechPort & { dispose:
       handles.length = 0;
     },
   };
+}
+
+/** Installed platform voices, normalised to the shape the picker uses. */
+export async function listNativeVoices(): Promise<NarrationVoice[]> {
+  if (!isAndroid()) return [];
+  try {
+    const { voices } = await NativeTextToSpeech.getVoices();
+    return (voices ?? []).map((v) => ({
+      id: v.id,
+      label: v.displayName?.trim() || v.id,
+      language: v.language ?? '',
+      networkRequired: v.networkRequired === true,
+    }));
+  } catch {
+    return [];
+  }
 }

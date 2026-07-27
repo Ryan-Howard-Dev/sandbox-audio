@@ -15,7 +15,10 @@ import type { NarrationChunk } from './documentNarration';
 
 /** Minimal surface this needs from a speech engine — the seam Kokoro can take over. */
 export interface NarrationSpeechPort {
-  speak(text: string, options: { rate: number; onEnd: () => void; onError: () => void }): void;
+  speak(
+    text: string,
+    options: { rate: number; voiceId?: string; onEnd: () => void; onError: () => void },
+  ): void;
   cancel(): void;
   pause(): void;
   resume(): void;
@@ -25,6 +28,8 @@ export type NarrationReaderState = 'idle' | 'speaking' | 'paused' | 'finished';
 
 export interface NarrationReaderOptions {
   rate?: number;
+  /** Chosen voice, passed straight through to whichever engine is underneath. */
+  voiceId?: string;
   /** Resume point, from the per-book progress store. */
   startIndex?: number;
   onChunkChange?: (index: number, chunk: NarrationChunk) => void;
@@ -49,6 +54,7 @@ export function createNarrationReader(
   options: NarrationReaderOptions = {},
 ): NarrationReader {
   const rate = options.rate ?? 1;
+  const voiceId = options.voiceId;
   let index = clampIndex(options.startIndex ?? 0, chunks.length);
   let state: NarrationReaderState = 'idle';
 
@@ -74,6 +80,7 @@ export function createNarrationReader(
     options.onChunkChange?.(index, chunk);
     port.speak(chunk.text, {
       rate,
+      voiceId,
       onEnd: () => {
         // A cancel during speech also fires onEnd on some engines. Only advance while we still
         // believe we are speaking, or stopping would silently restart the document.
@@ -163,9 +170,14 @@ export function createWebSpeechPort(
   };
 
   return {
-    speak(text, { rate, onEnd, onError }) {
+    speak(text, { rate, voiceId, onEnd, onError }) {
       const utterance = makeUtterance(text);
       utterance.rate = rate;
+      if (voiceId) {
+        // A voice can be uninstalled between sessions; leaving the default beats failing.
+        const match = synth.getVoices().find((v) => v.voiceURI === voiceId);
+        if (match) utterance.voice = match;
+      }
       utterance.onend = () => {
         stopKeepAlive();
         onEnd();

@@ -13,7 +13,17 @@ import {
 import {
   createNativeTextToSpeechPort,
   isNativeTextToSpeechAvailable,
+  listNativeVoices,
 } from '../../nativeTextToSpeech';
+import {
+  loadPreferredVoiceId,
+  preferLanguage,
+  resolvePreferredVoice,
+  savePreferredVoiceId,
+  sortNarrationVoices,
+  webSpeechVoiceToNarrationVoice,
+  type NarrationVoice,
+} from '../../narrationVoices';
 import {
   deleteDocument,
   documentDisplayName,
@@ -55,6 +65,8 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
   const [state, setState] = useState<NarrationReaderState>('idle');
   const [busy, setBusy] = useState(false);
   const [speechAvailable, setSpeechAvailable] = useState<boolean | undefined>(undefined);
+  const [voices, setVoices] = useState<NarrationVoice[]>([]);
+  const [voiceId, setVoiceId] = useState('');
 
   const refresh = useCallback(() => {
     void listDocuments().then(setDocs);
@@ -64,8 +76,30 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
 
   useEffect(() => {
     let cancelled = false;
-    void isNativeTextToSpeechAvailable().then((native) => {
-      if (!cancelled) setSpeechAvailable(native || isNarrationSpeechAvailable());
+    void isNativeTextToSpeechAvailable().then(async (native) => {
+      if (cancelled) return;
+      setSpeechAvailable(native || isNarrationSpeechAvailable());
+
+      /*
+       * Web Speech populates its voice list asynchronously and returns an empty array on the first
+       * call in most engines, so the `voiceschanged` event is the only reliable read. The native
+       * engine answers directly once it has initialised.
+       */
+      const load = async () => {
+        const found = native
+          ? await listNativeVoices()
+          : isNarrationSpeechAvailable()
+            ? window.speechSynthesis.getVoices().map(webSpeechVoiceToNarrationVoice)
+            : [];
+        if (cancelled || found.length === 0) return;
+        const ordered = sortNarrationVoices(preferLanguage(found, navigator.language ?? 'en'));
+        setVoices(ordered);
+        setVoiceId(resolvePreferredVoice(ordered, loadPreferredVoiceId())?.id ?? '');
+      };
+      await load();
+      if (!native && isNarrationSpeechAvailable()) {
+        window.speechSynthesis.addEventListener('voiceschanged', () => void load(), { once: true });
+      }
     });
     return () => {
       cancelled = true;
@@ -96,11 +130,12 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
     }
     readerRef.current = createNarrationReader(next, port, {
       startIndex,
+      voiceId: voiceId || undefined,
       onChunkChange: (index) => setChunkIndex(index),
       onStateChange: (s) => setState(s),
     });
     return readerRef.current;
-  }, []);
+  }, [voiceId]);
 
   const onImport = useCallback(
     async (file: File | undefined) => {
@@ -207,6 +242,30 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
           </button>
         </div>
       </div>
+
+      {/*
+        Offline voices are listed first and win the default. The better-sounding ones are usually
+        network voices, and those stop working exactly where a long document gets listened to.
+      */}
+      {voices.length > 1 ? (
+        <label className="audiobook-doc-voice">
+          <span className="audiobook-doc-voice-label">{t('audiobooks.voiceLabel')}</span>
+          <select
+            className="audiobook-doc-voice-select"
+            value={voiceId}
+            onChange={(e) => {
+              setVoiceId(e.target.value);
+              savePreferredVoiceId(e.target.value);
+            }}
+          >
+            {voices.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.networkRequired ? `${v.label} · ${t('audiobooks.voiceOnline')}` : v.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
 
       {docs.length === 0 ? (
         <p className="font-mono text-[10px] text-[var(--text-dim)] px-1 pb-2">

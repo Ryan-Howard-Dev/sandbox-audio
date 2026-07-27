@@ -33,6 +33,11 @@ import { useTranslation } from '../../i18n';
 import AudiobookChapterRow from './AudiobookChapterRow';
 import { getCachedDiscovery } from '../../discoveryRefresh';
 import {
+  classifyAudiobookFidelity,
+  fetchTextByteLength,
+  type AudiobookFidelity,
+} from '../../audiobookFidelity';
+import {
   audiobookBookKeyFromCatalogBook,
   audiobookBookKeyFromEnvelopeId,
   audiobookProgressPercent,
@@ -162,6 +167,37 @@ function BookDetailView({
   const { t } = useTranslation();
   const cover = useAudiobookCover(book);
   const art = cover.display;
+
+  /*
+   * Sanity-check the audio against the length of the source text. Gutendex maps a whole
+   * directory of chapter files to one URL, so a five-hour novel arrives claiming "1 chapter"
+   * and sixteen minutes. Only worth asking once the chapter list is in and only when the
+   * provider gave us a text to measure against.
+   */
+  const [fidelity, setFidelity] = useState<AudiobookFidelity>('unverified');
+  useEffect(() => {
+    setFidelity('unverified');
+    if (loading) return;
+    if (chapters.length > 1) {
+      setFidelity('complete');
+      return;
+    }
+    if (!book.textUrl) return;
+    let cancelled = false;
+    void fetchTextByteLength(book.textUrl).then((textBytes) => {
+      if (cancelled) return;
+      setFidelity(
+        classifyAudiobookFidelity({
+          textBytes,
+          actualSeconds: chapters[0]?.durationSeconds ?? book.durationSeconds ?? null,
+          chapterCount: chapters.length,
+        }),
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [book.textUrl, book.durationSeconds, chapters, loading]);
   // Carry the resolved cover into playback too, so these books get lock-screen art rather than
   // inheriting the same blank the hero used to show.
   const bookWithCover = cover.raw ? { ...book, artworkUrl: cover.raw } : book;
@@ -188,6 +224,14 @@ function BookDetailView({
         <div className="min-w-0 flex-1">
           <h2 className="podcasts-show-detail-title">{book.title}</h2>
           <p className="podcasts-show-detail-author">{book.author}</p>
+          {/*
+            Said plainly rather than hidden. This entry's audio is far too short to be the whole
+            book, and letting someone start a five-hour novel that stops after sixteen minutes
+            without warning is the failure worth avoiding.
+          */}
+          {fidelity === 'sample' ? (
+            <p className="audiobook-sample-chip">{t('audiobooks.sampleOnly')}</p>
+          ) : null}
           {book.description ? (
             <p className="font-mono text-[10px] text-[var(--text-dim)] mt-2 line-clamp-4">
               {book.description}
