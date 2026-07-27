@@ -4497,8 +4497,11 @@ export default function SettingsView({
                     <p className="ui-hint mt-1">
                       API keys saved on one device are stored on your Sandbox Server host and merged into
                       other clients using the same server URL. Keys live on your self-hosted server
-                      (not Sandbox Music cloud). Set SANDBOX_DEVICE_SYNC_SECRET on the server for
-                      extra auth. Disabled automatically when air-gapped without a LAN server.
+                      (not Sandbox Music cloud). Without extra auth, any device on your network can
+                      read and write these keys. To require a credential, set
+                      TIER34_DEVICE_SYNC_SECRET on the server and paste the same value into the
+                      server token field above. Disabled automatically when air-gapped without a
+                      LAN server.
                     </p>
                   </div>
                   <SandboxSwitch

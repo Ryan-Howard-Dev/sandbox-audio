@@ -93,7 +93,9 @@ When **Sync keys via Sandbox Server** is enabled (Settings → Security), the cl
 
 **Not synced:** device fingerprints, Connect device IDs, locker audio blobs.
 
-**Auth:** `X-Sandbox-Client` required. If `TIER34_DEVICE_SYNC_SECRET` is set on the server, clients must send matching `X-Tier34-Device-Sync` or `X-Sandbox-Token`. Without the env var, LAN clients with a valid Sandbox client header are trusted (self-hosted model).
+**Auth:** `X-Sandbox-Client` required. If `TIER34_DEVICE_SYNC_SECRET` is set on the server, clients must send the secret itself in `X-Tier34-Device-Sync` or `X-Sandbox-Token`; both are compared in constant time. Without the env var, LAN clients with a valid Sandbox client header are trusted (self-hosted model).
+
+Until `a0526a1` this paragraph described the intended behaviour, not the implemented one: the token header was accepted whenever it was merely non-empty, and it was never compared to the secret. Since the app only ever sends `X-Sandbox-Token`, that was the only live path, so configuring the secret protected nothing while appearing to. The app has no field for `X-Tier34-Device-Sync`, so paste the secret into the server token field.
 
 **Merge:** Per-key `updatedAt` timestamps — newer local values are not overwritten on pull; empty local slots accept remote values.
 
