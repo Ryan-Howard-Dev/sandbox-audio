@@ -187,6 +187,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(LockerMirrorPlugin.class);
         registerPlugin(DeviceMusicScanPlugin.class);
         registerPlugin(DownloadForegroundPlugin.class);
+        registerPlugin(NativeTextToSpeechPlugin.class);
         super.onCreate(savedInstanceState);
         instanceRef = new WeakReference<>(this);
         registerScreenLockReceiver();

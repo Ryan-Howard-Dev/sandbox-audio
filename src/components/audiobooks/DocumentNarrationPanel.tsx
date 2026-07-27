@@ -8,7 +8,12 @@ import {
   isNarrationSpeechAvailable,
   type NarrationReader,
   type NarrationReaderState,
+  type NarrationSpeechPort,
 } from '../../narrationReader';
+import {
+  createNativeTextToSpeechPort,
+  isNativeTextToSpeechAvailable,
+} from '../../nativeTextToSpeech';
 import { formatTime } from '../../stations/theme';
 import { useTranslation } from '../../i18n';
 
@@ -37,21 +42,52 @@ export default function DocumentNarrationPanel({ onError }: DocumentNarrationPan
   const [chunkIndex, setChunkIndex] = useState(0);
   const [state, setState] = useState<NarrationReaderState>('idle');
   const [busy, setBusy] = useState(false);
+  /*
+   * Undefined until probed. Web Speech can be answered synchronously, but the native engine has
+   * to initialise before it can say whether it has voices, so availability is resolved once on
+   * mount rather than guessed.
+   */
+  const [speechAvailable, setSpeechAvailable] = useState<boolean | undefined>(undefined);
+  const nativePortRef = useRef<ReturnType<typeof createNativeTextToSpeechPort> | null>(null);
 
-  const speechAvailable = isNarrationSpeechAvailable();
+  useEffect(() => {
+    let cancelled = false;
+    void isNativeTextToSpeechAvailable().then((native) => {
+      if (cancelled) return;
+      setSpeechAvailable(native || isNarrationSpeechAvailable());
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Stop speaking if the panel goes away — audio outliving its screen is its own bug.
   useEffect(() => {
-    return () => readerRef.current?.stop();
+    return () => {
+      readerRef.current?.stop();
+      nativePortRef.current?.dispose();
+      nativePortRef.current = null;
+    };
   }, []);
 
   const buildReader = useCallback(
-    (next: NarrationChunk[], startIndex: number) => {
+    async (next: NarrationChunk[], startIndex: number) => {
       readerRef.current?.stop();
-      const port = createWebSpeechPort(
-        window.speechSynthesis,
-        (text) => new SpeechSynthesisUtterance(text),
-      );
+      /*
+       * Native engine first on Android, where Web Speech does not exist in the WebView; Web Speech
+       * everywhere else. Both satisfy the same port, so the sequencing above does not care which.
+       */
+      let port: NarrationSpeechPort;
+      if (await isNativeTextToSpeechAvailable()) {
+        nativePortRef.current?.dispose();
+        nativePortRef.current = createNativeTextToSpeechPort();
+        port = nativePortRef.current;
+      } else {
+        port = createWebSpeechPort(
+          window.speechSynthesis,
+          (text) => new SpeechSynthesisUtterance(text),
+        );
+      }
       readerRef.current = createNarrationReader(next, port, {
         startIndex,
         onChunkChange: (index) => setChunkIndex(index),
@@ -80,7 +116,7 @@ export default function DocumentNarrationPanel({ onError }: DocumentNarrationPan
         setDocName(file.name);
         setChunks(next);
         setChunkIndex(0);
-        buildReader(next, 0).play();
+        (await buildReader(next, 0)).play();
       } catch {
         onError?.(t('audiobooks.docReadFailed'));
       } finally {
@@ -164,7 +200,7 @@ export default function DocumentNarrationPanel({ onError }: DocumentNarrationPan
                     className="mobile-np-icon-btn touch-manipulation"
                     onClick={() => {
                       if (state === 'paused') readerRef.current?.resume();
-                      else buildReader(chunks, chunkIndex).play();
+                      else void buildReader(chunks, chunkIndex).then((r) => r.play());
                     }}
                     aria-label={t('player.play')}
                   >
