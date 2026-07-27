@@ -1870,6 +1870,14 @@
     "tabDocuments": "Documents",
     "voiceLabel": "Voice",
     "voiceOnline": "online",
-    "sampleOnly": "Sample — this recording is far shorter than the full text"
+    "sampleOnly": "Sample — this recording is far shorter than the full text",
+    "tabEbooks": "Books",
+    "yourBooksUploaded": "Your uploaded books",
+    "importBook": "Import EPUB",
+    "booksEmpty": "Import an EPUB and it will be read aloud by chapter on this device. Nothing is uploaded.",
+    "bookTooLarge": "That book is too large to import (60 MB limit).",
+    "bookEncrypted": "That book is DRM-protected, so it cannot be opened or read aloud.",
+    "bookNotEpub": "That file is a zip, but not an EPUB.",
+    "bookUnreadable": "That EPUB could not be read — it may be corrupt."
   }
 }

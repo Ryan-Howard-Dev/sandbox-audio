@@ -30,6 +30,7 @@ import { useTranslation } from '../i18n';
 import { proxiedArtworkUrl } from '../displaySanitize';
 import { audiobookBookKeyFromEnvelopeId, getAudiobookProgress } from '../audiobookProgress';
 import DocumentShelf from '../components/audiobooks/DocumentShelf';
+import BookShelf from '../components/audiobooks/BookShelf';
 import { seedGradient } from '../seedGradient';
 import { fetchAudiobookDescription } from '../audiobookDescription';
 
@@ -68,7 +69,7 @@ export default function AudiobooksView({
   const { t } = useTranslation();
   // Pillar spine, matching Music (Library/Discover) and Podcasts (Library/Discover):
   // 'device' is the Library tab, split by origin into Downloaded vs On device.
-  const [tab, setTab] = useState<'discover' | 'acquire' | 'device' | 'documents'>('device');
+  const [tab, setTab] = useState<'discover' | 'acquire' | 'device' | 'documents' | 'ebooks'>('device');
   const [libraryOrigin, setLibraryOrigin] = useState<AudiobookOrigin | 'all'>('all');
   const [libraryMenuOpen, setLibraryMenuOpen] = useState(false);
   // Format-native grouping: books group by AUTHOR, not "artist" — the audiobook
@@ -527,6 +528,17 @@ export default function AudiobooksView({
           <FileText className="w-3.5 h-3.5" aria-hidden />
           {t('audiobooks.tabDocuments')}
         </button>
+        {/* Uploaded ebooks: real chapters from the spine, so a shelf of its own again. */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'ebooks'}
+          className={`podcasts-tab touch-manipulation${tab === 'ebooks' ? ' podcasts-tab--active' : ''}`}
+          onClick={() => setTab('ebooks')}
+        >
+          <BookOpen className="w-3.5 h-3.5" aria-hidden />
+          {t('audiobooks.tabEbooks')}
+        </button>
         <button
           type="button"
           role="tab"
@@ -570,6 +582,8 @@ export default function AudiobooksView({
         />
       ) : tab === 'documents' ? (
         <DocumentShelf onError={onError} />
+      ) : tab === 'ebooks' ? (
+        <BookShelf onError={onError} />
       ) : (
         <>
       {phase === 'scanning' && (

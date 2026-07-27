@@ -22180,3 +22180,41 @@ input.shell-search:focus-visible {
   border: 1px solid color-mix(in srgb, var(--accent-burnt) 55%, transparent);
   color: var(--accent-burnt);
 }
+
+.audiobook-book-cover {
+  flex: 0 0 auto;
+  width: 2.6rem;
+  height: 3.6rem;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.audiobook-book-chapters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.audiobook-book-chapter {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.35rem 0.4rem;
+  border-radius: 0.3rem;
+  border: none;
+  background: none;
+  color: var(--text-mid);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.audiobook-book-chapter.is-active {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 0 var(--accent);
+  color: var(--text);
+}

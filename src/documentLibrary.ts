@@ -14,7 +14,24 @@ const DB_NAME = 'SandboxDocumentsDB';
 const DB_VERSION = 1;
 const STORE = 'documents';
 
+/** Documents and books share a store; the shelves that show them are separate. */
+export type LibraryItemKind = 'document' | 'book';
+
+export interface SavedBookChapter {
+  title: string;
+  text: string;
+}
+
 export interface SavedDocument {
+  /** Absent on entries written before books existed — those are all documents. */
+  kind?: LibraryItemKind;
+  /** Real chapters from an EPUB spine. Documents have none; their sections come from headings. */
+  chapters?: SavedBookChapter[];
+  author?: string;
+  /** Cover extracted from the EPUB itself — a data URL, so it works offline. */
+  coverUrl?: string;
+  description?: string;
+  language?: string;
   id: string;
   name: string;
   addedAt: number;
@@ -26,11 +43,17 @@ export interface SavedDocument {
 }
 
 /** Card-sized view of a document: everything a shelf needs, without its text. */
-export type DocumentSummary = Omit<SavedDocument, 'text'>;
+export type DocumentSummary = Omit<SavedDocument, 'text' | 'chapters'> & { chapterTitles?: string[] };
 
 export function documentSummary(doc: SavedDocument): DocumentSummary {
-  const { text: _text, ...summary } = doc;
-  return summary;
+  const { text: _text, chapters, ...rest } = doc;
+  // Chapter *titles* are cheap and a shelf wants them; chapter bodies are the whole book.
+  return chapters ? { ...rest, chapterTitles: chapters.map((c) => c.title) } : rest;
+}
+
+/** Documents and books are one store and two shelves — filter rather than duplicate the IO. */
+export function itemKind(doc: Pick<SavedDocument, 'kind'>): LibraryItemKind {
+  return doc.kind ?? 'document';
 }
 
 /** Stable id from the name and time, so re-importing the same file makes a distinct entry. */
