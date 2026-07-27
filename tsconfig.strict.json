@@ -16,6 +16,8 @@
     "src/epubImport.ts",
     "src/spokenWordPlayback.ts",
     "src/replayGainIngest.ts",
-    "src/documentLibrary.ts"
+    "src/documentLibrary.ts",
+    "src/bencode.ts",
+    "src/torrentMeta.ts"
   ]
 }
