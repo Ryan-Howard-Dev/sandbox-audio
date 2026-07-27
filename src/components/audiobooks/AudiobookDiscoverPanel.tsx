@@ -808,34 +808,27 @@ export default function AudiobookDiscoverPanel({
         ))}
       </div>
 
+      {/*
+        Eleven sources as full-width chips pushed the results themselves off the screen — the
+        filter occupied more room than the thing it filters. It is one choice out of a list, which
+        is a select, and it sits inline by the search rather than as a block of its own.
+      */}
       {results.length > 0 ? (
-        <div className="audiobooks-source-filter flex flex-wrap gap-2 mb-3">
-          <button
-            type="button"
-            className={`font-mono text-[9px] uppercase tracking-wider px-2 py-1 rounded border touch-manipulation ${
-              sourceFilter === 'all'
-                ? 'border-accent text-accent'
-                : 'border-[var(--border)] text-[var(--text-dim)]'
-            }`}
-            onClick={() => setSourceFilter('all')}
+        <label className="audiobooks-source-filter">
+          <span className="audiobooks-source-filter-label">{t('audiobooks.filterSource')}</span>
+          <select
+            className="audiobooks-source-filter-select"
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value as SourceFilter)}
           >
-            {t('audiobooks.filterAll')}
-          </button>
-          {AUDIOBOOK_CATALOG_SOURCES.map((src) => (
-            <button
-              key={src.id}
-              type="button"
-              className={`font-mono text-[9px] uppercase tracking-wider px-2 py-1 rounded border touch-manipulation ${
-                sourceFilter === src.id
-                  ? 'border-accent text-accent'
-                  : 'border-[var(--border)] text-[var(--text-dim)]'
-              }`}
-              onClick={() => setSourceFilter(src.id)}
-            >
-              {src.label}
-            </button>
-          ))}
-        </div>
+            <option value="all">{t('audiobooks.filterAll')}</option>
+            {AUDIOBOOK_CATALOG_SOURCES.map((src) => (
+              <option key={src.id} value={src.id}>
+                {src.label}
+              </option>
+            ))}
+          </select>
+        </label>
       ) : null}
 
       {/*

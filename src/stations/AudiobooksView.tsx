@@ -502,15 +502,14 @@ export default function AudiobooksView({
       ) : null}
 
       {/* Library first, then Discover, then Acquire — same order as the other pillars. */}
-      <div className="podcasts-tabs mb-4 px-1" role="tablist" aria-label={t('audiobooks.title')}>
+      <div className="music-segment-bar" role="tablist" aria-label={t('audiobooks.title')}>
         <button
           type="button"
           role="tab"
           aria-selected={tab === 'device'}
-          className={`podcasts-tab touch-manipulation${tab === 'device' ? ' podcasts-tab--active' : ''}`}
+          className={`music-segment-tab touch-manipulation${tab === 'device' ? ' music-segment-tab--active' : ''}`}
           onClick={() => setTab('device')}
         >
-          <Smartphone className="w-3.5 h-3.5" aria-hidden />
           {t('audiobooks.tabDevice')}
         </button>
         {/*
@@ -522,10 +521,9 @@ export default function AudiobooksView({
           type="button"
           role="tab"
           aria-selected={tab === 'documents'}
-          className={`podcasts-tab touch-manipulation${tab === 'documents' ? ' podcasts-tab--active' : ''}`}
+          className={`music-segment-tab touch-manipulation${tab === 'documents' ? ' music-segment-tab--active' : ''}`}
           onClick={() => setTab('documents')}
         >
-          <FileText className="w-3.5 h-3.5" aria-hidden />
           {t('audiobooks.tabDocuments')}
         </button>
         {/* Uploaded ebooks: real chapters from the spine, so a shelf of its own again. */}
@@ -533,20 +531,18 @@ export default function AudiobooksView({
           type="button"
           role="tab"
           aria-selected={tab === 'ebooks'}
-          className={`podcasts-tab touch-manipulation${tab === 'ebooks' ? ' podcasts-tab--active' : ''}`}
+          className={`music-segment-tab touch-manipulation${tab === 'ebooks' ? ' music-segment-tab--active' : ''}`}
           onClick={() => setTab('ebooks')}
         >
-          <BookOpen className="w-3.5 h-3.5" aria-hidden />
           {t('audiobooks.tabEbooks')}
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={tab === 'discover'}
-          className={`podcasts-tab touch-manipulation${tab === 'discover' ? ' podcasts-tab--active' : ''}`}
+          className={`music-segment-tab touch-manipulation${tab === 'discover' ? ' music-segment-tab--active' : ''}`}
           onClick={() => setTab('discover')}
         >
-          <Search className="w-3.5 h-3.5" aria-hidden />
           {t('audiobooks.tabDiscover')}
         </button>
         {/* Acquire lives in the ⋮ now — see the menu above. Kept as a tab only while it is the

@@ -22218,3 +22218,32 @@ input.shell-search:focus-visible {
   box-shadow: inset 3px 0 0 0 var(--accent);
   color: var(--text);
 }
+
+/* One choice from a list is a select. Eleven chips pushed the results off the screen. */
+.audiobooks-source-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0 0.25rem;
+}
+
+.audiobooks-source-filter-label {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  flex: 0 0 auto;
+}
+
+.audiobooks-source-filter-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
+  color: var(--text);
+}

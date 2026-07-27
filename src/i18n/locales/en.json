@@ -1867,7 +1867,7 @@
     "documentsEmpty": "Import a .txt or .md and it will be read aloud on this device. Nothing is uploaded.",
     "docParts": "{count, plural, one {# part} other {# parts}}",
     "docRemove": "Remove document",
-    "tabDocuments": "Documents",
+    "tabDocuments": "Docs",
     "voiceLabel": "Voice",
     "voiceOnline": "online",
     "sampleOnly": "Sample — this recording is far shorter than the full text",
@@ -1878,6 +1878,7 @@
     "bookTooLarge": "That book is too large to import (60 MB limit).",
     "bookEncrypted": "That book is DRM-protected, so it cannot be opened or read aloud.",
     "bookNotEpub": "That file is a zip, but not an EPUB.",
-    "bookUnreadable": "That EPUB could not be read — it may be corrupt."
+    "bookUnreadable": "That EPUB could not be read — it may be corrupt.",
+    "filterSource": "Source"
   }
 }
