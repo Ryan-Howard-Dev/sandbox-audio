@@ -152,7 +152,7 @@ export type E2eHandlers = {
   /** Current play queue identity — index, length, and envelope ids in order. */
   getQueueProbe?: () => E2eQueueProbe;
   /** The app's own next-track action, same one the player button and car mode call. */
-  skipNext?: () => boolean;
+  skipNext?: () => { ok: boolean; outcome: string };
   toggleVinylMode?: () => HeroDisplayMode;
   setHeroDisplayMode?: (mode: HeroDisplayMode) => void;
   getHeroDisplayMode?: () => HeroDisplayMode;
@@ -234,6 +234,9 @@ let e2ePlaybackHandlersLive = false;
 const pendingE2eUrls: string[] = [];
 let lastE2eUrlKey = '';
 let lastE2eUrlAt = 0;
+/** Last deep link collected from the current intent, so the poll only acts on a new one. */
+let lastSeenLaunchUrl = '';
+const LAUNCH_URL_POLL_MS = 1_000;
 
 function flushPendingE2eUrls(): void {
   if (!e2eBridgeReady || !e2eHandlersReady) return;
@@ -253,6 +256,25 @@ function enqueueE2e<T>(fn: () => Promise<T>): Promise<T> {
   const run = e2eTail.then(fn);
   e2eTail = run.catch(() => {});
   return run;
+}
+
+/*
+ * Every action runs behind this. A throw inside an action used to disappear completely: the tail
+ * swallows the rejection to keep the queue alive, and the callers `void` the run, so the only
+ * evidence was a step that logged its arrival and then nothing — which reads exactly like a hang
+ * and sent me looking at timeouts instead of at a stack. The per-case try/catch in skip-onboarding
+ * was this same lesson, learned once and not generalised.
+ */
+function runE2eAction(action: string, params: URLSearchParams): Promise<boolean> {
+  return enqueueE2e(async () => {
+    try {
+      return await handleE2eAction(action, params);
+    } catch (err) {
+      const detail = err instanceof Error ? `${err.message} | ${err.stack ?? 'no stack'}` : String(err);
+      logE2e(action, false, `threw ${detail}`);
+      return false;
+    }
+  });
 }
 
 export function registerE2eHandlers(next: E2eHandlers): void {
@@ -1444,15 +1466,28 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         logE2e('queue-skip', false, `queue too short (length=${start.length}) — play an album first`);
         return false;
       }
+      /*
+       * Step logging, because "the deep link arrived and no result was ever logged" is not enough
+       * to act on. It could be a refused skip, a wait that never settles, or a timer the WebView
+       * is not running — different causes, opposite fixes, and silence looks the same for all of
+       * them. Each step reports where it got to.
+       */
+      logE2e('queue-skip-step', true, `start skips=${skips} index=${start.index}/${start.length}`);
 
       for (let n = 0; n < skips; n++) {
         const before = handlers.getQueueProbe();
         const expectedIndex = before.index + 1;
         if (expectedIndex >= before.length) break;
         const expectedId = before.envelopeIds[expectedIndex];
+        logE2e('queue-skip-step', true, `skip ${n + 1} requesting from index=${before.index}`);
 
-        if (!handlers.skipNext()) {
-          logE2e('queue-skip', false, `skip ${n + 1} refused at index=${before.index}`);
+        const requested = handlers.skipNext();
+        if (!requested.ok) {
+          logE2e(
+            'queue-skip',
+            false,
+            `skip ${n + 1} refused at index=${before.index} outcome=${requested.outcome}`,
+          );
           return false;
         }
 
@@ -1467,6 +1502,7 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         }
 
         const strayIndexes = [...seen].filter((i) => i !== expectedIndex);
+        logE2e('queue-skip-step', true, `skip ${n + 1} settled index=${probe.index} seen=[${[...seen].join(',')}]`);
         const playing = handlers.getPlaybackProbe();
         const identityOk = !expectedId || playing.envelopeId === expectedId;
         const ok = probe.index === expectedIndex && strayIndexes.length === 0 && identityOk;
@@ -1474,7 +1510,7 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
           logE2e(
             'queue-skip',
             false,
-            `skip ${n + 1}: index=${probe.index} expected=${expectedIndex} stray=[${strayIndexes.join(',')}] playing=${playing.envelopeId ?? 'none'} expectedId=${expectedId ?? 'none'} title=${playing.title}`,
+            `skip ${n + 1}: index=${probe.index} expected=${expectedIndex} stray=[${strayIndexes.join(',')}] outcome=${requested.outcome} playing=${playing.envelopeId ?? 'none'} expectedId=${expectedId ?? 'none'} title=${playing.title}`,
           );
           return false;
         }
@@ -3188,6 +3224,164 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       logE2e('station-open-all', allPass, `tabs=${outcomes.join(' ')}`);
       return allPass;
     }
+    /*
+     * Documents and books, without the file picker.
+     *
+     * Both shelves start at a native picker, so the only way to exercise them has been to tap
+     * through it by hand — which is why neither has ever been covered on device. The picker only
+     * supplies bytes; everything after it is ours. These feed the same code path a picked file
+     * feeds and assert what the shelf will show: an EPUB becomes chapters, a text document becomes
+     * narration chunks, and both round-trip through IndexedDB.
+     */
+    case 'probe-document-import': {
+      const { documentToNarration, estimateNarrationSeconds } = await import('./documentNarration');
+      const { deleteDocument, getDocument, listDocuments, newDocumentId, saveDocument } =
+        await import('./documentLibrary');
+      const markdown = [
+        '# Probe Document',
+        '',
+        'The first paragraph exists so the chunker has prose to split. It runs long enough to',
+        'cover the sentence packer rather than a single short line.',
+        '',
+        '## Second Section',
+        '',
+        'A second heading proves sections are detected, and this sentence gives it body.',
+      ].join('\n');
+      const chunks = documentToNarration(markdown);
+      if (chunks.length < 2) {
+        logE2e('document-import', false, `chunker produced ${chunks.length} chunk(s)`);
+        return false;
+      }
+      const id = newDocumentId('probe-document.md');
+      const doc = {
+        kind: 'document' as const,
+        id,
+        name: 'probe-document.md',
+        addedAt: Date.now(),
+        text: markdown,
+        chunkCount: chunks.length,
+        estimatedSeconds: estimateNarrationSeconds(chunks),
+      };
+      try {
+        await saveDocument(doc);
+        const readBack = await getDocument(id);
+        const listed = (await listDocuments()).some((d) => d.id === id);
+        const ok = Boolean(readBack) && readBack?.text === markdown && listed;
+        logE2e(
+          'document-import',
+          ok,
+          `chunks=${chunks.length} secs=${doc.estimatedSeconds} readBack=${Boolean(readBack)} listed=${listed}`,
+        );
+        await deleteDocument(id);
+        return ok;
+      } catch (err) {
+        logE2e('document-import', false, err instanceof Error ? err.message : String(err));
+        return false;
+      }
+    }
+    /*
+     * The half of "documents read aloud" that importing cannot prove.
+     *
+     * Android WebView has no speechSynthesis, which is why there is a native engine at all, so
+     * parsing a document to chunks says nothing about whether a device can actually speak them.
+     * This drives the real port and waits for the engine's own completion event: synthesis that
+     * silently fails still resolves speak(), but it never reports done.
+     */
+    /* Dump the continue-listening store so a duplicate card can be traced to its keys. */
+    case 'probe-audiobook-progress': {
+      const { listAudiobooksInProgress, audiobookProgressPercent } = await import(
+        './audiobookProgress'
+      );
+      const entries = listAudiobooksInProgress(50);
+      for (const entry of entries) {
+        logE2e(
+          'audiobook-progress',
+          true,
+          `key=${entry.bookKey} pct=${audiobookProgressPercent(entry)} title=${entry.title ?? 'none'} author=${entry.author ?? 'none'} locator=${entry.locator ? `${entry.locator.source}/${entry.locator.sourceId}` : 'none'}`,
+        );
+      }
+      logE2e('audiobook-progress', true, `entries=${entries.length}`);
+      return true;
+    }
+    case 'probe-narration': {
+      const { createNativeTextToSpeechPort, isNativeTextToSpeechAvailable, listNativeVoices } =
+        await import('./nativeTextToSpeech');
+      if (!(await isNativeTextToSpeechAvailable())) {
+        logE2e('narration', false, 'native text-to-speech reports unavailable');
+        return false;
+      }
+      const voices = await listNativeVoices();
+      const port = createNativeTextToSpeechPort();
+      try {
+        const spoke = await new Promise<boolean>((resolve) => {
+          const timer = setTimeout(() => resolve(false), 15_000);
+          port.speak('Sandbox narration probe.', {
+            rate: 1,
+            onEnd: () => {
+              clearTimeout(timer);
+              resolve(true);
+            },
+            onError: () => {
+              clearTimeout(timer);
+              resolve(false);
+            },
+          });
+        });
+        const offline = voices.filter((v) => !v.networkRequired).length;
+        logE2e(
+          'narration',
+          spoke,
+          `spoke=${spoke} voices=${voices.length} offline=${offline} first=${voices[0]?.label ?? 'none'}`,
+        );
+        return spoke;
+      } finally {
+        port.cancel();
+        port.dispose();
+      }
+    }
+    case 'probe-book-import': {
+      const { buildProbeEpub } = await import('./epubProbeFixture');
+      const { importEpubBytes } = await import('./epubImport');
+      const { deleteDocument, getDocument, newDocumentId, saveDocument } = await import(
+        './documentLibrary'
+      );
+      const result = importEpubBytes(buildProbeEpub());
+      if (!result.book) {
+        logE2e('book-import', false, `parse failed reason=${result.reason ?? 'unknown'}`);
+        return false;
+      }
+      const book = result.book;
+      if (book.chapters.length < 2) {
+        logE2e('book-import', false, `only ${book.chapters.length} chapter(s) from the spine`);
+        return false;
+      }
+      const id = newDocumentId(book.title);
+      try {
+        await saveDocument({
+          kind: 'book',
+          id,
+          name: book.title,
+          author: book.author,
+          addedAt: Date.now(),
+          text: book.chapters.map((c) => c.text).join('\n\n'),
+          chapters: book.chapters,
+          chunkCount: book.chapters.length,
+          estimatedSeconds: 0,
+        });
+        const readBack = await getDocument(id);
+        const ok = (readBack?.chapters?.length ?? 0) === book.chapters.length;
+        logE2e(
+          'book-import',
+          ok,
+          `title=${book.title} author=${book.author ?? 'none'} chapters=${book.chapters.length} readBackChapters=${readBack?.chapters?.length ?? 0}`,
+        );
+        await deleteDocument(id);
+        return ok;
+      } catch (err) {
+        logE2e('book-import', false, err instanceof Error ? err.message : String(err));
+        return false;
+      }
+    }
     case 'probe-track-radio': {
       const { TRACK_RADIO_PLAYLIST_ID, TRACK_RADIO_PLAYLIST_NAME } = await import(
         './radioSessionPlaylist'
@@ -3224,7 +3418,7 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
 export async function handleE2eUrl(raw: string): Promise<boolean> {
   const parsed = parseE2eUrl(raw);
   if (!parsed) return false;
-  return enqueueE2e(() => handleE2eAction(parsed.action, parsed.params));
+  return runE2eAction(parsed.action, parsed.params);
 }
 
 function queueOrHandleE2eUrl(raw: string): void {
@@ -3238,7 +3432,7 @@ function queueOrHandleE2eUrl(raw: string): void {
   logE2e('deeplink', Boolean(parsed), `raw=${raw} action=${parsed?.action ?? 'UNPARSED'}`);
   // Bootstrap / probe actions must not wait behind the sandboxLayer3 chunk on large vaults.
   if (parsed?.action === 'skip-onboarding' || parsed?.action === 'probe-handlers' || parsed?.action === 'probe-station-open' || parsed?.action === 'probe-all-stations-open') {
-    void enqueueE2e(() => handleE2eAction(parsed.action, parsed.params));
+    void runE2eAction(parsed.action, parsed.params);
     return;
   }
   // Capacitor often delivers the same deep link 2–3×; ignore duplicates while busy.
@@ -3270,23 +3464,67 @@ export async function initE2eDeepLinks(): Promise<() => void> {
   e2eDeepLinksInit = (async () => {
     const { App } = await import('@capacitor/app');
     const sub = await App.addListener('appUrlOpen', (event) => {
+      lastSeenLaunchUrl = event.url;
       queueOrHandleE2eUrl(event.url);
     });
+
+    /*
+     * Primary delivery path: MainActivity.forwardE2eDeepLink dispatches this straight from
+     * onNewIntent. appUrlOpen above stays as a fallback — it works often enough to be worth
+     * keeping, just not enough to depend on. Both funnel through the same dedupe.
+     */
+    const onNativeDeepLink = (event: Event) => {
+      const detail = (event as CustomEvent<{ url?: string }>).detail;
+      const url = typeof detail?.url === 'string' ? detail.url.trim() : '';
+      if (!url) return;
+      lastSeenLaunchUrl = url;
+      queueOrHandleE2eUrl(url);
+    };
+    window.addEventListener('sandboxE2eDeepLink', onNativeDeepLink);
     e2eBridgeReady = true;
     logE2e('bridge', true, 'ready');
     flushPendingE2eUrls();
     try {
       const launch = await App.getLaunchUrl();
       if (launch?.url) {
+        lastSeenLaunchUrl = launch.url;
         queueOrHandleE2eUrl(launch.url);
       }
     } catch {
       /* no cold-start URL */
     }
+
+    /*
+     * Second delivery path, because appUrlOpen alone is not dependable. Firing a deep link at an
+     * already-running app logs `START ... result code=3` (delivered to the top activity) and then
+     * nothing: Capacitor never reaches "Notifying listeners", so no listener can help. It works,
+     * then stops, then works again — which reads as a hung probe run and cost most of an evening
+     * pointed at the wrong layer.
+     *
+     * MainActivity.onNewIntent calls setIntent(), and getLaunchUrl() reads the *current* intent,
+     * so the URL is still there to be collected even when the event is dropped. Polling it closes
+     * the gap. Debug-only: this whole module is compiled out unless SANDBOX_ANDROID_E2E=true.
+     */
+    const poll = setInterval(() => {
+      void (async () => {
+        try {
+          const current = await App.getLaunchUrl();
+          const url = current?.url?.trim();
+          if (!url || url === lastSeenLaunchUrl) return;
+          lastSeenLaunchUrl = url;
+          queueOrHandleE2eUrl(url);
+        } catch {
+          /* intent gone; nothing to collect */
+        }
+      })();
+    }, LAUNCH_URL_POLL_MS);
+
     return () => {
       e2eBridgeReady = false;
       e2eHandlersReady = false;
       e2ePlaybackHandlersLive = false;
+      clearInterval(poll);
+      window.removeEventListener('sandboxE2eDeepLink', onNativeDeepLink);
       void sub.remove();
       e2eDeepLinksInit = null;
     };
