@@ -10134,8 +10134,14 @@ button.artist-track-title--tap:focus-visible {
   margin-top: 0.1rem;
 }
 
+/*
+ * The accent marks one thing in this app: what is playing. A soft tint alone is easy to miss
+ * part-way down a 37-chapter book, so the active row also carries an accent edge — enough to find
+ * at a glance without the glare of a full outline on every row.
+ */
 .podcasts-show-episode-row.is-active {
   background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 0 var(--accent);
 }
 
 .podcasts-show-episode-copy {
@@ -18674,21 +18680,44 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
   border-top: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
 }
 
+/*
+ * The chrome inset (3.25rem a side) aligns the artwork and header with the rest of the player,
+ * but this row carries six controls. 6.5rem of padding plus a 2.5rem leading column left roughly
+ * 250px for a row that intrinsically needs about the same, so the max-content actions column
+ * overflowed its own right padding and `overflow: hidden` clipped it — the share button sat hard
+ * against the screen edge while ~3rem of dead space sat to the left of the queue button.
+ *
+ * The footer uses the normal edge inset instead. Alignment with the artwork matters less here
+ * than the row fitting on the narrowest phone we support.
+ */
 .mobile-np-footer.mobile-np-footer--tidal {
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, max-content);
+  /*
+   * The context column was minmax(0, 1fr) and the actions column max-content. "Playing from" is
+   * empty for audiobooks and podcasts, but the 1fr still claimed every spare pixel, so the six
+   * controls were shoved into a max-content block hard against the right edge with ~3rem of dead
+   * space to their left. Giving the free space to the actions instead lets them distribute like
+   * the transport row above, and an empty context column now collapses to nothing.
+   */
+  grid-template-columns: 2.5rem minmax(0, auto) minmax(0, 1fr);
   grid-template-areas: 'leading context actions';
   align-items: center;
   justify-content: stretch;
   column-gap: 0.5rem;
   row-gap: 0;
-  padding-left: var(--mobile-np-chrome-inset, var(--mobile-edge-left));
-  padding-right: var(--mobile-np-chrome-inset, var(--mobile-edge-right));
+  padding-left: var(--mobile-edge-left);
+  padding-right: var(--mobile-edge-right);
   overflow: hidden;
 }
 
 .mobile-np-footer--tidal .mobile-np-footer-actions {
   grid-area: actions;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  justify-self: stretch;
+  /* Without this the flex row refuses to shrink below its content and overflows the grid cell. */
+  min-width: 0;
 }
 
 .mobile-np-footer-context {

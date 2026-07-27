@@ -21,8 +21,11 @@ export const AUDIOBOOK_CURATED_RSS_FEEDS: AudiobookCuratedRssFeed[] = [
     author: 'Storynory',
   },
   {
+    // `label` is the displayed book title, not a feed description — it goes straight into the
+    // catalog entry's title. "(LibriVox RSS)" was an internal disambiguator that leaked onto the
+    // book card and the player, where the source is already shown as its own label.
     url: 'https://librivox.org/rss/253',
-    label: 'Pride and Prejudice (LibriVox RSS)',
+    label: 'Pride and Prejudice',
     kind: 'book',
     author: 'Jane Austen',
   },

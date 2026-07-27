@@ -56,20 +56,23 @@ type SourceFilter = 'all' | AudiobookCatalogSource;
  * Returns the raw URL for playback metadata (lock screen) and the proxied one for display.
  */
 function useAudiobookCover(
-  book: Pick<AudiobookCatalogBook, 'title' | 'author' | 'artworkUrl'>,
+  book: Pick<AudiobookCatalogBook, 'title' | 'author' | 'artworkUrl'> | null,
 ): { raw?: string; display?: string } {
-  const [resolvedArt, setResolvedArt] = useState<string | undefined>(book.artworkUrl);
+  const [resolvedArt, setResolvedArt] = useState<string | undefined>(book?.artworkUrl);
+  const title = book?.title;
+  const author = book?.author;
+  const artworkUrl = book?.artworkUrl;
   useEffect(() => {
-    setResolvedArt(book.artworkUrl);
-    if (book.artworkUrl) return;
+    setResolvedArt(artworkUrl);
+    if (artworkUrl || !title) return;
     let cancelled = false;
-    void resolveAudiobookCover(book.title, book.author).then((url) => {
+    void resolveAudiobookCover(title, author ?? '').then((url) => {
       if (!cancelled && url) setResolvedArt(url);
     });
     return () => {
       cancelled = true;
     };
-  }, [book.artworkUrl, book.title, book.author]);
+  }, [artworkUrl, title, author]);
 
   return { raw: resolvedArt, display: proxiedArtworkUrl(resolvedArt) };
 }
@@ -183,14 +186,23 @@ function BookDetailView({
               : ''}
           </p>
           <div className="podcasts-show-detail-actions mt-3">
+            {/*
+              The label was the full book title. "Hans Christian Andersen - Hans Christian
+              Andersen's Fairy Tales" wrapped to four lines that spilled straight out of a
+              fixed-height button and over the metadata above it. The title is already the
+              heading two lines up, so repeating it in the button bought nothing; it moves to
+              the accessible name, where a screen reader still gets the context. shrink-0 and
+              whitespace-nowrap stop any future long label doing this again.
+            */}
             <button
               type="button"
-              className="btn-accent touch-manipulation h-10 px-4 rounded-lg font-mono text-[10px] uppercase tracking-wider inline-flex items-center gap-2"
+              className="btn-accent touch-manipulation h-10 px-4 rounded-lg font-mono text-[10px] uppercase tracking-wider inline-flex items-center gap-2 whitespace-nowrap"
               onClick={onPlayAll}
               disabled={loading || chapters.length === 0}
+              aria-label={t('audiobooks.playAlbum', { title: book.title })}
             >
-              <Play className="w-3.5 h-3.5" />
-              {t('audiobooks.playAlbum', { title: book.title })}
+              <Play className="w-3.5 h-3.5 shrink-0" />
+              {t('player.play')}
             </button>
           </div>
         </div>
@@ -351,7 +363,14 @@ async function loadFeaturedAudiobooks(): Promise<AudiobookCatalogBook[]> {
   // Cached per the user's Discovery-refresh setting (default 3 days) so it stays stable between
   // visits instead of refetching/reshuffling every time the station opens.
   return getCachedDiscovery(
-    'audiobooks-featured',
+    /*
+     * Bump this suffix whenever the *shape* of a catalog entry changes — title/author
+     * normalisation, curated feed labels, anything a user reads. The payload is cached for three
+     * days, so without a bump a fix ships to the code and not to the screen: v2 was minted for
+     * the scraped "Author - Title" split, then the curated RSS label fix landed after it and was
+     * invisible behind the cache it had just filled.
+     */
+    'audiobooks-featured-v4',
     async () => {
       const topics = shuffleInPlace([...FEATURED_AUDIOBOOK_TOPICS]).slice(0, 3);
       const batches = await Promise.all(
@@ -510,33 +529,48 @@ export default function AudiobookDiscoverPanel({
     [onError, t],
   );
 
+  /*
+   * Resolve the cover once here, not inside the detail view, so every play path carries it.
+   * Resolving it only for rendering left playAll and playChapter building envelopes from the
+   * bare book, so starting a book whose catalog gave no artwork showed a blank square in the
+   * mini player and on the lock screen even while the page above it displayed a cover.
+   */
+  const selectedCover = useAudiobookCover(selectedBook);
+  const bookForPlayback = useMemo(
+    () =>
+      selectedBook && selectedCover.raw
+        ? { ...selectedBook, artworkUrl: selectedCover.raw }
+        : selectedBook,
+    [selectedBook, selectedCover.raw],
+  );
+
   const playChapter = useCallback(
     (chapter: AudiobookCatalogChapter) => {
-      if (!selectedBook) return;
-      onPlay(catalogChapterEnvelope(chapter, selectedBook));
+      if (!bookForPlayback) return;
+      onPlay(catalogChapterEnvelope(chapter, bookForPlayback));
     },
-    [onPlay, selectedBook],
+    [onPlay, bookForPlayback],
   );
 
   const primePlayChapter = useCallback(
     (chapter: AudiobookCatalogChapter) => {
-      if (!selectedBook || !onPrimePlay) return;
-      onPrimePlay(catalogChapterEnvelope(chapter, selectedBook));
+      if (!bookForPlayback || !onPrimePlay) return;
+      onPrimePlay(catalogChapterEnvelope(chapter, bookForPlayback));
     },
-    [onPrimePlay, selectedBook],
+    [onPrimePlay, bookForPlayback],
   );
 
   const playAll = useCallback(() => {
-    if (!selectedBook || chapters.length === 0) return;
-    const envs = chapters.map((ch) => catalogChapterEnvelope(ch, selectedBook));
+    if (!bookForPlayback || chapters.length === 0) return;
+    const envs = chapters.map((ch) => catalogChapterEnvelope(ch, bookForPlayback));
     if (onPlayAlbum && envs.length > 1) onPlayAlbum(envs, false);
     else if (envs[0]) onPlay(envs[0]);
-  }, [chapters, onPlay, onPlayAlbum, selectedBook]);
+  }, [chapters, onPlay, onPlayAlbum, bookForPlayback]);
 
   if (selectedBook) {
     return (
       <BookDetailView
-        book={selectedBook}
+        book={bookForPlayback ?? selectedBook}
         chapters={chapters}
         loading={loadingChapters}
         activeEnvelopeId={activeEnvelopeId}
