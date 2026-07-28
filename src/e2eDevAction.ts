@@ -132,6 +132,14 @@ export type E2eHandlers = {
   navigateTab?: (tab: E2eNavTab) => void;
   completeOnboarding?: () => void;
   getSearchHitCount?: () => number;
+  /**
+   * Top hits as "artist — title", in rank order.
+   *
+   * A count tells you a search succeeded, not whether it succeeded at the right thing: a query
+   * that returns 70 rows and puts a karaoke cover first looks identical to one that got it right.
+   * This is the list play-by-index actually indexes into.
+   */
+  getSearchHitSummary?: (limit?: number) => string[];
   /** Resolve + play via app pipeline so React player UI updates (title, mini player). */
   playMobileQuery?: (query: string) => Promise<boolean>;
   /** Search then play first catalog/streamable hit (UI tap path). */
@@ -1284,7 +1292,32 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
           ? outcome
           : (handlers.getSearchHitCount?.() ?? 0);
       const pass = count > 0;
-      logE2e('search', pass, `query=${query} hits=${count}`);
+      const top = handlers.getSearchHitSummary?.(5) ?? [];
+      const ranked = top.length > 0 ? ` top=${top.map((s, i) => `${i}:${s}`).join(' | ')}` : '';
+      logE2e('search', pass, `query=${query} hits=${count}${ranked}`);
+      return pass;
+    }
+    case 'speech-clarity': {
+      /*
+       * Whether the narration compressor actually engaged cannot be judged by ear on a phone
+       * speaker, and DynamicsProcessing is optional system audio that vendors do disable — so a
+       * silent no-op and a working effect sound the same from a description. This asks the native
+       * side directly and reports both facts separately: supported (the device can run it) and
+       * active (it is running now). Needs playback in progress, since the effect attaches to the
+       * ExoPlayer audio session and there is no session id before a player exists.
+       */
+      const kind = params.get('profile')?.trim() || 'audiobook';
+      const [{ nativeExoSetSpeechClarity }, { AUDIOBOOK_CLARITY, PODCAST_CLARITY }] =
+        await Promise.all([import('./androidNativePlayback'), import('./speechClarity')]);
+      const profile = kind === 'podcast' ? PODCAST_CLARITY : AUDIOBOOK_CLARITY;
+      const result = await nativeExoSetSpeechClarity(profile);
+      const pass = result.active;
+      logE2e(
+        'speech-clarity',
+        pass,
+        `profile=${profile.id} supported=${result.supported} active=${result.active}` +
+          ` threshold=${profile.thresholdDb} ratio=${profile.ratio}`,
+      );
       return pass;
     }
     case 'search-play': {

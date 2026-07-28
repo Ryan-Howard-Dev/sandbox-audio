@@ -276,6 +276,41 @@ function queryTokensBeyondArtist(artistHaystack: string, query: string): string[
   return queryRelevantTokens(query).filter((t) => !hay.includes(t));
 }
 
+/**
+ * Words in the title the query never asked for.
+ *
+ * A query names what the listener wants, and every extra word in the title is a word making it
+ * something other than that. Token overlap alone cannot see this: "HUMBLE." and "HUMBLE.
+ * (Bassjackers Remix) [Mixed]" both contain every token of "kendrick lamar humble" that a title
+ * can contain, so they score identically — which is how remixes, karaoke versions and lullaby
+ * covers all ranked above the song that was actually searched for.
+ *
+ * The artist's own tokens are not counted as extra: a title like "HUMBLE. (Kendrick Lamar)"
+ * repeating the billing is not a different recording.
+ */
+export function titleTokensBeyondQuery(title: string, query: string, artist = ''): number {
+  const queryTokens = new Set(wordTokens(query));
+  const artistTokens = new Set(wordTokens(artist));
+  return wordTokens(title).filter(
+    (t) => !queryTokens.has(t) && !artistTokens.has(t) && !TRACK_QUERY_STOP_WORDS.has(t),
+  ).length;
+}
+
+/**
+ * Bare words, punctuation discarded.
+ *
+ * queryRelevantTokens splits on spaces only, which is fine for a typed query but not for a
+ * catalog title: "HUMBLE. (Bassjackers Remix)" tokenises there as "humble.", "(bassjackers" and
+ * "remix)", none of which ever equal the query's "humble". Comparing titles needs the brackets and
+ * trailing stops gone first.
+ */
+function wordTokens(value: string): string[] {
+  return normalizeName(value)
+    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+    .split(/\s+/)
+    .filter((t) => t.length > 1);
+}
+
 function extraQueryTokensMatchAlbumOrTitle(
   albumName: string | undefined,
   title: string,
@@ -317,6 +352,15 @@ function albumTitleRelevanceScore(albumTitle: string, query: string): number {
   return 0;
 }
 
+/**
+ * Cost of one unasked-for word in a title.
+ *
+ * Sized against the +800 that an exact token match earns: three junk words ("bassjackers remix
+ * mixed") outweigh it, one or two do not. A subtitle is not disqualifying — a pile of them is.
+ */
+const TITLE_EXTRA_TOKEN_PENALTY = 180;
+const MAX_TITLE_EXTRA_PENALTY = 900;
+
 function trackSearchRelevanceScore(track: CatalogTrack, query: string): number {
   const artistField = (track.artist ?? '').trim();
   const extraTokens = queryTokensBeyondArtist(artistField, query);
@@ -351,6 +395,16 @@ function trackSearchRelevanceScore(track: CatalogTrack, query: string): number {
     extraQueryTokensMatchAlbumOrTitle(track.album, track.title, extraTokens)
   ) {
     score += 800;
+  }
+
+  /*
+   * Demote titles carrying words the query did not ask for. Capped, because this must order
+   * results rather than eliminate them: someone searching for a remix by name still matches those
+   * words in the query, so the remix keeps its tokens and the penalty falls away on its own.
+   */
+  const titleExtras = titleTokensBeyondQuery(track.title, query, track.artist ?? '');
+  if (titleExtras > 0) {
+    score -= Math.min(titleExtras * TITLE_EXTRA_TOKEN_PENALTY, MAX_TITLE_EXTRA_PENALTY);
   }
 
   const isLocal = track.id.startsWith('local-');

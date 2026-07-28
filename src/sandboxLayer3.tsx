@@ -1904,6 +1904,18 @@ export default function SandboxShell() {
         const webBuffered = webSupplementTracksRef.current.length;
         return Math.max(hits, unifiedTracks, webBuffered);
       },
+      getSearchHitSummary: (limit = 5) => {
+        // Reads searchHits first because that is the list playSearchQuery indexes into — reporting
+        // the unified list instead would describe an order nothing plays from.
+        const hits = searchHitsRef.current.slice(0, limit).map((h) => {
+          const env = h.primaryEnvelope;
+          return `${env?.artist ?? '?'} — ${env?.title ?? '?'}`;
+        });
+        if (hits.length > 0) return hits;
+        return unifiedSearchResultRef.current.tracks
+          .slice(0, limit)
+          .map((t) => `${t.artist} — ${t.title}`);
+      },
       playMobileQuery: async (query) => {
         const env: MediaEnvelope = {
           envelopeId: `e2e-mobile-${Date.now()}`,

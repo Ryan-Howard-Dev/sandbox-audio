@@ -135,6 +135,16 @@ final class ExoSpeechClarity {
             configure(effect, params);
             effect.setEnabled(true);
             active = params;
+            // Logged at info, not debug: whether this effect actually engaged is the difference
+            // between narration being compressed and nothing happening at all, and it cannot be
+            // heard reliably enough on a phone speaker to diagnose from a description.
+            Log.i(
+                TAG,
+                "engaged session=" + sessionId
+                    + " threshold=" + params.thresholdDb
+                    + " ratio=" + params.ratio
+                    + " hp=" + params.highPassHz
+                    + " makeup=" + params.makeupDb);
         } catch (Exception e) {
             // Vendors do ship devices where this throws. Music must keep playing.
             Log.w(TAG, "DynamicsProcessing unavailable: " + e.getMessage());
