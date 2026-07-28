@@ -17339,6 +17339,13 @@ body:has(#root > .onboarding-root) {
   flex-shrink: 0;
 }
 
+/* A spacer with nothing in it should take no width, or it offsets the whole row. */
+.mobile-np-footer-leading:empty,
+.mobile-np-footer-context:empty {
+  width: 0;
+  padding: 0;
+}
+
 .mobile-np-footer--tidal .mobile-np-footer-context {
   grid-area: context;
   flex: unset;
@@ -18837,15 +18844,47 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
    * space to their left. Giving the free space to the actions instead lets them distribute like
    * the transport row above, and an empty context column now collapses to nothing.
    */
-  grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, max-content);
-  grid-template-areas: 'leading context actions';
+  /*
+   * Two lines, not three columns.
+   *
+   * One row could not hold "playing from" and six controls at once: giving the free space to the
+   * text pushed the controls against the right edge, and giving it to the controls squeezed the
+   * row until the thumbs and share fell off the end and `overflow: hidden` clipped them. The text
+   * takes a line of its own and the controls get the full width, which is what a control row wants
+   * regardless.
+   */
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: stretch;
   column-gap: 0.5rem;
-  row-gap: 0;
+  row-gap: 0.5rem;
   padding-left: var(--mobile-edge-left);
   padding-right: var(--mobile-edge-right);
   overflow: hidden;
+}
+
+.mobile-np-footer--tidal .mobile-np-footer-context {
+  /* Own line, above the controls. Collapses to nothing when there is no source to name. */
+  flex: 1 0 100%;
+  order: -1;
+  text-align: center;
+}
+
+.mobile-np-footer--tidal .mobile-np-footer-context:empty {
+  display: none;
+}
+
+.mobile-np-footer--tidal .mobile-np-footer-leading {
+  /* Stays in the control row — hiding it took the queue button with it. */
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.mobile-np-footer--tidal .mobile-np-footer-actions {
+  /* Must be allowed to shrink to zero, or it wraps and strands the queue button on its own line. */
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: space-between;
 }
 
 .mobile-np-footer--tidal .mobile-np-footer-actions {
