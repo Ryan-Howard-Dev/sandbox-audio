@@ -2826,10 +2826,27 @@ async function fetchRemoteSearchCatalogUncached(query: string): Promise<CatalogS
   }
 
   if (searchItems.length === 0 && artistItems.length === 0 && albumTracks.length === 0) {
+    console.warn(`[catalogSearch] provider returned nothing for "${q}" terms=${searchTerms.length}`);
     return EMPTY_CATALOG;
   }
 
   const base = processCatalogItems([...artistItems, ...searchItems], q);
+  /*
+   * Raw item counts beside mapped counts. A search that ends empty can fail at the network or in
+   * this mapping, and the two are indistinguishable downstream — the UI says "no matches" either
+   * way. Only logged when the mapping drops everything, which is the case worth seeing.
+   */
+  if (base.tracks.length === 0 && base.artists.length === 0 && base.albums.length === 0) {
+    const shapes = new Map<string, number>();
+    for (const item of [...artistItems, ...searchItems]) {
+      const shape = `wrapperType=${item.wrapperType ?? 'none'}/kind=${item.kind ?? 'none'}`;
+      shapes.set(shape, (shapes.get(shape) ?? 0) + 1);
+    }
+    const summary = [...shapes.entries()].map(([shape, n]) => `${shape}×${n}`).join(', ');
+    console.warn(
+      `[catalogSearch] mapped to nothing for "${q}" rawSearch=${searchItems.length} rawArtist=${artistItems.length} shapes=[${summary}]`,
+    );
+  }
 
   if (albumIntent && albumTracks.length > 0) {
     const intentAlbum = albumIntent.album;
@@ -4961,6 +4978,16 @@ export function parseCombinedTrackQuery(query: string): CombinedTrackQuery | nul
 
   let best: { title: string; artist: string; score: number } | null = null;
 
+  /*
+   * This split is a guess, and it cannot be made reliable here. Both halves of "kendrick lamar
+   * humble" score the same 600 — to a scorer that only asks "could this be a name?", the lone word
+   * "humble" is as plausible as "kendrick lamar" — so the direction bonus decides, and the
+   * trailing tokens win. Weighting the artist score, or preferring longer artists, only moves the
+   * error to a different query shape; both were tried on device.
+   *
+   * The guess is therefore treated as a ranking hint by callers, never as grounds to reject a row.
+   * See catalogFieldsMatchSearchQuery.
+   */
   const consider = (title: string, artist: string, bonus: number) => {
     const artistScore = scoreArtistQueryPart(artist);
     if (artistScore < 500 || title.trim().length < 2) return;
@@ -5118,26 +5145,54 @@ export function parseArtistAlbumQuery(query: string): { artist: string; album: s
 }
 
 /** Require token overlap between a catalog row and the query (strict for artist+album splits). */
+/**
+ * The honest question: do the words the user typed appear anywhere in this row?
+ *
+ * This is what every speculative parse falls back to. It does not care which half of the query
+ * was meant to be the artist, so a bad guess costs ranking rather than results.
+ */
+function catalogFieldsMatchTokens(
+  fields: { artist?: string; album?: string; title?: string },
+  query: string,
+): boolean {
+  const tokens = queryRelevantTokens(query);
+  if (!tokens.length) return false;
+  const hay = normalizeName(`${fields.artist ?? ''} ${fields.album ?? ''} ${fields.title ?? ''}`);
+  return tokens.every((token) => hay.includes(token) || fuzzyTokenInHaystack(hay, token));
+}
+
 export function catalogFieldsMatchSearchQuery(
   fields: { artist?: string; album?: string; title?: string },
   query: string,
 ): boolean {
+  /*
+   * The combined split may accept a row early, but it may never reject one.
+   *
+   * parseCombinedTrackQuery is a guess about which half of "kendrick lamar humble" is the artist,
+   * and it cannot be made reliable — both halves score identically, so a tiebreak decides. Using
+   * that guess as a veto meant one bad coin flip discarded every correct row: iTunes returned 70
+   * matches for "kendrick lamar humble", the parse decided the artist was "humble", and all 70
+   * failed the artist check. The user saw "no matches for this query" with the network working.
+   *
+   * Falling through leaves the decision to the token check at the end of this function, which asks
+   * the honest question — do the words the user typed appear in this row — and does not care which
+   * half was meant to be the artist. A wrong guess now costs ranking, not results.
+   */
   const combined = parseCombinedTrackQuery(query);
   if (combined) {
     const artistField = fields.artist ?? '';
-    if (
-      artistRelevanceScore(artistField, combined.artist) < 500 &&
-      !artistNamesEquivalent(artistField, combined.artist)
-    ) {
-      return false;
+    const artistMatches =
+      artistRelevanceScore(artistField, combined.artist) >= 500 ||
+      artistNamesEquivalent(artistField, combined.artist);
+    if (artistMatches) {
+      const titleHay = normalizeName(`${fields.title ?? ''} ${fields.album ?? ''}`);
+      if (titleTokensMatchHay(combined.title, titleHay)) return true;
+      const cover = parseCoverTrackQuery(query);
+      if (cover?.titleHint && titleTokensMatchHay(cover.titleHint, titleHay)) return true;
     }
-    const titleHay = normalizeName(`${fields.title ?? ''} ${fields.album ?? ''}`);
-    if (titleTokensMatchHay(combined.title, titleHay)) return true;
-    const cover = parseCoverTrackQuery(query);
-    if (cover?.titleHint && titleTokensMatchHay(cover.titleHint, titleHay)) return true;
-    return false;
   }
 
+  /* Same rule as the combined split above: a parsed performer may accept a row, never veto one. */
   const cover = parseCoverTrackQuery(query);
   if (cover) {
     const artistField = fields.artist ?? '';
@@ -5145,7 +5200,7 @@ export function catalogFieldsMatchSearchQuery(
       artistRelevanceScore(artistField, cover.performer) < 500 &&
       !artistNamesEquivalent(artistField, cover.performer)
     ) {
-      return false;
+      return catalogFieldsMatchTokens(fields, query);
     }
     const titleHay = normalizeName(`${fields.title ?? ''} ${fields.album ?? ''}`);
     if (cover.titleHint) {
@@ -5168,14 +5223,30 @@ export function catalogFieldsMatchSearchQuery(
     return matched >= Math.max(1, refTokens.length - 2);
   }
 
+  /*
+   * Artist+album may veto, but only for a two-word query.
+   *
+   * With two words there is exactly one plausible split, and the veto earns its keep: "Future
+   * Zone" names an artist and an album, and a compilation called "Future Classic" carrying a track
+   * called "Zone" is a false positive the token check cannot distinguish, because all the words
+   * really are present. From three words up the split is a guess like any other — "kendrick lamar
+   * humble" parses as album "lamar humble" — and a guess must not be able to empty the results.
+   */
   const parsed = parseArtistAlbumQuery(query);
   if (parsed) {
-    if (artistRelevanceScore(fields.artist ?? '', parsed.artist) < 500) return false;
-    const titleHay = normalizeName(`${fields.album ?? ''} ${fields.title ?? ''}`);
-    const albumToken = normalizeName(parsed.album);
-    if (!albumToken) return false;
-    if (titleHay.includes(albumToken)) return true;
-    return albumTokensMatchQueryAlbum(parsed.album, fields.album, fields.title);
+    const shortQuery = queryRelevantTokens(query).length <= 2;
+    const artistMatches = artistRelevanceScore(fields.artist ?? '', parsed.artist) >= 500;
+    if (!artistMatches) {
+      if (shortQuery) return false;
+    } else {
+      const titleHay = normalizeName(`${fields.album ?? ''} ${fields.title ?? ''}`);
+      const albumToken = normalizeName(parsed.album);
+      if (albumToken && titleHay.includes(albumToken)) return true;
+      if (albumToken && albumTokensMatchQueryAlbum(parsed.album, fields.album, fields.title)) {
+        return true;
+      }
+      if (shortQuery) return false;
+    }
   }
 
   const tokens = queryRelevantTokens(query);
