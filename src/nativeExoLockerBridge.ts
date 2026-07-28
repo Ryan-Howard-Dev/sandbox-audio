@@ -148,12 +148,13 @@ export async function nativeLockerBlobBytes(lockerId: string): Promise<number> {
 export async function nativeLockerBlobHead(
   lockerId: string,
   bytes = 8_192,
+  offset = 0,
 ): Promise<Uint8Array | null> {
   if (Capacitor.getPlatform() !== 'android') return null;
   const id = lockerId.trim().replace(/^local-/, '');
   if (!id) return null;
   try {
-    const result = await NativeExoPlayback.getLockerBlobHead({ id, bytes });
+    const result = await NativeExoPlayback.getLockerBlobHead({ id, bytes, offset });
     const base64 = result?.base64?.trim() ?? '';
     if (!base64) return null;
     const binary = atob(base64);

@@ -4683,6 +4683,59 @@ export async function withMeasuredBitrate<T extends MediaEnvelope>(envelope: T):
   return next;
 }
 
+/**
+ * Read any byte range of a locker track, from wherever its audio actually lives.
+ *
+ * Container metadata is not always at the front — an MP4 written without faststart keeps it behind
+ * the audio — so walking to it needs ranges from anywhere in the file. Still only kilobytes at a
+ * time: the point is to seek past the audio, never to load it.
+ */
+export async function lockerAudioByteReader(
+  entryId: string,
+): Promise<{ read: (offset: number, length: number) => Promise<Uint8Array | null>; size: number } | null> {
+  const id = entryId?.trim();
+  if (!id) return null;
+
+  const blob = await getLockerAudioBlob(id);
+  if (blob) {
+    return {
+      size: blob.size,
+      read: async (offset, length) => {
+        if (offset < 0 || length <= 0 || offset >= blob.size) return null;
+        const end = Math.min(offset + length, blob.size);
+        return new Uint8Array(await blob.slice(offset, end).arrayBuffer());
+      },
+    };
+  }
+
+  const { nativeLockerBlobBytes, nativeLockerBlobHead } = await import('./nativeExoLockerBridge');
+  const size = await nativeLockerBlobBytes(id);
+  if (size <= 0) return null;
+  return {
+    size,
+    read: async (offset, length) => nativeLockerBlobHead(id, length, offset),
+  };
+}
+
+/**
+ * Chapters embedded in a locker audiobook, or an empty list.
+ *
+ * A book shipped as one M4B is otherwise a single unbroken track — no chapter list, no resume to a
+ * chapter. Reads only container headers, so a nine-hour file costs kilobytes.
+ */
+export async function lockerAudiobookChapters(
+  entryId: string,
+): Promise<Array<{ startSeconds: number; title: string }>> {
+  try {
+    const source = await lockerAudioByteReader(entryId);
+    if (!source) return [];
+    const { readM4bChapters } = await import('./m4bChapters');
+    return await readM4bChapters(source.read, source.size);
+  } catch {
+    return [];
+  }
+}
+
 /** Worth opening the file only when something already suggests it is lossless. */
 function isLosslessLockerName(envelope: MediaEnvelope): boolean {
   const blob = `${envelope.mimeType ?? ''} ${envelope.url ?? ''} ${envelope.title ?? ''}`;

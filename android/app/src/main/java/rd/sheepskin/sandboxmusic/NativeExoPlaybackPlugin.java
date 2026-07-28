@@ -1586,19 +1586,26 @@ public class NativeExoPlaybackPlugin extends Plugin {
         final String id = rawId.trim();
         final int requested = call.getInt("bytes", 8192);
         final int limit = Math.max(1, Math.min(requested, 65536));
+        /*
+         * An offset, because MP4 keeps its metadata behind the audio in files that were not
+         * written faststart. Walking to it needs ranges from anywhere in the file, not just the
+         * front — but still only a few kilobytes at a time.
+         */
+        final long offset = Math.max(0L, call.getLong("offset", 0L));
         playbackExecutor.execute(
             () -> {
                 try {
                     File file = LockerBlobRegistry.getFile(getContext(), id);
-                    if (file == null || !file.exists()) {
+                    if (file == null || !file.exists() || offset >= file.length()) {
                         JSObject empty = new JSObject();
                         empty.put("base64", "");
                         mainHandler.post(() -> call.resolve(empty));
                         return;
                     }
-                    int size = (int) Math.min(limit, file.length());
+                    int size = (int) Math.min(limit, file.length() - offset);
                     byte[] head = new byte[size];
-                    try (java.io.FileInputStream in = new java.io.FileInputStream(file)) {
+                    try (java.io.RandomAccessFile in = new java.io.RandomAccessFile(file, "r")) {
+                        in.seek(offset);
                         int read = 0;
                         while (read < size) {
                             int n = in.read(head, read, size - read);
