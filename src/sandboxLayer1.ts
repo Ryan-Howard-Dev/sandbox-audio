@@ -166,6 +166,14 @@ export interface MediaEnvelope {
   /** Id of the `CandidateSource` that produced this envelope. */
   sourceId: string;
   mimeType?: string;
+  /**
+   * Measured bitrate of the winning candidate, when the source reported one.
+   *
+   * Carried through because the now-playing badge should describe the audio. Without it the badge
+   * could only fall back to the transport and told listeners "MOBILE" — which code path fetched
+   * the bytes — where they were looking for how good the track sounds.
+   */
+  bitrateKbps?: number;
   artworkUrl?: string;
   /** Album or folder grouping label (locker uploads). */
   album?: string;
@@ -411,6 +419,7 @@ export function resolveMediaEnvelope(
     transport: winner.transport,
     sourceId: winner.id,
     mimeType: winner.mimeType,
+    bitrateKbps: winner.bitrateKbps,
     artworkUrl: meta.artworkUrl,
   };
 }

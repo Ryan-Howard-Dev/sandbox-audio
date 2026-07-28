@@ -213,18 +213,19 @@ export default function MobileNowPlayingView({
 
   const resolveElapsedSeconds = usePlaybackResolveElapsed(audioState, envelope?.envelopeId);
 
-  const mobileOfflineResolve =
-    isAndroid() && hasActiveMobileResolvers() && preferFreshMobileResolve();
-  const streamLabel = envelope
-    ? mobileOfflineResolve
-      ? 'MOBILE'
-      : displayTransportLabel(
-          envelope.provider,
-          envelope.transport,
-          envelope.url,
-          envelope.resolutionSource,
-        )
-    : null;
+  /*
+   * The badge under the title describes the audio, or it says nothing.
+   *
+   * It used to read "MOBILE" whenever a mobile resolver happened to be installed — a global
+   * condition unrelated to what is playing, so a locker FLAC and a YouTube stream carried the same
+   * word. Falling back to the transport instead only traded one wrong answer for a redundant one:
+   * the footer already says "PLAYING FROM LOCKER", so the badge repeated it three lines higher.
+   *
+   * Where the listener looks for how good this sounds, only a property of the audio belongs —
+   * lossless format or measured bitrate. When neither is known the line is left empty rather than
+   * padded with the source, which the footer states once, in words, where it belongs.
+   */
+  const streamLabel = null;
   const qualityLabel =
     resolvePlaybackFidelityLabel(envelope, {
       streamLabel,

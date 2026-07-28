@@ -133,6 +133,7 @@ function candidateToEnvelope(candidate: CandidateSource): MediaEnvelope {
       transport: candidate.transport,
       sourceId: candidate.id,
       mimeType: candidate.mimeType,
+      bitrateKbps: candidate.bitrateKbps,
       artworkUrl: candidate.metadata?.artworkUrl,
       releaseYear: candidate.metadata?.releaseYear,
     };

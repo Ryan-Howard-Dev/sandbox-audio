@@ -105,5 +105,38 @@ export function resolvePlaybackFidelityLabel(
     return losslessBadgeLabel(envelope, options.t);
   }
 
+  /*
+   * A measured bitrate outranks the transport.
+   *
+   * The badge sits under the title where a listener looks for how good this sounds, and it was
+   * answering a different question: "MOBILE" says which code path fetched the bytes, which is
+   * true and useless — of course it is a phone. Bitrate is a property of the audio, so it belongs
+   * here whenever the source reports one, and the transport is what is left to say when nothing
+   * about the stream is known.
+   */
+  const bitrate = Math.round(envelope.bitrateKbps ?? 0);
+  if (bitrate > 0) {
+    const format = lossyFormatForEnvelope(envelope);
+    return format ? `${format} · ${bitrate} kbps` : `${bitrate} kbps`;
+  }
+
   return options.streamLabel?.trim() || null;
+}
+
+const LOSSY_FORMAT_HINTS: Array<[RegExp, string]> = [
+  [/opus/i, 'OPUS'],
+  [/(^|[^a-z])m4a|aac|mp4a/i, 'AAC'],
+  [/vorbis|\.ogg(\?|#|$)/i, 'OGG'],
+  [/mpeg|mp3/i, 'MP3'],
+];
+
+/** Codec name when the mime type or URL actually says one — never a guess from the provider. */
+export function lossyFormatForEnvelope(envelope: MediaEnvelope | null | undefined): string | null {
+  if (!envelope) return null;
+  const blob = `${envelope.mimeType ?? ''} ${envelope.url ?? ''}`;
+  if (!blob.trim()) return null;
+  for (const [pattern, label] of LOSSY_FORMAT_HINTS) {
+    if (pattern.test(blob)) return label;
+  }
+  return null;
 }

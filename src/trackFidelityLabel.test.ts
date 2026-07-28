@@ -106,3 +106,61 @@ describe('trackFidelityLabel', () => {
     expect(resolvePlaybackFidelityLabel(null, { streamLabel: 'LAN', t })).toBeNull();
   });
 });
+
+/*
+ * The badge sits under the track title, where a listener is asking how good this sounds. It was
+ * answering "which code path fetched the bytes" — "MOBILE" — which is true and useless on a phone.
+ * A measured bitrate is a property of the audio, so it wins whenever the source reports one.
+ */
+describe('resolvePlaybackFidelityLabel — bitrate over transport', () => {
+  const t = (key: string, params?: Record<string, string | number>) =>
+    params?.format ? `${params.format} lossless` : key;
+
+  it('states the bitrate and codec instead of the transport', () => {
+    const stream = env({
+      envelopeId: 'b-1',
+      provider: 'proxy',
+      transport: 'proxy',
+      url: 'https://cdn.example/track.m4a',
+      mimeType: 'audio/mp4',
+      bitrateKbps: 256,
+    });
+    expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'MOBILE', t })).toBe(
+      'AAC · 256 kbps',
+    );
+  });
+
+  it('states the bitrate alone when the codec is not identifiable', () => {
+    const stream = env({
+      envelopeId: 'b-2',
+      provider: 'proxy',
+      url: 'https://cdn.example/stream',
+      bitrateKbps: 320,
+    });
+    expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'MOBILE', t })).toBe('320 kbps');
+  });
+
+  it('falls back to the transport only when no bitrate is known', () => {
+    const stream = env({
+      envelopeId: 'b-3',
+      provider: 'proxy',
+      url: 'https://cdn.example/track.mp3',
+      mimeType: 'audio/mpeg',
+    });
+    expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'MOBILE', t })).toBe('MOBILE');
+  });
+
+  /* Lossless still wins — a FLAC is not improved by quoting its bitrate. */
+  it('keeps the lossless badge ahead of any bitrate', () => {
+    const stream = env({
+      envelopeId: 'b-4',
+      provider: 'local-vault',
+      url: 'file:///music/track.flac',
+      mimeType: 'audio/flac',
+      bitrateKbps: 1411,
+    });
+    expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'LOCKER', t })).toBe(
+      'FLAC lossless',
+    );
+  });
+});

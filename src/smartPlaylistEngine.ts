@@ -326,6 +326,8 @@ export function lockerEntryToEnvelope(entry: LockerEntry): MediaEnvelope {
     sourceId: entry.id,
     artworkUrl: resolveLockerEntryGroupArt(entry),
     releaseYear: entry.releaseYear,
+    /* Last link in the chain: measured at import, stored on the row, shown on the badge. */
+    bitrateKbps: entry.bitrateKbps,
   };
 }
 

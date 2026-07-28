@@ -90,6 +90,13 @@ export interface LockerEntry {
   lyrics?: string;
   /** ID3 TKEY initial key for harmonic mixing. */
   initialKey?: string;
+  /**
+   * Measured average bitrate (kbps), when the stored row has one.
+   *
+   * Carried so the now-playing badge can state a property of the audio. Absent means unknown, and
+   * the badge shows nothing rather than a number nobody measured.
+   */
+  bitrateKbps?: number;
   /** True only when IDB bytes or Android native cache exist — set at vault load. */
   offlineReady?: boolean;
   /** User edited title/artist/album via Edit info — auto-repair must never overwrite. */
@@ -147,6 +154,32 @@ export class LockerCapacityExceededError extends Error {
     this.limitBytes = limitBytes;
     this.projectedBytes = projectedBytes;
   }
+}
+
+/**
+ * Average bitrate of a file, in kbps, from its own bytes and duration.
+ *
+ * Every locker import used to be stamped `bitrate: 320` regardless of what the file was. That is
+ * not a measurement, it is a placeholder, and a 96 kbps podcast rip and a FLAC were both recorded
+ * as 320. The now-playing badge is supposed to tell a listener what they are hearing, so it could
+ * not honestly show that number — which is why it showed the transport instead, and why the badge
+ * said "MOBILE" and then "LOCKER" rather than a bitrate.
+ *
+ * Bytes over duration is the real average for the whole file, container overhead included. It
+ * matches what a player reports closely enough to be worth stating, and it is derived from the
+ * file rather than assumed about it. Returns undefined when either input is unusable, so an
+ * unknown bitrate stays unknown instead of becoming a guess.
+ */
+export function averageBitrateKbps(
+  byteLength: number | null | undefined,
+  durationSeconds: number | null | undefined,
+): number | undefined {
+  const bytes = Number(byteLength ?? 0);
+  const seconds = Number(durationSeconds ?? 0);
+  if (!Number.isFinite(bytes) || !Number.isFinite(seconds)) return undefined;
+  if (bytes <= 0 || seconds <= 0) return undefined;
+  const kbps = Math.round((bytes * 8) / seconds / 1000);
+  return kbps > 0 ? kbps : undefined;
 }
 
 export function capacityLimitBytes(capacity?: DeviceCapacity): number | null {
@@ -2636,6 +2669,13 @@ function rowToEntry(t: {
   trackProducers?: string;
   trackSoloists?: string;
   lyrics?: string;
+  /*
+   * Deliberately not `bitrate`. That column exists on every row ever written and held a hardcoded
+   * 320 regardless of the file, and a measured 320 is indistinguishable from the placeholder. A
+   * separate field is only ever written by the measurement, so rows predating it read as unknown
+   * instead of confidently wrong.
+   */
+  bitrateKbps?: number;
   addedAt?: number;
   nativeAudioCached?: boolean;
   nativeSourcePath?: string;
@@ -2674,6 +2714,7 @@ function rowToEntry(t: {
     trackProducers: t.trackProducers,
     trackSoloists: t.trackSoloists,
     lyrics: t.lyrics,
+    bitrateKbps: t.bitrateKbps && t.bitrateKbps > 0 ? t.bitrateKbps : undefined,
   };
 }
 
@@ -4254,7 +4295,8 @@ export async function saveLockerFilesAsAlbum(
         genre: id3.genre?.trim() || 'Local',
         albumName: album,
         albumArtBlob: imageFile,
-        bitrate: 320,
+        bitrate: averageBitrateKbps(file.size, durations[i] ?? 0),
+        bitrateKbps: averageBitrateKbps(file.size, durations[i] ?? 0),
         durationSeconds: durations[i] ?? 0,
         isCustom: true,
         audioBlob: file,
@@ -4392,7 +4434,8 @@ export async function saveLockerBlobFromNativeFile(
     albumArtist: meta.albumArtist?.trim() || existingRow?.albumArtist || undefined,
     releaseYear: meta.releaseYear?.trim() || existingRow?.releaseYear || undefined,
     genre: meta.genre?.trim() || existingRow?.genre || 'Downloaded',
-    bitrate: 320,
+    bitrate: averageBitrateKbps(nativeBytes, durationSeconds),
+    bitrateKbps: averageBitrateKbps(nativeBytes, durationSeconds),
     durationSeconds,
     isCustom: true,
     hasAudioBlob: true,
@@ -4601,7 +4644,8 @@ export async function saveLockerBlob(
     albumArtist: meta.albumArtist?.trim() || existingRow?.albumArtist || undefined,
     releaseYear: meta.releaseYear?.trim() || existingRow?.releaseYear || undefined,
     genre: meta.genre?.trim() || existingRow?.genre || 'Downloaded',
-    bitrate: 320,
+    bitrate: averageBitrateKbps(file.size, durationSeconds),
+    bitrateKbps: averageBitrateKbps(file.size, durationSeconds),
     durationSeconds,
     isCustom: true,
     audioBlob: file,
@@ -4688,7 +4732,8 @@ export async function saveLockerFile(
     albumArtist: id3.albumArtist?.trim() || undefined,
     releaseYear: id3.year?.trim() || undefined,
     genre: id3.genre?.trim() || 'Local',
-    bitrate: 320,
+    bitrate: averageBitrateKbps(file.size, durationSeconds),
+    bitrateKbps: averageBitrateKbps(file.size, durationSeconds),
     durationSeconds,
     isCustom: true,
     audioBlob: file,
