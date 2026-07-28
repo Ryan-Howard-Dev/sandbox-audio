@@ -2132,6 +2132,14 @@ body {
   font-family: 'IBM Plex Mono', var(--font-mono);
   font-size: 0.5625rem;
   color: var(--text-dim);
+  /* Elapsed and remaining redraw once a second on top of the blurred artwork
+     backdrop, which is itself moving. Subpixel antialiasing has to re-blend the
+     R, G and B channels against whatever shifted underneath each glyph, and at
+     this size the result is visible colour fringing on the digits. Grayscale
+     antialiasing blends alpha only, so the timecode stays stable while the
+     background moves. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .home-progress-slider {
