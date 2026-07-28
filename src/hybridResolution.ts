@@ -28,6 +28,7 @@ import { isAndroid } from './platformEnv';
 import { isOfflineUnplayableStreamUrl, localDevicePlayUrlReachable } from './nativeExoStreamResolver';
 import { getTier34BaseUrl, isServerReachableCached } from './tier34/client';
 import { logTierResolution } from './tierResolutionLog';
+import { youtubeStreamAudioProfile } from './youtubeItag';
 
 export type ResolutionSource = 'locker' | 'cache' | 'server' | 'mobile' | 'preview';
 
@@ -463,7 +464,18 @@ export function envelopeFromResolved(
      * The resolver already measured this and it was being dropped here, which is why a streamed
      * track showed its transport ("HTTP", "MOBILE") where the bitrate belongs.
      */
-    bitrateKbps: normaliseResolvedBitrateKbps(resolved.bitrate) ?? base.bitrateKbps,
+    bitrateKbps:
+      normaliseResolvedBitrateKbps(resolved.bitrate) ??
+      /*
+       * yt-dlp reports bitrate 0 for the stream path, so this used to fall through to the
+       * transport label — "MOBILE", which names the code that fetched the bytes rather than
+       * anything about how they sound. The URL already states the encoding: its itag pins the
+       * codec and a bitrate fixed by the format, so the badge can say "AAC · 96 kbps" from a fact
+       * rather than a guess. Read, never measured — a progressive stream carries video in the same
+       * file, and bytes over duration would overstate the audio several times over.
+       */
+      youtubeStreamAudioProfile(resolved.uri)?.bitrateKbps ??
+      base.bitrateKbps,
     resolutionSource: resolved.source,
   };
 }
