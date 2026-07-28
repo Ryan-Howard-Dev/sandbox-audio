@@ -104,6 +104,11 @@ export class NativeExoPlaybackWeb extends WebPlugin implements NativeExoPlayback
     return {};
   }
 
+  /** No native cache off Android; 0 means unknown, and the caller leaves the bitrate unset. */
+  async getLockerBlobBytes(): Promise<{ bytes?: number }> {
+    return { bytes: 0 };
+  }
+
   async importLockerBlobFromPath(): Promise<{ ok: boolean; contentUri?: string; bytes?: number }> {
     return { ok: false };
   }

@@ -1559,6 +1559,37 @@ public class NativeExoPlaybackPlugin extends Plugin {
             });
     }
 
+    /**
+     * Byte size of a locker blob on disk.
+     *
+     * Downloaded tracks keep their audio in the native cache rather than an IndexedDB blob, so the
+     * web layer has no way to measure them — which left the now-playing badge unable to state a
+     * bitrate for exactly the tracks a listener owns. The file is right here; its length is all
+     * that is needed to divide by the known duration.
+     */
+    @PluginMethod
+    public void getLockerBlobBytes(PluginCall call) {
+        final String rawId = call.getString("id");
+        if (rawId == null || rawId.trim().isEmpty()) {
+            call.reject("id required");
+            return;
+        }
+        final String id = rawId.trim();
+        playbackExecutor.execute(
+            () -> {
+                try {
+                    File file = LockerBlobRegistry.getFile(getContext(), id);
+                    long bytes = (file != null && file.exists()) ? file.length() : 0L;
+                    JSObject ret = new JSObject();
+                    ret.put("bytes", bytes);
+                    mainHandler.post(() -> call.resolve(ret));
+                } catch (Exception e) {
+                    String msg = e.getMessage() != null ? e.getMessage() : "size failed";
+                    mainHandler.post(() -> call.reject(msg));
+                }
+            });
+    }
+
     @PluginMethod
     public void listLockerBlobs(PluginCall call) {
         playbackExecutor.execute(

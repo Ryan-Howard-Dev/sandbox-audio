@@ -4613,11 +4613,21 @@ export async function backfillLockerBitrate(entryId: string): Promise<number | n
     const existing = (row as LockerRow & { bitrateKbps?: number }).bitrateKbps;
     if (typeof existing === 'number' && existing > 0) return existing;
 
+    /*
+     * Blob first, then the native cache. A downloaded track keeps its audio in the native file
+     * cache and has no IndexedDB blob at all, so reading only the blob store measured nothing for
+     * exactly the tracks a listener owns — the badge stayed blank on their whole library.
+     */
     const blob = await getLockerAudioBlob(id);
-    // Native cache may still be warming; leave the row alone and try again on a later play.
-    if (!blob) return null;
+    let bytes = blob?.size ?? 0;
+    if (bytes <= 0) {
+      const { nativeLockerBlobBytes } = await import('./nativeExoLockerBridge');
+      bytes = await nativeLockerBlobBytes(id);
+    }
+    // Nothing resident yet (cache still warming) — leave the row alone and retry on a later play.
+    if (bytes <= 0) return null;
 
-    const kbps = averageBitrateKbps(blob.size, Number(row.durationSeconds ?? 0));
+    const kbps = averageBitrateKbps(bytes, Number(row.durationSeconds ?? 0));
     if (!kbps) return null;
     await writeBitrateRow(id, kbps);
     const cached = (lockerCache ?? []).find((e) => e.id === id);

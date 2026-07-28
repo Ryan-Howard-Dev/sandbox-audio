@@ -119,6 +119,26 @@ export async function probeNativeLockerContentUri(lockerId: string): Promise<str
 }
 
 /** Register a on-disk file (file:// from yt-dlp) without loading audio into JS. */
+/**
+ * Size on disk of a natively cached locker track, or 0 when there is nothing there.
+ *
+ * Downloaded tracks live in the native cache rather than an IndexedDB blob, so the web layer has
+ * no bytes to measure and the bitrate backfill had nothing to work with for exactly the tracks a
+ * listener owns.
+ */
+export async function nativeLockerBlobBytes(lockerId: string): Promise<number> {
+  if (Capacitor.getPlatform() !== 'android') return 0;
+  const id = lockerId.trim().replace(/^local-/, '');
+  if (!id) return 0;
+  try {
+    const result = await NativeExoPlayback.getLockerBlobBytes({ id });
+    const bytes = typeof result?.bytes === 'number' ? result.bytes : 0;
+    return Number.isFinite(bytes) && bytes > 0 ? bytes : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export async function registerLockerBlobFromFileUri(
   lockerId: string,
   fileUri: string,
