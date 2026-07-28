@@ -1031,6 +1031,25 @@ export default function SearchResultsView({
     [catalogTrackRows, webSupplementTracks],
   );
 
+  /*
+   * What is actually in the list, at the moment it renders.
+   *
+   * Three separate changes aimed at this list moved nothing — a +2000 ranking bonus, a filter that
+   * tests as accepting the canonical row, and a merge fix — which means the list does not contain
+   * what reasoning about the code says it should. Guessing again is worthless; this prints the
+   * rows and settles whether the right recording is present at all.
+   */
+  useEffect(() => {
+    const rows = unified?.tracks ?? [];
+    console.warn(
+      `[unifiedTracks] n=${rows.length} ` +
+        rows
+          .slice(0, 8)
+          .map((t, i) => `${i}:"${t.artist} — ${t.title}"[${t.id}]`)
+          .join(' | '),
+    );
+  }, [unified?.tracks]);
+
   const streamableMatchesQuery = useMemo(
     () =>
       catalogSatisfiesTrackQuery(
