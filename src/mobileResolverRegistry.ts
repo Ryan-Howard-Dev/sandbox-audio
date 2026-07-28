@@ -69,12 +69,27 @@ const registry = new Map<string, MobileResolverAddon>();
 
 const YTDLP_MOBILE_ID = 'yt-dlp-mobile';
 
+/**
+ * Whether acquisition resolvers start switched on.
+ *
+ * Off unless a build asks for them. On-device extraction is the feature that decides whether this
+ * is a media player pointed at nothing in particular or a tool shipped aimed at one service, and
+ * that is the distributor's call rather than a default. A self-host or personal build sets
+ * VITE_ACQUISITION_DEFAULT_ON=true; a build for anywhere else leaves it unset and the user opts in
+ * per resolver, having seen what it is.
+ *
+ * This changes only the starting position. An explicit choice already stored always wins.
+ */
+function acquisitionDefaultsOn(): boolean {
+  return (import.meta.env?.VITE_ACQUISITION_DEFAULT_ON ?? '') === 'true';
+}
+
 function buildYtDlpMobileResolver(): MobileResolverAddon {
   const present = isYtDlpMobileNativeAvailable();
   return {
     id: YTDLP_MOBILE_ID,
     name: 'yt-dlp (mobile)',
-    enabled: present,
+    enabled: present && acquisitionDefaultsOn(),
     version: present ? 'builtin' : undefined,
     resolve: present
       ? async (query) => resolveViaYtDlpMobile(query)
@@ -442,7 +457,9 @@ export function isYtDlpMobileAddonPresent(): boolean {
 export function refreshYtDlpMobileStub(): void {
   const addon = buildYtDlpMobileResolver();
   registerMobileResolver(addon);
-  if (addon.enabled && !readRemovedIds().has(YTDLP_MOBILE_ID)) {
+  // Only writes a stored preference when the build asks for it. Otherwise registration leaves the
+  // resolver present and off, visible in Settings for the user to turn on themselves.
+  if (addon.enabled && acquisitionDefaultsOn() && !readRemovedIds().has(YTDLP_MOBILE_ID)) {
     const map = readEnabledIds();
     if (!(YTDLP_MOBILE_ID in map)) {
       setMobileResolverEnabled(YTDLP_MOBILE_ID, true);
@@ -450,11 +467,14 @@ export function refreshYtDlpMobileStub(): void {
   }
 }
 
-/** Ensure on-device yt-dlp is registered and enabled before offline playback. */
+/**
+ * Register on-device yt-dlp and report whether any resolver is actually usable.
+ *
+ * This used to switch the resolver on as a side effect, which made "is it ready" and "turn it on"
+ * the same call — so a build could never ship with extraction off, and a user who turned it off
+ * had it turned back on by the next play. Readiness is now a question, not an instruction.
+ */
 export function ensureYtDlpMobileReady(): boolean {
   refreshYtDlpMobileStub();
-  if (isYtDlpMobileNativeAvailable() && !readRemovedIds().has(YTDLP_MOBILE_ID)) {
-    setMobileResolverEnabled(YTDLP_MOBILE_ID, true);
-  }
   return hasActiveMobileResolvers();
 }
