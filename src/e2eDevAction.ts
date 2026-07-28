@@ -3297,6 +3297,68 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
      * This drives the real port and waits for the engine's own completion event: synthesis that
      * silently fails still resolves speak(), but it never reports done.
      */
+    /*
+     * Import a track through the real locker path and report the bitrate it ends up with.
+     *
+     * The import UI starts at a native file picker, which a deep link cannot drive, so this feeds
+     * saveLockerBlob directly — the same function the picker feeds. The file is a PCM WAV built
+     * here, so its true bitrate is known by construction (sampleRate x bits x channels) and the
+     * stored value can be checked against arithmetic rather than against a guess.
+     */
+    case 'probe-locker-import': {
+      const { saveLockerBlob, getLockerEntries, averageBitrateKbps } = await import(
+        './lockerStorage'
+      );
+      const sampleRate = 8_000;
+      const seconds = 4;
+      const samples = sampleRate * seconds;
+      const header = 44;
+      const buffer = new ArrayBuffer(header + samples);
+      const view = new DataView(buffer);
+      const ascii = (offset: number, text: string) => {
+        for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+      };
+      ascii(0, 'RIFF');
+      view.setUint32(4, 36 + samples, true);
+      ascii(8, 'WAVEfmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true); // PCM
+      view.setUint16(22, 1, true); // mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate, true); // byte rate = 8-bit mono
+      view.setUint16(32, 1, true);
+      view.setUint16(34, 8, true); // bits per sample
+      ascii(36, 'data');
+      view.setUint32(40, samples, true);
+      for (let i = 0; i < samples; i++) {
+        view.setUint8(header + i, 128 + Math.round(60 * Math.sin(i / 12)));
+      }
+      const blob = new Blob([buffer], { type: 'audio/wav' });
+      const title = `Bitrate Probe ${new Date().toISOString().slice(11, 19)}`;
+      try {
+        const saved = await saveLockerBlob(blob, {
+          title,
+          artist: 'Sandbox Probe',
+          albumName: 'Bitrate Probe',
+          durationSeconds: seconds,
+          mimeType: 'audio/wav',
+          skipRemoteSync: true,
+          skipHeavyAnalysis: true,
+        });
+        const expected = averageBitrateKbps(blob.size, seconds);
+        const readBack = (await getLockerEntries()).find((e) => e.id === saved.id);
+        const ok = Boolean(readBack?.bitrateKbps) && readBack?.bitrateKbps === expected;
+        logE2e(
+          'locker-import',
+          ok,
+          `title=${title} bytes=${blob.size} secs=${seconds} expected=${expected} saved=${saved.bitrateKbps ?? 'none'} readBack=${readBack?.bitrateKbps ?? 'none'}`,
+        );
+        return ok;
+      } catch (err) {
+        logE2e('locker-import', false, err instanceof Error ? err.message : String(err));
+        return false;
+      }
+    }
     /* Dump the continue-listening store so a duplicate card can be traced to its keys. */
     case 'probe-audiobook-progress': {
       const { listAudiobooksInProgress, audiobookProgressPercent } = await import(
