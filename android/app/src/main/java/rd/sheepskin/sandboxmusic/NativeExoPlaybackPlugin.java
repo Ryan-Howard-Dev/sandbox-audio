@@ -96,6 +96,16 @@ public class NativeExoPlaybackPlugin extends Plugin {
         String artist = "";
         String album = "";
         String artworkUrl = "";
+        /**
+         * Which track this metadata belongs to.
+         *
+         * Held here because the mirrored lastEnvelopeId used to advance only on an explicit
+         * playUrl. Title, artist and artwork moved with every transition while the id stayed on
+         * whatever was last played outright, so getStatus reported one track's id alongside
+         * another's title — and JS, which reconciles on the id, then believed the wrong item was
+         * playing and drew its artwork.
+         */
+        String envelopeId = "";
     }
 
     private String trackMetaKey(@Nullable String url, @Nullable String envelopeId) {
@@ -130,6 +140,7 @@ public class NativeExoPlaybackPlugin extends Plugin {
         if (artist != null && !artist.trim().isEmpty()) meta.artist = artist.trim();
         if (album != null && !album.trim().isEmpty()) meta.album = album.trim();
         if (artworkUrl != null && !artworkUrl.trim().isEmpty()) meta.artworkUrl = artworkUrl.trim();
+        if (envelopeId != null && !envelopeId.trim().isEmpty()) meta.envelopeId = envelopeId.trim();
     }
 
     private void applyTrackMetaForUrl(@Nullable String url) {
@@ -157,12 +168,22 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 "no track meta for key=" + key + " — clearing artwork to avoid showing the previous track's cover"
             );
             lastArtworkUrl = "";
+            // Same reasoning as the artwork: an id we know is wrong is worse than none, because
+            // JS matches on it and will confidently resolve the previous track's metadata.
+            lastEnvelopeId = "";
             return;
         }
         if (!meta.title.isEmpty()) lastTitle = meta.title;
         if (!meta.artist.isEmpty()) lastArtist = meta.artist;
         if (!meta.album.isEmpty()) lastAlbum = meta.album;
         if (!meta.artworkUrl.isEmpty()) lastArtworkUrl = meta.artworkUrl;
+        /*
+         * The id moves with the rest of it. Leaving it behind is what let getStatus answer with
+         * one track's title and another's envelopeId: JS reconciles the player against the id, so
+         * it kept resolving to the previous item and drew that track's artwork and duration over
+         * whatever was actually playing.
+         */
+        if (!meta.envelopeId.isEmpty()) lastEnvelopeId = meta.envelopeId;
     }
 
     private void runOnMain(Runnable action) {

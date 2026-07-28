@@ -1902,11 +1902,38 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         return false;
       }
       const status = await getNativeExoPlaybackStatus();
-      const pass = Boolean(probe.title?.trim());
+      /*
+       * Report both sides and whether they agree. The UI draws the title and artwork from its own
+       * envelope while ExoPlayer decodes whatever it was last handed, and when those drift the
+       * screen shows one track playing another — visible to anyone looking at the phone and
+       * invisible in a log that only ever printed the UI's side of it.
+       */
+      const uiTitle = probe.title?.trim() ?? '';
+      const nativeTitle = status.title?.trim() ?? '';
+      /*
+       * Only compared while native is actually playing. Mid-transition the player is idle and its
+       * mirrored fields still describe the track that just ended, so asserting agreement there
+       * fails on a state that is briefly correct — an unreliable probe is worse than none, because
+       * it costs a device round trip to disbelieve.
+       */
+      const comparable = status.state === 'playing';
+      const titlesAgree = !comparable || !nativeTitle || !uiTitle || nativeTitle === uiTitle;
+      const artAgree =
+        !comparable ||
+        !status.artworkUrl ||
+        !probe.artworkUrl ||
+        status.artworkUrl === probe.artworkUrl;
+      const pass = Boolean(uiTitle) && titlesAgree && artAgree;
       logE2e(
         'playback-probe',
         pass,
-        `title=${probe.title} artist=${probe.artist} album=${probe.album ?? ''} state=${probe.state} pos=${probe.positionSecs.toFixed(1)} dur=${probe.durationSecs.toFixed(1)} native=${status.state ?? 'unknown'} queueLength=${status.queueLength ?? 0} queueIndex=${status.queueIndex ?? 0}`,
+        `title=${probe.title} artist=${probe.artist} album=${probe.album ?? ''} ` +
+          `state=${probe.state} pos=${probe.positionSecs.toFixed(1)} dur=${probe.durationSecs.toFixed(1)} ` +
+          `native=${status.state ?? 'unknown'} queueLength=${status.queueLength ?? 0} queueIndex=${status.queueIndex ?? 0} ` +
+          `nativeTitle="${nativeTitle}" nativeArtist="${status.artist ?? ''}" ` +
+          `titlesAgree=${titlesAgree} artAgree=${artAgree} ` +
+          `uiEnvelope=${probe.envelopeId ?? ''} nativeEnvelope=${status.envelopeId ?? ''} ` +
+          `uiArt=${(probe.artworkUrl ?? '').slice(-40)} nativeArt=${(status.artworkUrl ?? '').slice(-40)}`,
       );
       return pass;
     }
