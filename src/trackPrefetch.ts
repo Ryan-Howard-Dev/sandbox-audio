@@ -82,7 +82,10 @@ export async function tryInstantPlayable(
   options?: InstantPlayableOptions,
 ): Promise<MediaEnvelope | null> {
   const sync = getSyncCachedPlayable(env);
-  if (sync) return sync;
+  if (sync) {
+    logInstantOutcome(env, 'hit:play-cache');
+    return sync;
+  }
 
   const remoteOnMobile =
     !options?.forPrefetch &&
@@ -92,7 +95,14 @@ export async function tryInstantPlayable(
     env.provider !== 'indexeddb' &&
     env.provider !== 'blob';
 
-  if (isEnvelopeStreamCached(env)) {
+  if (!isEnvelopeStreamCached(env)) {
+    // Nothing warmed this track. Either prefetch has not reached it yet, or stream caching is
+    // switched off in settings — in which case this whole path can never hit and the play tap
+    // always pays for a full resolve.
+    logInstantOutcome(env, remoteOnMobile ? 'miss:not-cached (fresh-preferred)' : 'miss:not-cached');
+    return null;
+  }
+  {
     const stream = await getStreamCacheEnvelope(env);
     const streamUrl = stream?.url?.trim() ?? '';
     if (streamUrl && !isOfflineUnplayableStreamUrl(streamUrl)) {
@@ -107,14 +117,39 @@ export async function tryInstantPlayable(
        * be shown to still be good, re-resolve when it cannot. A URL with no stated expiry is not
        * proof of freshness, so that case still re-resolves rather than gambling.
        */
-      if (!remoteOnMobile) return stream;
-      const expiresAt = parseStreamExpiry(streamUrl);
-      if (expiresAt != null && expiresAt - EXPIRY_SAFETY_MARGIN_MS > Date.now()) {
+      if (!remoteOnMobile) {
+        logInstantOutcome(env, 'hit:stream-cache');
         return stream;
       }
+      const expiresAt = parseStreamExpiry(streamUrl);
+      if (expiresAt != null && expiresAt - EXPIRY_SAFETY_MARGIN_MS > Date.now()) {
+        logInstantOutcome(env, 'hit:stream-cache (expiry ok)');
+        return stream;
+      }
+      logInstantOutcome(
+        env,
+        expiresAt == null
+          ? 'miss:no-stated-expiry — cannot prove fresh, re-resolving'
+          : `miss:expired ${Math.round((expiresAt - Date.now()) / 1000)}s left`,
+      );
+      return null;
     }
+    logInstantOutcome(env, 'miss:cached-but-unplayable-url');
   }
   return null;
+}
+
+/**
+ * Why a play tap did or did not skip resolution.
+ *
+ * The difference between an instant play and a fifteen-second wait is one branch here, and from
+ * outside the app both look identical apart from the delay. Naming the branch is what turns
+ * "still slow" into a specific thing to fix.
+ */
+function logInstantOutcome(env: MediaEnvelope, outcome: string): void {
+  console.warn(
+    `[tryInstantPlayable] ${outcome} track="${env.artist} — ${env.title}" provider=${env.provider}`,
+  );
 }
 
 async function applyLockerShortcut(env: MediaEnvelope): Promise<MediaEnvelope> {
