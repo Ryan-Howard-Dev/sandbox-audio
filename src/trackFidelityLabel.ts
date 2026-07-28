@@ -102,6 +102,20 @@ export function resolvePlaybackFidelityLabel(
   if (!envelope) return null;
 
   if (isLosslessEnvelope(envelope)) {
+    /*
+     * Depth and rate beat the word "lossless" when the file states them. "FLAC 24-bit 96 kHz" says
+     * what was captured; "lossless" only says nothing was thrown away, which is true of a 16-bit
+     * CD rip and a studio master alike. These come from STREAMINFO, so they are the encoder's own
+     * figures — the badge is still only ever repeating what the file says about itself.
+     */
+    const depth = Math.round(envelope.bitsPerSample ?? 0);
+    const rateHz = Math.round(envelope.sampleRateHz ?? 0);
+    if (depth > 0 && rateHz > 0) {
+      const format = losslessFormatForEnvelope(envelope) ?? 'Lossless';
+      const rate =
+        rateHz % 1000 === 0 ? `${rateHz / 1000} kHz` : `${(rateHz / 1000).toFixed(1)} kHz`;
+      return `${format} ${depth}-bit ${rate}`;
+    }
     return losslessBadgeLabel(envelope, options.t);
   }
 

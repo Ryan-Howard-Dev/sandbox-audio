@@ -4652,14 +4652,53 @@ export async function backfillLockerBitrate(entryId: string): Promise<number | n
  */
 export async function withMeasuredBitrate<T extends MediaEnvelope>(envelope: T): Promise<T> {
   if (!envelope) return envelope;
-  if (typeof envelope.bitrateKbps === 'number' && envelope.bitrateKbps > 0) return envelope;
+  const alreadyMeasured = typeof envelope.bitrateKbps === 'number' && envelope.bitrateKbps > 0;
   const isLocker =
     envelope.provider === 'local-vault' || envelope.envelopeId?.startsWith('local-') === true;
   if (!isLocker) return envelope;
   const sourceId = envelope.sourceId?.trim() || envelope.envelopeId?.replace(/^local-/, '');
   if (!sourceId) return envelope;
-  const measured = await backfillLockerBitrate(sourceId);
-  return measured ? { ...envelope, bitrateKbps: measured } : envelope;
+
+  let next = envelope;
+  if (!alreadyMeasured) {
+    const measured = await backfillLockerBitrate(sourceId);
+    if (measured) next = { ...next, bitrateKbps: measured };
+  }
+
+  /*
+   * For a lossless file, depth and rate say more than any bitrate: they describe what was
+   * captured, while the encoded size only describes how well it compressed. STREAMINFO sits in the
+   * first few hundred bytes, so this reads a small slice rather than the whole file.
+   */
+  if (next.bitsPerSample == null && isLosslessLockerName(next)) {
+    const header = await readLockerAudioHead(sourceId);
+    if (header) {
+      const { parseFlacStreamInfo } = await import('./flacStreamInfo');
+      const info = parseFlacStreamInfo(header);
+      if (info) {
+        next = { ...next, bitsPerSample: info.bitsPerSample, sampleRateHz: info.sampleRateHz };
+      }
+    }
+  }
+  return next;
+}
+
+/** Worth opening the file only when something already suggests it is lossless. */
+function isLosslessLockerName(envelope: MediaEnvelope): boolean {
+  const blob = `${envelope.mimeType ?? ''} ${envelope.url ?? ''} ${envelope.title ?? ''}`;
+  return /flac/i.test(blob);
+}
+
+/** First slice of a locker file — enough for STREAMINFO, which must come first. */
+async function readLockerAudioHead(id: string, bytes = 8_192): Promise<Uint8Array | null> {
+  try {
+    const blob = await getLockerAudioBlob(id);
+    if (!blob) return null;
+    const slice = blob.slice(0, Math.min(bytes, blob.size));
+    return new Uint8Array(await slice.arrayBuffer());
+  } catch {
+    return null;
+  }
 }
 
 /** Save a fetched audio blob into the locker vault with metadata. */

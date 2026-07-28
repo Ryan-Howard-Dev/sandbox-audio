@@ -164,3 +164,50 @@ describe('resolvePlaybackFidelityLabel — bitrate over transport', () => {
     );
   });
 });
+
+/*
+ * "Lossless" only says nothing was thrown away, which is equally true of a 16-bit CD rip and a
+ * studio master. When the file states its depth and rate — FLAC does, in STREAMINFO — the badge
+ * should say what was captured instead.
+ */
+describe('resolvePlaybackFidelityLabel — depth and rate from the container', () => {
+  const t = (key: string, params?: Record<string, string | number>) =>
+    params?.format ? `${params.format} lossless` : key;
+
+  it('states depth and sample rate for a high-resolution FLAC', () => {
+    const stream = env({
+      envelopeId: 'f-1',
+      provider: 'local-vault',
+      url: 'file:///music/track.flac',
+      mimeType: 'audio/flac',
+      bitsPerSample: 24,
+      sampleRateHz: 96_000,
+    });
+    expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'LOCKER', t })).toBe(
+      'FLAC 24-bit 96 kHz',
+    );
+  });
+
+  it('keeps a non-round rate readable', () => {
+    const stream = env({
+      envelopeId: 'f-2',
+      provider: 'local-vault',
+      url: 'file:///music/track.flac',
+      mimeType: 'audio/flac',
+      bitsPerSample: 24,
+      sampleRateHz: 88_200,
+    });
+    expect(resolvePlaybackFidelityLabel(stream, { t })).toBe('FLAC 24-bit 88.2 kHz');
+  });
+
+  /* Without those figures it must not invent them — the older wording still applies. */
+  it('falls back to the plain lossless badge when depth and rate are unknown', () => {
+    const stream = env({
+      envelopeId: 'f-3',
+      provider: 'local-vault',
+      url: 'file:///music/track.flac',
+      mimeType: 'audio/flac',
+    });
+    expect(resolvePlaybackFidelityLabel(stream, { t })).toBe('FLAC lossless');
+  });
+});

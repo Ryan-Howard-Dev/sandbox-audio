@@ -174,6 +174,15 @@ export interface MediaEnvelope {
    * the bytes — where they were looking for how good the track sounds.
    */
   bitrateKbps?: number;
+  /**
+   * Bit depth and sample rate, when a container states them outright.
+   *
+   * For a lossless file these are the properties that describe what was captured; the encoded size
+   * is an artefact of how well it compressed. Read from FLAC STREAMINFO, so they are the encoder's
+   * own figures rather than anything inferred.
+   */
+  bitsPerSample?: number;
+  sampleRateHz?: number;
   artworkUrl?: string;
   /** Album or folder grouping label (locker uploads). */
   album?: string;
