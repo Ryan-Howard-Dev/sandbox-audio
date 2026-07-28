@@ -89,6 +89,27 @@ describe('resolved stream cache', () => {
     expect(getCachedResolvedStream('q', NOW + DEFAULT_TTL_MS)).toBeNull();
   });
 
+  it('refuses a URL that states an expiry already in the past', () => {
+    // Found by fuzzing. parseStreamExpiry returns null both for "no expiry stated" and for "the
+    // stated expiry has passed", and the default-TTL fallback treated the second as the first —
+    // caching a provably dead URL and serving it for the next half hour.
+    cacheResolvedStream('q', stream('https://x.test/a?expire=1000000000'), NOW);
+    expect(getCachedResolvedStream('q', NOW)).toBeNull();
+    expect(resolvedStreamCacheSize()).toBe(0);
+  });
+
+  it('refuses a URL whose stated expiry is implausibly distant', () => {
+    const farFuture = Math.floor((NOW + 400 * 24 * 3600 * 1000) / 1000);
+    cacheResolvedStream('q', stream(`https://x.test/a?expire=${farFuture}`), NOW);
+    expect(getCachedResolvedStream('q', NOW)).toBeNull();
+  });
+
+  it('still caches a URL that simply never mentions an expiry', () => {
+    // The distinction that matters: unknown lifetime is cacheable, dead is not.
+    cacheResolvedStream('q', stream('https://x.test/a?itag=18'), NOW);
+    expect(getCachedResolvedStream('q', NOW)).not.toBeNull();
+  });
+
   it('does not cache local files', () => {
     // Already on disk; the locker owns that lifetime and it has no expiry to respect.
     cacheResolvedStream('q', stream('file:///data/user/0/app/cache/track.m4a'), NOW);

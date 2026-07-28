@@ -64,6 +64,20 @@ function normalizeKey(query: string): string {
  * trusted — a malformed `expire` that parses to 1970 would poison the entry permanently, and one
  * far in the future would keep a dead URL forever.
  */
+const EXPIRE_PARAM_RE = /[?&]expire=/;
+
+/**
+ * True when the URL carries an expiry claim at all, sound or not.
+ *
+ * Distinct from parseStreamExpiry returning null, which collapses two very different cases: "this
+ * URL never said when it dies" and "this URL says it died already". The first is a URL worth
+ * caching under a bounded default; the second is a URL that must never be stored, because the
+ * default TTL would resurrect it and playback would fail on a link known to be dead.
+ */
+export function hasStatedStreamExpiry(uri: string): boolean {
+  return EXPIRE_PARAM_RE.test(uri);
+}
+
 export function parseStreamExpiry(uri: string, now = Date.now()): number | null {
   const match = /[?&]expire=(\d{9,13})\b/.exec(uri);
   if (!match) return null;
@@ -138,6 +152,10 @@ export function cacheResolvedStream(
   if (resolved.uri.startsWith('file://')) return;
 
   const stated = parseStreamExpiry(resolved.uri, now);
+  // A URL that states an expiry we cannot use — already past, or implausible — is not a URL with
+  // an unknown lifetime. It is a dead one, and the default TTL would hand it back for the next
+  // half hour as though it were good.
+  if (stated == null && hasStatedStreamExpiry(resolved.uri)) return;
   const expiresAt = stated ?? now + DEFAULT_TTL_MS;
   // Nothing to gain from storing something already inside the safety margin.
   if (expiresAt - EXPIRY_SAFETY_MARGIN_MS <= now) return;
