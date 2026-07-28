@@ -1,8 +1,35 @@
 import { fetchWithTimeout } from './fetchWithTimeout';
 
-/** Public read-only client used by open-source TIDAL tooling (e.g. python-tidal). */
-const TIDAL_CLIENT_ID = 'REDACTED_TIDAL_CLIENT_ID';
-const TIDAL_CLIENT_SECRET = 'REDACTED_TIDAL_CLIENT_SECRET';
+/*
+ * Credentials come from the build, never from this file.
+ *
+ * A client id and secret were committed here and shipped inside every APK. Anyone can unzip an
+ * Android package and read them, so the pair was public the moment it was distributed — and being
+ * shared meant every install hit TIDAL as the same client. One person's abuse rate-limits or bans
+ * the account for everyone, and the account belongs to whoever published the build.
+ *
+ * Supplying them at build time does not make a client-side secret secret; nothing can, because the
+ * bundle ships to the user. What it does change is that the value is no longer in the repository,
+ * no longer shared between unrelated installs, and absent by default — a build with none simply
+ * has no TIDAL playlist import rather than silently borrowing someone else's identity. The real
+ * fix is OAuth with PKCE, where the client holds no secret at all, or a server-side token broker.
+ */
+// Read on use, not at import: a value captured at module load cannot be overridden by a test or
+// by anything that configures the app after startup.
+function tidalClientId(): string {
+  return (import.meta.env?.VITE_TIDAL_CLIENT_ID ?? '').trim();
+}
+
+function tidalClientSecret(): string {
+  return (import.meta.env?.VITE_TIDAL_CLIENT_SECRET ?? '').trim();
+}
+
+/** True when this build was given credentials to use. */
+export function tidalApiConfigured(): boolean {
+  return tidalClientId().length > 0 && tidalClientSecret().length > 0;
+}
+
+let warnedUnconfigured = false;
 
 const TIDAL_TOKEN_URL = 'https://auth.tidal.com/v1/oauth2/token';
 const TIDAL_API_BASE = 'https://api.tidal.com/v1';
@@ -86,7 +113,20 @@ async function fetchTidalAccessToken(): Promise<string | null> {
     return tokenCache.accessToken;
   }
 
-  const credentials = btoa(`${TIDAL_CLIENT_ID}:${TIDAL_CLIENT_SECRET}`);
+  if (!tidalApiConfigured()) {
+    // Said once, not per call: the feature is absent by configuration, which is a normal state for
+    // a build nobody supplied credentials to, not an error worth repeating on every import.
+    if (!warnedUnconfigured) {
+      warnedUnconfigured = true;
+      console.warn(
+        '[tidalApiClient] no TIDAL credentials in this build — playlist import unavailable. ' +
+          'Set VITE_TIDAL_CLIENT_ID and VITE_TIDAL_CLIENT_SECRET to enable it.',
+      );
+    }
+    return null;
+  }
+
+  const credentials = btoa(`${tidalClientId()}:${tidalClientSecret()}`);
   try {
     const res = await fetchWithTimeout(
       TIDAL_TOKEN_URL,
