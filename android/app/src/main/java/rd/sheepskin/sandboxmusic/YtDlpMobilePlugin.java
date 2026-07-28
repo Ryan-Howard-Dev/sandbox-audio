@@ -134,11 +134,65 @@ public class YtDlpMobilePlugin extends Plugin {
             } else {
                 Log.i(TAG, "youtubedl-android initialized in " + elapsedMs + " ms");
             }
+            maybeUpdateYtDlp();
         } catch (YoutubeDLException e) {
             initFailed = true;
             initError = e.getMessage() != null ? e.getMessage() : "yt-dlp init failed";
             long elapsedMs = System.currentTimeMillis() - startMs;
             Log.e(TAG, "failed to initialize youtubedl-android after " + elapsedMs + " ms", e);
+        }
+    }
+
+    private static final String UPDATE_PREFS = "ytdlp_update_v1";
+    private static final String LAST_UPDATE_KEY = "last_update_ms";
+    /** How stale the extractor may get before another update is attempted. */
+    private static final long UPDATE_INTERVAL_MS = 7L * 24 * 60 * 60 * 1000;
+
+    /**
+     * Refresh the yt-dlp binary itself, not the library wrapping it.
+     *
+     * The dependency pins a yt-dlp snapshot taken when that library was released, and YouTube
+     * changes its extractor contract far faster than the library ships. Measured on device, the
+     * bundled build could no longer obtain adaptive audio from any player client — every request
+     * came back "Requested format is not available", leaving only a 360p progressive stream whose
+     * audio is capped at 96 kbps. Nothing in the app's own code can fix that; the extractor has to
+     * be newer.
+     *
+     * Rate limited to once a week and run after init rather than before it, so a slow or refused
+     * download delays nothing: playback keeps working on the bundled version either way. Failures
+     * are logged and swallowed for the same reason.
+     */
+    private void maybeUpdateYtDlp() {
+        try {
+            android.content.SharedPreferences prefs =
+                getContext().getSharedPreferences(UPDATE_PREFS, android.content.Context.MODE_PRIVATE);
+            long last = prefs.getLong(LAST_UPDATE_KEY, 0L);
+            long now = System.currentTimeMillis();
+            if (now - last < UPDATE_INTERVAL_MS) return;
+
+            long t = System.currentTimeMillis();
+            YoutubeDL.UpdateStatus status =
+                YoutubeDL.getInstance()
+                    .updateYoutubeDL(getContext(), YoutubeDL.UpdateChannel.STABLE.INSTANCE);
+            // Recorded even when already up to date, so a device with no newer build available
+            // does not retry the network call on every launch.
+            prefs.edit().putLong(LAST_UPDATE_KEY, now).apply();
+            String updated = null;
+            try {
+                updated = YoutubeDL.getInstance().version(getContext());
+            } catch (Exception ignored) {
+                /* version is a nicety */
+            }
+            if (updated != null) version = updated;
+            Log.i(
+                TAG,
+                "yt-dlp update status=" + status
+                    + " version=" + (updated != null ? updated : "unknown")
+                    + " ms=" + (System.currentTimeMillis() - t));
+        } catch (Throwable e) {
+            // Offline, air-gapped, GitHub unreachable, or the API changed — none of which should
+            // stop playback on the version already on disk.
+            Log.w(TAG, "yt-dlp update skipped: " + e.getMessage());
         }
     }
 
