@@ -2852,15 +2852,30 @@ async function fetchRemoteSearchCatalogUncached(query: string): Promise<CatalogS
 
   const [searchBatches, artistItems, albumTracks] = await Promise.all([
     Promise.all(
-      searchTerms.map((term) =>
-        fetchCatalogApiResults(
+      searchTerms.map(async (term) => {
+        const items = await fetchCatalogApiResults(
           catalogSearchUrl({
             term,
             media: 'music',
             limit: CATALOG_SEARCH_LIMIT,
           }),
-        ),
-      ),
+        );
+        /*
+         * One line per query variant. This function fires several terms from
+         * buildCatalogSearchTerms and concatenates the responses, and the merged list ends up
+         * holding rows the primary term never returned while missing the one it returned first.
+         * Naming which term produced which rows is the only way to see that happen — reading the
+         * code has produced four wrong diagnoses of this list already.
+         */
+        console.warn(
+          `[catalogTerm] "${term}" n=${items.length} ` +
+            items
+              .slice(0, 5)
+              .map((it) => `${it.artistName ?? '?'} — ${it.trackName ?? '?'}`)
+              .join(' | '),
+        );
+        return items;
+      }),
     ),
     artistUrl ? fetchCatalogApiResults(artistUrl) : Promise.resolve([] as CatalogProviderItem[]),
     albumIntent ? fetchAlbumTracks(albumIntent.album) : Promise.resolve([] as CatalogTrack[]),
