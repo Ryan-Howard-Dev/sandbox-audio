@@ -4505,6 +4505,17 @@ export default function SandboxShell() {
 
   const handleSearchPlay = useCallback(
     (env: MediaEnvelope, candidates?: CandidateSource[]) => {
+      /*
+       * The entry point, logged before anything can swallow it. handlePlayEnvelope already times
+       * itself, but a silent log there is ambiguous: it means either the tap was slow or the tap
+       * never arrived, and those need opposite investigations. This line separates them — if it
+       * appears and the timing does not, the play call itself is being dropped; if neither
+       * appears, the gesture never reached this handler at all.
+       */
+      console.warn(
+        `[handleSearchPlay] play requested track="${env.artist} — ${env.title}" ` +
+          `provider=${env.provider} sources=${candidates?.length ?? 0}`,
+      );
       void handlePlayEnvelope(env, candidates, { seedSearchQueue: true }).catch((err) => {
         console.warn('[handleSearchPlay] playback failed:', err);
         showAppToast(t('artist.playbackHybridUnavailable'), 3800);
