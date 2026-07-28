@@ -1,4 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+/*
+ * Credentials are no longer compiled into the source, so a test build has none and the client
+ * correctly refuses to request a token. Stubbed here rather than restored to the module: the point
+ * of the change is that nothing ships with a working pair by default.
+ */
+vi.stubEnv('VITE_TIDAL_CLIENT_ID', 'test-client-id');
+vi.stubEnv('VITE_TIDAL_CLIENT_SECRET', 'test-client-secret');
 import {
   extractTidalCountryCodeFromEmbedHtml,
   extractTidalPlaylistUuidFromEmbedHtml,
