@@ -96,6 +96,18 @@ export interface NativeExoPlaybackPlugin {
   setReplayGainDb(options: { replayGainDb: number }): Promise<{ ok: boolean }>;
   setUserVolume(options: { volume: number }): Promise<{ ok: boolean }>;
   setPlaybackSpeed(options: { speed: number }): Promise<{ ok: boolean; speed?: number }>;
+  setSpeechClarity(options: {
+    enabled: boolean;
+    highPassHz?: number;
+    presenceHz?: number;
+    presenceGainDb?: number;
+    thresholdDb?: number;
+    kneeDb?: number;
+    ratio?: number;
+    attackMs?: number;
+    releaseMs?: number;
+    makeupDb?: number;
+  }): Promise<{ ok: boolean; active?: boolean; supported?: boolean }>;
   setBitPerfectEnabled(options: { enabled: boolean }): Promise<{ ok: boolean; bitPerfectActive?: boolean }>;
   setWiredDacStabilityEnabled(options: { enabled: boolean }): Promise<{ ok: boolean }>;
   getUsbBitPerfectSupport(): Promise<{
@@ -279,6 +291,54 @@ export async function nativeExoSetPlaybackSpeed(speed: number): Promise<void> {
     await NativeExoPlayback.setPlaybackSpeed({ speed: clamped });
   } catch {
     /* optional */
+  }
+}
+
+/**
+ * Push a spoken-word compression profile to the native audio session, or clear it.
+ *
+ * The Web Audio chain in speechClarity.ts never runs on Android — playback leaves the WebView for
+ * ExoPlayer — so without this an audiobook on a phone gets no compression at all. The profile is
+ * sent rather than duplicated in Java so the tuning has exactly one home.
+ *
+ * Returns whether the effect actually engaged: DynamicsProcessing needs API 28 and some vendors
+ * ship it disabled, and a caller that wants to say so in the UI needs to be able to tell.
+ */
+export async function nativeExoSetSpeechClarity(
+  profile: {
+    highPassHz: number;
+    presenceHz: number;
+    presenceGainDb: number;
+    thresholdDb: number;
+    kneeDb: number;
+    ratio: number;
+    attackSec: number;
+    releaseSec: number;
+    makeupGainDb: number;
+  } | null,
+): Promise<{ active: boolean; supported: boolean }> {
+  if (!isAndroidNativePlaybackPlatform()) return { active: false, supported: false };
+  try {
+    if (!profile) {
+      const off = await NativeExoPlayback.setSpeechClarity({ enabled: false });
+      return { active: false, supported: off?.supported === true };
+    }
+    const res = await NativeExoPlayback.setSpeechClarity({
+      enabled: true,
+      highPassHz: profile.highPassHz,
+      presenceHz: profile.presenceHz,
+      presenceGainDb: profile.presenceGainDb,
+      thresholdDb: profile.thresholdDb,
+      kneeDb: profile.kneeDb,
+      ratio: profile.ratio,
+      // Android takes milliseconds where Web Audio takes seconds.
+      attackMs: profile.attackSec * 1000,
+      releaseMs: profile.releaseSec * 1000,
+      makeupDb: profile.makeupGainDb,
+    });
+    return { active: res?.active === true, supported: res?.supported === true };
+  } catch {
+    return { active: false, supported: false };
   }
 }
 

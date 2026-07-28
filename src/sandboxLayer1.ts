@@ -29,6 +29,7 @@ import {
   nativeExoSetReplayGainDb,
   nativeExoSetUserVolume,
   nativeExoSetPlaybackSpeed,
+  nativeExoSetSpeechClarity,
   syncNativeExoPlaybackPrefs,
   prepareNativeExoPlayback,
   shouldPreferAndroidNativePlayback,
@@ -81,6 +82,7 @@ import {
   PODCAST_SETTINGS_CHANGE_EVENT,
 } from './podcastSettings';
 import { podcastWebAudioEffectsRequired } from './podcastVoiceBoost';
+import { speechClarityProfileFor } from './speechClarity';
 import { resolvePodcastWebAudioStreamUrl, unwrapPodcastProxyUrl } from './podcastPlayback';
 import { playbackSwitchRequiresHardPreempt } from './playbackSession';
 
@@ -583,6 +585,10 @@ export function useAudioFSM(): UseAudioFSMResult {
     // false, and it needs to already know an audiobook is the reason it is being handed false.
     crossfadeRef.current.setSpeechEnvelope(envelopeId);
     crossfadeRef.current.setPodcastPlayback(isPod);
+    // The router above only reaches audio that stays in the WebView. On Android playback is
+    // handed to ExoPlayer, so the same profile has to be pushed to the native audio session or an
+    // audiobook on a phone gets no compression at all. No-ops off Android.
+    void nativeExoSetSpeechClarity(speechClarityProfileFor(envelopeId));
     if (!isPod) {
       crossfadeRef.current.setPodcastFeedId(null);
       crossfadeRef.current.setPodcastEpisodeVolumeBoostDb(0);

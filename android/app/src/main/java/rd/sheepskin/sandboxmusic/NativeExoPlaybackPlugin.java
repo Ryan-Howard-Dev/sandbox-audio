@@ -58,6 +58,9 @@ public class NativeExoPlaybackPlugin extends Plugin {
     private final Map<Integer, Float> queueIndexToGainLinear = new HashMap<>();
     private final ExoVolumeFader volumeFader;
     private final ExoPlaybackLoudness loudnessHelper = new ExoPlaybackLoudness();
+    private final ExoSpeechClarity speechClarity = new ExoSpeechClarity();
+    /** Held so the effect can be re-attached after the audio session id changes. */
+    @Nullable private ExoSpeechClarity.Params speechClarityParams;
     /** App volume slider 0–1.5 (150% = software boost above system max). */
     private float userVolumeLinear = 1f;
     private boolean pendingAutoPlay = false;
@@ -1026,6 +1029,10 @@ public class NativeExoPlaybackPlugin extends Plugin {
             return;
         }
         loudnessHelper.ensureAttached(p);
+        // Same hook as the loudness enhancer: this runs on track change and gain change, which is
+        // where the audio session id can move out from under an attached effect. apply() no-ops
+        // when nothing has changed, so calling it here is cheap.
+        reapplySpeechClarity(p);
         float combined = userVolumeLinear * replayGainLinear;
         if (combined <= 0f) {
             p.setVolume(0f);
@@ -1087,6 +1094,78 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 ret.put("userVolumeLinear", userVolumeLinear);
                 call.resolve(ret);
             });
+    }
+
+    /**
+     * Compression and presence EQ for spoken word, or `enabled: false` to leave the signal alone.
+     *
+     * The tuning is passed in rather than duplicated here so speechClarity.ts stays the one place
+     * the numbers live; this side only decides whether the hardware can honour them.
+     */
+    @PluginMethod
+    public void setSpeechClarity(PluginCall call) {
+        boolean enabled = Boolean.TRUE.equals(call.getBoolean("enabled", false));
+        if (!enabled) {
+            speechClarityParams = null;
+            runOnMain(
+                call,
+                () -> {
+                    speechClarity.release();
+                    JSObject ret = new JSObject();
+                    ret.put("ok", true);
+                    ret.put("active", false);
+                    ret.put("supported", ExoSpeechClarity.isSupported());
+                    call.resolve(ret);
+                });
+            return;
+        }
+
+        if (!ExoSpeechClarity.isSupported()) {
+            // Reported rather than rejected: too old for the effect is a fact about the device,
+            // not a failed call, and the caller wants to know which it was.
+            speechClarityParams = null;
+            JSObject ret = new JSObject();
+            ret.put("ok", true);
+            ret.put("active", false);
+            ret.put("supported", false);
+            call.resolve(ret);
+            return;
+        }
+
+        final ExoSpeechClarity.Params params = new ExoSpeechClarity.Params(
+            floatArg(call, "highPassHz", 90f),
+            floatArg(call, "presenceHz", 3000f),
+            floatArg(call, "presenceGainDb", 3.5f),
+            floatArg(call, "thresholdDb", -24f),
+            floatArg(call, "kneeDb", 10f),
+            floatArg(call, "ratio", 3f),
+            floatArg(call, "attackMs", 5f),
+            floatArg(call, "releaseMs", 250f),
+            floatArg(call, "makeupDb", 4f));
+        speechClarityParams = params;
+
+        runOnMain(
+            call,
+            () -> {
+                speechClarity.apply(player, params);
+                JSObject ret = new JSObject();
+                ret.put("ok", true);
+                ret.put("active", true);
+                ret.put("supported", true);
+                call.resolve(ret);
+            });
+    }
+
+    private static float floatArg(PluginCall call, String key, float fallback) {
+        Double value = call.getDouble(key);
+        if (value == null || value.isNaN() || value.isInfinite()) return fallback;
+        return value.floatValue();
+    }
+
+    /** Re-attach after anything that can change the audio session id. */
+    private void reapplySpeechClarity(@Nullable ExoPlayer p) {
+        if (p == null) return;
+        speechClarity.apply(p, speechClarityParams);
     }
 
     @PluginMethod
@@ -1816,6 +1895,7 @@ public class NativeExoPlaybackPlugin extends Plugin {
             () -> {
                 volumeFader.cancel();
                 loudnessHelper.release();
+                speechClarity.release();
                 if (player != null) {
                     player.release();
                     player = null;

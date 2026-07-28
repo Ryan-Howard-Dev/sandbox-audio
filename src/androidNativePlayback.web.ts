@@ -49,6 +49,11 @@ export class NativeExoPlaybackWeb extends WebPlugin implements NativeExoPlayback
     return { ok: false, speed: 1 };
   }
 
+  /** Off the phone the Web Audio speech chain handles this — see speechClarity.ts. */
+  async setSpeechClarity(): Promise<{ ok: boolean; active?: boolean; supported?: boolean }> {
+    return { ok: false, active: false, supported: false };
+  }
+
   async setBitPerfectEnabled(): Promise<{ ok: boolean; bitPerfectActive?: boolean }> {
     return { ok: false, bitPerfectActive: false };
   }
