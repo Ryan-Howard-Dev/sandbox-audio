@@ -45,7 +45,52 @@ export function playbackArtStabilizeScope(
   return envId;
 }
 
-/** Keep a loaded <img> src when locker vault mints a new blob for the same scope. */
+/**
+ * Which scope each stabilised src was chosen for.
+ *
+ * `prev` is only ever "what is on screen right now", and right after a track change that is the
+ * *previous* track's cover. Without this the function cannot tell a vault re-mint apart from a new
+ * song, and the blob rule below would answer both with the old artwork.
+ */
+const scopeByArtSrc = new Map<string, string>();
+
+/** Bounded so a long session cannot grow this without limit. */
+const SCOPE_MEMORY_LIMIT = 64;
+
+function rememberArtScope(src: string, scope: string): void {
+  if (!src || !scope) return;
+  if (scopeByArtSrc.size >= SCOPE_MEMORY_LIMIT) {
+    const oldest = scopeByArtSrc.keys().next().value;
+    if (oldest) scopeByArtSrc.delete(oldest);
+  }
+  scopeByArtSrc.set(src, scope);
+}
+
+/**
+ * Whether `prev` was chosen for this same scope.
+ *
+ * Unrecorded art gets the benefit of the doubt — on a cold start there is no provenance to check,
+ * and refusing to stabilise there would reintroduce the blob flicker this function exists to stop.
+ * Only art known to belong to a *different* scope is treated as another track's.
+ */
+function artBelongsToScope(src: string, scope: string): boolean {
+  if (!src || !scope) return false;
+  const known = scopeByArtSrc.get(src);
+  return known === undefined || known === scope;
+}
+
+/**
+ * Keep a loaded <img> src when the locker vault mints a new blob for the same scope.
+ *
+ * The point is narrow: locker artwork lives behind object URLs that are revoked and re-created,
+ * so the same cover can arrive under a new blob: address and would otherwise flicker. Holding the
+ * old src across that is right.
+ *
+ * Holding it across a *track change* is not, and that is what happened — the blob rule returned
+ * the previous src whenever both sides were blobs, without checking they described the same thing,
+ * so starting a new song left the last song's cover on screen. Every rule that prefers `prev` now
+ * requires `prev` to be the src this same scope produced.
+ */
 export function stabilizePlaybackArtSrc(
   prev: string | undefined,
   next: string | undefined,
@@ -54,22 +99,32 @@ export function stabilizePlaybackArtSrc(
   const trimmedPrev = prev?.trim() ?? '';
   const trimmedNext = next?.trim() ?? '';
   const scope = scopeKey?.trim() ?? '';
+  const prevBelongsToScope = artBelongsToScope(trimmedPrev, scope);
+
+  const remember = (value: string): string => {
+    rememberArtScope(value, scope);
+    return value;
+  };
 
   if (!trimmedNext) {
+    // Artwork not resolved yet. Holding the last frame is right here — it is a gap, not a change,
+    // and the scope check belongs on the blob rule below, which is what actually kept the wrong
+    // cover on screen after a track change.
     if (trimmedPrev && scope) return trimmedPrev;
     return '';
   }
-  if (!trimmedPrev || trimmedPrev === trimmedNext) return trimmedNext;
+  if (!trimmedPrev || trimmedPrev === trimmedNext) return remember(trimmedNext);
   if (!scope) return trimmedNext;
 
+  // Same picture under a different address — safe whoever it belonged to.
   const prevCanon = canonicalArtworkSrc(trimmedPrev);
   const nextCanon = canonicalArtworkSrc(trimmedNext);
-  if (prevCanon && nextCanon && prevCanon === nextCanon) return trimmedPrev;
+  if (prevCanon && nextCanon && prevCanon === nextCanon) return remember(trimmedPrev);
 
-  if (trimmedPrev.startsWith('blob:') && trimmedNext.startsWith('blob:')) {
+  if (prevBelongsToScope && trimmedPrev.startsWith('blob:') && trimmedNext.startsWith('blob:')) {
     return trimmedPrev;
   }
-  return trimmedNext;
+  return remember(trimmedNext);
 }
 
 function stabilizeResolvedPlaybackArt(
