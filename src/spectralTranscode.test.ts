@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  detectClipping,
+  integratedLoudnessLufs,
   analyseSpectrum,
   assessSamplesForTranscode,
   averageSpectrumDb,
@@ -137,5 +139,91 @@ describe('transcode classification', () => {
     for (const samples of [synth(21_500), synth(16_000), synth(15_000, 3_000)]) {
       expect(assessSamplesForTranscode(samples, SAMPLE_RATE).reason.length).toBeGreaterThan(20);
     }
+  });
+});
+
+/*
+ * Clipping and loudness answer the other two questions about a file you did not encode yourself:
+ * has it been driven into distortion, and how loud is it actually. Both describe the audio rather
+ * than its container, which is the standard the fidelity badge is held to.
+ */
+describe('detectClipping', () => {
+  const clean = (): Float64Array => {
+    const out = new Float64Array(SAMPLE_RATE);
+    for (let i = 0; i < out.length; i++) out[i] = 0.5 * Math.sin((2 * Math.PI * 440 * i) / SAMPLE_RATE);
+    return out;
+  };
+
+  it('passes audio with headroom', () => {
+    const report = detectClipping(clean());
+    expect(report.clipped).toBe(false);
+    expect(report.clippedSamples).toBe(0);
+  });
+
+  it('flags a flattened run and reports how long it was', () => {
+    const samples = clean();
+    for (let i = 1000; i < 1040; i++) samples[i] = 1;
+    const report = detectClipping(samples);
+    expect(report.clipped).toBe(true);
+    expect(report.longestRunSamples).toBeGreaterThanOrEqual(40);
+    expect(report.clippedRatio).toBeGreaterThan(0);
+  });
+
+  /* One sample touching full scale is a peak on a loud master, not damage. */
+  it('does not call an isolated peak clipping', () => {
+    const samples = clean();
+    samples[500] = 1;
+    expect(detectClipping(samples).clipped).toBe(false);
+  });
+
+  it('handles an empty run without dividing by zero', () => {
+    expect(detectClipping([]).clippedRatio).toBe(0);
+  });
+});
+
+describe('integratedLoudnessLufs', () => {
+  const sine = (amplitude: number, seconds = 3): Float64Array => {
+    const out = new Float64Array(SAMPLE_RATE * seconds);
+    for (let i = 0; i < out.length; i++) {
+      out[i] = amplitude * Math.sin((2 * Math.PI * 1000 * i) / SAMPLE_RATE);
+    }
+    return out;
+  };
+
+  /*
+   * A full-scale sine has mean square 0.5, so an unweighted reading would be
+   * -0.691 + 10*log10(0.5) ≈ -3.7 LUFS. K-weighting is not flat at 1 kHz — the shelf contributes
+   * a little under a decibel there — which lands the real figure near -2.8, close to the -3.01
+   * the standard is usually quoted as giving. Anchoring on the measured value keeps this test
+   * honest about what K-weighting does rather than asserting the arithmetic without it.
+   */
+  it('measures a full-scale 1 kHz sine just under -3 LUFS', () => {
+    expect(integratedLoudnessLufs(sine(1), SAMPLE_RATE)).toBeCloseTo(-2.8, 0);
+  });
+
+  it('drops by about 20 LU when the signal drops by 20 dB', () => {
+    const loud = integratedLoudnessLufs(sine(1), SAMPLE_RATE);
+    const quiet = integratedLoudnessLufs(sine(0.1), SAMPLE_RATE);
+    expect(loud - quiet).toBeCloseTo(20, 0);
+  });
+
+  /* Silence is not a very negative number, it is the absence of a measurement. */
+  it('returns -Infinity for silence rather than a misleading figure', () => {
+    expect(integratedLoudnessLufs(new Float64Array(SAMPLE_RATE * 2), SAMPLE_RATE)).toBe(-Infinity);
+    expect(integratedLoudnessLufs([], SAMPLE_RATE)).toBe(-Infinity);
+    expect(integratedLoudnessLufs(sine(1), 0)).toBe(-Infinity);
+  });
+
+  /*
+   * Gating is the whole point: without it, long pauses drag an audiobook's reading far below what
+   * it sounds like. Speech with silence between phrases must measure close to the speech alone.
+   */
+  it('gates out silence so pauses do not deflate the reading', () => {
+    const speech = sine(0.5, 2);
+    const withPauses = new Float64Array(speech.length * 2);
+    withPauses.set(speech, 0); // second half left silent
+    const continuous = integratedLoudnessLufs(speech, SAMPLE_RATE);
+    const gapped = integratedLoudnessLufs(withPauses, SAMPLE_RATE);
+    expect(Math.abs(continuous - gapped)).toBeLessThan(1);
   });
 });

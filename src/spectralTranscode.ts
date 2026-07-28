@@ -281,3 +281,178 @@ export function assessSamplesForTranscode(
   const spectrum = averageSpectrumDb(samples, fftSize);
   return classifySpectralProfile(analyseSpectrum(spectrum, sampleRate, fftSize));
 }
+
+/* ------------------------------------------------------------------------ *
+ * Clipping and loudness.
+ *
+ * Spectral analysis answers "was this lossy before it was lossless". These answer the two other
+ * questions a listener would ask about a file they did not encode themselves: has it been driven
+ * into distortion, and how loud is it really. All three describe the audio rather than its
+ * container, which is the standard the fidelity badge is held to.
+ * ------------------------------------------------------------------------ */
+
+/** Samples this close to full scale are treated as pinned rather than merely loud. */
+export const CLIP_THRESHOLD = 0.9921; // ≈ -0.07 dBFS
+
+/** A single sample at full scale is a peak; several in a row is a flattened waveform. */
+export const CLIP_RUN_SAMPLES = 3;
+
+export interface ClippingReport {
+  /** Samples sitting at or above the threshold. */
+  clippedSamples: number;
+  /** Share of the whole file, 0–1. A few thousandths is audible on transients. */
+  clippedRatio: number;
+  /** Longest unbroken run — the flat top of the wave, and the clearest sign of real damage. */
+  longestRunSamples: number;
+  /** True only when a run long enough to be distortion was found, not merely a loud peak. */
+  clipped: boolean;
+}
+
+/**
+ * Find flattened peaks.
+ *
+ * A lone sample at full scale is normal on a loud master. What matters is consecutive samples
+ * pinned there, because that is a waveform whose top has been cut off and cannot be recovered.
+ * Reported as a ratio as well as a count so a three-minute song and a nine-hour audiobook can be
+ * compared honestly.
+ */
+export function detectClipping(
+  samples: Float64Array | number[],
+  threshold = CLIP_THRESHOLD,
+  runSamples = CLIP_RUN_SAMPLES,
+): ClippingReport {
+  const total = samples.length;
+  if (total === 0) {
+    return { clippedSamples: 0, clippedRatio: 0, longestRunSamples: 0, clipped: false };
+  }
+  let clippedSamples = 0;
+  let run = 0;
+  let longestRun = 0;
+  for (let i = 0; i < total; i++) {
+    const value = Math.abs(Number(samples[i] ?? 0));
+    if (value >= threshold) {
+      clippedSamples++;
+      run++;
+      if (run > longestRun) longestRun = run;
+    } else {
+      run = 0;
+    }
+  }
+  return {
+    clippedSamples,
+    clippedRatio: clippedSamples / total,
+    longestRunSamples: longestRun,
+    clipped: longestRun >= runSamples,
+  };
+}
+
+/**
+ * K-weighting, per ITU-R BS.1770.
+ *
+ * Two biquads: a high-frequency shelf approximating the acoustic effect of a head, then a
+ * high-pass that discards rumble the ear barely registers. The published coefficients are
+ * specified at 48 kHz and are applied here directly at whatever rate the file uses, which is the
+ * usual practice — the error at 44.1 kHz is a few hundredths of a decibel, far below anything a
+ * listener could notice and far below the difference this is used to describe.
+ */
+function kWeight(samples: Float64Array | number[]): Float64Array {
+  const n = samples.length;
+  const stage1 = new Float64Array(n);
+  // Shelving filter.
+  const b0 = 1.53512485958697;
+  const b1 = -2.69169618940638;
+  const b2 = 1.19839281085285;
+  const a1 = -1.69065929318241;
+  const a2 = 0.73248077421585;
+  let x1 = 0;
+  let x2 = 0;
+  let y1 = 0;
+  let y2 = 0;
+  for (let i = 0; i < n; i++) {
+    const x0 = Number(samples[i] ?? 0);
+    const y0 = b0 * x0 + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+    stage1[i] = y0;
+    x2 = x1;
+    x1 = x0;
+    y2 = y1;
+    y1 = y0;
+  }
+  // High-pass filter.
+  const c0 = 1.0;
+  const c1 = -2.0;
+  const c2 = 1.0;
+  const d1 = -1.99004745483398;
+  const d2 = 0.99007225036621;
+  const out = new Float64Array(n);
+  x1 = 0;
+  x2 = 0;
+  y1 = 0;
+  y2 = 0;
+  for (let i = 0; i < n; i++) {
+    const x0 = stage1[i]!;
+    const y0 = c0 * x0 + c1 * x1 + c2 * x2 - d1 * y1 - d2 * y2;
+    out[i] = y0;
+    x2 = x1;
+    x1 = x0;
+    y2 = y1;
+    y1 = y0;
+  }
+  return out;
+}
+
+/** Absolute gate from BS.1770-4: anything below this is silence, not quiet content. */
+const ABSOLUTE_GATE_LUFS = -70;
+
+/** Relative gate: blocks more than this far below the ungated mean are excluded. */
+const RELATIVE_GATE_LU = -10;
+
+/**
+ * Integrated loudness in LUFS, gated per BS.1770-4.
+ *
+ * Gating is what separates this from a plain average: without it a quiet audiobook with long
+ * pauses reads far quieter than it sounds, because the silence is averaged in. Returns
+ * -Infinity for a file with no content above the absolute gate, which is the honest answer for
+ * silence rather than a very negative number that looks like a measurement.
+ */
+export function integratedLoudnessLufs(
+  samples: Float64Array | number[],
+  sampleRate: number,
+): number {
+  if (!Number.isFinite(sampleRate) || sampleRate <= 0 || samples.length === 0) return -Infinity;
+  const weighted = kWeight(samples);
+  const blockSamples = Math.max(1, Math.round(sampleRate * 0.4));
+  const hop = Math.max(1, Math.round(blockSamples * 0.25)); // 75% overlap, per the standard.
+
+  const blockLoudness: number[] = [];
+  const blockMeanSquare: number[] = [];
+  for (let start = 0; start + blockSamples <= weighted.length; start += hop) {
+    let sum = 0;
+    for (let i = start; i < start + blockSamples; i++) sum += weighted[i]! * weighted[i]!;
+    const meanSquare = sum / blockSamples;
+    if (meanSquare <= 0) continue;
+    blockMeanSquare.push(meanSquare);
+    blockLoudness.push(-0.691 + 10 * Math.log10(meanSquare));
+  }
+  if (blockLoudness.length === 0) return -Infinity;
+
+  const aboveAbsolute: number[] = [];
+  for (let i = 0; i < blockLoudness.length; i++) {
+    if (blockLoudness[i]! > ABSOLUTE_GATE_LUFS) aboveAbsolute.push(blockMeanSquare[i]!);
+  }
+  if (aboveAbsolute.length === 0) return -Infinity;
+
+  const meanOf = (values: number[]): number =>
+    values.reduce((sum, v) => sum + v, 0) / values.length;
+
+  const ungated = -0.691 + 10 * Math.log10(meanOf(aboveAbsolute));
+  const relativeGate = ungated + RELATIVE_GATE_LU;
+
+  const retained: number[] = [];
+  for (let i = 0; i < blockLoudness.length; i++) {
+    if (blockLoudness[i]! > ABSOLUTE_GATE_LUFS && blockLoudness[i]! > relativeGate) {
+      retained.push(blockMeanSquare[i]!);
+    }
+  }
+  if (retained.length === 0) return ungated;
+  return -0.691 + 10 * Math.log10(meanOf(retained));
+}
