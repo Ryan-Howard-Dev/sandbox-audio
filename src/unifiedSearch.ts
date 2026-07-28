@@ -24,7 +24,6 @@ import {
   webCatalogTrackMatchesQuery,
   isLikelyTrackTitleQuery,
   textRelevanceScore,
-  titleTokensBeyondQuery,
   type CatalogAlbum,
   type CatalogArtist,
   type CatalogSearchResult,
@@ -181,30 +180,8 @@ function trackScore(track: CatalogTrack, query: string, source: UnifiedSearchSou
     score += relevanceScore(track.title, query);
   }
   if (track.album) score += relevanceScore(track.album, query);
-
-  /*
-   * Demote titles carrying words the query never asked for.
-   *
-   * This section and the "Streamable" one below it both query iTunes, through two separate
-   * ranking paths — and only the other one had this. The visible result was one search showing
-   * remixes, karaoke versions and lullaby covers above the recording that was asked for, while
-   * the list directly beneath it had the same rows in the right order.
-   *
-   * Token overlap alone cannot separate them: "HUMBLE." and "HUMBLE. (Bassjackers Remix) [Mixed]"
-   * contain every query token a title can contain, so they score identically until the extra
-   * words cost something. Capped, and self-cancelling once those words appear in the query, so
-   * searching for a remix by name still finds it.
-   */
-  const titleExtras = titleTokensBeyondQuery(track.title, query, track.artist ?? '');
-  if (titleExtras > 0) {
-    score -= Math.min(titleExtras * TITLE_EXTRA_TOKEN_PENALTY, MAX_TITLE_EXTRA_PENALTY);
-  }
   return score;
 }
-
-/** Sized against the ×14 title weight above — a pile of junk words outweighs a partial match. */
-const TITLE_EXTRA_TOKEN_PENALTY = 180;
-const MAX_TITLE_EXTRA_PENALTY = 900;
 
 function albumScore(album: CatalogAlbum, query: string, source: UnifiedSearchSource): number {
   let score = SOURCE_RANK[source];
