@@ -1,22 +1,32 @@
 /**
  * Overcast-style Voice Boost — presence EQ + gentle compression for speech clarity.
- * Runs in the Web Audio graph (podcasts only).
+ * Runs in the Web Audio graph.
+ *
+ * The chain is shared with audiobooks, which need firmer settings than podcasts; the numbers live
+ * in speechClarity.ts and the class below just builds whichever profile it is handed.
  */
 
 import { Capacitor } from '@capacitor/core';
 import { loadPodcastSmartSpeedEnabled, loadPodcastVoiceBoostEnabled } from './podcastSettings';
 import { findSubscription, isPodcastEnvelopeId } from './podcastStorage';
+import {
+  PODCAST_CLARITY,
+  dbToLinear,
+  highPassHzForRoute,
+  type SpeechClarityProfile,
+} from './speechClarity';
+import type { SonicOutputRoute } from './sandboxSonic';
 
 /** Peaking filter center — vocal presence band. */
-export const VOICE_BOOST_PRESENCE_HZ = 2800;
-export const VOICE_BOOST_PRESENCE_GAIN_DB = 3.2;
-export const VOICE_BOOST_PRESENCE_Q = 1.1;
+export const VOICE_BOOST_PRESENCE_HZ = PODCAST_CLARITY.presenceHz;
+export const VOICE_BOOST_PRESENCE_GAIN_DB = PODCAST_CLARITY.presenceGainDb;
+export const VOICE_BOOST_PRESENCE_Q = PODCAST_CLARITY.presenceQ;
 
-export const VOICE_BOOST_HIGHPASS_HZ = 85;
-export const VOICE_BOOST_COMPRESSOR_THRESHOLD_DB = -22;
-export const VOICE_BOOST_COMPRESSOR_RATIO = 2.2;
+export const VOICE_BOOST_HIGHPASS_HZ = PODCAST_CLARITY.highPassHz;
+export const VOICE_BOOST_COMPRESSOR_THRESHOLD_DB = PODCAST_CLARITY.thresholdDb;
+export const VOICE_BOOST_COMPRESSOR_RATIO = PODCAST_CLARITY.ratio;
 /** Linear makeup after compression (~1.5 dB). */
-export const VOICE_BOOST_MAKEUP_GAIN = 1.18;
+export const VOICE_BOOST_MAKEUP_GAIN = dbToLinear(PODCAST_CLARITY.makeupGainDb);
 
 export function resolveVoiceBoostEnabled(feedId: string | null | undefined): boolean {
   if (feedId) {
@@ -46,30 +56,35 @@ export class PodcastVoiceBoostChain {
   private readonly compressor: DynamicsCompressorNode;
   private readonly makeup: GainNode;
   private wired = false;
+  readonly profile: SpeechClarityProfile;
 
-  constructor(private readonly ctx: AudioContext) {
+  constructor(
+    private readonly ctx: AudioContext,
+    profile: SpeechClarityProfile = PODCAST_CLARITY,
+  ) {
+    this.profile = profile;
     this.input = ctx.createGain();
     this.output = ctx.createGain();
     this.highPass = ctx.createBiquadFilter();
     this.highPass.type = 'highpass';
-    this.highPass.frequency.value = VOICE_BOOST_HIGHPASS_HZ;
+    this.highPass.frequency.value = profile.highPassHz;
     this.highPass.Q.value = 0.7;
 
     this.presence = ctx.createBiquadFilter();
     this.presence.type = 'peaking';
-    this.presence.frequency.value = VOICE_BOOST_PRESENCE_HZ;
-    this.presence.Q.value = VOICE_BOOST_PRESENCE_Q;
-    this.presence.gain.value = VOICE_BOOST_PRESENCE_GAIN_DB;
+    this.presence.frequency.value = profile.presenceHz;
+    this.presence.Q.value = profile.presenceQ;
+    this.presence.gain.value = profile.presenceGainDb;
 
     this.compressor = ctx.createDynamicsCompressor();
-    this.compressor.threshold.value = VOICE_BOOST_COMPRESSOR_THRESHOLD_DB;
-    this.compressor.knee.value = 8;
-    this.compressor.ratio.value = VOICE_BOOST_COMPRESSOR_RATIO;
-    this.compressor.attack.value = 0.006;
-    this.compressor.release.value = 0.14;
+    this.compressor.threshold.value = profile.thresholdDb;
+    this.compressor.knee.value = profile.kneeDb;
+    this.compressor.ratio.value = profile.ratio;
+    this.compressor.attack.value = profile.attackSec;
+    this.compressor.release.value = profile.releaseSec;
 
     this.makeup = ctx.createGain();
-    this.makeup.gain.value = VOICE_BOOST_MAKEUP_GAIN;
+    this.makeup.gain.value = dbToLinear(profile.makeupGainDb);
 
     this.input.connect(this.highPass);
     this.highPass.connect(this.presence);
@@ -88,6 +103,25 @@ export class PodcastVoiceBoostChain {
 
   setEnabled(_enabled: boolean): void {
     /* routing handled by PlaybackCrossfadeRouter */
+  }
+
+  /**
+   * Move the rumble filter to suit the output.
+   *
+   * A phone speaker cannot reproduce what sits below ~200 Hz and only distorts trying, so on that
+   * route the corner rises; everywhere else it stays where the profile put it, because the same
+   * cut through headphones would thin a male narrator.
+   */
+  setOutputRoute(route: SonicOutputRoute | null | undefined): void {
+    const hz = highPassHzForRoute(this.profile, route);
+    if (this.highPass.frequency.value === hz) return;
+    try {
+      // Ramped rather than assigned: this can change mid-sentence when a listener pulls their
+      // headphones out, and a stepped filter corner clicks.
+      this.highPass.frequency.setTargetAtTime(hz, this.ctx.currentTime, 0.05);
+    } catch {
+      this.highPass.frequency.value = hz;
+    }
   }
 
   disconnect(): void {

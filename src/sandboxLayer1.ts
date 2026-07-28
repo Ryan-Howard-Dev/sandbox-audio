@@ -579,6 +579,9 @@ export function useAudioFSM(): UseAudioFSMResult {
   const crossfadeRef = useRef(new PlaybackCrossfadeRouter());
   const syncPodcastPlaybackChain = useCallback((envelopeId: string) => {
     const isPod = isPodcastEnvelopeId(envelopeId);
+    // Told before setPodcastPlayback: that call tears down the speech chain when it is handed
+    // false, and it needs to already know an audiobook is the reason it is being handed false.
+    crossfadeRef.current.setSpeechEnvelope(envelopeId);
     crossfadeRef.current.setPodcastPlayback(isPod);
     if (!isPod) {
       crossfadeRef.current.setPodcastFeedId(null);
