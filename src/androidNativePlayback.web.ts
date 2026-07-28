@@ -109,6 +109,11 @@ export class NativeExoPlaybackWeb extends WebPlugin implements NativeExoPlayback
     return { bytes: 0 };
   }
 
+  /** Likewise: an empty head means "could not read", not "empty file". */
+  async getLockerBlobHead(): Promise<{ base64?: string }> {
+    return { base64: '' };
+  }
+
   async importLockerBlobFromPath(): Promise<{ ok: boolean; contentUri?: string; bytes?: number }> {
     return { ok: false };
   }

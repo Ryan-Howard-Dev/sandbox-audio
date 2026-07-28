@@ -4689,13 +4689,22 @@ function isLosslessLockerName(envelope: MediaEnvelope): boolean {
   return /flac/i.test(blob);
 }
 
-/** First slice of a locker file — enough for STREAMINFO, which must come first. */
+/**
+ * First slice of a locker file — enough for STREAMINFO, which must come first.
+ *
+ * Blob store first, native cache second, exactly as the bitrate backfill does. A downloaded track
+ * has no IndexedDB blob at all, so reading only the blob store answered nothing for the tracks a
+ * listener actually owns.
+ */
 async function readLockerAudioHead(id: string, bytes = 8_192): Promise<Uint8Array | null> {
   try {
     const blob = await getLockerAudioBlob(id);
-    if (!blob) return null;
-    const slice = blob.slice(0, Math.min(bytes, blob.size));
-    return new Uint8Array(await slice.arrayBuffer());
+    if (blob) {
+      const slice = blob.slice(0, Math.min(bytes, blob.size));
+      return new Uint8Array(await slice.arrayBuffer());
+    }
+    const { nativeLockerBlobHead } = await import('./nativeExoLockerBridge');
+    return await nativeLockerBlobHead(id, bytes);
   } catch {
     return null;
   }

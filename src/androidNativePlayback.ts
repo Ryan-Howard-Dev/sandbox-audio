@@ -119,6 +119,8 @@ export interface NativeExoPlaybackPlugin {
   getLockerBlobUri(options: { id: string }): Promise<{ contentUri?: string }>;
   /** Byte size of a locker blob on disk — the only way to measure a natively cached download. */
   getLockerBlobBytes(options: { id: string }): Promise<{ bytes?: number }>;
+  /** First bytes of a locker blob, base64 — enough to read a container header. */
+  getLockerBlobHead(options: { id: string; bytes?: number }): Promise<{ base64?: string }>;
   importLockerBlobFromPath(options: {
     id: string;
     sourcePath: string;

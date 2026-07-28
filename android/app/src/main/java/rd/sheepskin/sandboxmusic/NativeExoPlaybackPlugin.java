@@ -1567,6 +1567,58 @@ public class NativeExoPlaybackPlugin extends Plugin {
      * bitrate for exactly the tracks a listener owns. The file is right here; its length is all
      * that is needed to divide by the known duration.
      */
+    /**
+     * First bytes of a locker blob, base64 encoded.
+     *
+     * A downloaded track keeps its audio in the native cache with no IndexedDB blob, so the web
+     * layer cannot read its container header — which left the fidelity badge unable to state depth
+     * and sample rate for exactly the tracks a listener owns. Only the head is returned: FLAC
+     * STREAMINFO is mandatory and comes first, so a few kilobytes answer the question without
+     * copying an entire album across the bridge.
+     */
+    @PluginMethod
+    public void getLockerBlobHead(PluginCall call) {
+        final String rawId = call.getString("id");
+        if (rawId == null || rawId.trim().isEmpty()) {
+            call.reject("id required");
+            return;
+        }
+        final String id = rawId.trim();
+        final int requested = call.getInt("bytes", 8192);
+        final int limit = Math.max(1, Math.min(requested, 65536));
+        playbackExecutor.execute(
+            () -> {
+                try {
+                    File file = LockerBlobRegistry.getFile(getContext(), id);
+                    if (file == null || !file.exists()) {
+                        JSObject empty = new JSObject();
+                        empty.put("base64", "");
+                        mainHandler.post(() -> call.resolve(empty));
+                        return;
+                    }
+                    int size = (int) Math.min(limit, file.length());
+                    byte[] head = new byte[size];
+                    try (java.io.FileInputStream in = new java.io.FileInputStream(file)) {
+                        int read = 0;
+                        while (read < size) {
+                            int n = in.read(head, read, size - read);
+                            if (n < 0) break;
+                            read += n;
+                        }
+                        if (read < size) {
+                            head = java.util.Arrays.copyOf(head, Math.max(read, 0));
+                        }
+                    }
+                    JSObject ret = new JSObject();
+                    ret.put("base64", android.util.Base64.encodeToString(head, android.util.Base64.NO_WRAP));
+                    mainHandler.post(() -> call.resolve(ret));
+                } catch (Exception e) {
+                    String msg = e.getMessage() != null ? e.getMessage() : "head read failed";
+                    mainHandler.post(() -> call.reject(msg));
+                }
+            });
+    }
+
     @PluginMethod
     public void getLockerBlobBytes(PluginCall call) {
         final String rawId = call.getString("id");

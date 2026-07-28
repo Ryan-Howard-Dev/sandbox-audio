@@ -139,6 +139,32 @@ export async function nativeLockerBlobBytes(lockerId: string): Promise<number> {
   }
 }
 
+/**
+ * First bytes of a natively cached locker track, or null when there is nothing to read.
+ *
+ * Container headers live at the front of the file — FLAC STREAMINFO is mandatory and comes first —
+ * so a few kilobytes answer what the whole file would, without copying an album across the bridge.
+ */
+export async function nativeLockerBlobHead(
+  lockerId: string,
+  bytes = 8_192,
+): Promise<Uint8Array | null> {
+  if (Capacitor.getPlatform() !== 'android') return null;
+  const id = lockerId.trim().replace(/^local-/, '');
+  if (!id) return null;
+  try {
+    const result = await NativeExoPlayback.getLockerBlobHead({ id, bytes });
+    const base64 = result?.base64?.trim() ?? '';
+    if (!base64) return null;
+    const binary = atob(base64);
+    const out = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+    return out.length > 0 ? out : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function registerLockerBlobFromFileUri(
   lockerId: string,
   fileUri: string,
