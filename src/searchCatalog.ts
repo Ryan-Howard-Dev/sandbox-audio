@@ -2900,6 +2900,26 @@ async function fetchRemoteSearchCatalogUncached(query: string): Promise<CatalogS
   }
 
   const base = processCatalogItems([...artistItems, ...searchItems], q);
+
+  /*
+   * Trace one known-good row through the two stages inside this function.
+   *
+   * The Tracks list renders eight covers and no Radiohead, while every search term returns
+   * Radiohead first — so the row is lost between the fetch and the render, and four attempts to
+   * find where by reading the code were all wrong. This says which stage drops it: present in
+   * searchItems but missing from base.tracks means processCatalogItems, missing from both means
+   * the dedup above.
+   */
+  if (/radiohead/i.test(q)) {
+    const inItems = searchItems.filter((it) => /^weird fishes/i.test(it.trackName ?? '')).length;
+    const rawRadiohead = searchItems.filter((it) => /radiohead/i.test(it.artistName ?? '')).length;
+    const mappedRadiohead = base.tracks.filter((t) => /radiohead/i.test(t.artist)).length;
+    console.warn(
+      `[catalogTrace] q="${q}" searchItems=${searchItems.length} weirdFishesItems=${inItems} ` +
+        `rawRadiohead=${rawRadiohead} mappedTracks=${base.tracks.length} mappedRadiohead=${mappedRadiohead} ` +
+        `firstMapped=${base.tracks.slice(0, 3).map((t) => `${t.artist}|${t.id}`).join(', ')}`,
+    );
+  }
   /*
    * Raw item counts beside mapped counts. A search that ends empty can fail at the network or in
    * this mapping, and the two are indistinguishable downstream — the UI says "no matches" either

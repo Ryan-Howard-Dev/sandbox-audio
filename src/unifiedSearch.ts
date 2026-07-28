@@ -542,6 +542,22 @@ export async function runUnifiedSearch(
           q,
         ),
   );
+  /*
+   * Third stage of the same trace. trackRows is what the catalog handed over, tracks is what
+   * survives mergeRankedTracks and the field filter — so a row present in the first and absent
+   * from the second is lost precisely here.
+   */
+  if (/radiohead/i.test(q)) {
+    const inRows = trackRows.filter((r) => /radiohead/i.test(r.track.artist)).length;
+    const merged = mergeRankedTracks(trackRows, q);
+    const afterMerge = merged.filter((t) => /radiohead/i.test(t.artist)).length;
+    const afterFilter = tracks.filter((t) => /radiohead/i.test(t.artist)).length;
+    console.warn(
+      `[unifiedTrace] rows=${trackRows.length} rowsRadiohead=${inRows} ` +
+        `afterMerge=${merged.length}/${afterMerge} afterFilter=${tracks.length}/${afterFilter}`,
+    );
+  }
+
   const albums = dedupeCatalogAlbums(rankAlbumRows(albumRows, q));
   const rankedArtists = mergeRankedArtists(artistRows, q);
   const artists = isLikelyTrackTitleQuery(q)
