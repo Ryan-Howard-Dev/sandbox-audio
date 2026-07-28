@@ -47,6 +47,20 @@ export async function runDeferredPlaySideEffects(
     }
   }
 
+  /*
+   * Measure the bitrate of a locker track that predates it being measured, so the badge under the
+   * track name can state a real number instead of nothing. Unlike the gain backfill above this
+   * needs no decode — stored bytes over known duration — and it applies to the track playing now,
+   * because the envelope is still being assembled here.
+   */
+  if (playable.bitrateKbps == null && playable.provider === 'local-vault' && playable.sourceId) {
+    const sourceId = playable.sourceId;
+    const measured = await import('../lockerStorage')
+      .then((m) => m.backfillLockerBitrate(sourceId))
+      .catch(() => null);
+    if (measured) playable = { ...playable, bitrateKbps: measured };
+  }
+
   const skipSpectral =
     input.hadAttachedTier ||
     playable.provider === 'local-vault' ||

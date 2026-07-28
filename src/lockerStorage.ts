@@ -4580,6 +4580,54 @@ export async function backfillLockerTrackGain(entryId: string): Promise<number |
   }
 }
 
+async function writeBitrateRow(id: string, bitrateKbps: number): Promise<void> {
+  const existing = await readLockerRowById(id);
+  if (!existing) return;
+  const db = await initDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    // Re-read then spread: adds one field, never rewrites a row from stale values.
+    tx.objectStore(STORE_NAME).put({ ...existing, bitrateKbps });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * Fill in `bitrateKbps` for a track imported before the bitrate was measured.
+ *
+ * Every older row carries a hardcoded 320 in the legacy `bitrate` column, which is a placeholder
+ * and not worth showing, so those tracks display nothing until measured. Without this the badge
+ * would only ever populate for newly imported files and an existing library would stay blank
+ * forever.
+ *
+ * On demand for the track being played, following backfillLockerTrackGain — but far cheaper than
+ * that one, because bitrate needs no decode: it is the stored byte count over the known duration.
+ */
+export async function backfillLockerBitrate(entryId: string): Promise<number | null> {
+  const id = entryId?.trim();
+  if (!id) return null;
+  try {
+    const row = await readLockerRowById(id);
+    if (!row) return null;
+    const existing = (row as LockerRow & { bitrateKbps?: number }).bitrateKbps;
+    if (typeof existing === 'number' && existing > 0) return existing;
+
+    const blob = await getLockerAudioBlob(id);
+    // Native cache may still be warming; leave the row alone and try again on a later play.
+    if (!blob) return null;
+
+    const kbps = averageBitrateKbps(blob.size, Number(row.durationSeconds ?? 0));
+    if (!kbps) return null;
+    await writeBitrateRow(id, kbps);
+    const cached = (lockerCache ?? []).find((e) => e.id === id);
+    if (cached) cached.bitrateKbps = kbps;
+    return kbps;
+  } catch {
+    return null;
+  }
+}
+
 /** Save a fetched audio blob into the locker vault with metadata. */
 export async function saveLockerBlob(
   file: File | Blob,

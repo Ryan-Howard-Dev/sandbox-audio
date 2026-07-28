@@ -221,11 +221,20 @@ export default function MobileNowPlayingView({
    * word. Falling back to the transport instead only traded one wrong answer for a redundant one:
    * the footer already says "PLAYING FROM LOCKER", so the badge repeated it three lines higher.
    *
-   * Where the listener looks for how good this sounds, only a property of the audio belongs —
-   * lossless format or measured bitrate. When neither is known the line is left empty rather than
-   * padded with the source, which the footer states once, in words, where it belongs.
+   * This line sits under the track name, which is where it belongs and where it stays. It shows
+   * the measured bitrate when one is known, the lossless format when the file is lossless, and
+   * falls back to the source only when neither is — so the line always says the most specific true
+   * thing available about the audio. The duplicate "playing from" line at the foot of the player
+   * is gone; one statement, in one place.
    */
-  const streamLabel = null;
+  const streamLabel = envelope
+    ? displayTransportLabel(
+        envelope.provider,
+        envelope.transport,
+        envelope.url,
+        envelope.resolutionSource,
+      )
+    : null;
   const qualityLabel =
     resolvePlaybackFidelityLabel(envelope, {
       streamLabel,

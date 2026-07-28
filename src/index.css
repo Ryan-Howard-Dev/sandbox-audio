@@ -18863,14 +18863,12 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
   overflow: hidden;
 }
 
+/*
+ * No "playing from" line at the foot of the player. The source already appears under the track
+ * name, which is where a listener looks for it; repeating it above the controls said the same
+ * thing twice and pushed the control row down the screen.
+ */
 .mobile-np-footer--tidal .mobile-np-footer-context {
-  /* Own line, above the controls. Collapses to nothing when there is no source to name. */
-  flex: 1 0 100%;
-  order: -1;
-  text-align: center;
-}
-
-.mobile-np-footer--tidal .mobile-np-footer-context:empty {
   display: none;
 }
 
