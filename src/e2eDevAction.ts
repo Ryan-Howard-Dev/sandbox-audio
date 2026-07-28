@@ -1308,10 +1308,20 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         (pos > 0.2 ||
           status.state === 'playing' ||
           (status.queueLength ?? 0) >= 1);
+      /*
+       * Report the search environment on failure, not just the outcome. A run that ends with zero
+       * hits looks identical whether the network was refused, a provider returned nothing, or
+       * air-gap mode is on and correctly suppressing every remote source — and those need opposite
+       * responses. Distinguishing them was costing a device round trip each time.
+       */
+      const { isAirGapEnabled } = await import('./airGapMode');
+      const environment = pass
+        ? ''
+        : ` airGap=${isAirGapEnabled()} online=${typeof navigator === 'undefined' ? 'unknown' : navigator.onLine}`;
       logE2e(
         'search-play',
         pass,
-        `query=${query} index=${hitIndex} started=${started} playing=${playing} pos=${pos.toFixed(2)} state=${status.state ?? probe?.state ?? 'unknown'} via=catalog-pipeline`,
+        `query=${query} index=${hitIndex} started=${started} playing=${playing} pos=${pos.toFixed(2)} state=${status.state ?? probe?.state ?? 'unknown'} via=catalog-pipeline${environment}`,
       );
       return pass;
     }

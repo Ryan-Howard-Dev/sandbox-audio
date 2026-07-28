@@ -1958,7 +1958,17 @@ export default function SandboxShell() {
         const envelope = hit?.primaryEnvelope ?? catalogTrack?.envelope;
         const candidates = hit?.sources;
         if (!envelope) {
-          console.warn('[playSearchQuery] no envelope', { query, hitIndex, hits: searchHitsRef.current.length });
+          /*
+           * One line, interpolated. This used to pass an object, which the Android bridge prints
+           * as "[object Object]" — so the one diagnostic covering a failed search told you only
+           * that it had failed, which is what you already knew from the FAIL line.
+           */
+          console.warn(
+            `[playSearchQuery] no envelope query="${query}" hitIndex=${hitIndex} ` +
+              `hits=${searchHitsRef.current.length} ` +
+              `catalogTracks=${unifiedSearchResultRef.current.tracks.length} ` +
+              `stillLoading=${searchLoadingRef.current || unifiedSearchLoadingRef.current}`,
+          );
           return false;
         }
         if (isAndroid() && hasActiveMobileResolvers()) {
