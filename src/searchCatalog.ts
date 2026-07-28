@@ -2727,7 +2727,19 @@ function processCatalogItems(
     suggestions: buildSuggestions(q, raw),
     artists,
     albums,
-    tracks: sortByReleaseYear(relevantTracks).slice(0, 8),
+    /*
+     * Relevance order, kept.
+     *
+     * This used to re-sort by release year after ranking by relevance, which discarded the ranking
+     * entirely and then cut the list to eight. Searching "Radiohead Weird Fishes" ranked
+     * Radiohead's own recording first and then dropped it: In Rainbows is 2007, the covers are
+     * recent, and newest-first pushed the canonical row past the slice. Measured on device, three
+     * Radiohead rows entered this function and none survived.
+     *
+     * Same fault as sortSearchHits had — year deciding an order the query should decide — so year
+     * is left to break ties inside rankTracksByQueryRelevance rather than overriding it here.
+     */
+    tracks: relevantTracks.slice(0, 8),
   };
 }
 
