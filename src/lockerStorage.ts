@@ -4638,6 +4638,30 @@ export async function backfillLockerBitrate(entryId: string): Promise<number | n
   }
 }
 
+/**
+ * Envelope with its bitrate filled in, measuring the file first if the row has never been measured.
+ *
+ * This has to happen *before* the envelope is handed to the player. The backfill originally ran in
+ * runDeferredPlaySideEffects, which is called after `audio.loadEnvelope` and whose result is
+ * discarded — so the number was computed correctly, stored correctly, and then never reached the
+ * badge, which had already rendered from the envelope loaded a line earlier.
+ *
+ * Cheap enough to sit on the play path: one IndexedDB read and at most one native file-size call.
+ * No decode, unlike the loudness backfill, which is why that one can stay deferred and this cannot.
+ * Anything that is not a locker track, or already carries a bitrate, is returned untouched.
+ */
+export async function withMeasuredBitrate<T extends MediaEnvelope>(envelope: T): Promise<T> {
+  if (!envelope) return envelope;
+  if (typeof envelope.bitrateKbps === 'number' && envelope.bitrateKbps > 0) return envelope;
+  const isLocker =
+    envelope.provider === 'local-vault' || envelope.envelopeId?.startsWith('local-') === true;
+  if (!isLocker) return envelope;
+  const sourceId = envelope.sourceId?.trim() || envelope.envelopeId?.replace(/^local-/, '');
+  if (!sourceId) return envelope;
+  const measured = await backfillLockerBitrate(sourceId);
+  return measured ? { ...envelope, bitrateKbps: measured } : envelope;
+}
+
 /** Save a fetched audio blob into the locker vault with metadata. */
 export async function saveLockerBlob(
   file: File | Blob,

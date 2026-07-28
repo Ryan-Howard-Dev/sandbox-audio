@@ -140,6 +140,7 @@ import {
   subscribeLockerCache,
   tracksForAlbumGroup,
   warmLockerCache,
+  withMeasuredBitrate,
   type LockerEntry,
 } from './lockerStorage';
 import { sortLockerTracks } from './lockerTrackOrder';
@@ -3708,7 +3709,9 @@ export default function SandboxShell() {
           );
           if (resolvedArtwork) playable = { ...playable, artworkUrl: resolvedArtwork };
           markActivePlaybackSession();
-          const syncedPlayable = preserveTappedEnvelopeIdentity(seedEnvelope, playable);
+          const syncedPlayable = await withMeasuredBitrate(
+            preserveTappedEnvelopeIdentity(seedEnvelope, playable),
+          );
           persistLockerPlayRepair(seedEnvelope, syncedPlayable);
           audio.loadEnvelope(syncedPlayable, envelopeLoadOpts({ seamless: true, instant: true }));
           void runDeferredPlaySideEffects({
@@ -3756,7 +3759,9 @@ export default function SandboxShell() {
           );
           if (resolvedArtwork) playable = { ...playable, artworkUrl: resolvedArtwork };
           markActivePlaybackSession();
-          const syncedPlayable = preserveTappedEnvelopeIdentity(seedEnvelope, playable);
+          const syncedPlayable = await withMeasuredBitrate(
+            preserveTappedEnvelopeIdentity(seedEnvelope, playable),
+          );
           persistLockerPlayRepair(seedEnvelope, syncedPlayable);
           audio.loadEnvelope(syncedPlayable, envelopeLoadOpts({ seamless: true, instant: true }));
           void runDeferredPlaySideEffects({
@@ -3817,7 +3822,9 @@ export default function SandboxShell() {
           );
           if (resolvedArtwork) playable = { ...playable, artworkUrl: resolvedArtwork };
           markActivePlaybackSession();
-          const syncedPlayable = preserveTappedEnvelopeIdentity(seedEnvelope, playable);
+          const syncedPlayable = await withMeasuredBitrate(
+            preserveTappedEnvelopeIdentity(seedEnvelope, playable),
+          );
           persistLockerPlayRepair(seedEnvelope, syncedPlayable);
           audio.loadEnvelope(syncedPlayable, envelopeLoadOpts({ seamless: true, instant: true }));
           void runDeferredPlaySideEffects({
@@ -3918,7 +3925,9 @@ export default function SandboxShell() {
           );
           if (resolvedArtwork) playable = { ...playable, artworkUrl: resolvedArtwork };
           markActivePlaybackSession();
-          const syncedPlayable = preserveTappedEnvelopeIdentity(seedEnvelope, playable);
+          const syncedPlayable = await withMeasuredBitrate(
+            preserveTappedEnvelopeIdentity(seedEnvelope, playable),
+          );
           persistLockerPlayRepair(seedEnvelope, syncedPlayable);
           audio.loadEnvelope(syncedPlayable, envelopeLoadOpts({ seamless: true, instant: true }));
           void runDeferredPlaySideEffects({
