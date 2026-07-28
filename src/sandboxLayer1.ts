@@ -1138,7 +1138,32 @@ export function useAudioFSM(): UseAudioFSMResult {
               if (isStalePlayLoad(next, options)) return;
             }
           }
-          const exoUrl = (await resolveNativeExoStreamUrlAsync(next)) ?? playableUrl;
+          /*
+           * Where the wait actually is. Everything upstream of this — search, ranking, queue —
+           * finishes in milliseconds; this single call is on-device stream extraction, and it is
+           * what stands between tapping a track and hearing it. Timing it by name is the only way
+           * to tell a slow resolve from a cached one that was rejected, and the two are
+           * indistinguishable from the outside.
+           */
+          const resolveStartedAt = Date.now();
+          const resolvedExoUrl = await resolveNativeExoStreamUrlAsync(next);
+          const resolveMs = Date.now() - resolveStartedAt;
+          const exoUrl = resolvedExoUrl ?? playableUrl;
+          console.warn(
+            `[resolveTiming] ${resolveMs}ms track="${next.artist} — ${next.title}" ` +
+              `provider=${next.provider} resolved=${resolvedExoUrl != null} ` +
+              `kind=${
+                exoUrl.startsWith('content://')
+                  ? 'content'
+                  : exoUrl.startsWith('file://')
+                    ? 'file'
+                    : /googlevideo/i.test(exoUrl)
+                      ? 'cdn'
+                      : /127\.0\.0\.1|local\/proxy/i.test(exoUrl)
+                        ? 'proxy'
+                        : 'http'
+              }`,
+          );
           if (isStalePlayLoad(next, options)) return;
           if (
             /^https?:\/\//i.test(exoUrl) ||

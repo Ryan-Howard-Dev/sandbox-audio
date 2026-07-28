@@ -3390,17 +3390,24 @@ export default function SandboxShell() {
       }
 
       const playTapStartedAt = performance.now();
+      /*
+       * Not DEV-gated. This measures the gap between tapping a track and hearing it, which is a
+       * property of the phone — on-device extraction, real network, real CPU — and cannot be
+       * observed on a dev server at all. Gating it to DEV meant the one instrument aimed at the
+       * one complaint ("it takes fifteen seconds") had never run on the device it describes.
+       *
+       * console.warn, not log: release WebView logcat drops console.log under load, which is
+       * exactly when the slow taps happen. Four lines per tap is not a volume problem.
+       */
       const logPlayTiming = (phase: string, extra?: Record<string, unknown>) => {
-        if (!import.meta.env.DEV) return;
-        console.log(
-          `[handlePlayEnvelope] timing ${JSON.stringify({
-            phase,
-            elapsedMs: Math.round(performance.now() - playTapStartedAt),
-            title: env.title,
-            ...extra,
-          })}`,
+        console.warn(
+          `[playTiming] ${Math.round(performance.now() - playTapStartedAt)}ms ${phase} ` +
+            `track="${env.artist} — ${env.title}"` +
+            (extra ? ` ${JSON.stringify(extra)}` : ''),
         );
       };
+      // Baseline, so every later phase is readable as a gap rather than an absolute number.
+      logPlayTiming('tap', { provider: env.provider, envelopeId: env.envelopeId });
 
       if (import.meta.env.DEV) {
         console.warn(
@@ -4155,6 +4162,9 @@ export default function SandboxShell() {
           seedArtwork && !playable.artworkUrl
             ? { ...playable, artworkUrl: seedArtwork }
             : playable;
+        // Reaching here at all means the instant path missed and this tap will pay for a full
+        // resolve. The gap between this line and 'resolved' is the wait the listener feels.
+        logPlayTiming('execute-start', { provider: playable.provider });
         const needsMobileExecuteTimeout =
           isAndroid() &&
           hasActiveMobileResolvers() &&
