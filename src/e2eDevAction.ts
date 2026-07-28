@@ -98,6 +98,8 @@ export type E2ePlaybackProbe = {
   durationSecs: number;
   artworkUrl?: string;
   nativeState?: string;
+  /** What the fidelity badge is derived from — the number the listener is shown. */
+  bitrateKbps?: number;
 };
 
 export type E2eQueueProbe = {
@@ -1931,6 +1933,7 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
           `state=${probe.state} pos=${probe.positionSecs.toFixed(1)} dur=${probe.durationSecs.toFixed(1)} ` +
           `native=${status.state ?? 'unknown'} queueLength=${status.queueLength ?? 0} queueIndex=${status.queueIndex ?? 0} ` +
           `nativeTitle="${nativeTitle}" nativeArtist="${status.artist ?? ''}" ` +
+          `bitrateKbps=${probe.bitrateKbps ?? 0} ` +
           `titlesAgree=${titlesAgree} artAgree=${artAgree} ` +
           `uiEnvelope=${probe.envelopeId ?? ''} nativeEnvelope=${status.envelopeId ?? ''} ` +
           `uiArt=${(probe.artworkUrl ?? '').slice(-40)} nativeArt=${(status.artworkUrl ?? '').slice(-40)}`,

@@ -5039,6 +5039,7 @@ export default function SandboxShell() {
           positionSecs: audioCurrentTimeRef.current,
           durationSecs: audioDurationRef.current,
           artworkUrl: env?.artworkUrl,
+          bitrateKbps: env?.bitrateKbps,
           nativeState:
             audio.nativeExoActive && audio.nativeExoEffectivePlaying
               ? 'playing'
