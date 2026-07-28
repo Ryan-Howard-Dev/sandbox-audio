@@ -1988,6 +1988,19 @@ export default function SandboxShell() {
           ensureYtDlpMobileReady();
           await waitForYtDlpInit();
         }
+        /*
+         * What was chosen, and out of what. A search can rank correctly and still play the wrong
+         * recording — the list and the pick are separate steps, and without this the only visible
+         * evidence is the track that came out of the speaker.
+         */
+        console.warn(
+          `[playSearchQuery] picked "${envelope.artist} — ${envelope.title}" ` +
+            `id=${envelope.envelopeId} provider=${envelope.provider} ` +
+            `sources=${candidates?.length ?? 0} ` +
+            `hit0="${searchHitsRef.current[0]?.primaryEnvelope?.artist} — ` +
+            `${searchHitsRef.current[0]?.primaryEnvelope?.title}" ` +
+            `hits=${searchHitsRef.current.length}`,
+        );
         await playEnvelopeRef.current(envelope, candidates, {
           autoPlay: true,
           seedSearchQueue: true,

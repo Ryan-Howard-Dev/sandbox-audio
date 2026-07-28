@@ -1354,7 +1354,13 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       logE2e(
         'search-play',
         pass,
-        `query=${query} index=${hitIndex} started=${started} playing=${playing} pos=${pos.toFixed(2)} state=${status.state ?? probe?.state ?? 'unknown'} via=catalog-pipeline${environment}`,
+        // The playing title, not just that something is playing. A pass that reports position and
+        // state alone cannot tell a correct result from a remix or a karaoke cover of it, which is
+        // exactly the failure this gate is meant to catch.
+        `query=${query} index=${hitIndex} started=${started} playing=${playing} ` +
+          `now="${probe?.artist ?? '?'} — ${probe?.title ?? '?'}" ` +
+          `pos=${pos.toFixed(2)} state=${status.state ?? probe?.state ?? 'unknown'} ` +
+          `via=catalog-pipeline${environment}`,
       );
       return pass;
     }
