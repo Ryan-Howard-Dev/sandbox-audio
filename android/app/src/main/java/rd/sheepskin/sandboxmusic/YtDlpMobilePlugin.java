@@ -29,6 +29,23 @@ import org.json.JSONArray;
 @CapacitorPlugin(name = "YtDlpMobile")
 public class YtDlpMobilePlugin extends Plugin {
 
+    /**
+     * Format preference, widest-last.
+     *
+     * The audio-only branches are tried first because a bare audio stream is smaller and decodes
+     * cheaper. They are not sufficient on their own: with player_client=android YouTube regularly
+     * offers no audio-only format at all, only progressive streams carrying video and audio
+     * together. The old selector stopped at worstaudio, so those videos failed outright with
+     * "Requested format is not available" — and the caller then paid for a second, slower resolve
+     * to recover. Measured on device that turned a 3.5s resolve into 14.1s, on every track.
+     *
+     * The progressive fallbacks cost bandwidth we do not use, since the video track is ignored on
+     * playback, but a stream that plays beats a stream that does not exist.
+     */
+    private static final String AUDIO_FORMAT_SELECTOR =
+        "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/"
+            + "best[acodec!=none][ext=mp4]/best[acodec!=none]/best";
+
     private static final String TAG = "YtDlpMobile";
     private static final long INIT_WAIT_MS = 45_000;
     /** Playback resolve — fail fast so UI can recover on cellular. */
@@ -275,7 +292,7 @@ public class YtDlpMobilePlugin extends Plugin {
         }
 
         YoutubeDLRequest streamReq = new YoutubeDLRequest(target);
-        streamReq.addOption("-f", "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/worstaudio");
+        streamReq.addOption("-f", AUDIO_FORMAT_SELECTOR);
         streamReq.addOption("-o", new File(getContext().getFilesDir(), "ytdlp-locker/%(id)s.%(ext)s").getAbsolutePath());
         streamReq.addOption("--no-playlist");
         streamReq.addOption("--no-warnings");
@@ -495,7 +512,7 @@ public class YtDlpMobilePlugin extends Plugin {
         }
 
         YoutubeDLRequest streamReq = new YoutubeDLRequest(target);
-        streamReq.addOption("-f", "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/worstaudio");
+        streamReq.addOption("-f", AUDIO_FORMAT_SELECTOR);
         streamReq.addOption("-g");
         streamReq.addOption("--no-playlist");
         streamReq.addOption("--no-warnings");
@@ -524,7 +541,7 @@ public class YtDlpMobilePlugin extends Plugin {
     private JSObject resolveTextQueryDirect(String query) {
         try {
             YoutubeDLRequest req = new YoutubeDLRequest("ytsearch1:" + query);
-            req.addOption("-f", "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/worstaudio");
+            req.addOption("-f", AUDIO_FORMAT_SELECTOR);
             req.addOption("-g");
             req.addOption("--no-playlist");
             req.addOption("--no-warnings");
