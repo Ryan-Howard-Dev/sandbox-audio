@@ -103,6 +103,7 @@ import { registerPlatformRoutes } from './routes/platform.js';
 import { registerPodcastMirrorRoutes } from './routes/podcastMirror.js';
 import { registerPodcastTranscriptRoutes } from './routes/podcastTranscript.js';
 import { registerPodcastRulesRoutes } from './routes/podcastRules.js';
+import { registerTidalRoutes } from './routes/tidal.js';
 import { initPodcastMirrorScheduler } from './lib/podcastMirrorScheduler.js';
 import { initPodcastTranscriptScheduler } from './lib/podcastTranscriptScheduler.js';
 import { loadTasteShareManifest, storeTasteShareManifest } from './lib/tasteShareStorage.js';
@@ -237,6 +238,7 @@ app.get('/health', async (_req, res) => {
 registerPodcastMirrorRoutes(app);
 registerPodcastTranscriptRoutes(app);
 registerPodcastRulesRoutes(app);
+registerTidalRoutes(app);
 registerCastRoutes(app);
 registerStreamFullRoutes(app);
 registerCacheStageRoutes(app);
