@@ -417,6 +417,63 @@ function trackSearchRelevanceScore(track: CatalogTrack, query: string): number {
   return score;
 }
 
+/**
+ * Words that mean a recording is a stand-in for the real one.
+ *
+ * Karaoke backing tracks, instrumental versions, lullaby renditions and tribute-band covers exist
+ * in the catalog in large numbers because they are cheap to produce and they carry the original's
+ * title verbatim. That makes them score identically to the record a listener actually asked for,
+ * and searching "Radiohead Weird Fishes" returned four of them above Radiohead.
+ *
+ * Matched against title, artist and album together: the marker lands in a different field
+ * depending on the release — "Karaoke Freaks" is the artist, "(Instrumental Version)" is in the
+ * title, "Lullaby Renditions of Radiohead" is the album.
+ */
+const DERIVATIVE_MARKERS = [
+  'karaoke',
+  'backing track',
+  'instrumental version',
+  'in the style of',
+  'originally performed by',
+  'made famous by',
+  'as made famous',
+  'tribute to',
+  'tribute band',
+  'lullaby rendition',
+  'lullaby version',
+  'rockabye',
+  'music box version',
+  'made popular by',
+  'sing-along',
+  'singalong',
+  'vocal-free',
+  'minus one',
+] as const;
+
+/**
+ * True when a row is a derivative and the query never asked for one.
+ *
+ * Deliberately a filter rather than a penalty. A karaoke track scoring slightly lower still
+ * appears, and "there should be no karaoke versions" is not satisfied by a lower position — it is
+ * satisfied by absence.
+ *
+ * The escape hatch matters as much as the filter: someone searching for a karaoke track, an
+ * instrumental, or a specific tribute band is asking on purpose, and the same words in their query
+ * turn the whole thing off. Nothing is unreachable, it is only absent unless requested.
+ */
+function isUnrequestedDerivative(track: CatalogTrack, query: string): boolean {
+  const q = normalizeName(query);
+  // Asked for explicitly — hand them back.
+  if (DERIVATIVE_MARKERS.some((m) => q.includes(m))) return false;
+  if (COVER_QUERY_MARKERS.has(q) || q.split(' ').some((t) => COVER_QUERY_MARKERS.has(t))) {
+    return false;
+  }
+  const hay = normalizeName(
+    `${track.title ?? ''} ${track.artist ?? ''} ${track.album ?? ''}`,
+  );
+  return DERIVATIVE_MARKERS.some((m) => hay.includes(m));
+}
+
 function rankTracksByQueryRelevance(tracks: CatalogTrack[], query: string): CatalogTrack[] {
   return [...tracks].sort(
     (a, b) => trackSearchRelevanceScore(b, query) - trackSearchRelevanceScore(a, query),
@@ -2719,9 +2776,9 @@ function processCatalogItems(
     : albumPool
   ).slice(0, 6);
 
-  const relevantTracks = rankTracksByQueryRelevance(tracks, q).filter((track) =>
-    catalogTrackMeetsSearchThreshold(track, q),
-  );
+  const relevantTracks = rankTracksByQueryRelevance(tracks, q)
+    .filter((track) => catalogTrackMeetsSearchThreshold(track, q))
+    .filter((track) => !isUnrequestedDerivative(track, q));
 
   return {
     suggestions: buildSuggestions(q, raw),
