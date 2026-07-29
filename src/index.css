@@ -16269,7 +16269,14 @@ body:has(#root > .onboarding-root) {
 }
 
 .playlists-mobile-card-btn {
-  padding: 1rem 3rem 1rem 1rem !important;
+  /*
+   * The 3rem right padding here reserved room for the play/shuffle/menu buttons — but those are a
+   * flex sibling with their own width, not an overlay, so the row paid for them twice and the text
+   * column lost 48px it never needed. On a phone that was enough to wrap every string: "Never
+   * Played" broke across two lines, its subtitle across four, and one playlist row became a third
+   * of the screen.
+   */
+  padding: 1rem 0.5rem 1rem 1rem !important;
   min-height: 4.5rem;
 }
 

@@ -234,7 +234,12 @@ function formatPlaylistDisplayStatus(pl: StoredPlaylist): string {
     const ruleHint = pl.rules
       ? describeSmartPlaylistRules(pl.rules, pl.builtInId, pl.builtInParam)
       : 'Smart';
-    return `Smart · ${n} track${n === 1 ? '' : 's'} · ${ruleHint}`;
+    const count = `Smart · ${n} track${n === 1 ? '' : 's'}`;
+    // For the built-in playlists the rule description *is* the name, so the row read
+    // "Never Played / Smart · 269 tracks · Never Played" — the same words twice, and the
+    // repetition is what pushed the subtitle onto a fourth line.
+    const sameAsName = ruleHint.trim().toLowerCase() === (pl.name ?? '').trim().toLowerCase();
+    return sameAsName ? count : `${count} · ${ruleHint}`;
   }
   return formatPlaylistStatus(pl);
 }
