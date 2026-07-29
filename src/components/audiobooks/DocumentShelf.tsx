@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FileText, Loader2, Pause, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { documentToNarration, estimateNarrationSeconds } from '../../documentNarration';
+import { extractDocumentText, SUPPORTED_DOCUMENT_ACCEPT } from '../../documentExtract';
 import type { NarrationChunk } from '../../documentNarration';
 import {
   createNarrationReader,
@@ -36,9 +37,19 @@ import {
 import { formatTime } from '../../stations/theme';
 import { useTranslation } from '../../i18n';
 
-/** Text formats a file read alone can handle. EPUB and PDF need parsers and are not offered yet. */
-const ACCEPTED = '.txt,.md,.markdown,.text,text/plain,text/markdown';
-const MAX_BYTES = 5 * 1024 * 1024;
+/**
+ * Formats the extractor can actually read, kept in one place so the picker and the extractor
+ * cannot drift — a picker offering more than the extractor handles is just a broken import.
+ */
+const ACCEPTED = SUPPORTED_DOCUMENT_ACCEPT;
+
+/*
+ * 5 MB was right when this only took .txt and .md, where it is a lot of prose. It rejects most
+ * real books: an EPUB carries its cover and any illustrations inside the same archive, so a
+ * novel routinely runs past 10 MB while its text is well under one. The cap is on the container,
+ * and only the text survives extraction.
+ */
+const MAX_BYTES = 25 * 1024 * 1024;
 
 export interface DocumentShelfProps {
   onError?: (message: string) => void;
@@ -146,10 +157,16 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
       }
       setBusy(true);
       try {
-        const text = await file.text();
-        const parsed = documentToNarration(text);
+        // file.text() only ever worked because the picker was limited to .txt and .md — on a
+        // .docx or .epub it decodes zip bytes as UTF-8 and narrates the mojibake. Extraction
+        // dispatches on the file's actual contents instead.
+        const extracted = extractDocumentText(new Uint8Array(await file.arrayBuffer()), file.name);
+        const text = extracted.text;
+        const parsed = text ? documentToNarration(text) : [];
         if (parsed.length === 0) {
-          onError?.(t('audiobooks.docEmpty'));
+          // A format we recognise but cannot read says so in its own words. "This EPUB is
+          // DRM-protected" is worth far more than a generic empty-document message.
+          onError?.(extracted.reason ?? t('audiobooks.docEmpty'));
           return;
         }
         await saveDocument({
