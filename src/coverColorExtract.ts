@@ -348,21 +348,34 @@ export function coverArtPaletteToUniverseStyle(
     };
   }
 
+  /*
+   * These were pitched so low the extraction may as well not have run: 18% saturation at 8%
+   * lightness behind 0.26 alpha, over a #07080c background, is a colour you can prove is present
+   * and cannot see. Every track looked identically dark, which is most of why the player reads as
+   * flat — the record you are listening to never appears on screen.
+   *
+   * Roughly doubled. The reference is YouTube Music, whose now-playing sheet takes a clearly
+   * readable tint from the artwork. Still well short of that: this is a dark-first UI and the
+   * point is for the art to be *present*, not for the background to compete with it.
+   *
+   * Lightness rises with saturation on purpose. Raising saturation alone on a near-black colour
+   * buys almost nothing — hue is only legible with some light behind it.
+   */
   const { primaryHue, secondaryHue, tertiaryHue, accentHue, avgLightness } = palette;
-  const ambSat = Math.round(18 * satMul);
-  const throwSat = Math.round(24 * satMul);
+  const ambSat = Math.round(36 * satMul);
+  const throwSat = Math.round(46 * satMul);
 
   return {
-    '--track-glow-a': artAmbientStop(primaryHue, Math.round(22 * satMul), 12, 0.1),
-    '--track-glow-b': artAmbientStop(secondaryHue, Math.round(16 * satMul), 9, 0.06),
-    '--track-glow-c': artAmbientStop(tertiaryHue, Math.round(12 * satMul), 7, 0.05),
-    '--universe-a': artAmbientStop(primaryHue, ambSat, 8, 0.26),
-    '--universe-b': artAmbientStop(secondaryHue, Math.round(14 * satMul), 7, 0.18),
-    '--universe-c': artAmbientStop(tertiaryHue, Math.round(12 * satMul), 6, 0.14),
-    '--universe-d': artAmbientStop(accentHue, Math.round(10 * satMul), 5, 0.11),
-    '--universe-throw-a': artThrowStop(primaryHue, throwSat, 16),
-    '--universe-throw-b': artThrowStop(secondaryHue, Math.round(18 * satMul), 13),
-    '--universe-throw-c': artThrowStop(tertiaryHue, Math.round(14 * satMul), 11),
+    '--track-glow-a': artAmbientStop(primaryHue, Math.round(42 * satMul), 20, 0.22),
+    '--track-glow-b': artAmbientStop(secondaryHue, Math.round(32 * satMul), 15, 0.14),
+    '--track-glow-c': artAmbientStop(tertiaryHue, Math.round(24 * satMul), 12, 0.1),
+    '--universe-a': artAmbientStop(primaryHue, ambSat, 16, 0.52),
+    '--universe-b': artAmbientStop(secondaryHue, Math.round(28 * satMul), 13, 0.38),
+    '--universe-c': artAmbientStop(tertiaryHue, Math.round(24 * satMul), 11, 0.3),
+    '--universe-d': artAmbientStop(accentHue, Math.round(20 * satMul), 9, 0.24),
+    '--universe-throw-a': artThrowStop(primaryHue, throwSat, 26),
+    '--universe-throw-b': artThrowStop(secondaryHue, Math.round(36 * satMul), 21),
+    '--universe-throw-c': artThrowStop(tertiaryHue, Math.round(28 * satMul), 17),
     '--universe-throw-d': brandFromHue(accentHue, avgLightness),
     '--universe-brand': brandFromHue(primaryHue, avgLightness),
     '--universe-void': '#07080c',
