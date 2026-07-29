@@ -1,4 +1,5 @@
 import { fetchWithTimeout } from './fetchWithTimeout';
+import { getTier34BaseUrl, isServerReachableCached } from './tier34/client';
 
 /*
  * Credentials come from the build, never from this file.
@@ -162,10 +163,59 @@ function buildCountryOrder(preferred?: string): string[] {
   return order;
 }
 
+/**
+ * Ask the Sandbox Server for the playlist, so the credential never has to be here.
+ *
+ * A client-side secret cannot be kept — the bundle ships to the user. Handing the request to a
+ * server the operator runs moves the credential onto their hardware, where it is genuinely
+ * private, and leaves nothing in the app to extract.
+ *
+ * Returns null when the server is unreachable or has no credentials configured, so the caller can
+ * fall through rather than treating "not set up" as a failure.
+ */
+async function fetchPlaylistViaTier34(
+  playlistUuid: string,
+  preferredCountryCode?: string,
+): Promise<{ tracks: TidalApiTrackStub[]; total?: number; countryCode?: string } | null> {
+  const base = getTier34BaseUrl().trim();
+  if (!base || !isServerReachableCached()) return null;
+
+  const query = preferredCountryCode
+    ? `?countryCode=${encodeURIComponent(preferredCountryCode)}`
+    : '';
+  try {
+    const res = await fetchWithTimeout(
+      `${base.replace(/\/$/, '')}/api/tidal/playlist/${encodeURIComponent(playlistUuid)}${query}`,
+      { headers: { Accept: 'application/json' } },
+      API_TIMEOUT_MS,
+    );
+    // 501 means the operator has not configured credentials there. That is a normal state and the
+    // caller should try its own, not report the server as broken.
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      tracks?: TidalApiTrackStub[];
+      total?: number;
+      countryCode?: string;
+    };
+    if (!Array.isArray(data.tracks)) return null;
+    return { tracks: data.tracks, total: data.total, countryCode: data.countryCode };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchAllTidalPlaylistItems(
   playlistUuid: string,
   options?: { preferredCountryCode?: string; maxTracks?: number },
 ): Promise<{ tracks: TidalApiTrackStub[]; total?: number; countryCode?: string }> {
+  /*
+   * Server first, always. When tier34 holds the credential this path needs none, which is the
+   * whole point — the build ships with nothing worth extracting. The direct call below remains
+   * only for someone who deliberately set build-time credentials and runs no server.
+   */
+  const viaServer = await fetchPlaylistViaTier34(playlistUuid, options?.preferredCountryCode);
+  if (viaServer && viaServer.tracks.length > 0) return viaServer;
+
   const accessToken = await fetchTidalAccessToken();
   if (!accessToken) return { tracks: [] };
 
