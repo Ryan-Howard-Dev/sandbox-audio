@@ -6,6 +6,24 @@ Play your own files offline, stream from a home **Sandbox Server**, subscribe to
 
 > **Beta software.** Expect rough edges in playback, mobile layout, and search. Not recommended as a daily driver without backups of your locker data.
 
+## Before you run it
+
+**You supply your own credentials.** No third-party API keys ship with this project. Optional
+integrations — TIDAL playlist import is the current example — read their credentials from your
+build environment (`VITE_TIDAL_CLIENT_ID`, `VITE_TIDAL_CLIENT_SECRET`); see `.env.example`. Leave
+them unset and that feature is simply absent. Register your own application with the provider
+rather than reusing anyone else's: values compiled into a client are readable by anyone holding the
+build, so a shared key is a key that gets rate-limited or banned for everybody.
+
+**You are responsible for what you point it at.** This is a player and a locker. It does not supply
+music, and what is lawful to fetch, store or play depends on the source, the content and where you
+live — not on this software. Acquisition resolvers (on-device extraction and similar) ship
+**switched off**; enabling them is a deliberate choice, and the consequences of that choice are
+yours. Set `VITE_ACQUISITION_DEFAULT_ON=true` only for a personal build where you have already
+decided.
+
+**Licensed under GPL-3.0.** See [LICENSE](./LICENSE).
+
 **Supported platforms (audit-verified):** Web/PWA, Tauri desktop (Windows + Linux), Android (Capacitor). iOS and macOS desktop are not in current CI or release artifacts per existing README scope.
 
 Catalog discovery uses an **iTunes metadata proxy plus your local locker** — not a Spotify-scale streaming catalog.
