@@ -4,6 +4,7 @@
  */
 
 import type { DeviceMusicScanHit } from './lockerUploadFilter';
+import { splitTitleWords } from './titleWordSplit';
 import { prefsGetItem, prefsSetItem } from './prefsStorage';
 import {
   isBadAudiobookAuthor,
@@ -99,10 +100,14 @@ function stripExt(name: string): string {
 }
 
 function cleanLabel(raw: string): string {
-  return raw
+  const spaced = raw
     .replace(/[._]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+  // Dots and underscores are only half the problem: a file named "ThescaredMusroom" has no
+  // separator at all, and left alone it is unreadable on the shelf and unsearchable. The splitter
+  // leaves anything it does not fully recognise exactly as it found it.
+  return splitTitleWords(spaced);
 }
 
 /** Best-effort book title from MediaStore tags / folder / filename. */

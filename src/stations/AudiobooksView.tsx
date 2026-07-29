@@ -4,6 +4,7 @@ import LockerMoreMenu from '../components/LockerMoreMenu';
 import type { MediaEnvelope } from '../sandboxLayer1';
 import AudiobookDiscoverPanel from '../components/audiobooks/AudiobookDiscoverPanel';
 import { EmbeddedChapterList } from '../components/audiobooks/EmbeddedChapterList';
+import { parseBookSeries, recommendRelatedBooks } from '../bookSeries';
 import AudiobookAcquirePanel from '../components/audiobooks/AudiobookAcquirePanel';
 import {
   checkDeviceMusicScanPermission,
@@ -93,6 +94,17 @@ export default function AudiobooksView({
   const selected = useMemo(
     () => books.find((b) => b.key === selectedKey) ?? null,
     [books, selectedKey],
+  );
+
+  // Derived, never stored: a scan can add a book at any moment and a cached list would be stale
+  // the instant it did.
+  const related = useMemo(
+    () => (selected ? recommendRelatedBooks(selected, books) : []),
+    [selected, books],
+  );
+  const seriesOfSelected = useMemo(
+    () => (selected ? parseBookSeries(selected.title) : null),
+    [selected],
   );
 
   /*
@@ -432,6 +444,42 @@ export default function AudiobooksView({
               </li>
             ))}
           </ul>
+
+          {/*
+            Reaching part 1 from part 2 was a dead end: device-scanned books carry no series
+            metadata, so the only clue is the title, and nothing read it. Series comes first
+            because someone on book two wants book one far more than another title by the same
+            author. Hidden entirely when there is nothing real to suggest — an empty "you might
+            also like" is worse than no shelf at all.
+          */}
+          {related.length > 0 ? (
+            <section className="audiobook-related mt-6">
+              <p className="podcasts-show-detail-episodes-label">
+                {seriesOfSelected
+                  ? t('audiobooks.moreInSeries', { series: seriesOfSelected.label })
+                  : t('audiobooks.moreByAuthor', { author: selected.author })}
+              </p>
+              <ul className="podcasts-episode-list divide-y divide-[var(--border)]">
+                {related.map((other) => {
+                  const ref = parseBookSeries(other.title);
+                  return (
+                    <li key={other.key} className="podcasts-show-episode-row">
+                      <button
+                        type="button"
+                        className="podcasts-show-episode-copy touch-manipulation text-left w-full py-3"
+                        onClick={() => setSelectedKey(other.key)}
+                      >
+                        <p className="podcasts-show-episode-title">{other.title}</p>
+                        <p className="podcasts-show-episode-meta">
+                          {ref ? t('audiobooks.seriesBookNumber', { number: ref.index }) : other.author}
+                        </p>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
         </section>
       </div>
     );

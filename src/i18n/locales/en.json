@@ -1879,6 +1879,9 @@
     "bookEncrypted": "That book is DRM-protected, so it cannot be opened or read aloud.",
     "bookNotEpub": "That file is a zip, but not an EPUB.",
     "bookUnreadable": "That EPUB could not be read — it may be corrupt.",
-    "filterSource": "Source"
+    "filterSource": "Source",
+    "moreInSeries": "More in {series}",
+    "moreByAuthor": "More by {author}",
+    "seriesBookNumber": "Book {number}"
   }
 }
