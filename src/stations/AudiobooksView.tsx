@@ -3,6 +3,7 @@ import { ArrowLeft, BookOpen, FileText, Magnet, Play, Search, ShieldAlert, Smart
 import LockerMoreMenu from '../components/LockerMoreMenu';
 import type { MediaEnvelope } from '../sandboxLayer1';
 import AudiobookDiscoverPanel from '../components/audiobooks/AudiobookDiscoverPanel';
+import { EmbeddedChapterList } from '../components/audiobooks/EmbeddedChapterList';
 import AudiobookAcquirePanel from '../components/audiobooks/AudiobookAcquirePanel';
 import {
   checkDeviceMusicScanPermission,
@@ -374,6 +375,37 @@ export default function AudiobooksView({
               </p>
               <p className="audiobooks-book-about-text">{bookDescription}</p>
             </section>
+          ) : null}
+
+          {/*
+            A single-file audiobook has no per-file chapter rows to list, because there is only one
+            file — but an M4B carries its chapter table inside it. Without this a five-hour book is
+            one unnavigable block. Multi-file books already list their chapters below, so this only
+            appears where the file list cannot say anything.
+
+            Seeking reuses onPlayAlbum's existing resume offset rather than adding a prop: embedded
+            chapters are positions inside one file, so the track never changes — only the offset.
+          */}
+          {selected.tracks.length === 1 && selected.tracks[0] ? (
+            <EmbeddedChapterList
+              entryId={selected.tracks[0].id}
+              onSeek={(startSeconds) => {
+                const hit = selected.tracks[0];
+                if (!hit) return;
+                const envelope = audiobookHitToEnvelope(hit, {
+                  title: selected.title,
+                  artist: selected.author,
+                  album: selected.title,
+                  artworkUrl: selected.coverUrl,
+                });
+                if (onPlayAlbum) {
+                  onPlayAlbum([envelope], false, { startIndex: 0, startSeconds });
+                } else {
+                  onPlay(envelope);
+                }
+              }}
+              label={t('audiobooks.chaptersLabel')}
+            />
           ) : null}
 
           <p className="podcasts-show-detail-episodes-label mt-4">
