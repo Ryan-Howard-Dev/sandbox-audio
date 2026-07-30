@@ -36,6 +36,8 @@ import {
   verticalPanVelocity,
 } from '../mobile/verticalPanGesture';
 import HomeHeroPlayer from './HomeHeroPlayer';
+import MixRadioChips from './MixRadioChips';
+import PlayerQueueSheet from './PlayerQueueSheet';
 import StemSlidersPanel from './StemSlidersPanel';
 import MobileHomeVinylSettingsSheet from '../mobile/MobileHomeVinylSettingsSheet';
 import PodcastPlayerControls from './podcasts/PodcastPlayerControls';
@@ -69,12 +71,25 @@ export interface MobileNowPlayingViewProps {
   onOpenLyrics: () => void;
   onOpenCast: () => void;
   onOpenQueue?: () => void;
+  /**
+   * Queue rendered as a sheet over a collapsed player instead of the separate drawer. Absent (or a
+   * podcast) falls back to onOpenQueue, so the queue button never becomes a dead control.
+   */
+  queueSheet?: {
+    playQueue: MediaEnvelope[];
+    queueIndex: number;
+    onPlayQueueIndex?: (index: number) => void;
+    onRemoveFromQueue?: (index: number) => void;
+    onReorderQueue?: (fromIndex: number, toIndex: number) => void;
+  };
   castState: CastState;
   playingFromLabel: string;
   onGoToVinyl?: () => void;
   mixRadioEnabled?: boolean;
   onArtistMix?: () => void;
   onTrackRadio?: () => void;
+  /** Opens the owner's playlist picker for the playing track. */
+  onAddToPlaylist?: () => void;
   mixRadioSession?: MixRadioSession | null;
   saveMixRadioEnabled?: boolean;
   onSaveMixRadioToPlaylist?: () => void;
@@ -141,12 +156,14 @@ export default function MobileNowPlayingView({
   onOpenLyrics,
   onOpenCast,
   onOpenQueue,
+  queueSheet,
   castState,
   playingFromLabel,
   onGoToVinyl,
   mixRadioEnabled,
   onArtistMix,
   onTrackRadio,
+  onAddToPlaylist,
   mixRadioSession,
   saveMixRadioEnabled,
   onSaveMixRadioToPlaylist,
@@ -187,6 +204,7 @@ export default function MobileNowPlayingView({
   const { t } = useTranslation();
 
   const [vinylSettingsOpen, setVinylSettingsOpen] = useState(false);
+  const [queueSheetOpen, setQueueSheetOpen] = useState(false);
   const [heroDisplay, setHeroDisplay] = useState(loadHeroDisplayMode);
   const displayArt = resolvePlaybackCoverArt(albumArt, envelope);
   const gradientSeed = title?.trim() || album?.trim() || 'Sandbox';
@@ -499,6 +517,7 @@ export default function MobileNowPlayingView({
               mixRadioEnabled,
               onArtistMix,
               onTrackRadio,
+              onAddToPlaylist,
               mixRadioSession,
               saveMixRadioEnabled,
               onSaveMixRadioToPlaylist,

@@ -230,6 +230,7 @@ import {
   probeHeroVisualFromDom,
 } from './homeHeroPlayerLogic';
 import MixRadioSaveDialog, { type MixRadioSaveMode } from './components/MixRadioSaveDialog';
+import AddToPlaylistPicker from './components/AddToPlaylistPicker';
 import {
   buildArtistMix,
   buildTrackRadio,
@@ -1034,6 +1035,8 @@ export default function SandboxShell() {
   >(() => {});
   const [mixRadioSaveOpen, setMixRadioSaveOpen] = useState(false);
   const [mixRadioSaveBusy, setMixRadioSaveBusy] = useState(false);
+  /* Playlist picker for the track on the player — the players themselves never hold the envelope. */
+  const [playerAddToPlaylistOpen, setPlayerAddToPlaylistOpen] = useState(false);
   const [appToast, setAppToast] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ANDROID_SERVER_BANNER_KEY = 'sandbox_android_server_banner_dismissed';
@@ -2435,6 +2438,10 @@ export default function SandboxShell() {
   }, [restoreSearchSnapshot, clearSearchView]);
 
   const handleShellBack = useCallback((): boolean => {
+    if (playerAddToPlaylistOpen) {
+      closeSandboxOverlay(() => setPlayerAddToPlaylistOpen(false));
+      return true;
+    }
     if (mixRadioSaveOpen) {
       closeSandboxOverlay(() => setMixRadioSaveOpen(false));
       return true;
@@ -2559,6 +2566,7 @@ export default function SandboxShell() {
     }
     return false;
   }, [
+    playerAddToPlaylistOpen,
     mixRadioSaveOpen,
     sleepTimerPanelOpen,
     castPickerOpen,
@@ -9327,6 +9335,9 @@ export default function SandboxShell() {
                     mixRadioEnabled: audio.state !== 'Idle' && Boolean(audio.envelope),
                     onArtistMix: () => void handleArtistMix(),
                     onTrackRadio: () => void handleTrackRadio(),
+                    onAddToPlaylist: npEnvelope
+                      ? () => setPlayerAddToPlaylistOpen(true)
+                      : undefined,
                     mixRadioSession,
                     saveMixRadioEnabled: Boolean(mixRadioSession) && playQueue.length > 0,
                     onSaveMixRadioToPlaylist: () => setMixRadioSaveOpen(true),
@@ -9708,6 +9719,13 @@ export default function SandboxShell() {
         onClose={() => setSleepTimerPanelOpen(false)}
       />
 
+      <AddToPlaylistPicker
+        open={playerAddToPlaylistOpen && Boolean(npEnvelope)}
+        onClose={() => setPlayerAddToPlaylistOpen(false)}
+        tracks={npEnvelope ? [npEnvelope] : []}
+        onDone={(message) => showAppToast(message)}
+      />
+
       <MixRadioSaveDialog
         open={mixRadioSaveOpen}
         onClose={() => setMixRadioSaveOpen(false)}
@@ -9839,6 +9857,9 @@ export default function SandboxShell() {
                   mixRadioEnabled: audio.state !== 'Idle' && Boolean(audio.envelope),
                   onArtistMix: () => void handleArtistMix(),
                   onTrackRadio: () => void handleTrackRadio(),
+                  onAddToPlaylist: npEnvelope
+                    ? () => setPlayerAddToPlaylistOpen(true)
+                    : undefined,
                   mixRadioSession,
                   saveMixRadioEnabled: Boolean(mixRadioSession) && playQueue.length > 0,
                   onSaveMixRadioToPlaylist: () => setMixRadioSaveOpen(true),
@@ -9937,6 +9958,9 @@ export default function SandboxShell() {
                   mixRadioEnabled: audio.state !== 'Idle' && Boolean(audio.envelope),
                   onArtistMix: () => void handleArtistMix(),
                   onTrackRadio: () => void handleTrackRadio(),
+                  onAddToPlaylist: npEnvelope
+                    ? () => setPlayerAddToPlaylistOpen(true)
+                    : undefined,
                   mixRadioSession,
                   saveMixRadioEnabled: Boolean(mixRadioSession) && playQueue.length > 0,
                   onSaveMixRadioToPlaylist: () => setMixRadioSaveOpen(true),
@@ -10054,6 +10078,9 @@ export default function SandboxShell() {
           mixRadioEnabled={audio.state !== 'Idle' && Boolean(audio.envelope)}
           onArtistMix={() => void handleArtistMix()}
           onTrackRadio={() => void handleTrackRadio()}
+          onAddToPlaylist={
+            npEnvelope ? () => setPlayerAddToPlaylistOpen(true) : undefined
+          }
           mixRadioSession={mixRadioSession}
           discoverySkipOnly={mixRadioSession?.skipOnly === true}
           saveMixRadioEnabled={Boolean(mixRadioSession) && playQueue.length > 0}

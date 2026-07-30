@@ -81,6 +81,8 @@ export interface PlayerBarProps {
   mixRadioEnabled?: boolean;
   onArtistMix?: () => void;
   onTrackRadio?: () => void;
+  /** Opens the owner's playlist picker for the playing track — the bar never holds the envelope. */
+  onAddToPlaylist?: () => void;
   mixRadioSession?: MixRadioSession | null;
   saveMixRadioEnabled?: boolean;
   onSaveMixRadioToPlaylist?: () => void;
@@ -169,6 +171,7 @@ export default function PlayerBar({
   mixRadioEnabled,
   onArtistMix,
   onTrackRadio,
+  onAddToPlaylist,
   mixRadioSession,
   saveMixRadioEnabled,
   onSaveMixRadioToPlaylist,
@@ -869,6 +872,7 @@ export default function PlayerBar({
                   mixRadioEnabled={mixRadioEnabled}
                   onArtistMix={onArtistMix}
                   onTrackRadio={onTrackRadio}
+                  onAddToPlaylist={onAddToPlaylist}
                   mixRadioSession={mixRadioSession}
                   saveMixRadioEnabled={saveMixRadioEnabled}
                   onSaveMixRadioToPlaylist={onSaveMixRadioToPlaylist}
@@ -1140,6 +1144,7 @@ export default function PlayerBar({
                 mixRadioEnabled={mixRadioEnabled}
                 onArtistMix={onArtistMix}
                 onTrackRadio={onTrackRadio}
+                onAddToPlaylist={onAddToPlaylist}
                 mixRadioSession={mixRadioSession}
                 saveMixRadioEnabled={saveMixRadioEnabled}
                 onSaveMixRadioToPlaylist={onSaveMixRadioToPlaylist}
