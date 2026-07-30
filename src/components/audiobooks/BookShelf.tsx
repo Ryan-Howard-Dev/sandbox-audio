@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BookOpen, Loader2, Pause, Play, Plus, Square, Trash2 } from 'lucide-react';
+import { BookOpen, FolderOpen, Loader2, Pause, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { documentToNarration, estimateNarrationSeconds } from '../../documentNarration';
 import type { NarrationChunk } from '../../documentNarration';
 import {
@@ -14,8 +14,7 @@ import {
   createNativeTextToSpeechPort,
   isNativeTextToSpeechAvailable,
 } from '../../nativeTextToSpeech';
-import { loadPreferredVoiceId } from '../../narrationVoices';
-import { epubCoverDataUrl, importEpubBytes, unzipEpub } from '../../epubImport';
+import { epubCoverDataUrl, importEpubBytes, unzipEpub, type EpubImportFailure } from '../../epubImport';
 import {
   deleteDocument,
   getDocument,
@@ -23,12 +22,26 @@ import {
   listDocuments,
   newDocumentId,
   saveDocument,
+  saveReadingPosition,
+  shouldPersistReadingPosition,
   type DocumentSummary,
+  type ReadingPosition,
 } from '../../documentLibrary';
+import {
+  describeSkippedFormats,
+  directoryPickerSupport,
+  planCalibreLibraryFiles,
+  type CalibreImportPlan,
+  type DirectoryPickerSupport,
+} from '../../calibreImportPlan';
+import type { CalibreBookCandidate } from '../../calibreLibrary';
+import { getPlatform } from '../../platformEnv';
 import { fetchAudiobookDescription } from '../../audiobookDescription';
 import { supportedDocumentFormatLabels } from '../../documentExtract';
 import { formatTime } from '../../stations/theme';
 import ImportEmptyState from './ImportEmptyState';
+import NarrationVoicePicker from './NarrationVoicePicker';
+import { useNarrationVoices } from './useNarrationVoices';
 import { seedGradient } from '../../seedGradient';
 import { useTranslation } from '../../i18n';
 
@@ -39,8 +52,53 @@ const FORMAT_LABELS = supportedDocumentFormatLabels(ACCEPTED).join(' · ');
 /** Books are bigger than papers; still bounded so a bad file cannot exhaust device memory. */
 const MAX_BYTES = 60 * 1024 * 1024;
 
+/*
+ * `webkitdirectory` is not in React's attribute types, and setting it on the element afterwards is
+ * too late — Chromium reads it when the input is created. Spread as attributes rather than casting
+ * the whole element, so every other prop on that input stays type-checked.
+ */
+const DIRECTORY_ATTRS = {
+  webkitdirectory: '',
+} as unknown as React.InputHTMLAttributes<HTMLInputElement>;
+
+/**
+ * Give up on a library import after this many books fail in a row.
+ *
+ * One unreadable book in four thousand is normal and must not stop the rest. A run of them is a
+ * different failure: a full storage quota rejects every remaining book identically, and grinding
+ * through 3,900 more to discover that wastes minutes and then reports the wrong problem.
+ */
+const CALIBRE_FAILURE_RUN_LIMIT = 5;
+
+/** Everything that can stop one book being imported. */
+type BookImportFailure = 'too-large' | EpubImportFailure;
+
+/**
+ * Each failure gets its own message: DRM will never work, a corrupt archive might on re-download,
+ * a mislabelled zip is simply the wrong file, and an oversized one is none of those.
+ */
+function bookFailureKey(reason: BookImportFailure): string {
+  if (reason === 'too-large') return 'audiobooks.bookTooLarge';
+  if (reason === 'encrypted') return 'audiobooks.bookEncrypted';
+  if (reason === 'not-an-epub') return 'audiobooks.bookNotEpub';
+  return 'audiobooks.bookUnreadable';
+}
+
+/** Calibre keeps a cover.jpg beside each book, which is often better than the one inside the EPUB. */
+function readFileAsDataUrl(file: File): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : undefined);
+    // A cover that will not decode is not worth failing an import over.
+    reader.onerror = () => resolve(undefined);
+    reader.readAsDataURL(file);
+  });
+}
+
 export interface BookShelfProps {
   onError?: (message: string) => void;
+  /** Needed because a library import is the one action here whose success is not self-evident. */
+  onSuccess?: (message: string) => void;
 }
 
 /**
@@ -50,10 +108,15 @@ export interface BookShelfProps {
  * a description and a spine that states its chapter order, while a paper has none of that and its
  * sections have to be inferred from headings. One shelf holding both would have to describe each
  * in the other's terms.
+ *
+ * Two ways in, because importing one book and importing a Calibre library are not the same job. A
+ * library is picked as a folder, planned, and shown to the listener before anything is written —
+ * a shelf that silently does something to four thousand books is not a shelf anyone can trust.
  */
-export default function BookShelf({ onError }: BookShelfProps) {
+export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const folderInputRef = useRef<HTMLInputElement | null>(null);
   const readerRef = useRef<NarrationReader | null>(null);
   const nativePortRef = useRef<ReturnType<typeof createNativeTextToSpeechPort> | null>(null);
 
@@ -64,6 +127,43 @@ export default function BookShelf({ onError }: BookShelfProps) {
   const [chunkIndex, setChunkIndex] = useState(0);
   const [state, setState] = useState<NarrationReaderState>('idle');
   const [busy, setBusy] = useState(false);
+  const { voices, voiceId, chooseVoice, speechAvailable } = useNarrationVoices();
+
+  const [plan, setPlan] = useState<CalibreImportPlan | null>(null);
+  const [libraryProgress, setLibraryProgress] = useState<{ done: number; total: number } | null>(
+    null,
+  );
+  /*
+   * The picked File objects, keyed by the same path the plan carries. The plan is paths only, and a
+   * File cannot be re-derived from a path — the browser gives no way back to a file it already
+   * handed over — so the handles have to be kept from the pick until the import runs.
+   */
+  const libraryFilesRef = useRef<Map<string, File>>(new Map());
+  const libraryCancelRef = useRef(false);
+
+  /*
+   * Read once. A folder picker either exists on this platform or it does not, and the answer cannot
+   * change while the shelf is mounted.
+   */
+  const [directorySupport] = useState<DirectoryPickerSupport>(() =>
+    directoryPickerSupport({
+      platform: getPlatform(),
+      hasWebkitDirectory:
+        typeof document !== 'undefined' && 'webkitdirectory' in document.createElement('input'),
+    }),
+  );
+
+  /*
+   * The narration callbacks are built once per reader and outlive the render that made them, so what
+   * they need is held in refs. Reading state through the closure instead would persist the position
+   * of whichever book was open when that reader was created.
+   */
+  const openBookRef = useRef<DocumentSummary | null>(null);
+  const chapterIndexRef = useRef(0);
+  const positionRef = useRef<ReadingPosition | null>(null);
+  const playChapterRef = useRef<
+    ((book: DocumentSummary, index: number, startChunk?: number) => Promise<void>) | null
+  >(null);
 
   const refresh = useCallback(() => {
     void listDocuments().then((all) => setBooks(all.filter((d) => itemKind(d) === 'book')));
@@ -71,6 +171,7 @@ export default function BookShelf({ onError }: BookShelfProps) {
 
   useEffect(refresh, [refresh]);
 
+  // Audio outliving the screen that started it is its own bug.
   useEffect(() => {
     return () => {
       readerRef.current?.stop();
@@ -79,94 +180,229 @@ export default function BookShelf({ onError }: BookShelfProps) {
     };
   }, []);
 
-  const buildReader = useCallback(async (next: NarrationChunk[]) => {
-    readerRef.current?.stop();
-    let port: NarrationSpeechPort;
-    if (await isNativeTextToSpeechAvailable()) {
-      nativePortRef.current?.dispose();
-      nativePortRef.current = createNativeTextToSpeechPort();
-      port = nativePortRef.current;
-    } else if (isNarrationSpeechAvailable()) {
-      port = createWebSpeechPort(
-        window.speechSynthesis,
-        (text) => new SpeechSynthesisUtterance(text),
-      );
-    } else {
-      return null;
-    }
-    readerRef.current = createNarrationReader(next, port, {
-      voiceId: loadPreferredVoiceId() ?? undefined,
-      onChunkChange: (index) => setChunkIndex(index),
-      onStateChange: (s) => setState(s),
-    });
-    return readerRef.current;
+  const rememberPosition = useCallback((chunk: number) => {
+    const book = openBookRef.current;
+    if (!book) return;
+    const next: ReadingPosition = {
+      chapterIndex: chapterIndexRef.current,
+      chunkIndex: chunk,
+      updatedAt: Date.now(),
+    };
+    if (!shouldPersistReadingPosition(positionRef.current, next)) return;
+    positionRef.current = next;
+    void saveReadingPosition(book.id, next);
+    // The card is patched in place rather than re-listed: re-reading the store would pull every
+    // book's record back out mid-narration to change one number.
+    setBooks((all) => all.map((b) => (b.id === book.id ? { ...b, position: next } : b)));
   }, []);
 
-  const onImport = useCallback(
-    async (file: File | undefined) => {
-      if (!file) return;
-      if (file.size > MAX_BYTES) {
-        onError?.(t('audiobooks.bookTooLarge'));
-        return;
+  /**
+   * Roll straight into the next chapter.
+   *
+   * A chapter ending is not the book ending. Without this the listener has to pick the next chapter
+   * by hand every twenty minutes, which is the one thing a ten-hour book cannot ask of them.
+   */
+  const advanceChapter = useCallback(() => {
+    const book = openBookRef.current;
+    if (!book) return;
+    const next = chapterIndexRef.current + 1;
+    if (next >= (book.chapterTitles?.length ?? 0)) return;
+    void playChapterRef.current?.(book, next);
+  }, []);
+
+  const buildReader = useCallback(
+    async (next: NarrationChunk[], startIndex: number) => {
+      readerRef.current?.stop();
+      let port: NarrationSpeechPort;
+      if (await isNativeTextToSpeechAvailable()) {
+        nativePortRef.current?.dispose();
+        nativePortRef.current = createNativeTextToSpeechPort();
+        port = nativePortRef.current;
+      } else if (isNarrationSpeechAvailable()) {
+        port = createWebSpeechPort(
+          window.speechSynthesis,
+          (text) => new SpeechSynthesisUtterance(text),
+        );
+      } else {
+        return null;
       }
-      setBusy(true);
+      readerRef.current = createNarrationReader(next, port, {
+        startIndex,
+        voiceId: voiceId || undefined,
+        onChunkChange: (index) => {
+          setChunkIndex(index);
+          rememberPosition(index);
+        },
+        onStateChange: (s) => {
+          setState(s);
+          if (s === 'finished') advanceChapter();
+        },
+      });
+      return readerRef.current;
+    },
+    [advanceChapter, rememberPosition, voiceId],
+  );
+
+  /**
+   * One EPUB onto the shelf.
+   *
+   * Shared by the single-file picker and the library import, so a book imported either way ends up
+   * described identically. Returns the reason rather than reporting it: a library import counts
+   * failures and speaks once at the end, where forty toasts would be unusable.
+   */
+  const importBookFile = useCallback(
+    async (
+      file: File,
+      options?: {
+        calibre?: CalibreBookCandidate;
+        coverFile?: File;
+        lookUpDescription?: boolean;
+      },
+    ): Promise<BookImportFailure | null> => {
+      if (file.size > MAX_BYTES) return 'too-large';
       try {
         const bytes = new Uint8Array(await file.arrayBuffer());
         const { book, reason } = importEpubBytes(bytes);
-        if (!book) {
-          // Each failure gets its own message: DRM will never work, a corrupt archive might on
-          // re-download, and a mislabelled zip is simply the wrong file.
-          onError?.(
-            t(
-              reason === 'encrypted'
-                ? 'audiobooks.bookEncrypted'
-                : reason === 'not-an-epub'
-                  ? 'audiobooks.bookNotEpub'
-                  : 'audiobooks.bookUnreadable',
-            ),
-          );
-          return;
-        }
+        if (!book) return reason ?? 'unreadable';
+
         const files = unzipEpub(bytes);
-        const cover = files ? epubCoverDataUrl(files, book.coverHref) : undefined;
+        let cover = files ? epubCoverDataUrl(files, book.coverHref) : undefined;
+        // Calibre's own cover only when the archive has none — it is a fallback, not an override.
+        if (!cover && options?.coverFile) cover = await readFileAsDataUrl(options.coverFile);
+
         const text = book.chapters.map((c) => c.text).join('\n\n');
+        /*
+         * The EPUB's metadata wins over the folder it came from. Calibre's folder names are
+         * accurate but truncated, and its own filenames are truncated harder, so the archive is the
+         * only place a full title is guaranteed intact.
+         */
+        const title = book.title || options?.calibre?.title || file.name;
+        const author = book.author || options?.calibre?.author;
 
         /*
          * The book's own description if it has one, else look it up. An EPUB usually carries
          * title and author but rarely a blurb, and a shelf card with nothing to say is the
          * complaint that started this.
+         *
+         * Off for a library import: four thousand books would be four thousand network lookups for
+         * a folder the listener picked once, and Calibre users have already curated their metadata.
          */
         let description = book.description;
-        if (!description && book.title) {
-          description = (await fetchAudiobookDescription(book.title, book.author)) ?? '';
+        if (!description && options?.lookUpDescription && title) {
+          description = (await fetchAudiobookDescription(title, author)) ?? '';
         }
 
         await saveDocument({
           kind: 'book',
-          id: newDocumentId(book.title || file.name),
-          name: book.title || file.name,
-          author: book.author,
+          id: newDocumentId(title),
+          name: title,
+          author,
           description,
           language: book.language,
           coverUrl: cover,
+          calibreId: options?.calibre?.calibreId,
           addedAt: Date.now(),
           text,
           chapters: book.chapters.map((c) => ({ title: c.title, text: c.text })),
           chunkCount: book.chapters.length,
           estimatedSeconds: estimateNarrationSeconds(documentToNarration(text)),
         });
-        refresh();
+        return null;
       } catch {
-        onError?.(t('audiobooks.bookUnreadable'));
+        return 'unreadable';
+      }
+    },
+    [],
+  );
+
+  const onImport = useCallback(
+    async (file: File | undefined) => {
+      if (!file) return;
+      setBusy(true);
+      try {
+        const reason = await importBookFile(file, { lookUpDescription: true });
+        if (reason) {
+          onError?.(t(bookFailureKey(reason)));
+          return;
+        }
+        refresh();
       } finally {
         setBusy(false);
       }
     },
-    [onError, refresh, t],
+    [importBookFile, onError, refresh, t],
   );
 
+  /**
+   * Plan a picked folder, and show it. Nothing is written here.
+   *
+   * The plan is what the confirmation step renders, so the counts a listener approves are the same
+   * numbers the import loop then walks — there is no second traversal that could disagree.
+   */
+  const onPickLibrary = useCallback(
+    (picked: FileList | null) => {
+      const files = picked ? [...picked] : [];
+      const next = planCalibreLibraryFiles(
+        files,
+        books.map((b) => ({ calibreId: b.calibreId, name: b.name, author: b.author })),
+      );
+      if (next.books.length === 0) {
+        onError?.(t('audiobooks.calibreNoBooks'));
+        return;
+      }
+      libraryFilesRef.current = new Map(files.map((f) => [f.webkitRelativePath || f.name, f]));
+      // Shown even when nothing is importable: "412 books, none readable here (mobi)" is the answer
+      // to what happened, and a folder that quietly produces no shelf entries is not.
+      setPlan(next);
+    },
+    [books, onError, t],
+  );
+
+  const closePlan = useCallback(() => {
+    setPlan(null);
+    // Thousands of File handles pin their sources open; dropping them is not just tidiness.
+    libraryFilesRef.current = new Map();
+  }, []);
+
+  const runLibraryImport = useCallback(async () => {
+    if (!plan) return;
+    libraryCancelRef.current = false;
+    const total = plan.fresh.length;
+    setLibraryProgress({ done: 0, total });
+    let imported = 0;
+    let failed = 0;
+    let failureRun = 0;
+    for (const candidate of plan.fresh) {
+      if (libraryCancelRef.current) break;
+      setLibraryProgress({ done: imported + failed, total });
+      const file = libraryFilesRef.current.get(candidate.path);
+      const coverFile = candidate.coverPath
+        ? libraryFilesRef.current.get(candidate.coverPath)
+        : undefined;
+      const reason = file
+        ? await importBookFile(file, { calibre: candidate, coverFile })
+        : 'unreadable';
+      if (reason) {
+        failed += 1;
+        failureRun += 1;
+      } else {
+        imported += 1;
+        failureRun = 0;
+      }
+      if (failureRun >= CALIBRE_FAILURE_RUN_LIMIT) break;
+      // Yield between books so the progress line actually paints. Without it a four-thousand-book
+      // loop is one enormous task and the app looks frozen for the whole import.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    setLibraryProgress(null);
+    closePlan();
+    refresh();
+    if (imported > 0) onSuccess?.(t('audiobooks.calibreImported', { count: imported }));
+    if (failed > 0) onError?.(t('audiobooks.calibreImportFailures', { count: failed }));
+  }, [closePlan, importBookFile, onError, onSuccess, plan, refresh, t]);
+
   const playChapter = useCallback(
-    async (summary: DocumentSummary, index: number) => {
+    async (summary: DocumentSummary, index: number, startChunk = 0) => {
       const full = await getDocument(summary.id);
       const chapter = full?.chapters?.[index];
       if (!chapter) {
@@ -174,11 +410,15 @@ export default function BookShelf({ onError }: BookShelfProps) {
         return;
       }
       const parsed = documentToNarration(chapter.text);
+      const start = Math.min(Math.max(0, startChunk), Math.max(0, parsed.length - 1));
+      openBookRef.current = summary;
+      chapterIndexRef.current = index;
+      positionRef.current = full.position ?? null;
       setOpenBook(summary);
       setChapterIndex(index);
       setChunks(parsed);
-      setChunkIndex(0);
-      const reader = await buildReader(parsed);
+      setChunkIndex(start);
+      const reader = await buildReader(parsed, start);
       if (!reader) {
         onError?.(t('audiobooks.docSpeechUnavailable'));
         return;
@@ -188,10 +428,29 @@ export default function BookShelf({ onError }: BookShelfProps) {
     [buildReader, onError, t],
   );
 
+  // Held in a ref so the reader's own end-of-chapter callback can reach it without the two forming
+  // a dependency cycle.
+  useEffect(() => {
+    playChapterRef.current = playChapter;
+  }, [playChapter]);
+
+  /** Tapping a book resumes it. Starting a ten-hour book over is the failure this exists to avoid. */
+  const openFromShelf = useCallback(
+    (book: DocumentSummary) => {
+      const chapters = book.chapterTitles?.length ?? 1;
+      const at = book.position;
+      // A stored chapter can outlive the book it belonged to if the same title was re-imported.
+      const chapter = Math.min(Math.max(0, at?.chapterIndex ?? 0), Math.max(0, chapters - 1));
+      return playChapter(book, chapter, at?.chunkIndex ?? 0);
+    },
+    [playChapter],
+  );
+
   const onRemove = useCallback(
     async (summary: DocumentSummary) => {
       if (openBook?.id === summary.id) {
         readerRef.current?.stop();
+        openBookRef.current = null;
         setOpenBook(null);
         setChunks([]);
       }
@@ -203,6 +462,16 @@ export default function BookShelf({ onError }: BookShelfProps) {
 
   const remaining = estimateNarrationSeconds(chunks.slice(chunkIndex));
   const openChapters = openBook?.chapterTitles ?? [];
+  const canPickFolder = directorySupport === 'supported';
+  const importing = libraryProgress !== null;
+
+  /** Named once so the head control and the empty state cannot describe the same limit differently. */
+  const libraryHint =
+    directorySupport === 'no-folder-picker-on-mobile'
+      ? t('audiobooks.calibreMobileUnavailable')
+      : canPickFolder
+        ? t('audiobooks.calibreEmptyHint')
+        : null;
 
   return (
     <section className="podcasts-library-grid-section audiobooks-library-section">
@@ -224,21 +493,51 @@ export default function BookShelf({ onError }: BookShelfProps) {
               e.target.value = '';
             }}
           />
-          {/* Head control only once the shelf has rows — see the empty state below. */}
+          {/*
+            A folder picker rather than a multi-select: a Calibre library's author and title live in
+            its directory names, and a multi-select hands back files stripped of the folders that
+            carry them. Only rendered where the platform can actually supply a directory.
+          */}
+          {canPickFolder ? (
+            <input
+              ref={folderInputRef}
+              type="file"
+              className="hidden"
+              {...DIRECTORY_ATTRS}
+              onChange={(e) => {
+                onPickLibrary(e.target.files);
+                e.target.value = '';
+              }}
+            />
+          ) : null}
+          {/* Head controls only once the shelf has rows — see the empty state below. */}
           {books.length > 0 ? (
-            <button
-              type="button"
-              className="audiobook-doc-import touch-manipulation"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={busy}
-            >
-              {busy ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Plus className="w-3.5 h-3.5" />
-              )}
-              {t('audiobooks.importBook')}
-            </button>
+            <>
+              {canPickFolder ? (
+                <button
+                  type="button"
+                  className="audiobook-doc-import touch-manipulation"
+                  onClick={() => folderInputRef.current?.click()}
+                  disabled={busy || importing}
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  {t('audiobooks.calibreImport')}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="audiobook-doc-import touch-manipulation"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={busy || importing}
+              >
+                {busy ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5" />
+                )}
+                {t('audiobooks.importBook')}
+              </button>
+            </>
           ) : null}
         </div>
       </div>
@@ -247,6 +546,79 @@ export default function BookShelf({ onError }: BookShelfProps) {
         <p className="font-mono text-[10px] text-[var(--text-dim)] px-1 mb-2">
           {t('audiobooks.formatsSupported', { formats: FORMAT_LABELS })}
         </p>
+      ) : null}
+
+      <NarrationVoicePicker voices={voices} voiceId={voiceId} onChange={chooseVoice} />
+
+      {/*
+        What the plan found, before anything is written. An import that silently does something to a
+        four-thousand-book library gives the listener no way to tell it went wrong.
+      */}
+      {plan ? (
+        <div className="audiobook-doc-now mt-3 mb-3">
+          <p className="audiobook-doc-name">
+            {plan.libraryName || t('audiobooks.calibrePlanUnnamedLibrary')}
+          </p>
+          <p className="audiobook-doc-section">
+            {t('audiobooks.calibrePlanFound', { count: plan.readable.length })}
+          </p>
+          {plan.duplicateCount > 0 ? (
+            <p className="audiobook-doc-meta">
+              {t('audiobooks.calibrePlanAlready', { count: plan.duplicateCount })}
+            </p>
+          ) : null}
+          {plan.skippedCount > 0 ? (
+            <p className="audiobook-doc-meta">
+              {t('audiobooks.calibrePlanSkipped', {
+                count: plan.skippedCount,
+                formats: describeSkippedFormats(plan.skipped),
+              })}
+            </p>
+          ) : null}
+          <p className="audiobook-doc-meta">{t('audiobooks.calibrePlanStorageNote')}</p>
+
+          {importing ? (
+            <div className="flex items-center gap-2 mt-2">
+              <p className="audiobook-doc-meta" aria-live="polite">
+                {t('audiobooks.calibreImporting', {
+                  done: Math.min(libraryProgress.done + 1, libraryProgress.total),
+                  total: libraryProgress.total,
+                })}
+              </p>
+              <button
+                type="button"
+                className="audiobook-doc-import touch-manipulation"
+                onClick={() => {
+                  // Checked between books, so the one in flight still finishes and lands whole.
+                  libraryCancelRef.current = true;
+                }}
+              >
+                {t('audiobooks.calibreStop')}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mt-2">
+              {plan.fresh.length > 0 ? (
+                <button
+                  type="button"
+                  className="audiobook-doc-import touch-manipulation"
+                  onClick={() => void runLibraryImport()}
+                >
+                  {t('audiobooks.calibrePlanConfirm', { count: plan.fresh.length })}
+                </button>
+              ) : (
+                <p className="audiobook-doc-meta">{t('audiobooks.calibreNothingNew')}</p>
+              )}
+              <button
+                type="button"
+                className="audiobook-doc-import touch-manipulation"
+                onClick={closePlan}
+              >
+                {t('audiobooks.calibrePlanCancel')}
+              </button>
+            </div>
+          )}
+        </div>
       ) : null}
 
       {books.length === 0 ? (
@@ -260,10 +632,16 @@ export default function BookShelf({ onError }: BookShelfProps) {
             // first saves a download that was never going to open.
             t('audiobooks.booksEmptyDrmHint'),
             t('audiobooks.booksEmptyOtherFormatsHint'),
+            // Says what this shelf can do with a whole library, or why it cannot here.
+            libraryHint,
+            speechAvailable === false ? t('audiobooks.docSpeechUnavailable') : null,
           ]}
           actionLabel={t('audiobooks.importBookAction')}
           onAction={() => fileInputRef.current?.click()}
+          secondaryActionLabel={canPickFolder ? t('audiobooks.calibreImportAction') : undefined}
+          onSecondaryAction={canPickFolder ? () => folderInputRef.current?.click() : undefined}
           busy={busy}
+          disabled={speechAvailable === false}
         />
       ) : (
         <ul className="audiobook-doc-list">
@@ -272,7 +650,7 @@ export default function BookShelf({ onError }: BookShelfProps) {
               <button
                 type="button"
                 className="audiobook-doc-open touch-manipulation"
-                onClick={() => void playChapter(book, 0)}
+                onClick={() => void openFromShelf(book)}
               >
                 <span className="audiobook-book-cover">
                   {book.coverUrl ? (
@@ -293,6 +671,16 @@ export default function BookShelf({ onError }: BookShelfProps) {
                     {t('audiobooks.chaptersCount', { count: book.chapterTitles?.length ?? 0 })}
                     {book.estimatedSeconds > 0 ? ` · ${formatTime(book.estimatedSeconds)}` : ''}
                   </span>
+                  {/* Only once there is a place to go back to; "resume at the start" is noise. */}
+                  {book.position && (book.position.chapterIndex > 0 || book.position.chunkIndex > 0) ? (
+                    <span className="audiobook-doc-section">
+                      {t('audiobooks.bookResume', {
+                        chapter:
+                          book.chapterTitles?.[book.position.chapterIndex] ??
+                          String(book.position.chapterIndex + 1),
+                      })}
+                    </span>
+                  ) : null}
                 </span>
               </button>
               <button
@@ -334,7 +722,9 @@ export default function BookShelf({ onError }: BookShelfProps) {
                 className="mobile-np-icon-btn touch-manipulation"
                 onClick={() => {
                   if (state === 'paused') readerRef.current?.resume();
-                  else void buildReader(chunks).then((r) => r?.play());
+                  // Resumes at the current chunk, not the top of the chapter — stopping and
+                  // starting again should not re-read twenty minutes you already heard.
+                  else void buildReader(chunks, chunkIndex).then((r) => r?.play());
                 }}
                 aria-label={t('player.play')}
               >

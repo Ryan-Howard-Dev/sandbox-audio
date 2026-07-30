@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, Plus } from 'lucide-react';
+import { FolderOpen, Loader2, Plus } from 'lucide-react';
 
 export interface ImportEmptyStateProps {
   /** Rendered above the copy — the shelf's own icon, so the two tabs stay distinguishable. */
@@ -12,6 +12,12 @@ export interface ImportEmptyStateProps {
   hints?: Array<string | null | undefined>;
   actionLabel: string;
   onAction: () => void;
+  /**
+   * A second way in, when the shelf has one. Both are omitted together — a labelled button with no
+   * handler is a control that does nothing, which is worse than an absent one.
+   */
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
   busy?: boolean;
   disabled?: boolean;
 }
@@ -37,6 +43,8 @@ export default function ImportEmptyState({
   hints,
   actionLabel,
   onAction,
+  secondaryActionLabel,
+  onSecondaryAction,
   busy,
   disabled,
 }: ImportEmptyStateProps) {
@@ -49,19 +57,33 @@ export default function ImportEmptyState({
       <p className="font-mono text-[10px] text-[var(--text-dim)] mb-4 max-w-sm mx-auto leading-relaxed">
         {lead}
       </p>
-      <button
-        type="button"
-        className="btn-accent touch-manipulation h-11 px-4 rounded-lg font-mono text-xs uppercase tracking-wider inline-flex items-center gap-2"
-        onClick={onAction}
-        disabled={busy || disabled}
-      >
-        {busy ? (
-          <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
-        ) : (
-          <Plus className="w-4 h-4" aria-hidden />
-        )}
-        {actionLabel}
-      </button>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <button
+          type="button"
+          className="btn-accent touch-manipulation h-11 px-4 rounded-lg font-mono text-xs uppercase tracking-wider inline-flex items-center gap-2"
+          onClick={onAction}
+          disabled={busy || disabled}
+        >
+          {busy ? (
+            <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+          ) : (
+            <Plus className="w-4 h-4" aria-hidden />
+          )}
+          {actionLabel}
+        </button>
+        {/* Quieter than the primary: it is the bulk route, not the one most people want first. */}
+        {secondaryActionLabel && onSecondaryAction ? (
+          <button
+            type="button"
+            className="audiobook-doc-import touch-manipulation h-11 px-4"
+            onClick={onSecondaryAction}
+            disabled={busy || disabled}
+          >
+            <FolderOpen className="w-4 h-4" aria-hidden />
+            {secondaryActionLabel}
+          </button>
+        ) : null}
+      </div>
       {/* Directly under the button, where it answers the question the button just raised. */}
       <p className="font-mono text-[10px] text-[var(--text-dim)] mt-3">{formatsLine}</p>
       {(hints ?? []).map((hint) =>

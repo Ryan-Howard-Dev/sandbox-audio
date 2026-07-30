@@ -22,9 +22,31 @@ export interface SavedBookChapter {
   text: string;
 }
 
+/**
+ * Where the listener stopped in one imported item.
+ *
+ * Kept on the item rather than in `audiobookProgress`, which looks like the obvious home and is
+ * not: its keys are `audiobook:`/`audiobook-catalog:` ids, and everything in it feeds the
+ * continue-listening shelf, which resumes a book by re-fetching chapters from a stored catalog
+ * locator. An imported EPUB has no locator, so it would appear on that shelf as an entry whose only
+ * possible response to a tap is "could not reopen that book".
+ *
+ * `chunkIndex` is the narration chunk within the chapter, not a second count: the reader's position
+ * is a chunk, and text-to-speech has no timeline to seek on.
+ */
+export interface ReadingPosition {
+  chapterIndex: number;
+  chunkIndex: number;
+  updatedAt: number;
+}
+
 export interface SavedDocument {
   /** Absent on entries written before books existed — those are all documents. */
   kind?: LibraryItemKind;
+  /** Calibre's row id, when the book came from a Calibre folder — this is what spots a re-import. */
+  calibreId?: number;
+  /** Last place read aloud. Absent until something has actually been listened to. */
+  position?: ReadingPosition;
   /** Real chapters from an EPUB spine. Documents have none; their sections come from headings. */
   chapters?: SavedBookChapter[];
   author?: string;
@@ -128,6 +150,48 @@ export async function getDocument(id: string): Promise<SavedDocument | null> {
     return doc ?? null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Whether a position is worth a write.
+ *
+ * Narration reports a new chunk every sentence or two, and each write here is a read of the whole
+ * record — text included — followed by a put of it. Doing that per chunk means rewriting a
+ * book-sized record hundreds of times per chapter. A chapter change always writes, because that is
+ * the jump a listener would notice losing.
+ */
+export function shouldPersistReadingPosition(
+  previous: ReadingPosition | null | undefined,
+  next: ReadingPosition,
+  options?: { minIntervalMs?: number; minChunkDelta?: number },
+): boolean {
+  if (next.chunkIndex < 0 || next.chapterIndex < 0) return false;
+  if (!previous) return true;
+  if (previous.chapterIndex !== next.chapterIndex) return true;
+  const minIntervalMs = options?.minIntervalMs ?? 20_000;
+  const minChunkDelta = options?.minChunkDelta ?? 10;
+  if (next.updatedAt - previous.updatedAt >= minIntervalMs) return true;
+  return Math.abs(next.chunkIndex - previous.chunkIndex) >= minChunkDelta;
+}
+
+/**
+ * Store a reading position without touching the rest of the record.
+ *
+ * Read-modify-write rather than a partial put: IndexedDB's `put` replaces the whole object, so
+ * writing a position as a bare record would delete the book's text and leave a shelf entry that
+ * opens to nothing. A missing item is not an error — it was deleted while being read.
+ */
+export async function saveReadingPosition(
+  id: string,
+  position: ReadingPosition,
+): Promise<void> {
+  try {
+    const existing = await getDocument(id);
+    if (!existing) return;
+    await saveDocument({ ...existing, position });
+  } catch {
+    /* losing a position must never interrupt narration */
   }
 }
 

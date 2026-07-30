@@ -10,7 +10,6 @@ import type { NarrationChunk } from '../../documentNarration';
 import {
   createNarrationReader,
   createWebSpeechPort,
-  isNarrationSpeechAvailable,
   type NarrationReader,
   type NarrationReaderState,
   type NarrationSpeechPort,
@@ -18,17 +17,9 @@ import {
 import {
   createNativeTextToSpeechPort,
   isNativeTextToSpeechAvailable,
-  listNativeVoices,
 } from '../../nativeTextToSpeech';
-import {
-  loadPreferredVoiceId,
-  preferLanguage,
-  resolvePreferredVoice,
-  savePreferredVoiceId,
-  sortNarrationVoices,
-  webSpeechVoiceToNarrationVoice,
-  type NarrationVoice,
-} from '../../narrationVoices';
+import NarrationVoicePicker from './NarrationVoicePicker';
+import { useNarrationVoices } from './useNarrationVoices';
 import {
   deleteDocument,
   documentDisplayName,
@@ -87,47 +78,13 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
   const [chunkIndex, setChunkIndex] = useState(0);
   const [state, setState] = useState<NarrationReaderState>('idle');
   const [busy, setBusy] = useState(false);
-  const [speechAvailable, setSpeechAvailable] = useState<boolean | undefined>(undefined);
-  const [voices, setVoices] = useState<NarrationVoice[]>([]);
-  const [voiceId, setVoiceId] = useState('');
+  const { voices, voiceId, chooseVoice, speechAvailable } = useNarrationVoices();
 
   const refresh = useCallback(() => {
     void listDocuments().then(setDocs);
   }, []);
 
   useEffect(refresh, [refresh]);
-
-  useEffect(() => {
-    let cancelled = false;
-    void isNativeTextToSpeechAvailable().then(async (native) => {
-      if (cancelled) return;
-      setSpeechAvailable(native || isNarrationSpeechAvailable());
-
-      /*
-       * Web Speech populates its voice list asynchronously and returns an empty array on the first
-       * call in most engines, so the `voiceschanged` event is the only reliable read. The native
-       * engine answers directly once it has initialised.
-       */
-      const load = async () => {
-        const found = native
-          ? await listNativeVoices()
-          : isNarrationSpeechAvailable()
-            ? window.speechSynthesis.getVoices().map(webSpeechVoiceToNarrationVoice)
-            : [];
-        if (cancelled || found.length === 0) return;
-        const ordered = sortNarrationVoices(preferLanguage(found, navigator.language ?? 'en'));
-        setVoices(ordered);
-        setVoiceId(resolvePreferredVoice(ordered, loadPreferredVoiceId())?.id ?? '');
-      };
-      await load();
-      if (!native && isNarrationSpeechAvailable()) {
-        window.speechSynthesis.addEventListener('voiceschanged', () => void load(), { once: true });
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   // Audio outliving the screen that started it is its own bug.
   useEffect(() => {
@@ -287,29 +244,7 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
         </p>
       ) : null}
 
-      {/*
-        Offline voices are listed first and win the default. The better-sounding ones are usually
-        network voices, and those stop working exactly where a long document gets listened to.
-      */}
-      {voices.length > 1 ? (
-        <label className="audiobook-doc-voice">
-          <span className="audiobook-doc-voice-label">{t('audiobooks.voiceLabel')}</span>
-          <select
-            className="audiobook-doc-voice-select"
-            value={voiceId}
-            onChange={(e) => {
-              setVoiceId(e.target.value);
-              savePreferredVoiceId(e.target.value);
-            }}
-          >
-            {voices.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.networkRequired ? `${v.label} · ${t('audiobooks.voiceOnline')}` : v.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
+      <NarrationVoicePicker voices={voices} voiceId={voiceId} onChange={chooseVoice} />
 
       {docs.length === 0 ? (
         <ImportEmptyState

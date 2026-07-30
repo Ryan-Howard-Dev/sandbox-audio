@@ -677,7 +677,7 @@ export default function AudiobooksView({
       ) : tab === 'documents' ? (
         <DocumentShelf onError={onError} />
       ) : tab === 'ebooks' ? (
-        <BookShelf onError={onError} />
+        <BookShelf onError={onError} onSuccess={onSuccess} />
       ) : (
         <>
       {phase === 'scanning' && (
