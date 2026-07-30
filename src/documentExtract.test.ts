@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { zipSync, strToU8 } from 'fflate';
-import { detectDocumentFormat, docxToText, extractDocumentText } from './documentExtract';
+import {
+  detectDocumentFormat,
+  docxToText,
+  extractDocumentText,
+  supportedDocumentFormatLabels,
+  SUPPORTED_DOCUMENT_ACCEPT,
+} from './documentExtract';
 
 /*
  * DOCX fixtures are built here rather than committed as binaries: the interesting cases are all
@@ -87,42 +93,70 @@ describe('docxToText', () => {
   });
 });
 
+describe('supportedDocumentFormatLabels', () => {
+  it('lists what the picker accepts, without the MIME noise', () => {
+    expect(supportedDocumentFormatLabels()).toEqual(['DOCX', 'EPUB', 'PDF', 'TXT', 'MD', 'HTML']);
+  });
+
+  it('collapses aliases that are one format to a reader', () => {
+    // .md/.markdown and .htm/.html are the same promise stated twice.
+    expect(supportedDocumentFormatLabels('.md,.markdown,.htm,.html,.text,.txt')).toEqual([
+      'MD',
+      'HTML',
+      'TXT',
+    ]);
+  });
+
+  it('never promises a format the extractor cannot dispatch', () => {
+    // The UI shows exactly this list beside the import button, so a label with no case behind it
+    // is a promise extractDocumentText() breaks at the moment the user acts on it.
+    for (const label of supportedDocumentFormatLabels()) {
+      expect(detectDocumentFormat(utf8(''), `book.${label.toLowerCase()}`)).not.toBe('unknown');
+    }
+    expect(SUPPORTED_DOCUMENT_ACCEPT).toContain('.pdf');
+  });
+
+  it('works for a shelf with a narrower accept list', () => {
+    expect(supportedDocumentFormatLabels('.epub,application/epub+zip')).toEqual(['EPUB']);
+  });
+});
+
 describe('extractDocumentText', () => {
-  it('reads a docx end to end', () => {
-    const result = extractDocumentText(makeDocx(paragraphs('Chapter one.')), 'book.docx');
+  it('reads a docx end to end', async () => {
+    const result = await extractDocumentText(makeDocx(paragraphs('Chapter one.')), 'book.docx');
     expect(result.format).toBe('docx');
     expect(result.text).toBe('Chapter one.');
     expect(result.reason).toBeUndefined();
   });
 
-  it('passes plain text through', () => {
-    expect(extractDocumentText(utf8('Just words.'), 'a.txt').text).toBe('Just words.');
+  it('passes plain text through', async () => {
+    expect((await extractDocumentText(utf8('Just words.'), 'a.txt')).text).toBe('Just words.');
   });
 
-  it('strips html down to prose', () => {
-    const result = extractDocumentText(utf8('<h1>Title</h1><p>Body text.</p>'), 'a.html');
+  it('strips html down to prose', async () => {
+    const result = await extractDocumentText(utf8('<h1>Title</h1><p>Body text.</p>'), 'a.html');
     expect(result.format).toBe('html');
     expect(result.text).toContain('Body text.');
     expect(result.text).not.toContain('<p>');
   });
 
-  it('says why a PDF produced nothing instead of returning silence', () => {
-    // An empty book with no explanation reads as a broken import; this is the difference between
-    // "not supported yet" and "your file is broken".
-    const result = extractDocumentText(utf8('%PDF-1.4'), 'book.pdf');
+  it('says why a broken PDF produced nothing instead of returning silence', async () => {
+    // An empty book with no explanation reads as a broken import. Real PDF extraction is covered
+    // in pdfExtract.test.ts; what matters here is that the damaged case still comes back speaking.
+    const result = await extractDocumentText(utf8('%PDF-1.4'), 'book.pdf');
     expect(result.format).toBe('pdf');
     expect(result.text).toBe('');
     expect(result.reason).toMatch(/PDF/i);
   });
 
-  it('gives a reason for an unknown type', () => {
-    const result = extractDocumentText(utf8('binary junk'), 'thing.xyz');
+  it('gives a reason for an unknown type', async () => {
+    const result = await extractDocumentText(utf8('binary junk'), 'thing.xyz');
     expect(result.text).toBe('');
     expect(result.reason).toBeTruthy();
   });
 
-  it('never throws on rubbish input', () => {
-    expect(() => extractDocumentText(new Uint8Array(0), '')).not.toThrow();
-    expect(extractDocumentText(new Uint8Array(0), '').text).toBe('');
+  it('never rejects on rubbish input', async () => {
+    // The contract callers rely on: failures arrive as a value, never as a thrown import.
+    await expect(extractDocumentText(new Uint8Array(0), '')).resolves.toMatchObject({ text: '' });
   });
 });

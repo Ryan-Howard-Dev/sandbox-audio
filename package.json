@@ -64,6 +64,7 @@
     "motion": "^12.23.24",
     "music-metadata": "^11.0.2",
     "node-ssdp": "^1.0.0",
+    "pdfjs-dist": "^6.2.108",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "vite": "^6.2.3",

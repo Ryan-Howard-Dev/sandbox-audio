@@ -26,11 +26,16 @@ import {
   type DocumentSummary,
 } from '../../documentLibrary';
 import { fetchAudiobookDescription } from '../../audiobookDescription';
+import { supportedDocumentFormatLabels } from '../../documentExtract';
 import { formatTime } from '../../stations/theme';
+import ImportEmptyState from './ImportEmptyState';
 import { seedGradient } from '../../seedGradient';
 import { useTranslation } from '../../i18n';
 
 const ACCEPTED = '.epub,application/epub+zip';
+
+/** Read off the picker's own accept list, so this shelf states exactly what it will take. */
+const FORMAT_LABELS = supportedDocumentFormatLabels(ACCEPTED).join(' · ');
 /** Books are bigger than papers; still bounded so a bad file cannot exhaust device memory. */
 const MAX_BYTES = 60 * 1024 * 1024;
 
@@ -219,26 +224,47 @@ export default function BookShelf({ onError }: BookShelfProps) {
               e.target.value = '';
             }}
           />
-          <button
-            type="button"
-            className="audiobook-doc-import touch-manipulation"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={busy}
-          >
-            {busy ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Plus className="w-3.5 h-3.5" />
-            )}
-            {t('audiobooks.importBook')}
-          </button>
+          {/* Head control only once the shelf has rows — see the empty state below. */}
+          {books.length > 0 ? (
+            <button
+              type="button"
+              className="audiobook-doc-import touch-manipulation"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy}
+            >
+              {busy ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Plus className="w-3.5 h-3.5" />
+              )}
+              {t('audiobooks.importBook')}
+            </button>
+          ) : null}
         </div>
       </div>
 
-      {books.length === 0 ? (
-        <p className="font-mono text-[10px] text-[var(--text-dim)] px-1 pb-2">
-          {t('audiobooks.booksEmpty')}
+      {books.length > 0 ? (
+        <p className="font-mono text-[10px] text-[var(--text-dim)] px-1 mb-2">
+          {t('audiobooks.formatsSupported', { formats: FORMAT_LABELS })}
         </p>
+      ) : null}
+
+      {books.length === 0 ? (
+        <ImportEmptyState
+          icon={<BookOpen className="w-8 h-8 text-accent" />}
+          title={t('audiobooks.booksEmptyTitle')}
+          lead={t('audiobooks.booksEmptyLead')}
+          formatsLine={t('audiobooks.formatsSupported', { formats: FORMAT_LABELS })}
+          hints={[
+            // Both failures are ones the importer already reports after the fact; saying them
+            // first saves a download that was never going to open.
+            t('audiobooks.booksEmptyDrmHint'),
+            t('audiobooks.booksEmptyOtherFormatsHint'),
+          ]}
+          actionLabel={t('audiobooks.importBookAction')}
+          onAction={() => fileInputRef.current?.click()}
+          busy={busy}
+        />
       ) : (
         <ul className="audiobook-doc-list">
           {books.map((book) => (

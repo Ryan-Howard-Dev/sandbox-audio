@@ -29,11 +29,51 @@ export interface DocumentExtraction {
   reason?: string;
 }
 
-/** Formats that reach readable text today, as an <input accept> list. */
+/**
+ * What the file picker offers, as an <input accept> list.
+ *
+ * The extensions lead with .docx and .epub because this list is now read twice: once by the file
+ * picker, where order is cosmetic, and once by the import screens, which show it to the user. The
+ * two formats people actually arrive with should be the first words they see.
+ */
 export const SUPPORTED_DOCUMENT_ACCEPT =
-  '.txt,.md,.markdown,.text,.htm,.html,.docx,.epub,' +
-  'text/plain,text/markdown,text/html,application/epub+zip,' +
+  '.docx,.epub,.pdf,.txt,.md,.markdown,.text,.htm,.html,' +
+  'text/plain,text/markdown,text/html,application/epub+zip,application/pdf,' +
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+/**
+ * Extensions that name the same format to a reader. ".md" and ".markdown" are one thing; listing
+ * both pads the promise without adding a format anyone can act on.
+ */
+const FORMAT_LABEL_ALIASES: Record<string, string> = {
+  markdown: 'MD',
+  text: 'TXT',
+  htm: 'HTML',
+};
+
+/**
+ * The formats that genuinely read, as short display labels — `['DOCX', 'EPUB', 'PDF', 'TXT', 'MD',
+ * 'HTML']`.
+ *
+ * Derived from the accept list rather than written out again next to the import button. A second
+ * hand-kept copy is the one that drifts, and the failure it causes is the worst kind: the UI
+ * promising a format the extractor will reject, discovered only after the user hunted down the
+ * file. MIME entries are dropped — "application/epub+zip" tells nobody anything.
+ */
+export function supportedDocumentFormatLabels(
+  accept: string = SUPPORTED_DOCUMENT_ACCEPT,
+): string[] {
+  const labels: string[] = [];
+  for (const entry of accept.split(',')) {
+    const token = entry.trim().toLowerCase();
+    if (!token.startsWith('.')) continue;
+    const ext = token.slice(1);
+    if (!ext) continue;
+    const label = FORMAT_LABEL_ALIASES[ext] ?? ext.toUpperCase();
+    if (!labels.includes(label)) labels.push(label);
+  }
+  return labels;
+}
 
 const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04];
 
@@ -176,10 +216,18 @@ export function epubToText(bytes: Uint8Array): DocumentExtraction {
 /**
  * Extract readable text from a document.
  *
- * Never throws: a document that cannot be read comes back with an empty `text` and a `reason`
- * worth showing. Callers are import handlers, and an exception there loses the file silently.
+ * Never throws — nor rejects: a document that cannot be read comes back with an empty `text` and a
+ * `reason` worth showing. Callers are import handlers, and an exception there loses the file
+ * silently.
+ *
+ * Asynchronous because of PDF alone. pdf.js parses off the main thread and cannot be made to
+ * answer synchronously, and every other format is fast enough that a promise costs nothing. One
+ * entry point that sometimes needs awaiting is better than two that differ only in colour.
  */
-export function extractDocumentText(bytes: Uint8Array, filename = ''): DocumentExtraction {
+export async function extractDocumentText(
+  bytes: Uint8Array,
+  filename = '',
+): Promise<DocumentExtraction> {
   const format = detectDocumentFormat(bytes, filename);
 
   try {
@@ -201,16 +249,15 @@ export function extractDocumentText(bytes: Uint8Array, filename = ''): DocumentE
       case 'epub':
         return epubToText(bytes);
 
-      case 'pdf':
-        // Deliberately not attempted. A PDF stores glyph positions, not sentences, so pulling
-        // prose out of one needs a real layout engine — the homegrown alternative reads columns
-        // across, keeps headers and page numbers mid-sentence, and produces audio that sounds
-        // broken without ever failing. Better to say so than to narrate that.
-        return {
-          format,
-          text: '',
-          reason: 'PDF text extraction is not built yet — try an EPUB or .docx of the same book.',
-        };
+      case 'pdf': {
+        /*
+         * Loaded on demand. pdf.js is the largest dependency in the app by a wide margin — a
+         * parser plus its worker — and most sessions never open a PDF. A static import would put
+         * all of it in the startup path of a phone app whose first screen is a music library.
+         */
+        const { pdfToText } = await import('./pdfExtract');
+        return await pdfToText(bytes);
+      }
 
       default:
         return {

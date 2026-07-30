@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FileText, Loader2, Pause, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { documentToNarration, estimateNarrationSeconds } from '../../documentNarration';
-import { extractDocumentText, SUPPORTED_DOCUMENT_ACCEPT } from '../../documentExtract';
+import {
+  extractDocumentText,
+  supportedDocumentFormatLabels,
+  SUPPORTED_DOCUMENT_ACCEPT,
+} from '../../documentExtract';
 import type { NarrationChunk } from '../../documentNarration';
 import {
   createNarrationReader,
@@ -35,6 +39,7 @@ import {
   type DocumentSummary,
 } from '../../documentLibrary';
 import { formatTime } from '../../stations/theme';
+import ImportEmptyState from './ImportEmptyState';
 import { useTranslation } from '../../i18n';
 
 /**
@@ -42,6 +47,9 @@ import { useTranslation } from '../../i18n';
  * cannot drift — a picker offering more than the extractor handles is just a broken import.
  */
 const ACCEPTED = SUPPORTED_DOCUMENT_ACCEPT;
+
+/** Same source as the picker, so the formats shown and the formats taken cannot disagree. */
+const FORMAT_LABELS = supportedDocumentFormatLabels(ACCEPTED).join(' · ');
 
 /*
  * 5 MB was right when this only took .txt and .md, where it is a lot of prose. It rejects most
@@ -60,8 +68,12 @@ export interface DocumentShelfProps {
  *
  * Deliberately a shelf and not a button bolted to the audiobook library: a research paper is not
  * an audiobook, has no author catalog or cover, and filing it among books makes both lists lie
- * about what they contain. Import lives in this section's head, at the weight of a section
- * control rather than a page-level call to action.
+ * about what they contain.
+ *
+ * Import is weighted by whether there is anything here yet. With documents on the shelf it is a
+ * section control beside the heading, out of the way of the list. With none, the shelf hands the
+ * whole tab to the call to action — a section-head button was too quiet to be found by someone
+ * who did not already know this tab imports files.
  */
 export default function DocumentShelf({ onError }: DocumentShelfProps) {
   const { t } = useTranslation();
@@ -160,7 +172,10 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
         // file.text() only ever worked because the picker was limited to .txt and .md — on a
         // .docx or .epub it decodes zip bytes as UTF-8 and narrates the mojibake. Extraction
         // dispatches on the file's actual contents instead.
-        const extracted = extractDocumentText(new Uint8Array(await file.arrayBuffer()), file.name);
+        const extracted = await extractDocumentText(
+          new Uint8Array(await file.arrayBuffer()),
+          file.name,
+        );
         const text = extracted.text;
         const parsed = text ? documentToNarration(text) : [];
         if (parsed.length === 0) {
@@ -243,22 +258,34 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
               e.target.value = '';
             }}
           />
-          <button
-            type="button"
-            className="audiobook-doc-import touch-manipulation"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={busy || speechAvailable === false}
-            aria-label={t('audiobooks.chooseDocument')}
-          >
-            {busy ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Plus className="w-3.5 h-3.5" />
-            )}
-            {t('audiobooks.importDocument')}
-          </button>
+          {/* Only while the shelf has rows — when it is empty the whole-tab call to action below
+              is the import, and two import buttons on one empty screen is just noise. */}
+          {docs.length > 0 ? (
+            <button
+              type="button"
+              className="audiobook-doc-import touch-manipulation"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy || speechAvailable === false}
+              aria-label={t('audiobooks.chooseDocument')}
+            >
+              {busy ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Plus className="w-3.5 h-3.5" />
+              )}
+              {t('audiobooks.importDocument')}
+            </button>
+          ) : null}
         </div>
       </div>
+
+      {/* Beside the import control, not buried in a help screen: the question "will it take my
+          file?" is asked at the moment of importing and nowhere else. */}
+      {docs.length > 0 ? (
+        <p className="font-mono text-[10px] text-[var(--text-dim)] px-1 mb-2">
+          {t('audiobooks.formatsSupported', { formats: FORMAT_LABELS })}
+        </p>
+      ) : null}
 
       {/*
         Offline voices are listed first and win the default. The better-sounding ones are usually
@@ -285,9 +312,32 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
       ) : null}
 
       {docs.length === 0 ? (
-        <p className="font-mono text-[10px] text-[var(--text-dim)] px-1 pb-2">
-          {t('audiobooks.documentsEmpty')}
-        </p>
+        <ImportEmptyState
+          icon={<FileText className="w-8 h-8 text-accent" />}
+          title={t('audiobooks.documentsEmptyTitle')}
+          lead={t('audiobooks.documentsEmptyLead')}
+          formatsLine={t('audiobooks.formatsSupported', { formats: FORMAT_LABELS })}
+          hints={[
+            /*
+             * The complaint that started this named Google Docs and Gemini deep research first,
+             * and both are URLs. No URL importer is promised here — a browser cannot fetch a
+             * signed-in document — so the empty state names the two-step route instead of
+             * leaving the user hunting for a paste box that will never exist.
+             */
+            t('audiobooks.documentsEmptyWebHint'),
+            /*
+             * PDF is listed as supported, so the one PDF that cannot work has to be named here.
+             * A scanned book opens, looks like pages, and extracts nothing — silence the reader
+             * would otherwise read as the import being broken.
+             */
+            t('audiobooks.documentsEmptyPdfNote'),
+            speechAvailable === false ? t('audiobooks.docSpeechUnavailable') : null,
+          ]}
+          actionLabel={t('audiobooks.importDocumentAction')}
+          onAction={() => fileInputRef.current?.click()}
+          busy={busy}
+          disabled={speechAvailable === false}
+        />
       ) : (
         <ul className="audiobook-doc-list">
           {docs.map((doc) => (

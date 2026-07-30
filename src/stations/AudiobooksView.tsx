@@ -564,6 +564,24 @@ export default function AudiobooksView({
                 divider: true,
                 onClick: () => setTab('acquire'),
               },
+              /*
+               * Importing is the other way to get a book in here, and until now the only sign of
+               * it was a two-word tab. Someone holding a .docx or an EPUB looks for the action,
+               * not for the shelf it lands on, so the action is listed where every other library
+               * action already is.
+               */
+              {
+                id: 'import-document',
+                section: 'Read aloud',
+                label: t('audiobooks.importDocumentAction'),
+                divider: true,
+                onClick: () => setTab('documents'),
+              },
+              {
+                id: 'import-book',
+                label: t('audiobooks.importBookAction'),
+                onClick: () => setTab('ebooks'),
+              },
             ]}
           />
         ) : null}
@@ -729,6 +747,30 @@ export default function AudiobooksView({
       {phase === 'ready' && books.length === 0 && (
         <div className="podcasts-empty-state">
           <p className="font-mono text-xs text-[var(--text-mid)]">{t('audiobooks.empty')}</p>
+          {/*
+            The scan only ever looks for audio. A user whose books are .docx or EPUB reads "no
+            audiobooks found" as "this app cannot read my books" — the shelves that would read
+            them are one tap away and said nothing here.
+          */}
+          <p className="font-mono text-[10px] text-[var(--text-dim)] mt-2 mb-4 max-w-sm mx-auto leading-relaxed">
+            {t('audiobooks.emptyImportHint')}
+          </p>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <button
+              type="button"
+              className="btn-accent touch-manipulation h-11 px-4 rounded-lg font-mono text-xs uppercase tracking-wider"
+              onClick={() => setTab('documents')}
+            >
+              {t('audiobooks.importDocumentAction')}
+            </button>
+            <button
+              type="button"
+              className="btn-accent touch-manipulation h-11 px-4 rounded-lg font-mono text-xs uppercase tracking-wider"
+              onClick={() => setTab('ebooks')}
+            >
+              {t('audiobooks.importBookAction')}
+            </button>
+          </div>
         </div>
       )}
 
