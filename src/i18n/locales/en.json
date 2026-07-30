@@ -1875,7 +1875,7 @@
     "docPosition": "Part {index} of {total}",
     "docLeft": "left",
     "docStop": "Stop reading",
-    "docTooLarge": "That file is too large to read aloud (5 MB limit).",
+    "docTooLarge": "That file is too large to read aloud (25 MB limit).",
     "docEmpty": "No readable text found in that file.",
     "docReadFailed": "Could not read that file.",
     "docSpeechUnavailable": "This device has no speech voices available, so documents cannot be read aloud here.",

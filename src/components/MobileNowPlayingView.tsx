@@ -205,6 +205,13 @@ export default function MobileNowPlayingView({
 
   const [vinylSettingsOpen, setVinylSettingsOpen] = useState(false);
   const [queueSheetOpen, setQueueSheetOpen] = useState(false);
+
+  /*
+   * The sheet is only offered when there is a queue to put in it and this is not a podcast, which
+   * has its own episode list. Everything else keeps the old drawer, so the queue button is never a
+   * control that does nothing — the failure this replaces was a button that opened an empty view.
+   */
+  const canShowQueueSheet = !isPodcast && !!queueSheet && queueSheet.playQueue.length > 0;
   const [heroDisplay, setHeroDisplay] = useState(loadHeroDisplayMode);
   const displayArt = resolvePlaybackCoverArt(albumArt, envelope);
   const gradientSeed = title?.trim() || album?.trim() || 'Sandbox';
@@ -557,11 +564,11 @@ export default function MobileNowPlayingView({
           className={`mobile-np-footer mobile-np-footer--unified mobile-np-footer--tidal${isPodcast ? ' mobile-np-footer--podcast' : ''}`}
         >
           <div className="mobile-np-footer-leading">
-            {onOpenQueue ? (
+            {canShowQueueSheet || onOpenQueue ? (
               <button
                 type="button"
                 className="mobile-np-icon-btn touch-manipulation"
-                onClick={onOpenQueue}
+                onClick={canShowQueueSheet ? () => setQueueSheetOpen(true) : onOpenQueue}
                 aria-label={t('player.queue')}
               >
                 <ListMusic className="w-5 h-5" strokeWidth={2} />
@@ -646,6 +653,39 @@ export default function MobileNowPlayingView({
             </button>
           </div>
         </footer>
+
+        {/*
+          The queue as a sheet over this player rather than a screen that replaces it. Modelled on
+          YouTube Music: the player collapses to a bar the transport still lives in, so reaching the
+          queue never costs you play/pause. Save is passed through as a primary button because
+          saving the queue you are currently hearing is the reason to open this at all.
+        */}
+        {canShowQueueSheet ? (
+          <PlayerQueueSheet
+            open={queueSheetOpen}
+            onClose={() => setQueueSheetOpen(false)}
+            playQueue={queueSheet.playQueue}
+            queueIndex={queueSheet.queueIndex}
+            activeEnvelope={envelope}
+            mixRadioSession={mixRadioSession}
+            playingFromLabel={playingFromLabel}
+            title={title}
+            artist={artist}
+            albumArt={displayArt}
+            isPlaying={isPlaying}
+            onTogglePlay={onTogglePlay}
+            onSkipBack={onSkipBack}
+            onSkipForward={onSkipForward}
+            onPlayQueueIndex={queueSheet.onPlayQueueIndex}
+            onRemove={queueSheet.onRemoveFromQueue}
+            onReorder={queueSheet.onReorderQueue}
+            onSaveQueue={onSaveMixRadioToPlaylist}
+            saveDisabled={!saveMixRadioEnabled}
+            mixRadioEnabled={mixRadioEnabled}
+            onArtistMix={onArtistMix}
+            onTrackRadio={onTrackRadio}
+          />
+        ) : null}
 
         {!isPodcast ? (
           <MobileHomeVinylSettingsSheet

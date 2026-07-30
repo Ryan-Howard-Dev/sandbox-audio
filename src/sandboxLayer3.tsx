@@ -9947,6 +9947,23 @@ export default function SandboxShell() {
                     setMobileNowPlayingOpen(false);
                     setQueueDrawerOpen(true);
                   },
+                  /*
+                   * Supplying this is what makes the queue a sheet over the player instead of a
+                   * drawer that replaces it. Without it MobileNowPlayingView falls back to
+                   * onOpenQueue above, so the button keeps working either way — but the sheet can
+                   * only ever open if this object is present, which is the difference between the
+                   * component existing and the feature existing.
+                   */
+                  queueSheet: {
+                    playQueue,
+                    queueIndex,
+                    onRemoveFromQueue: handleRemoveFromQueue,
+                    onReorderQueue: handleReorderQueue,
+                    // onPlayQueueIndex is deliberately absent: no jump-to-index handler exists in
+                    // this file, because the old drawer never let you tap a row to play it either.
+                    // The sheet treats it as optional and simply does not make rows tappable, which
+                    // is honest — a row that looks tappable and silently does nothing is worse.
+                  },
                   castState: speakerCast,
                   playingFromLabel: mobilePlayingFromLabel,
                   onGoToVinyl: () => {
