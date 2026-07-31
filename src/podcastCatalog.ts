@@ -141,6 +141,12 @@ export async function searchPodcastCatalogShows(
   );
   if (remote?.shows?.length) return remote.shows;
 
+  // Podcast Index has much better indie/small-show coverage, but it is opt-in (user's own
+  // key) and returns [] on 401/429 — so iTunes stays the always-available fallback.
+  const { searchPodcastIndexShows } = await import('./podcastIndexProvider');
+  const viaIndex = await searchPodcastIndexShows(q, limit);
+  if (viaIndex.length > 0) return viaIndex;
+
   return searchItunesShowsClient(q, limit);
 }
 
@@ -158,15 +164,64 @@ export async function searchPodcastCatalogEpisodes(
   return episodes.map(catalogEpisodeToHit);
 }
 
+/** Rotating discovery topics so the trending shelf varies + stays fresh across visits. */
+const PODCAST_DISCOVERY_TOPICS = [
+  'true crime',
+  'comedy',
+  'news',
+  'technology',
+  'business',
+  'science',
+  'history',
+  'health',
+  'sports',
+  'music',
+  'film',
+  'politics',
+  'interview',
+  'society culture',
+  'education',
+];
+
+function shuffle<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}
+
 export async function fetchTrendingPodcastShows(max = 20): Promise<PodcastCatalogShow[]> {
   if (isAirGapEnabled()) return [];
 
-  const remote = await fetchViaTier34<{ shows?: PodcastCatalogShow[] }>(
-    `/api/podcast/trending?max=${max}`,
-  );
-  if (remote?.shows?.length) return remote.shows;
+  // Cached per the user's Discovery-refresh setting (default 3 days) so it stays stable between
+  // visits instead of refetching/reshuffling every open.
+  const { getCachedDiscovery } = await import('./discoveryRefresh');
+  return getCachedDiscovery(
+    `podcasts-trending-${max}`,
+    async () => {
+      const remote = await fetchViaTier34<{ shows?: PodcastCatalogShow[] }>(
+        `/api/podcast/trending?max=${max}`,
+      );
+      if (remote?.shows?.length) return shuffle(remote.shows).slice(0, max);
 
-  return searchItunesShowsClient('podcast', max);
+      // Client fallback used to always search the literal "podcast" — identical every visit.
+      // Rotate across a shuffled pool of topics so each refresh surfaces a different mix.
+      const topics = shuffle(PODCAST_DISCOVERY_TOPICS).slice(0, 3);
+      const perTopic = Math.max(6, Math.ceil((max * 1.5) / topics.length));
+      const batches = await Promise.all(
+        topics.map((topic) => searchItunesShowsClient(topic, perTopic).catch(() => [])),
+      );
+      const byId = new Map<string, PodcastCatalogShow>();
+      for (const show of batches.flat()) {
+        if (!byId.has(show.id)) byId.set(show.id, show);
+      }
+      const merged = shuffle([...byId.values()]);
+      return merged.length > 0 ? merged.slice(0, max) : searchItunesShowsClient('podcast', max);
+    },
+    (shows) => shows.length === 0,
+  );
 }
 
 /** Fetch episodes for a catalog show without subscribing. */

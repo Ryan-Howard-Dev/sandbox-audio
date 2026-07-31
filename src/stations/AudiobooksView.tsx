@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, BookOpen, Magnet, Play, RefreshCw, Search, ShieldAlert, Smartphone } from 'lucide-react';
+import { ArrowLeft, BookOpen, FileText, Magnet, Play, Search, ShieldAlert, Smartphone } from 'lucide-react';
+import LockerMoreMenu from '../components/LockerMoreMenu';
 import type { MediaEnvelope } from '../sandboxLayer1';
 import AudiobookDiscoverPanel from '../components/audiobooks/AudiobookDiscoverPanel';
+import { EmbeddedChapterList } from '../components/audiobooks/EmbeddedChapterList';
+import { parseBookSeries, recommendRelatedBooks } from '../bookSeries';
 import AudiobookAcquirePanel from '../components/audiobooks/AudiobookAcquirePanel';
 import {
   checkDeviceMusicScanPermission,
@@ -11,11 +14,14 @@ import {
   type DeviceMusicScanProgress,
 } from '../deviceMusicScan';
 import { filterAudiobookScanHits } from '../lockerUploadFilter';
-import { audiobookHitToEnvelope } from '../audiobookPlayback';
+import { AUDIOBOOK_ENVELOPE_PREFIX, audiobookHitToEnvelope } from '../audiobookPlayback';
 import {
   applyAudiobookEnrichment,
+  audiobookOrigin,
   groupAudiobookHits,
+  saveAudiobookSeeds,
   type AudiobookBook,
+  type AudiobookOrigin,
 } from '../audiobookLibrary';
 import {
   enrichAudiobookList,
@@ -24,13 +30,23 @@ import {
 import { formatTime } from './theme';
 import { useTranslation } from '../i18n';
 import { proxiedArtworkUrl } from '../displaySanitize';
+import { audiobookBookKeyFromEnvelopeId, getAudiobookProgress } from '../audiobookProgress';
+import DocumentShelf from '../components/audiobooks/DocumentShelf';
+import BookShelf from '../components/audiobooks/BookShelf';
 import { seedGradient } from '../seedGradient';
+import { fetchAudiobookDescription } from '../audiobookDescription';
 
 export interface AudiobooksViewProps {
   onPlay: (envelope: MediaEnvelope) => void;
-  onPlayAlbum?: (envelopes: MediaEnvelope[], shuffle?: boolean) => void;
+  onPlayAlbum?: (
+    envelopes: MediaEnvelope[],
+    shuffle?: boolean,
+    resume?: { startIndex: number; startSeconds: number },
+  ) => void;
   onPrimePlay?: (envelope: MediaEnvelope) => void;
   activeEnvelopeId?: string | null;
+  /** Playhead of whatever is playing, so an open book can highlight the chapter you are in. */
+  playheadSeconds?: number;
   onError?: (message: string) => void;
   onSuccess?: (message: string) => void;
   onOpenAcquireSettings?: () => void;
@@ -49,27 +65,127 @@ export default function AudiobooksView({
   onPlayAlbum,
   onPrimePlay,
   activeEnvelopeId,
+  playheadSeconds,
   onError,
   onSuccess,
   onOpenAcquireSettings,
   drillBackRef,
 }: AudiobooksViewProps) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<'discover' | 'acquire' | 'device'>('discover');
+  // Pillar spine, matching Music (Library/Discover) and Podcasts (Library/Discover):
+  // 'device' is the Library tab, split by origin into Downloaded vs On device.
+  const [tab, setTab] = useState<'discover' | 'acquire' | 'device' | 'documents' | 'ebooks'>('device');
+  const [libraryOrigin, setLibraryOrigin] = useState<AudiobookOrigin | 'all'>('all');
+  const [libraryMenuOpen, setLibraryMenuOpen] = useState(false);
+  // Format-native grouping: books group by AUTHOR, not "artist" — the audiobook
+  // equivalent of the music locker's artist view.
+  const [libraryGroup, setLibraryGroup] = useState<'books' | 'authors'>('books');
+  const [openAuthor, setOpenAuthor] = useState<string | null>(null);
   const discoverDrillBackRef = useRef<(() => boolean) | null>(null);
   const [books, setBooks] = useState<AudiobookBook[]>([]);
   const [phase, setPhase] = useState<Phase>('idle');
+  const [librarySearchOpen, setLibrarySearchOpen] = useState(false);
+  const [libraryQuery, setLibraryQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<DeviceMusicScanProgress | null>(null);
   const [enrichDone, setEnrichDone] = useState(0);
   const [enrichTotal, setEnrichTotal] = useState(0);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [bookDescription, setBookDescription] = useState<string | null>(null);
   const autoStartedRef = useRef(false);
 
   const selected = useMemo(
     () => books.find((b) => b.key === selectedKey) ?? null,
     [books, selectedKey],
   );
+
+  // Derived, never stored: a scan can add a book at any moment and a cached list would be stale
+  // the instant it did.
+  const related = useMemo(
+    () => (selected ? recommendRelatedBooks(selected, books) : []),
+    [selected, books],
+  );
+  const seriesOfSelected = useMemo(
+    () => (selected ? parseBookSeries(selected.title) : null),
+    [selected],
+  );
+
+  /*
+   * Land on Discover only when there is genuinely no library to land on. Unlike podcasts the
+   * book list comes from an async device scan, so this cannot be decided at mount — it waits
+   * for the scan to settle, fires once, and bails if the user already navigated, so it can
+   * never yank a tab out from under them.
+   */
+  const landingResolvedRef = useRef(false);
+  useEffect(() => {
+    if (landingResolvedRef.current) return;
+    if (phase === 'scanning' || phase === 'enriching') return;
+    landingResolvedRef.current = true;
+    if (books.length === 0 && tab === 'device') setTab('discover');
+  }, [phase, books.length, tab]);
+
+  /*
+   * File tags carry no synopsis, so the detail page had nothing to say about a book. Look one
+   * up on open (cached, so once per book) and drop it if the user navigates away first.
+   */
+  useEffect(() => {
+    setBookDescription(null);
+    if (!selected) return;
+    let cancelled = false;
+    void fetchAudiobookDescription(selected.title, selected.author).then((text) => {
+      if (!cancelled) setBookDescription(text);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
+
+  // Persist author/title seeds so the search sheet can build a personalised Books row
+  // without running its own device scan.
+  useEffect(() => {
+    if (books.length > 0) saveAudiobookSeeds(books);
+  }, [books]);
+
+  const originCounts = useMemo(() => {
+    let downloaded = 0;
+    for (const b of books) if (audiobookOrigin(b) === 'downloaded') downloaded += 1;
+    return { downloaded, uploaded: books.length - downloaded };
+  }, [books]);
+
+  const originFiltered = useMemo(
+    () =>
+      libraryOrigin === 'all'
+        ? books
+        : books.filter((b) => audiobookOrigin(b) === libraryOrigin),
+    [books, libraryOrigin],
+  );
+
+  /** Books grouped by author — the audiobook analogue of the music locker's artists. */
+  const authors = useMemo(() => {
+    const map = new Map<string, AudiobookBook[]>();
+    for (const b of originFiltered) {
+      const key = (b.author || 'Unknown author').trim();
+      const bucket = map.get(key);
+      if (bucket) bucket.push(b);
+      else map.set(key, [b]);
+    }
+    return [...map.entries()]
+      .map(([name, list]) => ({ name, books: list }))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  }, [originFiltered]);
+
+  const visibleBooks = useMemo(() => {
+    const scoped =
+      libraryGroup === 'authors' && openAuthor
+        ? originFiltered.filter((b) => (b.author || 'Unknown author').trim() === openAuthor)
+        : originFiltered;
+    // Local filter over books already on the device — instant, no submit, matching Music.
+    const q = libraryQuery.trim().toLowerCase();
+    if (!q) return scoped;
+    return scoped.filter(
+      (b) => b.title.toLowerCase().includes(q) || b.author?.toLowerCase().includes(q),
+    );
+  }, [originFiltered, libraryGroup, openAuthor, libraryQuery]);
 
   const playBook = useCallback(
     (book: AudiobookBook) => {
@@ -80,7 +196,14 @@ export default function AudiobooksView({
         artworkUrl: book.coverUrl,
       };
       const envs = book.tracks.map((hit) => audiobookHitToEnvelope(hit, opts));
-      if (onPlayAlbum && envs.length > 1) onPlayAlbum(envs, false);
+      // Device-library books resume from the same store as catalog books.
+      const bookKey = audiobookBookKeyFromEnvelopeId(envs[0]?.envelopeId);
+      const saved = bookKey ? getAudiobookProgress(bookKey) : null;
+      const resume =
+        saved && saved.chapterIndex < envs.length
+          ? { startIndex: saved.chapterIndex, startSeconds: saved.offsetSeconds }
+          : undefined;
+      if (onPlayAlbum && envs.length > 1) onPlayAlbum(envs, false, resume);
       else if (envs[0]) onPlay(envs[0]);
     },
     [onPlay, onPlayAlbum],
@@ -249,13 +372,64 @@ export default function AudiobooksView({
                   type="button"
                   className="btn-accent touch-manipulation h-10 px-4 rounded-lg font-mono text-[10px] uppercase tracking-wider inline-flex items-center gap-2"
                   onClick={() => playBook(selected)}
+                  aria-label={t('audiobooks.playAlbum', { title: selected.title })}
                 >
-                  <Play className="w-3.5 h-3.5" />
-                  {t('audiobooks.playAlbum', { title: selected.title })}
+                  {/* Short visible label. Interpolating the full title made long book names
+                      overflow the button and overlap the text around it. */}
+                  <Play className="w-3.5 h-3.5 shrink-0" />
+                  {t('audiobooks.playBook')}
                 </button>
               </div>
             </div>
           </header>
+
+          {bookDescription ? (
+            <section className="audiobooks-book-about" aria-label={t('audiobooks.aboutLabel')}>
+              <p className="podcasts-show-detail-episodes-label">
+                {t('audiobooks.aboutLabel')}
+              </p>
+              <p className="audiobooks-book-about-text">{bookDescription}</p>
+            </section>
+          ) : null}
+
+          {/*
+            A single-file audiobook has no per-file chapter rows to list, because there is only one
+            file — but an M4B carries its chapter table inside it. Without this a five-hour book is
+            one unnavigable block. Multi-file books already list their chapters below, so this only
+            appears where the file list cannot say anything.
+
+            Seeking reuses onPlayAlbum's existing resume offset rather than adding a prop: embedded
+            chapters are positions inside one file, so the track never changes — only the offset.
+          */}
+          {selected.tracks.length === 1 && selected.tracks[0] ? (
+            <EmbeddedChapterList
+              entryId={selected.tracks[0].id}
+              positionSeconds={
+                // Only when this very file is the one playing — the highlight is a claim about the
+                // playhead, and any other book's clock would put it on an arbitrary chapter.
+                activeEnvelopeId ===
+                `${AUDIOBOOK_ENVELOPE_PREFIX}${selected.tracks[0].id}`
+                  ? playheadSeconds
+                  : undefined
+              }
+              onSeek={(startSeconds) => {
+                const hit = selected.tracks[0];
+                if (!hit) return;
+                const envelope = audiobookHitToEnvelope(hit, {
+                  title: selected.title,
+                  artist: selected.author,
+                  album: selected.title,
+                  artworkUrl: selected.coverUrl,
+                });
+                if (onPlayAlbum) {
+                  onPlayAlbum([envelope], false, { startIndex: 0, startSeconds });
+                } else {
+                  onPlay(envelope);
+                }
+              }}
+              label={t('audiobooks.chaptersLabel')}
+            />
+          ) : null}
 
           <p className="podcasts-show-detail-episodes-label mt-4">
             {t('audiobooks.chaptersLabel')}
@@ -281,6 +455,42 @@ export default function AudiobooksView({
               </li>
             ))}
           </ul>
+
+          {/*
+            Reaching part 1 from part 2 was a dead end: device-scanned books carry no series
+            metadata, so the only clue is the title, and nothing read it. Series comes first
+            because someone on book two wants book one far more than another title by the same
+            author. Hidden entirely when there is nothing real to suggest — an empty "you might
+            also like" is worse than no shelf at all.
+          */}
+          {related.length > 0 ? (
+            <section className="audiobook-related mt-6">
+              <p className="podcasts-show-detail-episodes-label">
+                {seriesOfSelected
+                  ? t('audiobooks.moreInSeries', { series: seriesOfSelected.label })
+                  : t('audiobooks.moreByAuthor', { author: selected.author })}
+              </p>
+              <ul className="podcasts-episode-list divide-y divide-[var(--border)]">
+                {related.map((other) => {
+                  const ref = parseBookSeries(other.title);
+                  return (
+                    <li key={other.key} className="podcasts-show-episode-row">
+                      <button
+                        type="button"
+                        className="podcasts-show-episode-copy touch-manipulation text-left w-full py-3"
+                        onClick={() => setSelectedKey(other.key)}
+                      >
+                        <p className="podcasts-show-episode-title">{other.title}</p>
+                        <p className="podcasts-show-episode-meta">
+                          {ref ? t('audiobooks.seriesBookNumber', { number: ref.index }) : other.author}
+                        </p>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
         </section>
       </div>
     );
@@ -290,70 +500,174 @@ export default function AudiobooksView({
     <div className="locker-page podcasts-view audiobooks-view">
       <header className="audiobooks-station-header flex items-start justify-between gap-3 mb-3 px-1">
         <div>
+          {/* Title only. The per-tab notes here listed every provider by name — capability
+              documentation that reads as noise on every visit, and that Music never needed. */}
           <h1 className="font-display text-xl font-black uppercase tracking-wider flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-accent" aria-hidden />
             {t('audiobooks.title')}
           </h1>
-          <p className="font-mono text-[10px] text-[var(--text-dim)] mt-1 max-w-md">
-            {tab === 'discover'
-              ? t('audiobooks.discoverTabNote')
-              : tab === 'acquire'
-                ? t('audiobooks.acquireTabNote')
-                : t('audiobooks.isolationNote')}
-          </p>
         </div>
+        {/* Scan/library actions live behind ⋮ rather than a permanent button pinned to the
+            header — it dominated the page and left no room for other actions. */}
+        {/* Magnifier beside the ⋮, matching Music's Library. Filters books already scanned off
+            the device, so it is instant and needs no submit — Discover keeps its own box
+            because that one fires a remote query. */}
         {tab === 'device' ? (
           <button
             type="button"
-            className="btn-accent touch-manipulation h-10 px-3 rounded-lg font-mono text-[10px] uppercase tracking-wider flex items-center gap-2 shrink-0"
-            onClick={() => void runScan()}
-            disabled={phase === 'scanning' || phase === 'enriching'}
+            className={`audiobooks-library-search-btn touch-manipulation${librarySearchOpen ? ' is-active' : ''}`}
+            onClick={() => {
+              setLibrarySearchOpen((open) => !open);
+              if (librarySearchOpen) setLibraryQuery('');
+            }}
+            aria-label={t('audiobooks.searchPlaceholder')}
+            aria-expanded={librarySearchOpen}
           >
-            <RefreshCw
-              className={`w-3.5 h-3.5${
-                phase === 'scanning' || phase === 'enriching' ? ' animate-spin' : ''
-              }`}
-            />
-            {phase === 'scanning'
-              ? t('audiobooks.scanning')
-              : phase === 'enriching'
-                ? t('audiobooks.enriching')
-                : t('audiobooks.scan')}
+            <Search className="w-5 h-5" />
           </button>
+        ) : null}
+        {tab === 'device' ? (
+          <LockerMoreMenu
+            open={libraryMenuOpen}
+            onOpenChange={setLibraryMenuOpen}
+            alwaysVisible
+            align="right"
+            portaled
+            ariaLabel={t('audiobooks.title')}
+            actions={[
+              {
+                id: 'scan',
+                section: 'Library',
+                label:
+                  phase === 'scanning'
+                    ? t('audiobooks.scanning')
+                    : phase === 'enriching'
+                      ? t('audiobooks.enriching')
+                      : t('audiobooks.scan'),
+                disabled: phase === 'scanning' || phase === 'enriching',
+                onClick: () => void runScan(),
+              },
+              {
+                id: 'origin-all',
+                section: 'Show',
+                label: `All (${books.length})`,
+                active: libraryOrigin === 'all',
+                onClick: () => setLibraryOrigin('all'),
+              },
+              {
+                id: 'origin-downloaded',
+                label: `Downloaded (${originCounts.downloaded})`,
+                active: libraryOrigin === 'downloaded',
+                onClick: () => setLibraryOrigin('downloaded'),
+              },
+              {
+                id: 'origin-uploaded',
+                label: `On device (${originCounts.uploaded})`,
+                active: libraryOrigin === 'uploaded',
+                onClick: () => setLibraryOrigin('uploaded'),
+              },
+              {
+                // Acquire is an action, not a way of browsing, so it does not belong beside
+                // Library and Discover as a peer tab. Music and Podcasts both get by with two.
+                id: 'acquire',
+                section: 'Get books',
+                label: t('audiobooks.tabAcquire'),
+                divider: true,
+                onClick: () => setTab('acquire'),
+              },
+              /*
+               * Importing is the other way to get a book in here, and until now the only sign of
+               * it was a two-word tab. Someone holding a .docx or an EPUB looks for the action,
+               * not for the shelf it lands on, so the action is listed where every other library
+               * action already is.
+               */
+              {
+                id: 'import-document',
+                section: 'Read aloud',
+                label: t('audiobooks.importDocumentAction'),
+                divider: true,
+                onClick: () => setTab('documents'),
+              },
+              {
+                id: 'import-book',
+                label: t('audiobooks.importBookAction'),
+                onClick: () => setTab('ebooks'),
+              },
+            ]}
+          />
         ) : null}
       </header>
 
-      <div className="podcasts-tabs mb-4 px-1" role="tablist" aria-label={t('audiobooks.title')}>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'discover'}
-          className={`podcasts-tab touch-manipulation${tab === 'discover' ? ' podcasts-tab--active' : ''}`}
-          onClick={() => setTab('discover')}
-        >
-          <Search className="w-3.5 h-3.5" aria-hidden />
-          {t('audiobooks.tabDiscover')}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'acquire'}
-          className={`podcasts-tab touch-manipulation${tab === 'acquire' ? ' podcasts-tab--active' : ''}`}
-          onClick={() => setTab('acquire')}
-        >
-          <Magnet className="w-3.5 h-3.5" aria-hidden />
-          {t('audiobooks.tabAcquire')}
-        </button>
+      {tab === 'device' && librarySearchOpen ? (
+        <input
+          type="search"
+          className="audiobooks-library-search-input"
+          value={libraryQuery}
+          onChange={(e) => setLibraryQuery(e.target.value)}
+          placeholder={t('audiobooks.searchPlaceholder')}
+          aria-label={t('audiobooks.searchPlaceholder')}
+          autoFocus
+        />
+      ) : null}
+
+      {/* Library first, then Discover, then Acquire — same order as the other pillars. */}
+      <div className="music-segment-bar" role="tablist" aria-label={t('audiobooks.title')}>
         <button
           type="button"
           role="tab"
           aria-selected={tab === 'device'}
-          className={`podcasts-tab touch-manipulation${tab === 'device' ? ' podcasts-tab--active' : ''}`}
+          className={`music-segment-tab touch-manipulation${tab === 'device' ? ' music-segment-tab--active' : ''}`}
           onClick={() => setTab('device')}
         >
-          <Smartphone className="w-3.5 h-3.5" aria-hidden />
           {t('audiobooks.tabDevice')}
         </button>
+        {/*
+          Documents is a pillar of its own, not a section inside the book library. A research
+          paper has no author catalog, no cover and no chapters until narration derives them —
+          putting it among audiobooks makes both lists misrepresent what they hold.
+        */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'documents'}
+          className={`music-segment-tab touch-manipulation${tab === 'documents' ? ' music-segment-tab--active' : ''}`}
+          onClick={() => setTab('documents')}
+        >
+          {t('audiobooks.tabDocuments')}
+        </button>
+        {/* Uploaded ebooks: real chapters from the spine, so a shelf of its own again. */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'ebooks'}
+          className={`music-segment-tab touch-manipulation${tab === 'ebooks' ? ' music-segment-tab--active' : ''}`}
+          onClick={() => setTab('ebooks')}
+        >
+          {t('audiobooks.tabEbooks')}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'discover'}
+          className={`music-segment-tab touch-manipulation${tab === 'discover' ? ' music-segment-tab--active' : ''}`}
+          onClick={() => setTab('discover')}
+        >
+          {t('audiobooks.tabDiscover')}
+        </button>
+        {/* Acquire lives in the ⋮ now — see the menu above. Kept as a tab only while it is the
+            active view, so the tab strip still reflects where you are. */}
+        {tab === 'acquire' ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected
+            className="podcasts-tab podcasts-tab--active touch-manipulation"
+            onClick={() => setTab('device')}
+          >
+            <Magnet className="w-3.5 h-3.5" aria-hidden />
+            {t('audiobooks.tabAcquire')}
+          </button>
+        ) : null}
       </div>
 
       {tab === 'discover' ? (
@@ -371,6 +685,10 @@ export default function AudiobooksView({
           onError={onError}
           onSuccess={onSuccess}
         />
+      ) : tab === 'documents' ? (
+        <DocumentShelf onError={onError} />
+      ) : tab === 'ebooks' ? (
+        <BookShelf onError={onError} onSuccess={onSuccess} />
       ) : (
         <>
       {phase === 'scanning' && (
@@ -440,8 +758,33 @@ export default function AudiobooksView({
       {phase === 'ready' && books.length === 0 && (
         <div className="podcasts-empty-state">
           <p className="font-mono text-xs text-[var(--text-mid)]">{t('audiobooks.empty')}</p>
+          {/*
+            The scan only ever looks for audio. A user whose books are .docx or EPUB reads "no
+            audiobooks found" as "this app cannot read my books" — the shelves that would read
+            them are one tap away and said nothing here.
+          */}
+          <p className="font-mono text-[10px] text-[var(--text-dim)] mt-2 mb-4 max-w-sm mx-auto leading-relaxed">
+            {t('audiobooks.emptyImportHint')}
+          </p>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <button
+              type="button"
+              className="btn-accent touch-manipulation h-11 px-4 rounded-lg font-mono text-xs uppercase tracking-wider"
+              onClick={() => setTab('documents')}
+            >
+              {t('audiobooks.importDocumentAction')}
+            </button>
+            <button
+              type="button"
+              className="btn-accent touch-manipulation h-11 px-4 rounded-lg font-mono text-xs uppercase tracking-wider"
+              onClick={() => setTab('ebooks')}
+            >
+              {t('audiobooks.importBookAction')}
+            </button>
+          </div>
         </div>
       )}
+
 
       {books.length > 0 && (phase === 'ready' || phase === 'enriching') && (
         <section className="podcasts-library-grid-section audiobooks-library-section">
@@ -450,12 +793,75 @@ export default function AudiobooksView({
               {t('audiobooks.yourBooks')}
             </p>
             <span className="podcasts-count-badge podcasts-count-badge--inline">
-              {books.length}
+              {visibleBooks.length}
             </span>
           </div>
 
-          <ul className="podcasts-library-grid" role="list">
-            {books.map((book) => {
+          {/* Books / Authors — format-native groupings (audiobooks have authors, not artists). */}
+          <div className="music-segment-bar" role="tablist" aria-label="Group books by">
+            {(
+              [
+                ['books', `Books ${originFiltered.length}`],
+                ['authors', `Authors ${authors.length}`],
+              ] as Array<['books' | 'authors', string]>
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={libraryGroup === id}
+                data-testid={`audiobook-group-${id}`}
+                className={`music-segment-tab touch-manipulation${
+                  libraryGroup === id ? ' music-segment-tab--active' : ''
+                }`}
+                onClick={() => {
+                  setLibraryGroup(id);
+                  setOpenAuthor(null);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {libraryGroup === 'authors' && !openAuthor ? (
+            <ul className="space-y-1" role="list">
+              {authors.map((a) => (
+                <li key={a.name}>
+                  <button
+                    type="button"
+                    className="universal-search-row touch-manipulation w-full"
+                    onClick={() => setOpenAuthor(a.name)}
+                  >
+                    <span className="universal-search-meta">
+                      <span className="universal-search-title">{a.name}</span>
+                      <span className="universal-search-sub">
+                        {a.books.length} {a.books.length === 1 ? 'book' : 'books'}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {libraryGroup === 'authors' && openAuthor ? (
+            <button
+              type="button"
+              className="universal-search-seeall touch-manipulation mb-2"
+              onClick={() => setOpenAuthor(null)}
+            >
+              ← All authors · {openAuthor}
+            </button>
+          ) : null}
+
+          <ul
+            className={`podcasts-library-grid${
+              libraryGroup === 'authors' && !openAuthor ? ' hidden' : ''
+            }`}
+            role="list"
+          >
+            {visibleBooks.map((book) => {
               const art = proxiedArtworkUrl(book.coverUrl);
               return (
                 <li key={book.key}>
@@ -522,6 +928,7 @@ export default function AudiobooksView({
           </ul>
         </section>
       )}
+
         </>
       )}
     </div>

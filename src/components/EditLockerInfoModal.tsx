@@ -12,6 +12,7 @@ export interface EditLockerInfoValues {
   releaseYear?: string;
   discCount?: string;
   genre?: string;
+  subGenre?: string;
 }
 
 interface EditLockerInfoModalProps {
@@ -39,8 +40,9 @@ interface EditLockerInfoModalProps {
 }
 
 const GENRE_OPTIONS = [
-  'Hip-Hop/Rap',
-  'R&B/Soul',
+  'Hip-Hop',
+  'R&B',
+  'Soul',
   'Electronic',
   'Rock',
   'Pop',
@@ -48,7 +50,52 @@ const GENRE_OPTIONS = [
   'Classical',
   'Ambient',
   'Metal',
-  'Other',
+  'Punk',
+  'Country',
+  'Reggae',
+  'Folk',
+];
+
+/**
+ * Suggestions only — the field stays free-text so any style can be typed.
+ * Grouped roughly by parent genre for scanability in the datalist.
+ */
+const SUB_GENRE_OPTIONS = [
+  // Hip-Hop
+  'Trap',
+  'Boom Bap',
+  'Drill',
+  'UK Drill',
+  'Grime',
+  'Cloud Rap',
+  'Conscious Hip Hop',
+  'East Coast Hip Hop',
+  'West Coast Hip Hop',
+  'Southern Hip Hop',
+  'Hardcore Hip Hop',
+  'G-Funk',
+  'Lo-Fi Hip Hop',
+  // Rock / Metal
+  'Nu Metal',
+  'Rap Metal',
+  'Rapcore',
+  'Alternative Metal',
+  'Indie Rock',
+  'Post-Punk',
+  'Grunge',
+  'Shoegaze',
+  // Electronic
+  'House',
+  'Techno',
+  'Drum & Bass',
+  'Garage',
+  'Dubstep',
+  'Ambient Techno',
+  'Trip-Hop',
+  // R&B / Soul
+  'Neo-Soul',
+  'Contemporary R&B',
+  'Funk',
 ];
 
 const labelClass =
@@ -79,6 +126,7 @@ export default function EditLockerInfoModal({
   const [releaseYear, setReleaseYear] = useState('');
   const [discCount, setDiscCount] = useState('');
   const [genre, setGenre] = useState('');
+  const [subGenre, setSubGenre] = useState('');
   const [saving, setSaving] = useState(false);
   const [coverSearching, setCoverSearching] = useState(false);
   const [identifying, setIdentifying] = useState(false);
@@ -105,6 +153,7 @@ export default function EditLockerInfoModal({
     setReleaseYear(initial.releaseYear ?? '');
     setDiscCount(initial.discCount ?? '');
     setGenre(initial.genre ?? '');
+    setSubGenre(initial.subGenre ?? '');
   }, [open, initial]);
 
   useEffect(() => {
@@ -128,6 +177,7 @@ export default function EditLockerInfoModal({
         releaseYear: releaseYear.trim() || undefined,
         discCount: discCount.trim() || undefined,
         genre: genre.trim() || undefined,
+        subGenre: subGenre.trim() || undefined,
       });
       onClose();
     } finally {
@@ -163,11 +213,18 @@ export default function EditLockerInfoModal({
   const busy = saving || coverSearching || identifying;
 
   const genreDatalist = (
-    <datalist id="edit-genre-options">
-      {GENRE_OPTIONS.map((g) => (
-        <option key={g} value={g} />
-      ))}
-    </datalist>
+    <>
+      <datalist id="edit-genre-options">
+        {GENRE_OPTIONS.map((g) => (
+          <option key={g} value={g} />
+        ))}
+      </datalist>
+      <datalist id="edit-sub-genre-options">
+        {SUB_GENRE_OPTIONS.map((g) => (
+          <option key={g} value={g} />
+        ))}
+      </datalist>
+    </>
   );
 
   return (
@@ -231,6 +288,19 @@ export default function EditLockerInfoModal({
                 className={fieldClass}
               />
               {genreDatalist}
+            </label>
+            <label className="block">
+              <span className={labelClass}>Sub-genre</span>
+              <input
+                list="edit-sub-genre-options"
+                value={subGenre}
+                onChange={(e) => setSubGenre(e.target.value)}
+                placeholder="Trap, Nu Metal, Boom Bap…"
+                className={fieldClass}
+              />
+              <span className="mt-1 block text-[10px] text-[var(--text-dim)]">
+                Genre shelves group by sub-genre when set.
+              </span>
             </label>
           </>
         ) : (
@@ -378,6 +448,20 @@ export default function EditLockerInfoModal({
                 className={fieldClass}
               />
               {genreDatalist}
+            </label>
+
+            <label className="block">
+              <span className={labelClass}>Sub-genre</span>
+              <input
+                list="edit-sub-genre-options"
+                value={subGenre}
+                onChange={(e) => setSubGenre(e.target.value)}
+                placeholder="Trap, Nu Metal, Boom Bap…"
+                className={fieldClass}
+              />
+              <span className="mt-1 block text-[10px] text-[var(--text-dim)]">
+                Genre shelves group by sub-genre when set.
+              </span>
             </label>
 
             {onIdentifyFromCatalog && (

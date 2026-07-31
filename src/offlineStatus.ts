@@ -85,14 +85,22 @@ export function searchBarPlaceholder(
     : t('shell.searchPlaceholder.default', lang);
 }
 
-/** Serious connectivity limits — show when search is focused or open. */
+/**
+ * Serious connectivity limits — show when search is focused or open.
+ *
+ * "No home server" is deliberately not one of them. Running without a Sandbox Server is a
+ * supported configuration, not a fault: the notice itself says catalog search, charts and previews
+ * still work. Showing it here put a permanent three-line banner across the top of the search
+ * dropdown for every standalone user, pushing the actual results below the fold to explain that
+ * search works. Air-gap and a dead network genuinely change what search can return, so they stay.
+ * The server state is still reported in Settings → Diagnostics, where it is actionable.
+ */
 export function searchConnectivityHint(
   status: OfflineStatusSnapshot,
   lang?: AppLanguage,
 ): string | null {
   if (status.airGap) return t('offline.searchHint.airGap', lang);
   if (!status.browserOnline) return t('offline.searchHint.noInternet', lang);
-  if (status.tier34Ok === false) return t('offline.searchHint.tier34Offline', lang);
   return null;
 }
 

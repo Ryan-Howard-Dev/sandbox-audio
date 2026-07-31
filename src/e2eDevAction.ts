@@ -15,7 +15,9 @@ export function isE2eBridgeEnabled(): boolean {
 import { detectTVPlatform } from './tvDetection';
 import {
   getNativeExoPlaybackStatus,
+  nativeExoEnqueueNext,
   nativeExoPlayUrl,
+  nativeExoSeek,
   nativeExoResume,
   nativeExoStop,
   prepareNativeExoPlayback,
@@ -96,6 +98,14 @@ export type E2ePlaybackProbe = {
   durationSecs: number;
   artworkUrl?: string;
   nativeState?: string;
+  /** What the fidelity badge is derived from — the number the listener is shown. */
+  bitrateKbps?: number;
+};
+
+export type E2eQueueProbe = {
+  index: number;
+  length: number;
+  envelopeIds: string[];
 };
 
 export type E2eNavTab =
@@ -124,6 +134,14 @@ export type E2eHandlers = {
   navigateTab?: (tab: E2eNavTab) => void;
   completeOnboarding?: () => void;
   getSearchHitCount?: () => number;
+  /**
+   * Top hits as "artist — title", in rank order.
+   *
+   * A count tells you a search succeeded, not whether it succeeded at the right thing: a query
+   * that returns 70 rows and puts a karaoke cover first looks identical to one that got it right.
+   * This is the list play-by-index actually indexes into.
+   */
+  getSearchHitSummary?: (limit?: number) => string[];
   /** Resolve + play via app pipeline so React player UI updates (title, mini player). */
   playMobileQuery?: (query: string) => Promise<boolean>;
   /** Search then play first catalog/streamable hit (UI tap path). */
@@ -141,6 +159,10 @@ export type E2eHandlers = {
   /** Current album drill track list (after openAlbum). */
   listAlbumTracks?: () => { title: string; id: string }[];
   getPlaybackProbe?: () => E2ePlaybackProbe;
+  /** Current play queue identity — index, length, and envelope ids in order. */
+  getQueueProbe?: () => E2eQueueProbe;
+  /** The app's own next-track action, same one the player button and car mode call. */
+  skipNext?: () => { ok: boolean; outcome: string };
   toggleVinylMode?: () => HeroDisplayMode;
   setHeroDisplayMode?: (mode: HeroDisplayMode) => void;
   getHeroDisplayMode?: () => HeroDisplayMode;
@@ -222,6 +244,9 @@ let e2ePlaybackHandlersLive = false;
 const pendingE2eUrls: string[] = [];
 let lastE2eUrlKey = '';
 let lastE2eUrlAt = 0;
+/** Last deep link collected from the current intent, so the poll only acts on a new one. */
+let lastSeenLaunchUrl = '';
+const LAUNCH_URL_POLL_MS = 1_000;
 
 function flushPendingE2eUrls(): void {
   if (!e2eBridgeReady || !e2eHandlersReady) return;
@@ -241,6 +266,25 @@ function enqueueE2e<T>(fn: () => Promise<T>): Promise<T> {
   const run = e2eTail.then(fn);
   e2eTail = run.catch(() => {});
   return run;
+}
+
+/*
+ * Every action runs behind this. A throw inside an action used to disappear completely: the tail
+ * swallows the rejection to keep the queue alive, and the callers `void` the run, so the only
+ * evidence was a step that logged its arrival and then nothing — which reads exactly like a hang
+ * and sent me looking at timeouts instead of at a stack. The per-case try/catch in skip-onboarding
+ * was this same lesson, learned once and not generalised.
+ */
+function runE2eAction(action: string, params: URLSearchParams): Promise<boolean> {
+  return enqueueE2e(async () => {
+    try {
+      return await handleE2eAction(action, params);
+    } catch (err) {
+      const detail = err instanceof Error ? `${err.message} | ${err.stack ?? 'no stack'}` : String(err);
+      logE2e(action, false, `threw ${detail}`);
+      return false;
+    }
+  });
 }
 
 export function registerE2eHandlers(next: E2eHandlers): void {
@@ -286,9 +330,22 @@ export function logE2e(area: string, pass: boolean, detail?: string): void {
 export function parseE2eUrl(raw: string): { action: string; params: URLSearchParams } | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
+
+  /*
+   * Parsed by hand, deliberately. `new URL()` does not populate `hostname` for non-special
+   * schemes consistently — Android's WebView left it empty for sandboxmusic://, so
+   * `host !== 'e2e'` rejected every deep link on device while Node/jsdom parsed them fine and
+   * the unit tests stayed green. That silently disabled the entire E2E bridge.
+   */
+  const direct = trimmed.match(/^[a-z][a-z0-9+.-]*:\/\/e2e\/+([^?#]+)(?:\?([^#]*))?/i);
+  if (direct?.[1]) {
+    const action = direct[1].replace(/\/+$/, '');
+    if (action) return { action, params: new URLSearchParams(direct[2] ?? '') };
+  }
+
   try {
     const url = trimmed.includes('://') ? new URL(trimmed) : new URL(`sandboxmusic://${trimmed.replace(/^\/+/, '')}`);
-    const host = url.hostname.toLowerCase();
+    const host = (url.hostname || url.host).toLowerCase();
     const path = url.pathname.replace(/^\/+/, '');
     if (host !== 'e2e') return null;
     const action = path || url.host;
@@ -1043,11 +1100,22 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
   releaseBootGateForE2e();
   switch (action) {
     case 'skip-onboarding': {
-      saveOnboardingComplete(true);
-      saveServerSetupComplete(true);
-      handlers.completeOnboarding?.();
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('sandbox-e2e-onboarding-complete'));
+      /*
+       * The PASS log is last, so a throw anywhere above it made this step silently produce
+       * nothing — indistinguishable from the deep link never arriving. Report the failure
+       * instead of letting it vanish; the gate blocks on this step, so a mute failure here
+       * stops every later assertion from ever running.
+       */
+      try {
+        saveOnboardingComplete(true);
+        saveServerSetupComplete(true);
+        handlers.completeOnboarding?.();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('sandbox-e2e-onboarding-complete'));
+        }
+      } catch (err) {
+        logE2e('onboarding', false, err instanceof Error ? err.message : String(err));
+        return false;
       }
       logE2e('onboarding', true, 'skipped');
       return true;
@@ -1226,7 +1294,32 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
           ? outcome
           : (handlers.getSearchHitCount?.() ?? 0);
       const pass = count > 0;
-      logE2e('search', pass, `query=${query} hits=${count}`);
+      const top = handlers.getSearchHitSummary?.(5) ?? [];
+      const ranked = top.length > 0 ? ` top=${top.map((s, i) => `${i}:${s}`).join(' | ')}` : '';
+      logE2e('search', pass, `query=${query} hits=${count}${ranked}`);
+      return pass;
+    }
+    case 'speech-clarity': {
+      /*
+       * Whether the narration compressor actually engaged cannot be judged by ear on a phone
+       * speaker, and DynamicsProcessing is optional system audio that vendors do disable — so a
+       * silent no-op and a working effect sound the same from a description. This asks the native
+       * side directly and reports both facts separately: supported (the device can run it) and
+       * active (it is running now). Needs playback in progress, since the effect attaches to the
+       * ExoPlayer audio session and there is no session id before a player exists.
+       */
+      const kind = params.get('profile')?.trim() || 'audiobook';
+      const [{ nativeExoSetSpeechClarity }, { AUDIOBOOK_CLARITY, PODCAST_CLARITY }] =
+        await Promise.all([import('./androidNativePlayback'), import('./speechClarity')]);
+      const profile = kind === 'podcast' ? PODCAST_CLARITY : AUDIOBOOK_CLARITY;
+      const result = await nativeExoSetSpeechClarity(profile);
+      const pass = result.active;
+      logE2e(
+        'speech-clarity',
+        pass,
+        `profile=${profile.id} supported=${result.supported} active=${result.active}` +
+          ` threshold=${profile.thresholdDb} ratio=${profile.ratio}`,
+      );
       return pass;
     }
     case 'search-play': {
@@ -1250,12 +1343,233 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         (pos > 0.2 ||
           status.state === 'playing' ||
           (status.queueLength ?? 0) >= 1);
+      /*
+       * Report the search environment on failure, not just the outcome. A run that ends with zero
+       * hits looks identical whether the network was refused, a provider returned nothing, or
+       * air-gap mode is on and correctly suppressing every remote source — and those need opposite
+       * responses. Distinguishing them was costing a device round trip each time.
+       */
+      const { isAirGapEnabled } = await import('./airGapMode');
+      const environment = pass
+        ? ''
+        : ` airGap=${isAirGapEnabled()} online=${typeof navigator === 'undefined' ? 'unknown' : navigator.onLine}`;
       logE2e(
         'search-play',
         pass,
-        `query=${query} index=${hitIndex} started=${started} playing=${playing} pos=${pos.toFixed(2)} state=${status.state ?? probe?.state ?? 'unknown'} via=catalog-pipeline`,
+        // The playing title, not just that something is playing. A pass that reports position and
+        // state alone cannot tell a correct result from a remix or a karaoke cover of it, which is
+        // exactly the failure this gate is meant to catch.
+        `query=${query} index=${hitIndex} started=${started} playing=${playing} ` +
+          `now="${probe?.artist ?? '?'} — ${probe?.title ?? '?'}" ` +
+          `pos=${pos.toFixed(2)} state=${status.state ?? probe?.state ?? 'unknown'} ` +
+          `via=catalog-pipeline${environment}`,
       );
       return pass;
+    }
+    /*
+     * Play a direct audio URL, bypassing catalog resolution entirely.
+     *
+     * The gate previously asserted real playback via YouTube, which blocks datacenter IPs, so
+     * CI could only ever prove the play spine and never that audio actually decoded. Pointing
+     * this at an open source with no bot wall (Internet Archive / LibriVox) gives genuine
+     * end-to-end coverage on a runner: ExoPlayer receives a stream, decodes it, and position
+     * advances. Resolution is exercised separately by the artist-track path.
+     */
+    case 'play-direct-url': {
+      const url = params.get('url')?.trim();
+      if (!url) {
+        logE2e('direct-url-play', false, 'missing url param');
+        return false;
+      }
+      const waitMsRaw = Number(params.get('playTimeoutMs') ?? '45000');
+      const waitMs = Number.isFinite(waitMsRaw) && waitMsRaw > 0 ? waitMsRaw : 45_000;
+      logE2e('play-spine', true, `invoke direct url=${url}`);
+      try {
+        await nativeExoPlayUrl(url, { autoPlay: true, resetQueue: true });
+      } catch (err) {
+        logE2e('direct-url-play', false, err instanceof Error ? err.message : String(err));
+        return false;
+      }
+      logE2e('play-spine', true, 'playArtistTrack returned true');
+      const playing = await waitForExoPlaying(waitMs);
+      const status = await getNativeExoPlaybackStatus();
+      const pos = playing.positionSecs ?? 0;
+      const pass = playing.ok && (pos > 0.2 || status.state === 'playing');
+      logE2e(
+        'direct-url-play',
+        pass,
+        `url=${url} state=${status.state ?? playing.state ?? 'unknown'} pos=${pos.toFixed(2)}`,
+      );
+      return pass;
+    }
+    /*
+     * Gapless boundary assertion — the regression test for today's two playback failures.
+     *
+     * Both bugs lived at the queue transition: skipping jumped between tracks, and metadata
+     * from the previous item followed the new one (the lock screen kept the old title and
+     * cover). Neither is visible to a single-track playback check, which is all the gate had.
+     *
+     * Queues two items with identical audio but DISTINCT metadata, seeks near the end of the
+     * first, and lets gapless auto-advance fire for real. Identical audio is deliberate: it
+     * isolates metadata keying from stream resolution, so a failure here can only mean the
+     * queue advanced to the wrong item or carried the wrong metadata across the boundary.
+     */
+    case 'play-direct-queue': {
+      const url = params.get('url')?.trim();
+      if (!url) {
+        logE2e('direct-queue', false, 'missing url param');
+        return false;
+      }
+      const firstId = 'e2e-queue-one';
+      const secondId = 'e2e-queue-two';
+      /*
+       * The second item needs a distinct URL: enqueueNext dedupes by URL, so passing the same
+       * one is silently refused and the queue never reaches length 2. An ignored query param
+       * keeps the audio byte-identical while making the URLs differ, which preserves the point
+       * of the test — only metadata and ordering vary, not the stream.
+       */
+      const secondUrl = url.includes('?') ? `${url}&e2e=2` : `${url}?e2e=2`;
+      try {
+        await nativeExoPlayUrl(url, {
+          autoPlay: true,
+          resetQueue: true,
+          gaplessEnabled: true,
+          envelopeId: firstId,
+          title: 'E2E TRACK ONE',
+          artist: 'E2E',
+        });
+        await nativeExoEnqueueNext(secondUrl, {
+          envelopeId: secondId,
+          title: 'E2E TRACK TWO',
+          artist: 'E2E',
+        });
+      } catch (err) {
+        logE2e('direct-queue', false, err instanceof Error ? err.message : String(err));
+        return false;
+      }
+
+      const started = await waitForExoPlaying(45_000);
+      if (!started.ok) {
+        logE2e('direct-queue', false, `first item never played state=${started.state ?? 'unknown'}`);
+        return false;
+      }
+
+      const before = await getNativeExoPlaybackStatus();
+      if ((before.queueLength ?? 0) < 2) {
+        logE2e('direct-queue', false, `enqueue failed queueLength=${before.queueLength ?? 0}`);
+        return false;
+      }
+      const duration = before.durationSecs ?? 0;
+      if (duration <= 3) {
+        logE2e('direct-queue', false, `duration too short to seek: ${duration}`);
+        return false;
+      }
+
+      // Seek near the end so the real auto-advance runs, rather than forcing an index change.
+      await nativeExoSeek(Math.max(0, duration - 2));
+
+      const deadline = Date.now() + 30_000;
+      let indexChanges = 0;
+      let lastIndex = before.queueIndex ?? 0;
+      let final = before;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 500));
+        const now = await getNativeExoPlaybackStatus();
+        const idx = now.queueIndex ?? lastIndex;
+        if (idx !== lastIndex) {
+          indexChanges += 1;
+          lastIndex = idx;
+        }
+        final = now;
+        if (idx >= 1 && Date.now() > deadline - 24_000) break;
+      }
+
+      const landedOnSecond = (final.queueIndex ?? 0) === 1;
+      const metadataFollowed = final.title === 'E2E TRACK TWO' || final.envelopeId === secondId;
+      // More than one index change is the "jumped around then landed" symptom.
+      const settled = indexChanges <= 1;
+      const pass = landedOnSecond && metadataFollowed && settled;
+      logE2e(
+        'direct-queue',
+        pass,
+        `index=${final.queueIndex ?? -1} title=${final.title ?? 'none'} envelopeId=${final.envelopeId ?? 'none'} indexChanges=${indexChanges} landed=${landedOnSecond} metadata=${metadataFollowed} settled=${settled}`,
+      );
+      return pass;
+    }
+    /*
+     * The skip assertion the emulator gate cannot make. play-direct-queue drives native directly,
+     * so the JS play queue is empty and the transition handler never runs — exactly the code that
+     * broke twice. This runs against whatever the app is actually playing, so it exercises the
+     * real queue, the real skip action, and the real native reconciliation.
+     *
+     * Asserts per skip: the index advances by exactly one, the playing track is the queue entry
+     * at that index, and the index does not land anywhere else on the way. "Jumped around then
+     * settled" is the symptom, so settling is not sufficient.
+     */
+    case 'queue-skip-probe': {
+      const skips = Math.max(1, Number(params.get('skips') ?? '1') || 1);
+      if (!handlers.getQueueProbe || !handlers.skipNext || !handlers.getPlaybackProbe) {
+        logE2e('queue-skip', false, 'queue probe handlers not registered');
+        return false;
+      }
+      const start = handlers.getQueueProbe();
+      if (start.length < 2) {
+        logE2e('queue-skip', false, `queue too short (length=${start.length}) — play an album first`);
+        return false;
+      }
+      /*
+       * Step logging, because "the deep link arrived and no result was ever logged" is not enough
+       * to act on. It could be a refused skip, a wait that never settles, or a timer the WebView
+       * is not running — different causes, opposite fixes, and silence looks the same for all of
+       * them. Each step reports where it got to.
+       */
+      logE2e('queue-skip-step', true, `start skips=${skips} index=${start.index}/${start.length}`);
+
+      for (let n = 0; n < skips; n++) {
+        const before = handlers.getQueueProbe();
+        const expectedIndex = before.index + 1;
+        if (expectedIndex >= before.length) break;
+        const expectedId = before.envelopeIds[expectedIndex];
+        logE2e('queue-skip-step', true, `skip ${n + 1} requesting from index=${before.index}`);
+
+        const requested = handlers.skipNext();
+        if (!requested.ok) {
+          logE2e(
+            'queue-skip',
+            false,
+            `skip ${n + 1} refused at index=${before.index} outcome=${requested.outcome}`,
+          );
+          return false;
+        }
+
+        const deadline = Date.now() + 15_000;
+        const seen = new Set<number>();
+        let probe = handlers.getQueueProbe();
+        while (Date.now() < deadline) {
+          await new Promise((r) => setTimeout(r, 250));
+          probe = handlers.getQueueProbe();
+          if (probe.index !== before.index) seen.add(probe.index);
+          if (probe.index === expectedIndex && Date.now() > deadline - 13_000) break;
+        }
+
+        const strayIndexes = [...seen].filter((i) => i !== expectedIndex);
+        logE2e('queue-skip-step', true, `skip ${n + 1} settled index=${probe.index} seen=[${[...seen].join(',')}]`);
+        const playing = handlers.getPlaybackProbe();
+        const identityOk = !expectedId || playing.envelopeId === expectedId;
+        const ok = probe.index === expectedIndex && strayIndexes.length === 0 && identityOk;
+        if (!ok) {
+          logE2e(
+            'queue-skip',
+            false,
+            `skip ${n + 1}: index=${probe.index} expected=${expectedIndex} stray=[${strayIndexes.join(',')}] outcome=${requested.outcome} playing=${playing.envelopeId ?? 'none'} expectedId=${expectedId ?? 'none'} title=${playing.title}`,
+          );
+          return false;
+        }
+      }
+
+      const end = handlers.getQueueProbe();
+      logE2e('queue-skip', true, `${skips} skip(s) clean, index=${end.index}/${end.length}`);
+      return true;
     }
     case 'mobile-play': {
       const query = params.get('query')?.trim();
@@ -1466,7 +1780,16 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         logE2e('artist-track-play', false, 'missing artist/track or handler');
         return false;
       }
+      /*
+       * Spine markers. The gate used to assert the play path via `[handlePlayEnvelope]`, which
+       * is behind import.meta.env.DEV and therefore stripped from the production APK that CI
+       * builds — so that assertion could never pass on the artifact it tested. These go
+       * through logE2e, which ships whenever the E2E bridge does, and let the gate prove
+       * intent -> resolve -> play was driven even when the upstream audio fetch fails.
+       */
+      logE2e('play-spine', true, `invoke artist=${artist} track=${track}`);
       const played = await handlers.playArtistTrack(artist, track);
+      logE2e('play-spine', played, `playArtistTrack returned ${played}`);
       if (!played) {
         logE2e('artist-track-play', false, `artist=${artist} track=${track} play=false`);
         return false;
@@ -1581,11 +1904,39 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         return false;
       }
       const status = await getNativeExoPlaybackStatus();
-      const pass = Boolean(probe.title?.trim());
+      /*
+       * Report both sides and whether they agree. The UI draws the title and artwork from its own
+       * envelope while ExoPlayer decodes whatever it was last handed, and when those drift the
+       * screen shows one track playing another — visible to anyone looking at the phone and
+       * invisible in a log that only ever printed the UI's side of it.
+       */
+      const uiTitle = probe.title?.trim() ?? '';
+      const nativeTitle = status.title?.trim() ?? '';
+      /*
+       * Only compared while native is actually playing. Mid-transition the player is idle and its
+       * mirrored fields still describe the track that just ended, so asserting agreement there
+       * fails on a state that is briefly correct — an unreliable probe is worse than none, because
+       * it costs a device round trip to disbelieve.
+       */
+      const comparable = status.state === 'playing';
+      const titlesAgree = !comparable || !nativeTitle || !uiTitle || nativeTitle === uiTitle;
+      const artAgree =
+        !comparable ||
+        !status.artworkUrl ||
+        !probe.artworkUrl ||
+        status.artworkUrl === probe.artworkUrl;
+      const pass = Boolean(uiTitle) && titlesAgree && artAgree;
       logE2e(
         'playback-probe',
         pass,
-        `title=${probe.title} artist=${probe.artist} album=${probe.album ?? ''} state=${probe.state} pos=${probe.positionSecs.toFixed(1)} dur=${probe.durationSecs.toFixed(1)} native=${status.state ?? 'unknown'} queueLength=${status.queueLength ?? 0} queueIndex=${status.queueIndex ?? 0}`,
+        `title=${probe.title} artist=${probe.artist} album=${probe.album ?? ''} ` +
+          `state=${probe.state} pos=${probe.positionSecs.toFixed(1)} dur=${probe.durationSecs.toFixed(1)} ` +
+          `native=${status.state ?? 'unknown'} queueLength=${status.queueLength ?? 0} queueIndex=${status.queueIndex ?? 0} ` +
+          `nativeTitle="${nativeTitle}" nativeArtist="${status.artist ?? ''}" ` +
+          `bitrateKbps=${probe.bitrateKbps ?? 0} ` +
+          `titlesAgree=${titlesAgree} artAgree=${artAgree} ` +
+          `uiEnvelope=${probe.envelopeId ?? ''} nativeEnvelope=${status.envelopeId ?? ''} ` +
+          `uiArt=${(probe.artworkUrl ?? '').slice(-40)} nativeArt=${(status.artworkUrl ?? '').slice(-40)}`,
       );
       return pass;
     }
@@ -2350,6 +2701,13 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       logE2e('stop-downloads', true, `cancelled=${cancelled}`);
       return true;
     }
+    case 'clear-all-downloads': {
+      await cancelAllActiveDownloadJobs();
+      const { clearAllDownloadJobs, getDownloadJobs } = await import('./downloadQueue');
+      clearAllDownloadJobs();
+      logE2e('clear-all-downloads', true, `remaining=${getDownloadJobs().length}`);
+      return true;
+    }
     case 'verify-locker-album': {
       const artist = params.get('artist')?.trim();
       const album = params.get('album')?.trim();
@@ -2945,6 +3303,226 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       logE2e('station-open-all', allPass, `tabs=${outcomes.join(' ')}`);
       return allPass;
     }
+    /*
+     * Documents and books, without the file picker.
+     *
+     * Both shelves start at a native picker, so the only way to exercise them has been to tap
+     * through it by hand — which is why neither has ever been covered on device. The picker only
+     * supplies bytes; everything after it is ours. These feed the same code path a picked file
+     * feeds and assert what the shelf will show: an EPUB becomes chapters, a text document becomes
+     * narration chunks, and both round-trip through IndexedDB.
+     */
+    case 'probe-document-import': {
+      const { documentToNarration, estimateNarrationSeconds } = await import('./documentNarration');
+      const { deleteDocument, getDocument, listDocuments, newDocumentId, saveDocument } =
+        await import('./documentLibrary');
+      const markdown = [
+        '# Probe Document',
+        '',
+        'The first paragraph exists so the chunker has prose to split. It runs long enough to',
+        'cover the sentence packer rather than a single short line.',
+        '',
+        '## Second Section',
+        '',
+        'A second heading proves sections are detected, and this sentence gives it body.',
+      ].join('\n');
+      const chunks = documentToNarration(markdown);
+      if (chunks.length < 2) {
+        logE2e('document-import', false, `chunker produced ${chunks.length} chunk(s)`);
+        return false;
+      }
+      const id = newDocumentId('probe-document.md');
+      const doc = {
+        kind: 'document' as const,
+        id,
+        name: 'probe-document.md',
+        addedAt: Date.now(),
+        text: markdown,
+        chunkCount: chunks.length,
+        estimatedSeconds: estimateNarrationSeconds(chunks),
+      };
+      try {
+        await saveDocument(doc);
+        const readBack = await getDocument(id);
+        const listed = (await listDocuments()).some((d) => d.id === id);
+        const ok = Boolean(readBack) && readBack?.text === markdown && listed;
+        logE2e(
+          'document-import',
+          ok,
+          `chunks=${chunks.length} secs=${doc.estimatedSeconds} readBack=${Boolean(readBack)} listed=${listed}`,
+        );
+        await deleteDocument(id);
+        return ok;
+      } catch (err) {
+        logE2e('document-import', false, err instanceof Error ? err.message : String(err));
+        return false;
+      }
+    }
+    /*
+     * The half of "documents read aloud" that importing cannot prove.
+     *
+     * Android WebView has no speechSynthesis, which is why there is a native engine at all, so
+     * parsing a document to chunks says nothing about whether a device can actually speak them.
+     * This drives the real port and waits for the engine's own completion event: synthesis that
+     * silently fails still resolves speak(), but it never reports done.
+     */
+    /*
+     * Import a track through the real locker path and report the bitrate it ends up with.
+     *
+     * The import UI starts at a native file picker, which a deep link cannot drive, so this feeds
+     * saveLockerBlob directly — the same function the picker feeds. The file is a PCM WAV built
+     * here, so its true bitrate is known by construction (sampleRate x bits x channels) and the
+     * stored value can be checked against arithmetic rather than against a guess.
+     */
+    case 'probe-locker-import': {
+      const { saveLockerBlob, getLockerEntries, averageBitrateKbps } = await import(
+        './lockerStorage'
+      );
+      const sampleRate = 8_000;
+      const seconds = 4;
+      const samples = sampleRate * seconds;
+      const header = 44;
+      const buffer = new ArrayBuffer(header + samples);
+      const view = new DataView(buffer);
+      const ascii = (offset: number, text: string) => {
+        for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+      };
+      ascii(0, 'RIFF');
+      view.setUint32(4, 36 + samples, true);
+      ascii(8, 'WAVEfmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true); // PCM
+      view.setUint16(22, 1, true); // mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate, true); // byte rate = 8-bit mono
+      view.setUint16(32, 1, true);
+      view.setUint16(34, 8, true); // bits per sample
+      ascii(36, 'data');
+      view.setUint32(40, samples, true);
+      for (let i = 0; i < samples; i++) {
+        view.setUint8(header + i, 128 + Math.round(60 * Math.sin(i / 12)));
+      }
+      const blob = new Blob([buffer], { type: 'audio/wav' });
+      const title = `Bitrate Probe ${new Date().toISOString().slice(11, 19)}`;
+      try {
+        const saved = await saveLockerBlob(blob, {
+          title,
+          artist: 'Sandbox Probe',
+          albumName: 'Bitrate Probe',
+          durationSeconds: seconds,
+          mimeType: 'audio/wav',
+          skipRemoteSync: true,
+          skipHeavyAnalysis: true,
+        });
+        const expected = averageBitrateKbps(blob.size, seconds);
+        const readBack = (await getLockerEntries()).find((e) => e.id === saved.id);
+        const ok = Boolean(readBack?.bitrateKbps) && readBack?.bitrateKbps === expected;
+        logE2e(
+          'locker-import',
+          ok,
+          `title=${title} bytes=${blob.size} secs=${seconds} expected=${expected} saved=${saved.bitrateKbps ?? 'none'} readBack=${readBack?.bitrateKbps ?? 'none'}`,
+        );
+        return ok;
+      } catch (err) {
+        logE2e('locker-import', false, err instanceof Error ? err.message : String(err));
+        return false;
+      }
+    }
+    /* Dump the continue-listening store so a duplicate card can be traced to its keys. */
+    case 'probe-audiobook-progress': {
+      const { listAudiobooksInProgress, audiobookProgressPercent } = await import(
+        './audiobookProgress'
+      );
+      const entries = listAudiobooksInProgress(50);
+      for (const entry of entries) {
+        logE2e(
+          'audiobook-progress',
+          true,
+          `key=${entry.bookKey} pct=${audiobookProgressPercent(entry)} title=${entry.title ?? 'none'} author=${entry.author ?? 'none'} locator=${entry.locator ? `${entry.locator.source}/${entry.locator.sourceId}` : 'none'}`,
+        );
+      }
+      logE2e('audiobook-progress', true, `entries=${entries.length}`);
+      return true;
+    }
+    case 'probe-narration': {
+      const { createNativeTextToSpeechPort, isNativeTextToSpeechAvailable, listNativeVoices } =
+        await import('./nativeTextToSpeech');
+      if (!(await isNativeTextToSpeechAvailable())) {
+        logE2e('narration', false, 'native text-to-speech reports unavailable');
+        return false;
+      }
+      const voices = await listNativeVoices();
+      const port = createNativeTextToSpeechPort();
+      try {
+        const spoke = await new Promise<boolean>((resolve) => {
+          const timer = setTimeout(() => resolve(false), 15_000);
+          port.speak('Sandbox narration probe.', {
+            rate: 1,
+            onEnd: () => {
+              clearTimeout(timer);
+              resolve(true);
+            },
+            onError: () => {
+              clearTimeout(timer);
+              resolve(false);
+            },
+          });
+        });
+        const offline = voices.filter((v) => !v.networkRequired).length;
+        logE2e(
+          'narration',
+          spoke,
+          `spoke=${spoke} voices=${voices.length} offline=${offline} first=${voices[0]?.label ?? 'none'}`,
+        );
+        return spoke;
+      } finally {
+        port.cancel();
+        port.dispose();
+      }
+    }
+    case 'probe-book-import': {
+      const { buildProbeEpub } = await import('./epubProbeFixture');
+      const { importEpubBytes } = await import('./epubImport');
+      const { deleteDocument, getDocument, newDocumentId, saveDocument } = await import(
+        './documentLibrary'
+      );
+      const result = importEpubBytes(buildProbeEpub());
+      if (!result.book) {
+        logE2e('book-import', false, `parse failed reason=${result.reason ?? 'unknown'}`);
+        return false;
+      }
+      const book = result.book;
+      if (book.chapters.length < 2) {
+        logE2e('book-import', false, `only ${book.chapters.length} chapter(s) from the spine`);
+        return false;
+      }
+      const id = newDocumentId(book.title);
+      try {
+        await saveDocument({
+          kind: 'book',
+          id,
+          name: book.title,
+          author: book.author,
+          addedAt: Date.now(),
+          text: book.chapters.map((c) => c.text).join('\n\n'),
+          chapters: book.chapters,
+          chunkCount: book.chapters.length,
+          estimatedSeconds: 0,
+        });
+        const readBack = await getDocument(id);
+        const ok = (readBack?.chapters?.length ?? 0) === book.chapters.length;
+        logE2e(
+          'book-import',
+          ok,
+          `title=${book.title} author=${book.author ?? 'none'} chapters=${book.chapters.length} readBackChapters=${readBack?.chapters?.length ?? 0}`,
+        );
+        await deleteDocument(id);
+        return ok;
+      } catch (err) {
+        logE2e('book-import', false, err instanceof Error ? err.message : String(err));
+        return false;
+      }
+    }
     case 'probe-track-radio': {
       const { TRACK_RADIO_PLAYLIST_ID, TRACK_RADIO_PLAYLIST_NAME } = await import(
         './radioSessionPlaylist'
@@ -2981,15 +3559,21 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
 export async function handleE2eUrl(raw: string): Promise<boolean> {
   const parsed = parseE2eUrl(raw);
   if (!parsed) return false;
-  return enqueueE2e(() => handleE2eAction(parsed.action, parsed.params));
+  return runE2eAction(parsed.action, parsed.params);
 }
 
 function queueOrHandleE2eUrl(raw: string): void {
   markBootInteractiveFromAutomation();
   const parsed = parseE2eUrl(raw);
+  /*
+   * Log arrival before dispatch. Without this, a step that never reports PASS is ambiguous
+   * between "the deep link never reached the app" and "it arrived and the handler threw" —
+   * which need opposite fixes, and cost a CI round trip each time they are guessed at.
+   */
+  logE2e('deeplink', Boolean(parsed), `raw=${raw} action=${parsed?.action ?? 'UNPARSED'}`);
   // Bootstrap / probe actions must not wait behind the sandboxLayer3 chunk on large vaults.
   if (parsed?.action === 'skip-onboarding' || parsed?.action === 'probe-handlers' || parsed?.action === 'probe-station-open' || parsed?.action === 'probe-all-stations-open') {
-    void enqueueE2e(() => handleE2eAction(parsed.action, parsed.params));
+    void runE2eAction(parsed.action, parsed.params);
     return;
   }
   // Capacitor often delivers the same deep link 2–3×; ignore duplicates while busy.
@@ -3021,23 +3605,67 @@ export async function initE2eDeepLinks(): Promise<() => void> {
   e2eDeepLinksInit = (async () => {
     const { App } = await import('@capacitor/app');
     const sub = await App.addListener('appUrlOpen', (event) => {
+      lastSeenLaunchUrl = event.url;
       queueOrHandleE2eUrl(event.url);
     });
+
+    /*
+     * Primary delivery path: MainActivity.forwardE2eDeepLink dispatches this straight from
+     * onNewIntent. appUrlOpen above stays as a fallback — it works often enough to be worth
+     * keeping, just not enough to depend on. Both funnel through the same dedupe.
+     */
+    const onNativeDeepLink = (event: Event) => {
+      const detail = (event as CustomEvent<{ url?: string }>).detail;
+      const url = typeof detail?.url === 'string' ? detail.url.trim() : '';
+      if (!url) return;
+      lastSeenLaunchUrl = url;
+      queueOrHandleE2eUrl(url);
+    };
+    window.addEventListener('sandboxE2eDeepLink', onNativeDeepLink);
     e2eBridgeReady = true;
     logE2e('bridge', true, 'ready');
     flushPendingE2eUrls();
     try {
       const launch = await App.getLaunchUrl();
       if (launch?.url) {
+        lastSeenLaunchUrl = launch.url;
         queueOrHandleE2eUrl(launch.url);
       }
     } catch {
       /* no cold-start URL */
     }
+
+    /*
+     * Second delivery path, because appUrlOpen alone is not dependable. Firing a deep link at an
+     * already-running app logs `START ... result code=3` (delivered to the top activity) and then
+     * nothing: Capacitor never reaches "Notifying listeners", so no listener can help. It works,
+     * then stops, then works again — which reads as a hung probe run and cost most of an evening
+     * pointed at the wrong layer.
+     *
+     * MainActivity.onNewIntent calls setIntent(), and getLaunchUrl() reads the *current* intent,
+     * so the URL is still there to be collected even when the event is dropped. Polling it closes
+     * the gap. Debug-only: this whole module is compiled out unless SANDBOX_ANDROID_E2E=true.
+     */
+    const poll = setInterval(() => {
+      void (async () => {
+        try {
+          const current = await App.getLaunchUrl();
+          const url = current?.url?.trim();
+          if (!url || url === lastSeenLaunchUrl) return;
+          lastSeenLaunchUrl = url;
+          queueOrHandleE2eUrl(url);
+        } catch {
+          /* intent gone; nothing to collect */
+        }
+      })();
+    }, LAUNCH_URL_POLL_MS);
+
     return () => {
       e2eBridgeReady = false;
       e2eHandlersReady = false;
       e2ePlaybackHandlersLive = false;
+      clearInterval(poll);
+      window.removeEventListener('sandboxE2eDeepLink', onNativeDeepLink);
       void sub.remove();
       e2eDeepLinksInit = null;
     };

@@ -4,6 +4,8 @@
  */
 
 import type { DeviceMusicScanHit } from './lockerUploadFilter';
+import { splitTitleWords } from './titleWordSplit';
+import { prefsGetItem, prefsSetItem } from './prefsStorage';
 import {
   isBadAudiobookAuthor,
   isBadAudiobookTitle,
@@ -28,15 +30,84 @@ export type AudiobookBook = {
   metaSource?: AudiobookMetaEnrichment['source'];
 };
 
+/** Where a book came from — drives the Library's Downloaded / On device split. */
+export type AudiobookOrigin = 'downloaded' | 'uploaded';
+
+const SEEDS_KEY = 'sandbox_audiobook_seeds_v1';
+
+export interface AudiobookSeeds {
+  authors: string[];
+  titles: string[];
+}
+
+/**
+ * Persist authors/titles from the last device scan.
+ *
+ * The audiobook library itself is scan-only (held in AudiobooksView state), but the search
+ * sheet needs to know which authors the user owns to build a "books from authors you have"
+ * row — without paying for a full media scan just to open search.
+ */
+export function saveAudiobookSeeds(books: AudiobookBook[]): void {
+  try {
+    const authors = [...new Set(books.map((b) => b.author?.trim()).filter(Boolean))];
+    const titles = [...new Set(books.map((b) => b.title?.trim()).filter(Boolean))];
+    prefsSetItem(
+      SEEDS_KEY,
+      JSON.stringify({ authors: authors.slice(0, 30), titles: titles.slice(0, 200) }),
+    );
+  } catch {
+    /* seeds are an optimisation, never fatal */
+  }
+}
+
+export function loadAudiobookSeeds(): AudiobookSeeds {
+  try {
+    const raw = prefsGetItem(SEEDS_KEY);
+    if (!raw) return { authors: [], titles: [] };
+    const parsed = JSON.parse(raw) as Partial<AudiobookSeeds>;
+    return {
+      authors: Array.isArray(parsed.authors) ? parsed.authors : [],
+      titles: Array.isArray(parsed.titles) ? parsed.titles : [],
+    };
+  } catch {
+    return { authors: [], titles: [] };
+  }
+}
+
+/**
+ * Folders the app itself writes acquired books into. Anything else on the device is the
+ * user's own file (side-loaded over USB/MTP, copied from a PC, another app's export), so
+ * the Library separates the two rather than showing one undifferentiated pile.
+ */
+const DOWNLOADED_PATH_RE =
+  /(sandbox|audiobookshelf|\/Android\/data\/rd\.sheepskin\.sandboxmusic|audiobooks?\/downloads?)/i;
+
+export function audiobookOriginForPath(pathOrFolder: string): AudiobookOrigin {
+  return DOWNLOADED_PATH_RE.test(pathOrFolder ?? '') ? 'downloaded' : 'uploaded';
+}
+
+/** Origin of a grouped book — downloaded when any chapter sits in an app-managed folder. */
+export function audiobookOrigin(book: AudiobookBook): AudiobookOrigin {
+  return book.tracks.some(
+    (t) => audiobookOriginForPath(t.path || t.folder || '') === 'downloaded',
+  )
+    ? 'downloaded'
+    : 'uploaded';
+}
+
 function stripExt(name: string): string {
   return name.replace(/\.(m4b|mp3|m4a|aac|flac|ogg|wav|aa|aax)$/i, '').trim();
 }
 
 function cleanLabel(raw: string): string {
-  return raw
+  const spaced = raw
     .replace(/[._]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+  // Dots and underscores are only half the problem: a file named "ThescaredMusroom" has no
+  // separator at all, and left alone it is unreadable on the shelf and unsearchable. The splitter
+  // leaves anything it does not fully recognise exactly as it found it.
+  return splitTitleWords(spaced);
 }
 
 /** Best-effort book title from MediaStore tags / folder / filename. */

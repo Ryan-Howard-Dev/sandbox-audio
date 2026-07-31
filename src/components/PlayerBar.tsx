@@ -17,7 +17,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import type { useAudioFSM } from '../sandboxLayer1';
+import type { MediaEnvelope, useAudioFSM } from '../sandboxLayer1';
 import type { RepeatMode } from '../queuePersistence';
 import type { MixRadioSession } from '../playerMixRadio';
 import type { CastState } from '../castState';
@@ -81,6 +81,8 @@ export interface PlayerBarProps {
   mixRadioEnabled?: boolean;
   onArtistMix?: () => void;
   onTrackRadio?: () => void;
+  /** Opens the owner's playlist picker for the playing track — the bar never holds the envelope. */
+  onAddToPlaylist?: () => void;
   mixRadioSession?: MixRadioSession | null;
   saveMixRadioEnabled?: boolean;
   onSaveMixRadioToPlaylist?: () => void;
@@ -131,6 +133,21 @@ export interface PlayerBarProps {
   onTogglePodcastSkipAdChapters?: () => void;
   /** True while a tap is resolving/connecting — UI feedback only. */
   resolvePending?: boolean;
+  /**
+   * The track still coming out of the speaker while a different one resolves.
+   *
+   * Set only during that window. The bar otherwise reads its identity from the audio layer, which
+   * adopts the skip target the moment it is tapped — and on this screen the bar sits under the hero
+   * player, so the two would name different songs at the same time.
+   */
+  heldNowPlaying?: {
+    title: string;
+    artist: string;
+    album?: string;
+    envelope: MediaEnvelope | null;
+    positionSeconds: number;
+    durationSeconds: number;
+  } | null;
 }
 
 export default function PlayerBar({
@@ -169,6 +186,7 @@ export default function PlayerBar({
   mixRadioEnabled,
   onArtistMix,
   onTrackRadio,
+  onAddToPlaylist,
   mixRadioSession,
   saveMixRadioEnabled,
   onSaveMixRadioToPlaylist,
@@ -205,6 +223,7 @@ export default function PlayerBar({
   podcastSkipAdChaptersEnabled = false,
   onTogglePodcastSkipAdChapters,
   resolvePending = false,
+  heldNowPlaying = null,
 }: PlayerBarProps) {
   const { t } = useTranslation();
   const longPressRef = useRef<number | null>(null);
@@ -235,24 +254,31 @@ export default function PlayerBar({
   const track = connectRemote && remoteMirror
     ? remoteMirror.playQueue[remoteMirror.queueIndex] ?? null
     : null;
-  const { title: displayTitle, artist: displayArtist, album: displayAlbum } =
-    resolvePlayerBarDisplay(
-      Boolean(connectRemote),
-      track,
-      {
-        title: audio.title,
-        artist: audio.artist,
-        state: audio.state,
-        envelope: audio.envelope,
-      },
-    );
+  const audioDisplay = resolvePlayerBarDisplay(
+    Boolean(connectRemote),
+    track,
+    {
+      title: audio.title,
+      artist: audio.artist,
+      state: audio.state,
+      envelope: audio.envelope,
+    },
+  );
+  const displayTitle = heldNowPlaying ? heldNowPlaying.title : audioDisplay.title;
+  const displayArtist = heldNowPlaying ? heldNowPlaying.artist : audioDisplay.artist;
+  const displayAlbum = heldNowPlaying ? heldNowPlaying.album : audioDisplay.album;
+  /** Cover, transport badge and fidelity all describe the audible track, not the queued one. */
+  const displayEnvelope = heldNowPlaying ? heldNowPlaying.envelope : audio.envelope;
   const displayCurrentTime = connectRemote && remoteMirror
     ? remoteMirror.currentTimeSeconds
-    : localPlaybackOverride?.currentTimeSeconds ?? audio.currentTimeSeconds;
+    : localPlaybackOverride?.currentTimeSeconds ??
+      (heldNowPlaying ? heldNowPlaying.positionSeconds : audio.currentTimeSeconds);
   const displayDuration =
     connectRemote && remoteMirror && remoteMirror.durationSeconds > 0
       ? remoteMirror.durationSeconds
-      : audio.durationSeconds;
+      : heldNowPlaying
+        ? heldNowPlaying.durationSeconds
+        : audio.durationSeconds;
   const displayVolume = connectRemote && remoteMirror ? remoteMirror.volume : audio.volume;
   const duration = displayDuration > 0 ? displayDuration : 0;
   const progress =
@@ -277,12 +303,12 @@ export default function PlayerBar({
   const streamLabel =
     !connectRemote && mobileOfflineResolve
       ? 'MOBILE'
-      : !connectRemote && audio.envelope
+      : !connectRemote && displayEnvelope
         ? displayTransportLabel(
-            audio.envelope.provider,
-            audio.envelope.transport,
-            audio.envelope.url,
-            audio.envelope.resolutionSource,
+            displayEnvelope.provider,
+            displayEnvelope.transport,
+            displayEnvelope.url,
+            displayEnvelope.resolutionSource,
           )
         : connectRemote
           ? t('player.sandboxConnect')
@@ -291,13 +317,13 @@ export default function PlayerBar({
     streamLabel === 'MOBILE'
       ? 'text-amber-500/90 border-amber-500/40 bg-amber-500/5'
       : themeBadgeOutlineClass;
-  const fidelityLabel = resolvePlaybackFidelityLabel(audio.envelope, {
+  const fidelityLabel = resolvePlaybackFidelityLabel(displayEnvelope, {
     streamLabel,
     t,
   });
   const barArt = connectRemote && track
     ? proxiedArtworkUrl(track.artworkUrl) ?? track.artworkUrl ?? ''
-    : resolvePlaybackCoverArt(artworkUrl, audio.envelope);
+    : resolvePlaybackCoverArt(artworkUrl, displayEnvelope);
   const [barArtSrc, setBarArtSrc] = useState(barArt);
   const [barArtFailed, setBarArtFailed] = useState(false);
   const [heroDisplay, setHeroDisplay] = useState(loadHeroDisplayMode);
@@ -306,11 +332,11 @@ export default function PlayerBar({
   useEffect(() => {
     setBarArtFailed(false);
     setBarArtSrc((prev) =>
-      stabilizePlaybackArtSrc(prev, barArt, playbackArtStabilizeScope(audio.envelope)),
+      stabilizePlaybackArtSrc(prev, barArt, playbackArtStabilizeScope(displayEnvelope)),
     );
     setScrubValue(0);
     setOptimisticPlaying(null);
-  }, [barArt, audio.envelope]);
+  }, [barArt, displayEnvelope]);
 
   useEffect(() => {
     if (optimisticPlaying === null) return;
@@ -409,7 +435,14 @@ export default function PlayerBar({
     }
     if (connectRemote && onRemoteTogglePlay) onRemoteTogglePlay();
     else if (localPlaybackOverride) localPlaybackOverride.onTogglePlay();
-    else if (displayIsPlaying) {
+    else if (
+      // Pause whenever the track is actually playing by ANY signal. `displayIsPlaying`
+      // alone can be a false-negative (duration unknown / state briefly not "Playing"),
+      // which made the mini-player's button fall through to play() — so it never paused.
+      displayIsPlaying ||
+      audio.state === 'Playing' ||
+      audio.nativeExoEffectivePlaying
+    ) {
       setOptimisticPlaying(false);
       audio.pause();
     } else {
@@ -614,7 +647,7 @@ export default function PlayerBar({
                       className="player-bar-badge-img"
                       onError={() => {
                         const retry = resolvePlaybackCoverArtFallback(
-                          audio.envelope,
+                          displayEnvelope,
                           barArtSrc,
                           artworkUrl,
                         );
@@ -717,7 +750,7 @@ export default function PlayerBar({
                   className="player-bar-badge-img"
                   onError={() => {
                     const retry = resolvePlaybackCoverArtFallback(
-                      audio.envelope,
+                      displayEnvelope,
                       barArtSrc,
                       artworkUrl,
                     );
@@ -862,6 +895,7 @@ export default function PlayerBar({
                   mixRadioEnabled={mixRadioEnabled}
                   onArtistMix={onArtistMix}
                   onTrackRadio={onTrackRadio}
+                  onAddToPlaylist={onAddToPlaylist}
                   mixRadioSession={mixRadioSession}
                   saveMixRadioEnabled={saveMixRadioEnabled}
                   onSaveMixRadioToPlaylist={onSaveMixRadioToPlaylist}
@@ -1133,6 +1167,7 @@ export default function PlayerBar({
                 mixRadioEnabled={mixRadioEnabled}
                 onArtistMix={onArtistMix}
                 onTrackRadio={onTrackRadio}
+                onAddToPlaylist={onAddToPlaylist}
                 mixRadioSession={mixRadioSession}
                 saveMixRadioEnabled={saveMixRadioEnabled}
                 onSaveMixRadioToPlaylist={onSaveMixRadioToPlaylist}

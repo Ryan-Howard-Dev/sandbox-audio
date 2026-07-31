@@ -91,6 +91,33 @@ export function prefsGetItem(key: string): string | null {
   }
 }
 
+/** Prefixes of non-essential cached data that can be evicted to recover from a full store. */
+const EVICTABLE_KEY_PREFIXES = [
+  'sandbox_discovery_cache:',
+  'sandbox_explore_cache',
+  'sandbox_catalog_cache',
+  'sandbox_last_queue',
+];
+
+/** Evict non-essential cache keys when the store is full, so essential writes can proceed. */
+function evictNonEssential(store: Storage): number {
+  let removed = 0;
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < store.length; i++) {
+      const k = store.key(i);
+      if (k && EVICTABLE_KEY_PREFIXES.some((p) => k.startsWith(p))) keys.push(k);
+    }
+    for (const k of keys) {
+      store.removeItem(k);
+      removed += 1;
+    }
+  } catch {
+    /* ignore */
+  }
+  return removed;
+}
+
 export function prefsSetItem(key: string, value: string): boolean {
   const primary = prefStore();
   const secondary = otherStore(primary);
@@ -103,6 +130,16 @@ export function prefsSetItem(key: string, value: string): boolean {
     }
     return true;
   } catch (err) {
+    // Likely QuotaExceededError — evict non-essential caches and retry once so essential
+    // state (queue, settings, taste) can still be saved instead of silently failing.
+    if (evictNonEssential(primary) > 0) {
+      try {
+        primary.setItem(key, value);
+        return true;
+      } catch {
+        /* still failed — fall through */
+      }
+    }
     console.warn('[Sandbox] prefsSetItem failed:', key, err);
     return false;
   }

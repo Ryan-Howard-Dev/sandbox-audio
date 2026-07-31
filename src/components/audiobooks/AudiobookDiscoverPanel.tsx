@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
   ChevronDown,
-  Globe,
   Loader2,
   Play,
   Plus,
@@ -32,10 +31,30 @@ import { seedGradient } from '../../seedGradient';
 import { formatTime } from '../../stations/theme';
 import { useTranslation } from '../../i18n';
 import AudiobookChapterRow from './AudiobookChapterRow';
+import { getCachedDiscovery } from '../../discoveryRefresh';
+import { fetchLibrivoxChapters } from '../../librivoxCrossRef';
+import {
+  classifyAudiobookFidelity,
+  fetchTextByteLength,
+  type AudiobookFidelity,
+} from '../../audiobookFidelity';
+import {
+  audiobookBookKeyFromCatalogBook,
+  audiobookBookKeyFromEnvelopeId,
+  audiobookProgressPercent,
+  getAudiobookProgress,
+  listAudiobooksInProgress,
+  saveAudiobookProgress,
+  type AudiobookProgress,
+} from '../../audiobookProgress';
 
 export interface AudiobookDiscoverPanelProps {
   onPlay: (env: MediaEnvelope) => void;
-  onPlayAlbum?: (envelopes: MediaEnvelope[], shuffle?: boolean) => void;
+  onPlayAlbum?: (
+    envelopes: MediaEnvelope[],
+    shuffle?: boolean,
+    resume?: { startIndex: number; startSeconds: number },
+  ) => void;
   onPrimePlay?: (env: MediaEnvelope) => void;
   onError?: (message: string) => void;
   activeEnvelopeId?: string | null;
@@ -45,6 +64,38 @@ export interface AudiobookDiscoverPanelProps {
 
 type SourceFilter = 'all' | AudiobookCatalogSource;
 
+/**
+ * Cover for a catalog book, backfilled from Open Library when the source gave none.
+ *
+ * This backfill used to live inline in BookCard only. Opening a book whose catalog entry has no
+ * artwork — every LibriVox result without an Archive.org id — then showed the gradient
+ * placeholder on the detail page with no lookup ever attempted, which is why the grid could show
+ * a cover the detail view could not. Shared so the two cannot drift again.
+ *
+ * Returns the raw URL for playback metadata (lock screen) and the proxied one for display.
+ */
+function useAudiobookCover(
+  book: Pick<AudiobookCatalogBook, 'title' | 'author' | 'artworkUrl'> | null,
+): { raw?: string; display?: string } {
+  const [resolvedArt, setResolvedArt] = useState<string | undefined>(book?.artworkUrl);
+  const title = book?.title;
+  const author = book?.author;
+  const artworkUrl = book?.artworkUrl;
+  useEffect(() => {
+    setResolvedArt(artworkUrl);
+    if (artworkUrl || !title) return;
+    let cancelled = false;
+    void resolveAudiobookCover(title, author ?? '').then((url) => {
+      if (!cancelled && url) setResolvedArt(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [artworkUrl, title, author]);
+
+  return { raw: resolvedArt, display: proxiedArtworkUrl(resolvedArt) };
+}
+
 function BookCard({
   book,
   onOpen,
@@ -52,7 +103,10 @@ function BookCard({
   book: AudiobookCatalogBook;
   onOpen: () => void;
 }) {
-  const art = proxiedArtworkUrl(book.artworkUrl);
+  const art = useAudiobookCover(book).display;
+  // Percentage read straight off the position store — no catalog call, works offline.
+  const progress = getAudiobookProgress(audiobookBookKeyFromCatalogBook(book.source, book.id));
+  const percent = progress ? audiobookProgressPercent(progress) : 0;
   return (
     <article
       className="podcasts-discover-card podcasts-discover-card--clickable touch-manipulation"
@@ -73,6 +127,7 @@ function BookCard({
         ) : (
           <div className="w-full h-full" style={{ background: seedGradient(book.title) }} />
         )}
+        {percent > 0 ? <span className="audiobook-progress-badge">{percent}%</span> : null}
       </div>
       <div className="podcasts-discover-card-body">
         <h3 className="podcasts-discover-card-title">{book.title}</h3>
@@ -111,7 +166,71 @@ function BookDetailView({
   onError?: (message: string) => void;
 }) {
   const { t } = useTranslation();
-  const art = proxiedArtworkUrl(book.artworkUrl);
+  const cover = useAudiobookCover(book);
+  const art = cover.display;
+
+  /*
+   * Sanity-check the audio against the length of the source text. Gutendex maps a whole
+   * directory of chapter files to one URL, so a five-hour novel arrives claiming "1 chapter"
+   * and sixteen minutes. Only worth asking once the chapter list is in and only when the
+   * provider gave us a text to measure against.
+   */
+  const [fidelity, setFidelity] = useState<AudiobookFidelity>('unverified');
+  /** Chapters recovered from LibriVox, used in place of a fragmentary catalog listing. */
+  const [repaired, setRepaired] = useState<AudiobookCatalogChapter[] | null>(null);
+
+  useEffect(() => {
+    setFidelity('unverified');
+    setRepaired(null);
+    if (loading) return;
+    if (chapters.length > 1) {
+      setFidelity('complete');
+      return;
+    }
+    if (!book.textUrl) return;
+    let cancelled = false;
+    void fetchTextByteLength(book.textUrl).then(async (textBytes) => {
+      if (cancelled) return;
+      const verdict = classifyAudiobookFidelity({
+        textBytes,
+        actualSeconds: chapters[0]?.durationSeconds ?? book.durationSeconds ?? null,
+        chapterCount: chapters.length,
+      });
+      setFidelity(verdict);
+      if (verdict !== 'sample') return;
+
+      /*
+       * Detecting the fragment only warns; this repairs it. Most Gutenberg audio came from
+       * LibriVox volunteers, and LibriVox models the recording as the primary entity, so it has
+       * the real section list. A confident match replaces the single stub file with the whole
+       * book; anything less leaves the warning in place, because swapping in the wrong book
+       * would be worse than the fragment.
+       */
+      const found = await fetchLibrivoxChapters(book.title, book.author);
+      if (cancelled || !found) return;
+      setRepaired(
+        found.map((chapter, index) => ({
+          id: `librivox-xref-${index + 1}`,
+          bookId: book.id,
+          title: chapter.title,
+          audioUrl: chapter.audioUrl,
+          durationSeconds: chapter.durationSeconds,
+          chapterNumber: chapter.chapterNumber,
+          source: 'librivox' as const,
+        })),
+      );
+      setFidelity('complete');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [book.textUrl, book.durationSeconds, book.title, book.author, book.id, chapters, loading]);
+
+  // Everything below renders the repaired listing once there is one.
+  const shownChapters = repaired ?? chapters;
+  // Carry the resolved cover into playback too, so these books get lock-screen art rather than
+  // inheriting the same blank the hero used to show.
+  const bookWithCover = cover.raw ? { ...book, artworkUrl: cover.raw } : book;
 
   return (
     <section className="podcasts-library-show-detail audiobooks-book-detail">
@@ -135,6 +254,14 @@ function BookDetailView({
         <div className="min-w-0 flex-1">
           <h2 className="podcasts-show-detail-title">{book.title}</h2>
           <p className="podcasts-show-detail-author">{book.author}</p>
+          {/*
+            Said plainly rather than hidden. This entry's audio is far too short to be the whole
+            book, and letting someone start a five-hour novel that stops after sixteen minutes
+            without warning is the failure worth avoiding.
+          */}
+          {fidelity === 'sample' ? (
+            <p className="audiobook-sample-chip">{t('audiobooks.sampleOnly')}</p>
+          ) : null}
           {book.description ? (
             <p className="font-mono text-[10px] text-[var(--text-dim)] mt-2 line-clamp-4">
               {book.description}
@@ -142,22 +269,31 @@ function BookDetailView({
           ) : null}
           <p className="font-mono text-[10px] text-[var(--text-dim)] mt-1">
             {audiobookSourceLabel(book.source)}
-            {chapters.length > 0
-              ? ` · ${t('audiobooks.chaptersCount', { count: chapters.length })}`
+            {shownChapters.length > 0
+              ? ` · ${t('audiobooks.chaptersCount', { count: shownChapters.length })}`
               : ''}
             {book.durationSeconds && book.durationSeconds > 0
               ? ` · ${formatTime(book.durationSeconds)}`
               : ''}
           </p>
           <div className="podcasts-show-detail-actions mt-3">
+            {/*
+              The label was the full book title. "Hans Christian Andersen - Hans Christian
+              Andersen's Fairy Tales" wrapped to four lines that spilled straight out of a
+              fixed-height button and over the metadata above it. The title is already the
+              heading two lines up, so repeating it in the button bought nothing; it moves to
+              the accessible name, where a screen reader still gets the context. shrink-0 and
+              whitespace-nowrap stop any future long label doing this again.
+            */}
             <button
               type="button"
-              className="btn-accent touch-manipulation h-10 px-4 rounded-lg font-mono text-[10px] uppercase tracking-wider inline-flex items-center gap-2"
+              className="btn-accent touch-manipulation h-10 px-4 rounded-lg font-mono text-[10px] uppercase tracking-wider inline-flex items-center gap-2 whitespace-nowrap"
               onClick={onPlayAll}
-              disabled={loading || chapters.length === 0}
+              disabled={loading || shownChapters.length === 0}
+              aria-label={t('audiobooks.playAlbum', { title: book.title })}
             >
-              <Play className="w-3.5 h-3.5" />
-              {t('audiobooks.playAlbum', { title: book.title })}
+              <Play className="w-3.5 h-3.5 shrink-0" />
+              {t('player.play')}
             </button>
           </div>
         </div>
@@ -172,20 +308,20 @@ function BookDetailView({
           <Loader2 className="w-4 h-4 animate-spin" />
           {t('audiobooks.loadingChapters')}
         </p>
-      ) : chapters.length === 0 ? (
+      ) : shownChapters.length === 0 ? (
         <p className="font-mono text-xs text-[var(--text-dim)] py-4">
           {t('audiobooks.noChapters')}
         </p>
       ) : (
         <ul className="podcasts-episode-list divide-y divide-[var(--border)]">
-          {chapters.map((chapter) => (
+          {shownChapters.map((chapter) => (
             <AudiobookChapterRow
               key={chapter.id}
               chapter={chapter}
               bookTitle={book.title}
               bookAuthor={book.author}
-              bookArtworkUrl={book.artworkUrl}
-              envelope={catalogChapterEnvelope(chapter, book)}
+              bookArtworkUrl={bookWithCover.artworkUrl}
+              envelope={catalogChapterEnvelope(chapter, bookWithCover)}
               activeEnvelopeId={activeEnvelopeId}
               onPlay={() => onPlayChapter(chapter)}
               onPrimePlay={
@@ -200,6 +336,147 @@ function BookDetailView({
   );
 }
 
+/** Genre chips under the search bar — mirrors the podcasts station's category row. */
+const AUDIOBOOK_DISCOVER_CATEGORIES: { id: string; label: string; query: string }[] = [
+  { id: 'fiction', label: 'Fiction', query: 'fiction' },
+  { id: 'mystery', label: 'Mystery', query: 'mystery detective' },
+  { id: 'scifi', label: 'Sci-Fi', query: 'science fiction' },
+  { id: 'classics', label: 'Classics', query: 'classic literature' },
+  { id: 'adventure', label: 'Adventure', query: 'adventure' },
+  { id: 'horror', label: 'Horror', query: 'horror ghost' },
+  { id: 'history', label: 'History', query: 'history' },
+  { id: 'philosophy', label: 'Philosophy', query: 'philosophy' },
+  { id: 'poetry', label: 'Poetry', query: 'poetry' },
+  { id: 'kids', label: 'Kids', query: 'children fairy tales' },
+];
+
+const GENERIC_AUTHOR_RE =
+  /^(various|unknown|librivox|golden audiobooks|audiobooks?4soul|loyal ?books|lit ?2 ?go|learn ?out ?loud)$/i;
+const AUDIOBOOK_SUFFIX_RE =
+  /\b(full\s+)?audio[\s-]?books?(\s+online)?\b|\bonline\b|\bfree\b|\bunabridged\b|\bfull\b/gi;
+
+/**
+ * Catalog titles often look like "Author – Book Title Audiobook" (Golden Audiobooks etc.).
+ * Open Library needs just the book title (+ real author), so strip the author prefix and the
+ * "audiobook/online/free" suffixes before searching.
+ */
+function cleanBookQuery(title: string, author: string): { title: string; author: string } {
+  let t = title.trim();
+  let a = author.trim();
+  const dash = t.match(/^(.+?)\s*[–—-]\s*(.+)$/);
+  if (dash) {
+    const before = dash[1]!.trim();
+    const after = dash[2]!.trim();
+    // If the catalog "author" is really a source name, the part before the dash is the author.
+    if ((GENERIC_AUTHOR_RE.test(a) || !a) && before && before.length < 40) {
+      a = before;
+    }
+    t = after;
+  }
+  t = t.replace(AUDIOBOOK_SUFFIX_RE, '').replace(/\s+/g, ' ').trim();
+  if (GENERIC_AUTHOR_RE.test(a)) a = '';
+  return { title: t, author: a };
+}
+
+/** Open Library cover lookup (keyless) for books whose catalog gave no artwork. */
+const audiobookCoverCache = new Map<string, string | null>();
+async function resolveAudiobookCover(
+  rawTitle: string,
+  rawAuthor: string,
+): Promise<string | undefined> {
+  const { title, author } = cleanBookQuery(rawTitle, rawAuthor);
+  if (!title) return undefined;
+  const key = `${title}|${author}`.toLowerCase();
+  if (audiobookCoverCache.has(key)) return audiobookCoverCache.get(key) ?? undefined;
+  try {
+    const params = new URLSearchParams({ title, limit: '1' });
+    if (author) params.set('author', author);
+    const res = await fetch(`https://openlibrary.org/search.json?${params.toString()}`, {
+      signal: AbortSignal.timeout(7000),
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      audiobookCoverCache.set(key, null);
+      return undefined;
+    }
+    const data = (await res.json()) as { docs?: Array<{ cover_i?: number }> };
+    let coverId = data.docs?.[0]?.cover_i;
+    // Retry title-only if the author-qualified search found no cover.
+    if (!coverId && author) {
+      const res2 = await fetch(
+        `https://openlibrary.org/search.json?${new URLSearchParams({ title, limit: '1' }).toString()}`,
+        { signal: AbortSignal.timeout(7000), headers: { Accept: 'application/json' } },
+      );
+      if (res2.ok) {
+        const data2 = (await res2.json()) as { docs?: Array<{ cover_i?: number }> };
+        coverId = data2.docs?.[0]?.cover_i;
+      }
+    }
+    const url = coverId ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg` : null;
+    audiobookCoverCache.set(key, url);
+    return url ?? undefined;
+  } catch {
+    audiobookCoverCache.set(key, null);
+    return undefined;
+  }
+}
+
+/** Rotating pool of popular audiobook topics so the featured shelf varies + stays fresh. */
+const FEATURED_AUDIOBOOK_TOPICS = [
+  'sherlock holmes',
+  'dracula',
+  'pride and prejudice',
+  'adventure',
+  'mystery',
+  'science fiction',
+  'frankenstein',
+  'war of the worlds',
+  'greek mythology',
+  'philosophy',
+  'short stories',
+  'ghost stories',
+  'fairy tales',
+  'history',
+  'jane austen',
+  'edgar allan poe',
+];
+
+function shuffleInPlace<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j]!, arr[i]!];
+  }
+  return arr;
+}
+
+/** Fetch a fresh, shuffled set of featured audiobooks from the free catalogs. */
+async function loadFeaturedAudiobooks(): Promise<AudiobookCatalogBook[]> {
+  // Cached per the user's Discovery-refresh setting (default 3 days) so it stays stable between
+  // visits instead of refetching/reshuffling every time the station opens.
+  return getCachedDiscovery(
+    /*
+     * Bump this suffix whenever the *shape* of a catalog entry changes — title/author
+     * normalisation, curated feed labels, anything a user reads. The payload is cached for three
+     * days, so without a bump a fix ships to the code and not to the screen: v2 was minted for
+     * the scraped "Author - Title" split, then the curated RSS label fix landed after it and was
+     * invisible behind the cache it had just filled.
+     */
+    'audiobooks-featured-v4',
+    async () => {
+      const topics = shuffleInPlace([...FEATURED_AUDIOBOOK_TOPICS]).slice(0, 3);
+      const batches = await Promise.all(
+        topics.map((topic) => searchAudiobookCatalog(topic, 10).catch(() => [])),
+      );
+      const byId = new Map<string, AudiobookCatalogBook>();
+      for (const book of batches.flat()) {
+        if (!byId.has(book.id)) byId.set(book.id, book);
+      }
+      return shuffleInPlace([...byId.values()]).slice(0, 18);
+    },
+    (books) => books.length === 0,
+  );
+}
+
 export default function AudiobookDiscoverPanel({
   onPlay,
   onPlayAlbum,
@@ -210,6 +487,7 @@ export default function AudiobookDiscoverPanel({
 }: AudiobookDiscoverPanelProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<AudiobookCatalogBook[]>([]);
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
@@ -220,11 +498,87 @@ export default function AudiobookDiscoverPanel({
   const [rssUrl, setRssUrl] = useState('');
   const [rssAdding, setRssAdding] = useState(false);
   const [userFeedCount, setUserFeedCount] = useState(() => loadUserAudiobookRssFeeds().length);
+  const [featured, setFeatured] = useState<AudiobookCatalogBook[]>([]);
+  /*
+   * Read once per mount rather than subscribed: the shelf answers "what was I in the middle of"
+   * on arrival, and re-ordering itself under the reader while a book plays would be noise.
+   */
+  const [inProgress, setInProgress] = useState<AudiobookProgress[]>([]);
+  /*
+   * Re-read on return from a book and when the playing track changes, not just on mount. Reading
+   * once on mount meant the shelf stayed empty for the whole session: coming back from a book you
+   * had just started does not remount this panel, so it kept showing the state from before you
+   * played anything.
+   */
+  useEffect(() => {
+    setInProgress(listAudiobooksInProgress(12));
+  }, [selectedBook, activeEnvelopeId]);
+
+  /**
+   * Resume a book straight from the shelf: re-fetch its chapters from the stored locator, then
+   * play from the saved position. No search, no guessing which result was the one you were in.
+   */
+  const continueBook = useCallback(
+    async (entry: AudiobookProgress) => {
+      const locator = entry.locator;
+      if (!locator) {
+        onError?.(t('audiobooks.continueUnavailable'));
+        return;
+      }
+      const book: AudiobookCatalogBook = {
+        id: `${locator.source}:${locator.sourceId}`,
+        sourceId: locator.sourceId,
+        source: locator.source as AudiobookCatalogSource,
+        title: entry.title ?? '',
+        author: entry.author ?? '',
+        artworkUrl: entry.artworkUrl,
+        feedUrl: locator.feedUrl,
+        detailUrl: locator.detailUrl,
+      };
+      try {
+        const chapters = await fetchAudiobookCatalogChapters(book);
+        if (chapters.length === 0) {
+          onError?.(t('audiobooks.continueUnavailable'));
+          return;
+        }
+        const envs = chapters.map((ch) => catalogChapterEnvelope(ch, book));
+        const startIndex = Math.min(Math.max(0, entry.chapterIndex), envs.length - 1);
+        if (onPlayAlbum && envs.length > 1) {
+          onPlayAlbum(envs, false, { startIndex, startSeconds: entry.offsetSeconds });
+        } else if (envs[startIndex]) {
+          onPlay(envs[startIndex]);
+        }
+      } catch {
+        onError?.(t('audiobooks.continueUnavailable'));
+      }
+    },
+    [onError, onPlay, onPlayAlbum, t],
+  );
+  const [loadingFeatured, setLoadingFeatured] = useState(false);
+  const [sourcesExpanded, setSourcesExpanded] = useState(false);
 
   useEffect(() => {
     return subscribeAudiobookRssFeeds(() => {
       setUserFeedCount(loadUserAudiobookRssFeeds().length);
     });
+  }, []);
+
+  // Featured audiobooks shelf — fetch actual browsable books (rotating popular topics, shuffled)
+  // so the station opens with something to listen to, like the podcasts trending shelf, instead
+  // of a wall of catalog-source names.
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingFeatured(true);
+    void loadFeaturedAudiobooks()
+      .then((books) => {
+        if (!cancelled) setFeatured(books);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingFeatured(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -247,9 +601,13 @@ export default function AudiobookDiscoverPanel({
     return results.filter((b) => b.source === sourceFilter);
   }, [results, sourceFilter]);
 
+  // Guards against a slower older query's response overwriting a newer one's results.
+  const searchGenerationRef = useRef(0);
+
   const runSearch = useCallback(
     async (q: string) => {
       const trimmed = q.trim();
+      const generation = ++searchGenerationRef.current;
       if (trimmed.length < 2) {
         setResults([]);
         return;
@@ -257,12 +615,14 @@ export default function AudiobookDiscoverPanel({
       setSearching(true);
       try {
         const books = await searchAudiobookCatalog(trimmed, 24);
+        if (searchGenerationRef.current !== generation) return;
         setResults(books);
       } catch (e) {
+        if (searchGenerationRef.current !== generation) return;
         onError?.(e instanceof Error ? e.message : t('audiobooks.searchFailed'));
         setResults([]);
       } finally {
-        setSearching(false);
+        if (searchGenerationRef.current === generation) setSearching(false);
       }
     },
     [onError, t],
@@ -291,51 +651,106 @@ export default function AudiobookDiscoverPanel({
     }
   }, [onError, query, rssUrl, runSearch, t]);
 
+  // Guards against a slower older book's chapter fetch overwriting a newer selection's chapters.
+  const chapterGenerationRef = useRef(0);
+
   const openBook = useCallback(
     async (book: AudiobookCatalogBook) => {
+      const generation = ++chapterGenerationRef.current;
       setSelectedBook(book);
       setChapters([]);
       setLoadingChapters(true);
       try {
         const loaded = await fetchAudiobookCatalogChapters(book);
+        if (chapterGenerationRef.current !== generation) return;
         setChapters(loaded);
       } catch (e) {
+        if (chapterGenerationRef.current !== generation) return;
         onError?.(e instanceof Error ? e.message : t('audiobooks.chaptersFailed'));
         setChapters([]);
       } finally {
-        setLoadingChapters(false);
+        if (chapterGenerationRef.current === generation) setLoadingChapters(false);
       }
     },
     [onError, t],
   );
 
+  /*
+   * Resolve the cover once here, not inside the detail view, so every play path carries it.
+   * Resolving it only for rendering left playAll and playChapter building envelopes from the
+   * bare book, so starting a book whose catalog gave no artwork showed a blank square in the
+   * mini player and on the lock screen even while the page above it displayed a cover.
+   */
+  const selectedCover = useAudiobookCover(selectedBook);
+  const bookForPlayback = useMemo(
+    () =>
+      selectedBook && selectedCover.raw
+        ? { ...selectedBook, artworkUrl: selectedCover.raw }
+        : selectedBook,
+    [selectedBook, selectedCover.raw],
+  );
+
   const playChapter = useCallback(
     (chapter: AudiobookCatalogChapter) => {
-      if (!selectedBook) return;
-      onPlay(catalogChapterEnvelope(chapter, selectedBook));
+      if (!bookForPlayback) return;
+      onPlay(catalogChapterEnvelope(chapter, bookForPlayback));
     },
-    [onPlay, selectedBook],
+    [onPlay, bookForPlayback],
   );
 
   const primePlayChapter = useCallback(
     (chapter: AudiobookCatalogChapter) => {
-      if (!selectedBook || !onPrimePlay) return;
-      onPrimePlay(catalogChapterEnvelope(chapter, selectedBook));
+      if (!bookForPlayback || !onPrimePlay) return;
+      onPrimePlay(catalogChapterEnvelope(chapter, bookForPlayback));
     },
-    [onPrimePlay, selectedBook],
+    [onPrimePlay, bookForPlayback],
   );
 
   const playAll = useCallback(() => {
-    if (!selectedBook || chapters.length === 0) return;
-    const envs = chapters.map((ch) => catalogChapterEnvelope(ch, selectedBook));
-    if (onPlayAlbum && envs.length > 1) onPlayAlbum(envs, false);
+    if (!bookForPlayback || chapters.length === 0) return;
+    const envs = chapters.map((ch) => catalogChapterEnvelope(ch, bookForPlayback));
+    /*
+     * Resume where the listener left off. Without this, pressing play on a book you are eight
+     * hours into starts it from chapter one — the position was being recorded and never used.
+     */
+    const bookKey = audiobookBookKeyFromEnvelopeId(envs[0]?.envelopeId);
+    const saved = bookKey ? getAudiobookProgress(bookKey) : null;
+    const resume =
+      saved && saved.chapterIndex < envs.length
+        ? { startIndex: saved.chapterIndex, startSeconds: saved.offsetSeconds }
+        : undefined;
+    /*
+     * Record what this book is while the catalog entry is in hand. The position updates that
+     * follow come from a playback envelope, which cannot say where the book came from, so the
+     * continue shelf would have nothing to re-fetch from.
+     */
+    if (bookKey) {
+      saveAudiobookProgress({
+        bookKey,
+        chapterIndex: saved?.chapterIndex ?? 0,
+        offsetSeconds: saved?.offsetSeconds ?? 0,
+        durationSeconds: saved?.durationSeconds ?? 0,
+        chapterCount: envs.length,
+        updatedAt: Date.now(),
+        title: bookForPlayback.title,
+        author: bookForPlayback.author,
+        artworkUrl: bookForPlayback.artworkUrl,
+        locator: {
+          source: bookForPlayback.source,
+          sourceId: bookForPlayback.sourceId,
+          feedUrl: bookForPlayback.feedUrl,
+          detailUrl: bookForPlayback.detailUrl,
+        },
+      });
+    }
+    if (onPlayAlbum && envs.length > 1) onPlayAlbum(envs, false, resume);
     else if (envs[0]) onPlay(envs[0]);
-  }, [chapters, onPlay, onPlayAlbum, selectedBook]);
+  }, [chapters, onPlay, onPlayAlbum, bookForPlayback]);
 
   if (selectedBook) {
     return (
       <BookDetailView
-        book={selectedBook}
+        book={bookForPlayback ?? selectedBook}
         chapters={chapters}
         loading={loadingChapters}
         activeEnvelopeId={activeEnvelopeId}
@@ -353,14 +768,6 @@ export default function AudiobookDiscoverPanel({
 
   return (
     <div className="podcasts-discover audiobooks-discover">
-      <div className="podcasts-discover-hero">
-        <Globe className="w-5 h-5 text-accent shrink-0" aria-hidden />
-        <div>
-          <p className="podcasts-discover-hero-title">{t('audiobooks.discoverTitle')}</p>
-          <p className="podcasts-discover-hero-lead">{t('audiobooks.discoverLead')}</p>
-        </div>
-      </div>
-
       <form
         className="podcasts-discover-search"
         onSubmit={(e) => {
@@ -377,43 +784,100 @@ export default function AudiobookDiscoverPanel({
           className="podcasts-discover-search-input"
           aria-label={t('audiobooks.searchPlaceholder')}
         />
-        <button
-          type="submit"
-          className="podcasts-discover-search-btn touch-manipulation"
-          disabled={searching || query.trim().length < 2}
-        >
-          {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : t('audiobooks.search')}
-        </button>
+        {/* No Search button — enter submits, and the button was eating the field's width. */}
+        {searching ? (
+          <Loader2 className="w-4 h-4 shrink-0 animate-spin text-accent" aria-hidden />
+        ) : null}
       </form>
 
-      {results.length > 0 ? (
-        <div className="audiobooks-source-filter flex flex-wrap gap-2 mb-3">
+      {/* Genre chips — mirrors the podcasts station's category row under the search bar. */}
+      <div className="podcasts-discover-categories hide-scrollbar">
+        {AUDIOBOOK_DISCOVER_CATEGORIES.map((cat) => (
           <button
+            key={cat.id}
             type="button"
-            className={`font-mono text-[9px] uppercase tracking-wider px-2 py-1 rounded border touch-manipulation ${
-              sourceFilter === 'all'
-                ? 'border-accent text-accent'
-                : 'border-[var(--border)] text-[var(--text-dim)]'
-            }`}
-            onClick={() => setSourceFilter('all')}
+            className={`podcasts-discover-chip touch-manipulation${activeCategory === cat.id ? ' podcasts-discover-chip--active' : ''}`}
+            onClick={() => {
+              setActiveCategory(cat.id);
+              setQuery(cat.query);
+              void runSearch(cat.query);
+            }}
           >
-            {t('audiobooks.filterAll')}
+            {cat.label}
           </button>
-          {AUDIOBOOK_CATALOG_SOURCES.map((src) => (
-            <button
-              key={src.id}
-              type="button"
-              className={`font-mono text-[9px] uppercase tracking-wider px-2 py-1 rounded border touch-manipulation ${
-                sourceFilter === src.id
-                  ? 'border-accent text-accent'
-                  : 'border-[var(--border)] text-[var(--text-dim)]'
-              }`}
-              onClick={() => setSourceFilter(src.id)}
-            >
-              {src.label}
-            </button>
-          ))}
-        </div>
+        ))}
+      </div>
+
+      {/*
+        Eleven sources as full-width chips pushed the results themselves off the screen — the
+        filter occupied more room than the thing it filters. It is one choice out of a list, which
+        is a select, and it sits inline by the search rather than as a block of its own.
+      */}
+      {results.length > 0 ? (
+        <label className="audiobooks-source-filter">
+          <span className="audiobooks-source-filter-label">{t('audiobooks.filterSource')}</span>
+          <select
+            className="audiobooks-source-filter-select"
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value as SourceFilter)}
+          >
+            <option value="all">{t('audiobooks.filterAll')}</option>
+            {AUDIOBOOK_CATALOG_SOURCES.map((src) => (
+              <option key={src.id} value={src.id}>
+                {src.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+
+      {/*
+        Continue listening. Above Featured on purpose: a book you are already inside beats
+        anything a catalog can suggest. Rendered entirely from the position store, so it works
+        offline and without re-querying a catalog that may have changed or gone away.
+      */}
+      {results.length === 0 && inProgress.length > 0 ? (
+        <>
+          <div className="podcasts-discover-section-head">
+            <BookOpen className="w-4 h-4 text-accent" aria-hidden />
+            <h2 className="podcasts-discover-section-title">
+              {t('audiobooks.continueListening')}
+            </h2>
+          </div>
+          <div className="audiobook-continue-row">
+            {inProgress.map((entry) => (
+              <button
+                key={entry.bookKey}
+                type="button"
+                className="audiobook-continue-card touch-manipulation"
+                onClick={() => void continueBook(entry)}
+                aria-label={entry.title ?? entry.bookKey}
+              >
+                <div className="audiobook-continue-art">
+                  {entry.artworkUrl ? (
+                    <img
+                      src={proxiedArtworkUrl(entry.artworkUrl)}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full"
+                      style={{ background: seedGradient(entry.title ?? entry.bookKey) }}
+                    />
+                  )}
+                  <span className="audiobook-progress-badge">
+                    {audiobookProgressPercent(entry)}%
+                  </span>
+                </div>
+                <p className="audiobook-continue-title">{entry.title ?? entry.bookKey}</p>
+                {entry.author ? (
+                  <p className="audiobook-continue-author">{entry.author}</p>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        </>
       ) : null}
 
       <div className="podcasts-discover-section-head">
@@ -421,27 +885,70 @@ export default function AudiobookDiscoverPanel({
         <h2 className="podcasts-discover-section-title">
           {results.length > 0
             ? t('audiobooks.resultsFor', { query: query.trim() })
-            : t('audiobooks.discoverSources')}
+            : t('audiobooks.featuredHeading')}
         </h2>
         {searching ? <Loader2 className="w-4 h-4 animate-spin text-accent ml-auto" /> : null}
       </div>
 
+      {/* Featured audiobooks — actual browsable books to play, shown when not searching. */}
       {results.length === 0 && !searching ? (
-        <div className="audiobooks-source-list mb-4">
-          {AUDIOBOOK_CATALOG_SOURCES.map((src) => (
-            <p key={src.id} className="font-mono text-[10px] text-[var(--text-dim)]">
-              {src.label}
-            </p>
-          ))}
-          {userFeedCount > 0 ? (
-            <p className="font-mono text-[10px] text-[var(--text-dim)]">
-              {t('audiobooks.userRssFeeds', { count: userFeedCount })}
-            </p>
+        <>
+          {loadingFeatured && featured.length === 0 ? (
+            <div className="podcasts-discover-empty font-mono text-xs text-[var(--text-dim)] flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-accent" />
+              {t('audiobooks.featuredLoading')}
+            </div>
+          ) : featured.length > 0 ? (
+            <div className="podcasts-discover-grid mb-4">
+              {featured.map((book) => (
+                <div key={book.id}>
+                  <BookCard book={book} onOpen={() => void openBook(book)} />
+                </div>
+              ))}
+            </div>
           ) : null}
-          <p className="font-mono text-xs text-[var(--text-dim)] mt-3">
-            {t('audiobooks.discoverHint')}
-          </p>
-        </div>
+
+          {/* Catalog sources moved out of the main view into a collapsed "where these come from"
+              section, so the station leads with books, not a wall of source names. */}
+          <section className="podcasts-manual-subscribe mb-4">
+            <button
+              type="button"
+              className="podcasts-manual-subscribe-toggle touch-manipulation"
+              aria-expanded={sourcesExpanded}
+              onClick={() => setSourcesExpanded((v) => !v)}
+            >
+              <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-dim)]">
+                {t('audiobooks.discoverSources')}
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-[var(--text-dim)] transition-transform${sourcesExpanded ? ' rotate-180' : ''}`}
+                aria-hidden
+              />
+            </button>
+            {sourcesExpanded ? (
+              <div className="audiobooks-source-list mt-2">
+                <div className="flex flex-wrap gap-2">
+                  {AUDIOBOOK_CATALOG_SOURCES.map((src) => (
+                    <span
+                      key={src.id}
+                      className="font-mono text-[9px] uppercase tracking-wider px-2 py-1 rounded-full border border-[var(--border)] text-[var(--text-dim)]"
+                    >
+                      {src.label}
+                    </span>
+                  ))}
+                  {userFeedCount > 0 ? (
+                    <span className="font-mono text-[9px] uppercase tracking-wider px-2 py-1 rounded-full border border-accent/40 text-accent">
+                      {t('audiobooks.userRssFeeds', { count: userFeedCount })}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="font-mono text-xs text-[var(--text-dim)] mt-3">
+                  {t('audiobooks.discoverHint')}
+                </p>
+              </div>
+            ) : null}
+          </section>
+        </>
       ) : null}
 
       <section className="podcasts-manual-subscribe mb-4">

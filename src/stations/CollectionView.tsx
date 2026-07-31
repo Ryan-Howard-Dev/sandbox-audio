@@ -3,6 +3,11 @@ import type { MediaEnvelope } from '../sandboxLayer1';
 import type { LockerVm } from './LocalView';
 import LocalView from './LocalView';
 import PlaylistsView from './PlaylistsView';
+import LockerGenreView from '../components/locker/LockerGenreView';
+import {
+  buildLockerGenreShelves,
+  lockerGenreSourceCollections,
+} from '../lockerGenreShelf';
 import { repairLockerVault, useLockerVault } from '../LockerVaultContext';
 import { useTranslation } from '../i18n';
 import {
@@ -36,15 +41,28 @@ export type LockerSectionId = LockerTabId;
 /** @deprecated use LockerSectionId */
 export type CollectionSectionId = LockerSectionId;
 
-const ALL_TABS: LockerTabId[] = ['artists', 'albums', 'singles', 'videos', 'playlists'];
+const ALL_TABS: LockerTabId[] = [
+  'artists',
+  'albums',
+  'singles',
+  'genres',
+  'videos',
+  'playlists',
+];
 
 export interface CollectionViewProps {
   section: LockerSectionId;
   onSectionChange: (id: LockerSectionId) => void;
+  /** Replaces the internal section tab bar with the shared Music segment bar. */
+  sectionBar?: React.ReactNode;
   /** Increment to pop locker UI back to the artists hub root (re-tap locker tab). */
   homeResetKey?: number;
   /** Android hardware back — pop locker drill-down before leaving the station. */
   lockerDrillBackRef?: React.MutableRefObject<(() => boolean) | null>;
+  /** Open the download activity sheet from the Locker overflow menu. */
+  onOpenDownloads?: () => void;
+  /** Downloads queued/failed — surfaced on the overflow menu entry. */
+  downloadAttentionCount?: number;
   vm: LockerVm;
   activeEnvelopeId: string | null;
   meshResults: MediaEnvelope[];
@@ -93,8 +111,11 @@ function LockerTab({
 export default function CollectionView({
   section,
   onSectionChange,
+  sectionBar,
   homeResetKey = 0,
   lockerDrillBackRef,
+  onOpenDownloads,
+  downloadAttentionCount = 0,
   vm,
   activeEnvelopeId,
   meshResults,
@@ -142,6 +163,7 @@ export default function CollectionView({
   const hubPanelRef = React.useRef<HTMLDivElement>(null);
   const localDrillBackRef = React.useRef<(() => boolean) | null>(null);
   const lockerPlaylistsDrillBackRef = React.useRef<(() => boolean) | null>(null);
+  const lockerGenreDrillBackRef = React.useRef<(() => boolean) | null>(null);
   const localUploadRef = React.useRef<(() => void) | null>(null);
   const localRepairRef = React.useRef<(() => void) | null>(null);
   const localUpdateArtworkRef = React.useRef<(() => void) | null>(null);
@@ -150,6 +172,13 @@ export default function CollectionView({
   const artistProfileOpen = section === 'artists' && artistHubActive;
   const showMobileArtistsChrome =
     isMobileShell && section === 'artists' && !artistProfileOpen;
+  /**
+   * On the mobile Music pillar the segment bar is the only header chrome. The "Locker" title,
+   * stats line and sync bar used to render on Genres/Playlists but not Library, which moved the
+   * segment tabs down 71px between segments — the tabs appeared to change size and the page
+   * jumped. Suppress the title block for every mobile segment so the bar never moves.
+   */
+  const showLockerTitleBlock = !isMobileShell;
 
   useEffect(() => {
     if (!homeResetKey) return;
@@ -165,7 +194,7 @@ export default function CollectionView({
   const tabs = useMemo(
     () =>
       isMobileShell
-        ? (['artists', 'playlists'] as LockerTabId[])
+        ? (['artists', 'genres', 'playlists'] as LockerTabId[])
         : ALL_TABS,
     [isMobileShell],
   );
@@ -203,8 +232,21 @@ export default function CollectionView({
         },
       );
     }
+    if (onOpenDownloads) {
+      // Downloads land in the Locker, so this is where users look for them — the floating
+      // button is kept for the stations that have no overflow menu of their own.
+      items.push({
+        id: 'downloads',
+        label:
+          downloadAttentionCount > 0
+            ? t('locker.headerMenu.downloadsWithCount', { count: downloadAttentionCount })
+            : t('locker.headerMenu.downloads'),
+        divider: true,
+        onClick: onOpenDownloads,
+      });
+    }
     return items;
-  }, [airGap, t]);
+  }, [airGap, t, onOpenDownloads, downloadAttentionCount]);
 
   useEffect(() => {
     const syncSettings = () => setLockerSync(loadLockerSyncSettings());
@@ -237,6 +279,13 @@ export default function CollectionView({
       const artistCount = graph.artists.length;
       const trackCount = vaultEntries.filter((e) => !isLockerVideoEntry(e)).length;
       return t('locker.artistsStats', { artists: artistCount, tracks: trackCount });
+    }
+
+    if (section === 'genres') {
+      const source = lockerGenreSourceCollections(collections, vaultEntries);
+      const shelves = buildLockerGenreShelves(source);
+      const tracks = shelves.reduce((sum, sh) => sum + sh.trackCount, 0);
+      return t('locker.genre.stats', { genres: shelves.length, tracks });
     }
 
     const videos = vaultEntries.filter(isLockerVideoEntry);
@@ -298,6 +347,9 @@ export default function CollectionView({
       if (section === 'playlists' && lockerPlaylistsDrillBackRef.current?.()) {
         return true;
       }
+      if (section === 'genres' && lockerGenreDrillBackRef.current?.()) {
+        return true;
+      }
       if (localDrillBackRef.current?.()) {
         return true;
       }
@@ -333,9 +385,11 @@ export default function CollectionView({
       <header
         className={`locker-station-header${
           artistProfileOpen ? ' locker-station-header--profile' : ''
-        }${showMobileArtistsChrome ? ' locker-station-header--artists-mobile' : ''}`}
+        }${!showLockerTitleBlock ? ' locker-station-header--artists-mobile' : ''}`}
       >
-        {!showMobileArtistsChrome ? (
+        {/* Segment bar first: it must sit at the header's top edge in every segment. */}
+        {sectionBar ?? null}
+        {showLockerTitleBlock ? (
         <div className="flex items-start justify-between gap-3">
           <h1 className="font-display text-[1.75rem] font-bold tracking-tight leading-none text-[var(--text)]">
             {t('nav.locker')}
@@ -349,7 +403,7 @@ export default function CollectionView({
           ) : null}
         </div>
         ) : null}
-        {!showMobileArtistsChrome ? (
+        {showLockerTitleBlock ? (
         <p className="locker-header-subtitle">
           {statsLine}
           {lockerSync.enabled && lockerSync.provider !== 'none' ? (
@@ -361,18 +415,20 @@ export default function CollectionView({
           ) : null}
         </p>
         ) : null}
-        {!showMobileArtistsChrome ? <LockerSyncProgressBar progress={syncProgress} /> : null}
-        <nav className="locker-station-tabs" aria-label={t('locker.tabsAria')}>
-          {tabs.map((tab) => (
-            <React.Fragment key={tab}>
-              <LockerTab
-                active={section === tab}
-                label={t(`locker.tabs.${tab}`)}
-                onClick={() => onSectionChange(tab)}
-              />
-            </React.Fragment>
-          ))}
-        </nav>
+        {showLockerTitleBlock ? <LockerSyncProgressBar progress={syncProgress} /> : null}
+        {sectionBar ? null : (
+          <nav className="locker-station-tabs" aria-label={t('locker.tabsAria')}>
+            {tabs.map((tab) => (
+              <React.Fragment key={tab}>
+                <LockerTab
+                  active={section === tab}
+                  label={t(`locker.tabs.${tab}`)}
+                  onClick={() => onSectionChange(tab)}
+                />
+              </React.Fragment>
+            ))}
+          </nav>
+        )}
         {showMobileArtistsChrome ? (
           <LockerArtistsMobileHeader
             searchOpen={artistsSearchOpen}
@@ -396,6 +452,13 @@ export default function CollectionView({
               setArtistsSortMenuOpen(false);
             }}
             menuItems={artistsHeaderMenuItems}
+          />
+        ) : section === 'genres' ? (
+          <LockerHeaderSearch
+            value={libraryQuery}
+            onChange={setLibraryQuery}
+            placeholder={t('locker.genre.searchPlaceholder')}
+            ariaLabel={t('locker.genre.searchPlaceholder')}
           />
         ) : section !== 'playlists' && section !== 'artists' ? (
           <>
@@ -431,7 +494,7 @@ export default function CollectionView({
       ) : null}
 
       <div className="locker-hub-panel" ref={hubPanelRef}>
-        {section !== 'playlists' && pins.length > 0 && !artistProfileOpen ? (
+        {section !== 'playlists' && section !== 'genres' && pins.length > 0 && !artistProfileOpen ? (
           <LockerPinnedRow
             pins={pins}
             title={t('locker.pinsTitle')}
@@ -459,6 +522,14 @@ export default function CollectionView({
             onDownloadImportedPlaylist={onDownloadImportedPlaylist}
             initialOpenPlaylistId={initialOpenPlaylistId}
             onOpenPlaylistHandled={onOpenPlaylistHandled}
+          />
+        ) : section === 'genres' ? (
+          <LockerGenreView
+            collections={collections}
+            entries={vaultEntries}
+            libraryQuery={libraryQuery}
+            onPlayAlbum={onPlayAlbum}
+            drillBackRef={lockerGenreDrillBackRef}
           />
         ) : (
           <LocalView

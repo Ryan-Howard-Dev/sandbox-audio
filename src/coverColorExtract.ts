@@ -142,6 +142,23 @@ function buildColorPalette(
 ): CoverArtPalette {
   const tertiaryHue = (primaryHue + 120) % 360;
   const accentHue = (primaryHue + 180) % 360;
+
+  /*
+   * Tint, not stage lighting. This used to emit 72% saturation at 50% lightness and 0.52 alpha
+   * — four times the opacity the monochrome path uses (0.12) — so any colourful cover lit the
+   * whole screen and glared in a dark room. Three changes keep the album's identity without
+   * the burn:
+   *
+   *  - Saturation well below the source hue. A wash reads as "this album's colour" long before
+   *    it reaches full chroma, and past roughly 45% it starts to vibrate against text.
+   *  - Lightness follows the artwork instead of sitting at a fixed 50%, so a dark cover gets a
+   *    dark wash rather than being brightened by its own tint.
+   *  - Alpha scales DOWN as the cover gets lighter. Bright art already carries the room; adding
+   *    an opaque wash on top is what made pale covers unreadable.
+   */
+  const lightness = clamp(avgLightness * 0.55 + 12, 16, 40);
+  const alpha = clamp(0.26 - (avgLightness / 100) * 0.12, 0.12, 0.26);
+
   return {
     isMonochrome: false,
     primaryHue,
@@ -149,11 +166,17 @@ function buildColorPalette(
     tertiaryHue,
     accentHue,
     avgLightness,
-    glowPrimary: `hsl(${primaryHue.toFixed(0)} 72% 50% / 0.52)`,
-    glowSecondary: `hsl(${secondaryHue.toFixed(0)} 55% 42% / 0.32)`,
+    glowPrimary: `hsl(${primaryHue.toFixed(0)} 42% ${lightness.toFixed(0)}% / ${alpha.toFixed(2)})`,
+    glowSecondary: `hsl(${secondaryHue.toFixed(0)} 32% ${(lightness * 0.8).toFixed(0)}% / ${(
+      alpha * 0.62
+    ).toFixed(2)})`,
     trackGlowA: `hsl(${primaryHue.toFixed(0)} 22% 12% / 0.08)`,
     trackGlowB: `hsl(${secondaryHue.toFixed(0)} 16% 9% / 0.05)`,
   };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 function analyzeCoverPixels(data: Uint8ClampedArray): CoverArtPalette {
@@ -276,8 +299,10 @@ export function seedFallbackGlowStyle(seed: string): Record<string, string> {
   const { primary, secondary } = seedGradientUniverseHues(seed);
   return {
     ...seedGradientGlowStyle(seed),
-    '--locker-cover-glow': `hsl(${primary} 72% 50% / 0.52)`,
-    '--locker-cover-glow-soft': `hsl(${secondary} 55% 42% / 0.32)`,
+    // Matched to buildColorPalette — an art-less album should not glare harder than one
+    // with a cover just because its colour came from a seed.
+    '--locker-cover-glow': `hsl(${primary} 42% 30% / 0.22)`,
+    '--locker-cover-glow-soft': `hsl(${secondary} 32% 24% / 0.14)`,
   };
 }
 
@@ -323,21 +348,34 @@ export function coverArtPaletteToUniverseStyle(
     };
   }
 
+  /*
+   * These were pitched so low the extraction may as well not have run: 18% saturation at 8%
+   * lightness behind 0.26 alpha, over a #07080c background, is a colour you can prove is present
+   * and cannot see. Every track looked identically dark, which is most of why the player reads as
+   * flat — the record you are listening to never appears on screen.
+   *
+   * Roughly doubled. The reference is YouTube Music, whose now-playing sheet takes a clearly
+   * readable tint from the artwork. Still well short of that: this is a dark-first UI and the
+   * point is for the art to be *present*, not for the background to compete with it.
+   *
+   * Lightness rises with saturation on purpose. Raising saturation alone on a near-black colour
+   * buys almost nothing — hue is only legible with some light behind it.
+   */
   const { primaryHue, secondaryHue, tertiaryHue, accentHue, avgLightness } = palette;
-  const ambSat = Math.round(18 * satMul);
-  const throwSat = Math.round(24 * satMul);
+  const ambSat = Math.round(36 * satMul);
+  const throwSat = Math.round(46 * satMul);
 
   return {
-    '--track-glow-a': artAmbientStop(primaryHue, Math.round(22 * satMul), 12, 0.1),
-    '--track-glow-b': artAmbientStop(secondaryHue, Math.round(16 * satMul), 9, 0.06),
-    '--track-glow-c': artAmbientStop(tertiaryHue, Math.round(12 * satMul), 7, 0.05),
-    '--universe-a': artAmbientStop(primaryHue, ambSat, 8, 0.26),
-    '--universe-b': artAmbientStop(secondaryHue, Math.round(14 * satMul), 7, 0.18),
-    '--universe-c': artAmbientStop(tertiaryHue, Math.round(12 * satMul), 6, 0.14),
-    '--universe-d': artAmbientStop(accentHue, Math.round(10 * satMul), 5, 0.11),
-    '--universe-throw-a': artThrowStop(primaryHue, throwSat, 16),
-    '--universe-throw-b': artThrowStop(secondaryHue, Math.round(18 * satMul), 13),
-    '--universe-throw-c': artThrowStop(tertiaryHue, Math.round(14 * satMul), 11),
+    '--track-glow-a': artAmbientStop(primaryHue, Math.round(42 * satMul), 20, 0.22),
+    '--track-glow-b': artAmbientStop(secondaryHue, Math.round(32 * satMul), 15, 0.14),
+    '--track-glow-c': artAmbientStop(tertiaryHue, Math.round(24 * satMul), 12, 0.1),
+    '--universe-a': artAmbientStop(primaryHue, ambSat, 16, 0.52),
+    '--universe-b': artAmbientStop(secondaryHue, Math.round(28 * satMul), 13, 0.38),
+    '--universe-c': artAmbientStop(tertiaryHue, Math.round(24 * satMul), 11, 0.3),
+    '--universe-d': artAmbientStop(accentHue, Math.round(20 * satMul), 9, 0.24),
+    '--universe-throw-a': artThrowStop(primaryHue, throwSat, 26),
+    '--universe-throw-b': artThrowStop(secondaryHue, Math.round(36 * satMul), 21),
+    '--universe-throw-c': artThrowStop(tertiaryHue, Math.round(28 * satMul), 17),
     '--universe-throw-d': brandFromHue(accentHue, avgLightness),
     '--universe-brand': brandFromHue(primaryHue, avgLightness),
     '--universe-void': '#07080c',

@@ -22,6 +22,7 @@ import {
 import SandboxSwitch from '../components/SandboxSwitch';
 import TasteRecipePanel from '../components/TasteRecipePanel';
 import NavPinTabsSettings from '../components/settings/NavPinTabsSettings';
+import StorageReclaimCard from '../components/settings/StorageReclaimCard';
 import SettingsGroup from '../components/settings/SettingsGroup';
 import SettingsMobileRoot, {
   type SettingsCategory,
@@ -470,6 +471,12 @@ import {
 } from '../androidNativePlaybackSettings';
 import { syncWiredDacStabilityNative } from '../androidWiredDacPlayback';
 import { loadScrobbleSettings, saveScrobbleSettings } from '../scrobbleSettings';
+import {
+  PODCAST_INDEX_ATTRIBUTION,
+  loadPodcastIndexCredentials,
+  savePodcastIndexCredentials,
+  testPodcastIndexCredentials,
+} from '../podcastIndexProvider';
 import { getLastfmAuthUrl, isScrobbleBlockedByAirGap } from '../scrobble';
 import {
   loadBatterySaverEnabled,
@@ -831,6 +838,12 @@ export default function SettingsView({
   const [prowlarrApiKey, setProwlarrApiKey] = useState(engineSettings.prowlarrApiKey);
   const [realDebridApiKey, setRealDebridApiKey] = useState(engineSettings.realDebridApiKey);
   const [discogsApiToken, setDiscogsApiToken] = useState(engineSettings.discogsApiToken);
+  // Optional Podcast Index credentials — see podcastIndexProvider for why these are the
+  // user's own key rather than one embedded in the app.
+  const [piCreds] = useState(() => loadPodcastIndexCredentials());
+  const [piKey, setPiKey] = useState(piCreds.key);
+  const [piSecret, setPiSecret] = useState(piCreds.secret);
+  const [piStatus, setPiStatus] = useState<string | null>(null);
   const [addonUrl, setAddonUrl] = useState('');
   const [installedAddons, setInstalledAddons] = useState<SandboxAddon[]>(() => {
     ensureBuiltinAddons();
@@ -3819,6 +3832,59 @@ export default function SettingsView({
                     />
                     <p className="ui-hint text-[10px] mt-1">{t('settings.addons.discogsApiTokenHint')}</p>
                   </div>
+                  <div>
+                    <label className="ui-field-label">Podcast Index key</label>
+                    <input
+                      type="password"
+                      value={piKey}
+                      onChange={(e) => {
+                        setPiKey(e.target.value);
+                        savePodcastIndexCredentials({ key: e.target.value });
+                        setPiStatus(null);
+                      }}
+                      placeholder="Your podcastindex.org API key"
+                      className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent"
+                      style={{ color: C.text }}
+                    />
+                  </div>
+                  <div>
+                    <label className="ui-field-label">Podcast Index secret</label>
+                    <input
+                      type="password"
+                      value={piSecret}
+                      onChange={(e) => {
+                        setPiSecret(e.target.value);
+                        savePodcastIndexCredentials({ secret: e.target.value });
+                        setPiStatus(null);
+                      }}
+                      placeholder="Your podcastindex.org API secret"
+                      className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent"
+                      style={{ color: C.text }}
+                    />
+                    <div className="flex items-center gap-2 mt-2">
+                      <button
+                        type="button"
+                        className="ui-btn-ghost text-[10px] uppercase tracking-wider px-3 py-2 touch-manipulation"
+                        onClick={() => {
+                          setPiStatus('checking…');
+                          void testPodcastIndexCredentials().then((r) =>
+                            setPiStatus(`${r.ok ? 'OK' : 'Failed'}: ${r.detail}`),
+                          );
+                        }}
+                      >
+                        Test connection
+                      </button>
+                      {piStatus ? (
+                        <span className="ui-hint text-[10px]">{piStatus}</span>
+                      ) : null}
+                    </div>
+                    <p className="ui-hint text-[10px] mt-1">
+                      Optional — improves coverage of independent shows. Podcast search works
+                      without it (Apple/iTunes is used by default), and falls back automatically
+                      if this key is rate-limited. Keys are per-app and issued free at
+                      podcastindex.org. {PODCAST_INDEX_ATTRIBUTION}.
+                    </p>
+                  </div>
                   </>
                   ) : null}
                   <p className="ui-hint">
@@ -4431,8 +4497,11 @@ export default function SettingsView({
                     <p className="ui-hint mt-1">
                       API keys saved on one device are stored on your Sandbox Server host and merged into
                       other clients using the same server URL. Keys live on your self-hosted server
-                      (not Sandbox Music cloud). Set SANDBOX_DEVICE_SYNC_SECRET on the server for
-                      extra auth. Disabled automatically when air-gapped without a LAN server.
+                      (not Sandbox Music cloud). Without extra auth, any device on your network can
+                      read and write these keys. To require a credential, set
+                      TIER34_DEVICE_SYNC_SECRET on the server and paste the same value into the
+                      server token field above. Disabled automatically when air-gapped without a
+                      LAN server.
                     </p>
                   </div>
                   <SandboxSwitch
@@ -4887,6 +4956,8 @@ export default function SettingsView({
                   {t('settings.vault.hint')}
                 </p>
               </div>
+
+              <StorageReclaimCard cardStyle={cardStyle} />
 
               {isTauri() && deviceFingerprint ? (
                 <div className="settings-anchor-section p-5 rounded-xl border space-y-3" style={cardStyle}>

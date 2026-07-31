@@ -3,6 +3,7 @@
  */
 
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { cacheResolvedStream, getCachedResolvedStream } from './resolvedStreamCache';
 
 export interface YtDlpMobileResolveResult {
   uri: string;
@@ -97,6 +98,25 @@ const DEFAULT_YTDLP_INIT_TIMEOUT_MS = 45_000;
 const DEFAULT_YTDLP_RESOLVE_TIMEOUT_MS = 600_000;
 const DEFAULT_YTDLP_DOWNLOAD_TIMEOUT_MS = 600_000;
 
+/**
+ * Search YouTube via native yt-dlp (`ytsearch`) — keyless, finds mixtapes/singles/rare tracks
+ * and DJ sets that the iTunes catalog doesn't carry. Returns [] on web or when unavailable.
+ */
+export async function searchYtDlpMobile(
+  query: string,
+  limit = 15,
+): Promise<YtDlpMobileSearchHit[]> {
+  const q = query.trim();
+  if (!q || !isYtDlpMobileNativeAvailable()) return [];
+  try {
+    const result = await YtDlpMobile.search({ query: q, limit });
+    return (result?.results ?? []).filter((h) => h?.title?.trim() && h?.watchUrl?.trim());
+  } catch (err) {
+    lastYtDlpMobileError = err instanceof Error ? err.message : String(err);
+    return [];
+  }
+}
+
 /** Poll native yt-dlp init — safe to call before first on-device resolve. */
 export async function waitForYtDlpInit(
   timeoutMs = DEFAULT_YTDLP_INIT_TIMEOUT_MS,
@@ -160,11 +180,26 @@ export async function resolveViaYtDlpMobile(
   const q = query.trim();
   if (!q || !isYtDlpMobileNativeAvailable()) return null;
 
+  /*
+   * Checked before the queue, not inside it. A cache hit must not wait behind another track's
+   * extraction — that is the whole fifteen seconds it exists to avoid, and queueing it first would
+   * hand back the right URL just as late.
+   */
+  const cached = getCachedResolvedStream(q);
+  if (cached) return cached;
+
   return enqueueYtDlpResolve(async () => {
     const generation = resolveGeneration;
     lastYtDlpMobileError = null;
 
+    // Re-checked inside the queue: while this call waited its turn, the track it wants may have
+    // been resolved by the call ahead of it — a second tap on the same row, or a prefetch that
+    // landed first.
+    const queuedHit = getCachedResolvedStream(q);
+    if (queuedHit) return queuedHit;
+
     let hit = await resolveViaYtDlpMobileOnce(q, generation);
+    if (hit) cacheResolvedStream(q, hit);
     if (hit || !isResolveGenerationCurrent(generation)) return hit;
 
     const err = lastYtDlpMobileError?.toLowerCase() ?? '';
@@ -173,6 +208,8 @@ export async function resolveViaYtDlpMobile(
       if (!isResolveGenerationCurrent(generation)) return null;
       lastYtDlpMobileError = null;
       hit = await resolveViaYtDlpMobileOnce(q, generation);
+      // The retry earns a cache entry as much as the first attempt does; it cost the same again.
+      if (hit) cacheResolvedStream(q, hit);
     }
     return hit;
   });

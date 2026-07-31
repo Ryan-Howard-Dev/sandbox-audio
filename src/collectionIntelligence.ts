@@ -5,6 +5,7 @@
  * Extensible for mastering preference, lossless rules, source ranking, auto-dedup.
  */
 
+import { memoizeStringFn } from './memoizeStringFn';
 import {
   formatAlbumDisplayName,
   isArtistTitleMashupName,
@@ -21,6 +22,7 @@ import {
   lockerAlbumGroupKey,
   lockerAlbumDisplayArtist,
   normalizeLockerKeyPart,
+  normalizeLockerAlbumArtistKey,
   albumPrimaryArtist,
   parseLockerArtistBilling,
   collectLockerGuestArtists,
@@ -84,6 +86,8 @@ export type CanonicalArtist = {
   trackCount: number;
   albumCount: number;
   collectionKeys: string[];
+  /** Only ever credited as a feature on another artist's release — hidden from the library list. */
+  guestOnly?: boolean;
 };
 
 export type MediaGraph = {
@@ -254,15 +258,16 @@ export function editionLabelForKind(kind: EditionKind, displayName: string): str
   return labels[kind as Exclude<EditionKind, 'other'>];
 }
 
-export function normalizeIdentityKey(value: string): string {
-  return (value ?? '')
+/** Memoized: artist/album canonicalisation calls this many times per row. */
+export const normalizeIdentityKey = memoizeStringFn((value: string): string =>
+  (value ?? '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
-    .replace(/\s+/g, ' ');
-}
+    .replace(/\s+/g, ' '),
+);
 
 export function buildCanonicalAlbumId(
   releaseGroupId: string | null,
@@ -406,13 +411,36 @@ function finalizeAlbumEdition(edition: AlbumEdition): void {
   edition.label = editionLabelForKind(kind, edition.displayName);
 }
 
+/**
+ * Album bucket key that cannot be split by one track's billing.
+ *
+ * `lockerAlbumGroupKey` resolves the artist PER ROW, and its stub/mislabel heuristics can
+ * reject a perfectly good album-artist tag for individual rows — those rows then fall back
+ * to "Local Upload" and land in a second bucket. On a collaboration album that meant the
+ * tracks carrying featured artists split off into a duplicate album: "We Don't Trust You"
+ * appeared twice (12 tracks + 4 tracks) even though all 16 rows share the identical
+ * albumArtist "Future & Metro Boomin". When a usable albumArtist tag exists it IS the
+ * authority for grouping, so key off it directly and skip the per-row heuristics.
+ */
+function albumBucketKey(entry: LockerEntry): string | null {
+  const name = entry.albumName?.trim();
+  if (!name) return null;
+  const albumArtist = entry.albumArtist?.trim();
+  if (albumArtist && isUsableArtistName(albumArtist)) {
+    return `${normalizeLockerKeyPart(name)}::${normalizeLockerAlbumArtistKey(
+      albumPrimaryArtist(albumArtist),
+    )}`;
+  }
+  return lockerAlbumGroupKey(entry);
+}
+
 function buildLegacyAlbumGroups(
   entries: LockerEntry[],
   metaByEnvelopeId?: Map<string, EnvelopeMetaRow>,
 ): Map<string, AlbumEdition> {
   const byAlbumKey = new Map<string, LockerEntry[]>();
   for (const e of entries) {
-    const key = lockerAlbumGroupKey(e);
+    const key = albumBucketKey(e);
     if (!key) continue;
     const list = byAlbumKey.get(key);
     if (list) list.push(e);
@@ -420,10 +448,11 @@ function buildLegacyAlbumGroups(
   }
 
   const map = new Map<string, AlbumEdition>();
-  for (const tracks of byAlbumKey.values()) {
+  for (const [bucketKey, tracks] of byAlbumKey.entries()) {
     const name = tracks[0]!.albumName!.trim();
     const artist = lockerAlbumDisplayArtist(tracks[0]!, tracks);
-    const key = lockerAlbumGroupKey(tracks[0]!)!;
+    // Reuse the bucket key so the edition identity matches how tracks were grouped.
+    const key = bucketKey;
     const displayName = formatAlbumDisplayName(name);
     map.set(key, {
       key,
@@ -691,6 +720,32 @@ export function buildCanonicalArtists(entries: LockerEntry[]): CanonicalArtist[]
     }
   };
 
+  /**
+   * Artists who actually headline something in the vault (album artist, or the primary
+   * name on a track). A guest is only worth its own library tile if it also appears
+   * here — otherwise a single feature credit like "Kanye West & Andre Troutman" or
+   * "Denzel Curry & 454" spawns a standalone artist row whose only tracks belong to
+   * someone else's album, so it even inherits that album's cover.
+   */
+  const primaryArtistKeys = new Set<string>();
+  for (const entry of entries) {
+    const albumArtist = entry.albumArtist?.trim();
+    if (albumArtist) {
+      primaryArtistKeys.add(normalizeLockerKeyPart(albumPrimaryArtist(albumArtist)));
+    }
+    const trackPrimaryName = albumPrimaryArtist(entry.artist ?? '');
+    if (trackPrimaryName) {
+      primaryArtistKeys.add(normalizeLockerKeyPart(trackPrimaryName));
+    }
+  }
+  for (const collection of collections) {
+    if (collection.artist?.trim()) {
+      primaryArtistKeys.add(normalizeLockerKeyPart(albumPrimaryArtist(collection.artist)));
+    }
+  }
+  const isHeadlineArtist = (name: string): boolean =>
+    primaryArtistKeys.has(normalizeLockerKeyPart(albumPrimaryArtist(name)));
+
   for (const entry of entries) {
     const { name, musicbrainzArtistId } = resolveCanonicalArtistForTrack(entry);
     upsertArtist(name, musicbrainzArtistId, 1, undefined, entry);
@@ -704,9 +759,8 @@ export function buildCanonicalArtists(entries: LockerEntry[]): CanonicalArtist[]
 
     const trackPrimary = albumPrimaryArtist(entry.artist ?? '');
     for (const billed of parseLockerArtistBilling(entry.artist ?? '')) {
-      if (normalizeLockerKeyPart(billed) !== normalizeLockerKeyPart(trackPrimary)) {
-        upsertArtist(billed, null, 1, undefined, entry);
-      }
+      if (normalizeLockerKeyPart(billed) === normalizeLockerKeyPart(trackPrimary)) continue;
+      upsertArtist(billed, null, 1, undefined, entry);
     }
   }
 
@@ -749,6 +803,12 @@ export function buildCanonicalArtists(entries: LockerEntry[]): CanonicalArtist[]
       trackCount: row.trackCount,
       albumCount: row.collectionKeys.size,
       collectionKeys: [...row.collectionKeys],
+      // True when this name never headlines anything in the vault — it only exists as a
+      // feature credit on someone else's release (e.g. "Kanye West & Andre Troutman").
+      // Kept in the data so guest links / "appears on" still resolve, but the library
+      // artist list hides these so single features do not become artist tiles that
+      // borrow another album's cover.
+      guestOnly: !isHeadlineArtist(row.name),
     }))
     .filter(
       (a) =>
@@ -963,7 +1023,13 @@ export function groupLockerSearchHits(
 
 const LOCKER_VIDEO_EXT_RE = /\.(mp4|webm|mkv|mov|avi|m4v)(\?|$)/i;
 
-export type LockerTabId = 'artists' | 'albums' | 'singles' | 'videos' | 'playlists';
+export type LockerTabId =
+  | 'artists'
+  | 'albums'
+  | 'singles'
+  | 'genres'
+  | 'videos'
+  | 'playlists';
 
 export function isLockerVideoEntry(entry: LockerEntry): boolean {
   const url = entry.url?.trim() ?? '';

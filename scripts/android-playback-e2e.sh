@@ -14,6 +14,30 @@ deeplink() {
   sleep 2
 }
 
+# A bare "FAIL: <step>" cannot distinguish "the E2E bridge was compiled out of the APK" from
+# "the bridge is running and the step genuinely failed" — and those need opposite fixes. Dump
+# enough state to tell them apart on the spot instead of guessing from a one-line failure.
+diagnose_failure() {
+  local step="$1"
+  echo "--- diagnostics for ${step} ---"
+  local bridge
+  bridge="$(adb -s "$EMU_SERIAL" logcat -d 2>/dev/null | grep -c 'SandboxE2E' || true)"
+  echo "SandboxE2E log lines: ${bridge}"
+  if [[ "$bridge" == "0" ]]; then
+    echo "  -> No bridge output at all. Either __SANDBOX_ANDROID_E2E__ was false at build time"
+    echo "     (check SANDBOX_ANDROID_E2E reaches vite in scripts/vite-android-build.mjs),"
+    echo "     or the deep link never reached the app."
+  else
+    echo "  -> Bridge is alive; this step failed for an application reason."
+  fi
+  echo "app process: $(adb -s "$EMU_SERIAL" shell pidof "$PACKAGE" 2>/dev/null || echo 'NOT RUNNING')"
+  echo "last SandboxE2E lines:"
+  adb -s "$EMU_SERIAL" logcat -d 2>/dev/null | grep 'SandboxE2E' | tail -15 || true
+  echo "recent app errors:"
+  adb -s "$EMU_SERIAL" logcat -d 2>/dev/null | grep -E 'AndroidRuntime|Capacitor/Console.*(Error|error)' | tail -15 || true
+  echo "--- end diagnostics ---"
+}
+
 wait_logcat() {
   local pattern="$1"
   local timeout="${2:-120}"
@@ -90,14 +114,36 @@ sleep 2
 
 deeplink 'skip-onboarding'
 sleep 15
-wait_logcat 'SandboxE2E.*AREA=onboarding RESULT=PASS' 90 || { echo 'Playback E2E FAIL: skip-onboarding'; exit 1; }
+wait_logcat 'SandboxE2E.*AREA=onboarding RESULT=PASS' 90 || { echo 'Playback E2E FAIL: skip-onboarding'; diagnose_failure 'skip-onboarding'; exit 1; }
 
 deeplink 'probe-handlers'
-wait_logcat 'SandboxE2E.*AREA=handlers-probe RESULT=PASS' 90 || { echo 'Playback E2E FAIL: handlers-probe'; exit 1; }
+wait_logcat 'SandboxE2E.*AREA=handlers-probe RESULT=PASS' 90 || { echo 'Playback E2E FAIL: handlers-probe'; diagnose_failure 'handlers-probe'; exit 1; }
 
 deeplink 'clear-server'
 deeplink 'check-ytdlp'
 sleep 8
+
+# Real end-to-end audio, asserted on every run. Internet Archive has no bot wall, so unlike
+# YouTube it serves a datacenter IP normally — this proves ExoPlayer actually receives a
+# stream, decodes it and advances position. Hard failure: nothing about this depends on the
+# network being permissive, so a regression here is a genuine playback regression.
+adb -s "$EMU_SERIAL" logcat -c >/dev/null
+direct_url="$(python3 -c "import urllib.parse; print(urllib.parse.quote('https://archive.org/download/testmp3testfile/mpthreetest.mp3', safe=''))")"
+deeplink "play-direct-url?url=${direct_url}&playTimeoutMs=45000"
+wait_logcat 'SandboxE2E.*AREA=direct-url-play RESULT=PASS' 120 \
+  || { echo 'Playback E2E FAIL: direct-url-play (open-source audio did not decode)'; diagnose_failure 'direct-url-play'; exit 1; }
+echo 'DIRECT AUDIO PASS: Internet Archive stream decoded and advanced'
+
+# The gapless boundary — where both of today's playback regressions lived. Single-track
+# playback cannot see either: skipping jumped between tracks, and the previous item's metadata
+# followed the new one onto the lock screen. This queues two items with identical audio and
+# distinct metadata, seeks to the end of the first, and asserts the transition lands on index 1
+# exactly once with the SECOND item's metadata.
+adb -s "$EMU_SERIAL" logcat -c >/dev/null
+deeplink "play-direct-queue?url=${direct_url}"
+wait_logcat 'SandboxE2E.*AREA=direct-queue RESULT=PASS' 150 \
+  || { echo 'Playback E2E FAIL: direct-queue (gapless boundary)'; diagnose_failure 'direct-queue'; exit 1; }
+echo 'GAPLESS BOUNDARY PASS: advanced to index 1 once, with the correct metadata'
 
 artist="$(python3 -c "import urllib.parse; print(urllib.parse.quote('Kanye West'))")"
 track="$(python3 -c "import urllib.parse; print(urllib.parse.quote('FATHER'))")"
@@ -105,20 +151,72 @@ track="$(python3 -c "import urllib.parse; print(urllib.parse.quote('FATHER'))")"
 adb -s "$EMU_SERIAL" logcat -c >/dev/null
 reset_play_spine_seen
 deeplink "play-artist-track?artist=${artist}&track=${track}&progressSeconds=25&integritySeconds=0"
-wait_logcat 'SandboxE2E.*AREA=artist-track-play RESULT=PASS' 360 || { echo 'Playback E2E FAIL: artist-track-play'; exit 1; }
-wait_logcat 'SandboxE2E.*AREA=playback-progress RESULT=PASS' 120 || { echo 'Playback E2E FAIL: playback-progress'; exit 1; }
-assert_play_spine || { echo 'Playback E2E FAIL: play spine'; exit 1; }
+# Upstream audio (YouTube/Invidious) blocks datacenter IPs, so a CI runner cannot reliably
+# fetch a stream — R-017. That is an upstream fact, not a regression, and gating on it would
+# make this job permanently red and therefore ignored again. Distinguish the two:
+#
+#   full   — audio actually played and progressed. Only achievable where the network allows.
+#   spine  — intent resolved to an envelope and reached NativeExoPlayback.playUrl, but the
+#            stream could not be fetched. This still proves the queue/resolve path, which is
+#            what regresses, and is the honest maximum on a blocked runner.
+#   fail   — the spine itself broke. A real regression, red regardless of network.
+upstream_stream_unavailable() {
+  adb -s "$EMU_SERIAL" logcat -d -t 12000 2>/dev/null \
+    | grep -Eq 'Received HTML instead of audio|no stream available|is not valid JSON'
+}
+
+# Asserts on markers that survive a production build. `[handlePlayEnvelope]` does not — it is
+# behind import.meta.env.DEV and is stripped from the APK CI actually tests, so the old spine
+# check could never pass here regardless of whether playback worked.
+assert_play_spine_reached() {
+  local logs
+  logs="$(adb -s "$EMU_SERIAL" logcat -d -t 12000 2>/dev/null || true)"
+  grep -Eq 'SandboxE2E.*AREA=play-spine.*invoke' <<<"$logs" \
+    || { echo 'spine: play-artist-track never invoked the play handler'; return 1; }
+  grep -Eq 'SandboxE2E.*AREA=play-spine.*returned true' <<<"$logs" \
+    || { echo 'spine: play handler did not resolve a playable envelope'; return 1; }
+  grep -Fq 'methodName: playUrl' <<<"$logs" \
+    || { echo 'spine: NativeExoPlayback.playUrl was never called'; return 1; }
+  return 0
+}
+
+E2E_RESULT='full'
+if wait_logcat 'SandboxE2E.*AREA=artist-track-play RESULT=PASS' 360; then
+  wait_logcat 'SandboxE2E.*AREA=playback-progress RESULT=PASS' 120 || { echo 'Playback E2E FAIL: playback-progress'; diagnose_failure 'playback-progress'; exit 1; }
+  assert_play_spine || { echo 'Playback E2E FAIL: play spine'; diagnose_failure 'play spine'; exit 1; }
+else
+  if upstream_stream_unavailable && assert_play_spine_reached; then
+    E2E_RESULT='spine'
+    echo 'PLAY SPINE PASS (degraded): resolve + playUrl reached; upstream audio unavailable on this runner'
+  else
+    echo 'Playback E2E FAIL: artist-track-play'
+    diagnose_failure 'artist-track-play'
+    exit 1
+  fi
+fi
 
 {
   echo '# Android Playback E2E Report'
   echo "Date: $(date -Iseconds)"
   echo "Device: ${EMU_SERIAL} (emulator)"
-  echo 'Result: PASS'
-  echo '- artist-track-play: PASS'
-  echo '- playback-progress: PASS'
-  echo '- play spine (handlePlayEnvelope + playUrl + Exo): PASS'
+  if [[ "$E2E_RESULT" == 'full' ]]; then
+    echo 'Result: PASS (full)'
+    echo '- artist-track-play: PASS'
+    echo '- playback-progress: PASS'
+    echo '- play spine (handlePlayEnvelope + playUrl + Exo): PASS'
+  else
+    echo 'Result: PASS (spine only)'
+    echo '- artist-track-play: NOT REACHED — upstream audio unavailable (R-017)'
+    echo '- playback-progress: NOT REACHED'
+    echo '- play spine (handlePlayEnvelope + playUrl): PASS'
+    echo 'Audio fetch is blocked for datacenter IPs; run on a physical device for full coverage.'
+  fi
   echo 'Ready for phone install: requires phone-playback-vinyl-e2e.ps1 on physical device'
 } >"$REPORT"
 
-echo 'PLAYBACK E2E PASS'
+if [[ "$E2E_RESULT" == 'full' ]]; then
+  echo 'PLAYBACK E2E PASS'
+else
+  echo 'PLAYBACK E2E PASS (spine only — upstream audio unavailable on this runner)'
+fi
 exit 0

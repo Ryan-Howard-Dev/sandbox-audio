@@ -268,3 +268,56 @@ describe('catalogFieldsMatchSearchQuery', () => {
     ).toBe(true);
   });
 });
+
+/*
+ * Search returned nothing on a device with working network, and every layer reported it as a
+ * normal empty result. iTunes was returning 70 correct rows for "kendrick lamar humble" and the
+ * matcher discarded all of them: parseCombinedTrackQuery guessed the artist was "humble", and that
+ * guess was allowed to veto rows. These pin the rule that came out of it — a speculative split may
+ * accept a row, never reject one — while keeping the two-word veto that stops real false positives.
+ */
+describe('catalogFieldsMatchSearchQuery — a bad split must not empty the results', () => {
+  it('matches the row the user asked for when the split guesses wrong', () => {
+    // Parses as artist "humble", which is backwards; the row must still match.
+    expect(
+      catalogFieldsMatchSearchQuery(
+        { artist: 'Kendrick Lamar', album: 'DAMN.', title: 'HUMBLE.' },
+        'kendrick lamar humble',
+      ),
+    ).toBe(true);
+  });
+
+  it('matches a collaboration where both artists are typed', () => {
+    expect(
+      catalogFieldsMatchSearchQuery(
+        { artist: 'Kid Cudi & Denzel Curry', album: 'BLACK OPS - Single', title: 'Black Ops' },
+        'denzel curry kid cudi black ops',
+      ),
+    ).toBe(true);
+  });
+
+  it('matches whichever way round the artist and title are typed', () => {
+    const row = { artist: 'Denzel Curry', album: 'Melt My Eyez See Your Future', title: 'Walkin' };
+    expect(catalogFieldsMatchSearchQuery(row, 'denzel curry walkin')).toBe(true);
+    expect(catalogFieldsMatchSearchQuery(row, 'walkin denzel curry')).toBe(true);
+  });
+
+  /* The veto still earns its keep where the split is unambiguous. */
+  it('still rejects a compilation that merely contains both words', () => {
+    expect(
+      catalogFieldsMatchSearchQuery(
+        { artist: 'Danny Daze', album: 'Future Classic DJs Compilation', title: 'Zone' },
+        'Future Zone',
+      ),
+    ).toBe(false);
+  });
+
+  it('still rejects a row missing one of the typed words', () => {
+    expect(
+      catalogFieldsMatchSearchQuery(
+        { artist: 'Kendrick Lamar', album: 'DAMN.', title: 'DNA.' },
+        'kendrick lamar humble',
+      ),
+    ).toBe(false);
+  });
+});

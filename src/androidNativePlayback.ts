@@ -2,7 +2,8 @@
  * Android native ExoPlayer bridge — default decode path outside the WebView.
  */
 
-import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core';
+import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
+import { NativeExoPlayback } from './nativePluginHandles';
 import {
   loadAndroidNativePlaybackEnabled,
   loadAndroidUsbBitPerfectEnabled,
@@ -79,6 +80,8 @@ export interface NativeExoPlaybackPlugin {
   enqueueNext(options: {
     url: string;
     replayGainDb?: number;
+    /** Stable track id — native keys queue metadata off this, not the URL. */
+    envelopeId?: string;
     title?: string;
     artist?: string;
     album?: string;
@@ -93,6 +96,18 @@ export interface NativeExoPlaybackPlugin {
   setReplayGainDb(options: { replayGainDb: number }): Promise<{ ok: boolean }>;
   setUserVolume(options: { volume: number }): Promise<{ ok: boolean }>;
   setPlaybackSpeed(options: { speed: number }): Promise<{ ok: boolean; speed?: number }>;
+  setSpeechClarity(options: {
+    enabled: boolean;
+    highPassHz?: number;
+    presenceHz?: number;
+    presenceGainDb?: number;
+    thresholdDb?: number;
+    kneeDb?: number;
+    ratio?: number;
+    attackMs?: number;
+    releaseMs?: number;
+    makeupDb?: number;
+  }): Promise<{ ok: boolean; active?: boolean; supported?: boolean }>;
   setBitPerfectEnabled(options: { enabled: boolean }): Promise<{ ok: boolean; bitPerfectActive?: boolean }>;
   setWiredDacStabilityEnabled(options: { enabled: boolean }): Promise<{ ok: boolean }>;
   getUsbBitPerfectSupport(): Promise<{
@@ -114,6 +129,14 @@ export interface NativeExoPlaybackPlugin {
   finishLockerBlob(options: { id: string }): Promise<{ ok: boolean; contentUri: string }>;
   abortLockerBlob(options: { id: string }): Promise<{ ok: boolean }>;
   getLockerBlobUri(options: { id: string }): Promise<{ contentUri?: string }>;
+  /** Byte size of a locker blob on disk — the only way to measure a natively cached download. */
+  getLockerBlobBytes(options: { id: string }): Promise<{ bytes?: number }>;
+  /** A byte range of a locker blob, base64 — enough to walk container headers. */
+  getLockerBlobHead(options: {
+    id: string;
+    bytes?: number;
+    offset?: number;
+  }): Promise<{ base64?: string }>;
   importLockerBlobFromPath(options: {
     id: string;
     sourcePath: string;
@@ -130,6 +153,21 @@ export interface NativeExoPlaybackPlugin {
     cacheYtdlpCount?: number;
     cacheYtdlpBytes?: number;
   }>;
+  /**
+   * Garbage-collect durable locker_blobs whose id is referenced by no track.
+   * Pass dryRun:true to preview freed bytes. keepIds must be the full set of
+   * referenced track ids — native refuses to delete when it is empty.
+   */
+  /** Basenames (sanitised track ids) of every durable native locker blob file. */
+  listLockerBlobs(): Promise<{ ids: string[] }>;
+  pruneLockerBlobs(options: { keepIds: string[]; dryRun?: boolean }): Promise<{
+    deletedCount: number;
+    freedBytes: number;
+    keptCount: number;
+    totalCount: number;
+    dryRun: boolean;
+    refusedEmptyKeep: boolean;
+  }>;
   probeLocalFile(options: { path: string }): Promise<{ exists: boolean; bytes?: number }>;
   addListener(
     eventName: 'playbackEvent',
@@ -143,6 +181,8 @@ export interface NativeExoPlaybackEvent {
   queueLength?: number;
   reason?: number;
   url?: string;
+  /** Stable key native stamped on the MediaItem — survives URL rewriting, unlike `url`. */
+  mediaId?: string;
 }
 
 export function isNativeExoQueueEndedEvent(
@@ -150,10 +190,6 @@ export function isNativeExoQueueEndedEvent(
 ): evt is NativeExoPlaybackEvent & { event: 'queueEnded' } {
   return evt.event === 'queueEnded';
 }
-
-const NativeExoPlayback = registerPlugin<NativeExoPlaybackPlugin>('NativeExoPlayback', {
-  web: () => import('./androidNativePlayback.web').then((m) => new m.NativeExoPlaybackWeb()),
-});
 
 export { NativeExoPlayback };
 
@@ -258,6 +294,54 @@ export async function nativeExoSetPlaybackSpeed(speed: number): Promise<void> {
   }
 }
 
+/**
+ * Push a spoken-word compression profile to the native audio session, or clear it.
+ *
+ * The Web Audio chain in speechClarity.ts never runs on Android — playback leaves the WebView for
+ * ExoPlayer — so without this an audiobook on a phone gets no compression at all. The profile is
+ * sent rather than duplicated in Java so the tuning has exactly one home.
+ *
+ * Returns whether the effect actually engaged: DynamicsProcessing needs API 28 and some vendors
+ * ship it disabled, and a caller that wants to say so in the UI needs to be able to tell.
+ */
+export async function nativeExoSetSpeechClarity(
+  profile: {
+    highPassHz: number;
+    presenceHz: number;
+    presenceGainDb: number;
+    thresholdDb: number;
+    kneeDb: number;
+    ratio: number;
+    attackSec: number;
+    releaseSec: number;
+    makeupGainDb: number;
+  } | null,
+): Promise<{ active: boolean; supported: boolean }> {
+  if (!isAndroidNativePlaybackPlatform()) return { active: false, supported: false };
+  try {
+    if (!profile) {
+      const off = await NativeExoPlayback.setSpeechClarity({ enabled: false });
+      return { active: false, supported: off?.supported === true };
+    }
+    const res = await NativeExoPlayback.setSpeechClarity({
+      enabled: true,
+      highPassHz: profile.highPassHz,
+      presenceHz: profile.presenceHz,
+      presenceGainDb: profile.presenceGainDb,
+      thresholdDb: profile.thresholdDb,
+      kneeDb: profile.kneeDb,
+      ratio: profile.ratio,
+      // Android takes milliseconds where Web Audio takes seconds.
+      attackMs: profile.attackSec * 1000,
+      releaseMs: profile.releaseSec * 1000,
+      makeupDb: profile.makeupGainDb,
+    });
+    return { active: res?.active === true, supported: res?.supported === true };
+  } catch {
+    return { active: false, supported: false };
+  }
+}
+
 export async function nativeExoSetBitPerfectEnabled(enabled: boolean): Promise<void> {
   if (!isAndroidNativePlaybackPlatform()) return;
   try {
@@ -316,14 +400,18 @@ export type NativeExoPlayMetadata = {
   revision?: number;
 };
 
-async function waitForNativeExoPlaying(maxMs = 2500): Promise<void> {
+async function waitForNativeExoPlaying(maxMs = 2500, cancelled?: () => boolean): Promise<void> {
+  if (cancelled?.()) return;
   const deadline = Date.now() + maxMs;
   await nativeExoResume();
   while (Date.now() < deadline) {
+    if (cancelled?.()) return;
     const status = await nativeExoPlaybackStatus();
     if (status.state === 'playing') return;
+    if (cancelled?.()) return;
     await new Promise((resolve) => window.setTimeout(resolve, 80));
   }
+  if (cancelled?.()) return;
   await nativeExoResume();
 }
 
@@ -331,6 +419,21 @@ async function resolveNativeExoForegroundArtwork(
   artworkUrl?: string,
 ): Promise<string | undefined> {
   return resolveAndroidForegroundArtworkUrl(artworkUrl);
+}
+
+let jsInitiatedNav: { envelopeId?: string; atMs: number } = { atMs: 0 };
+
+/**
+ * The track JS last asked native to play, and when.
+ *
+ * Native fires a mediaItemTransition for every item change, including the ones JS just caused by
+ * calling playUrl. The transition handler needs to tell those echoes apart from a real gapless
+ * advance, and comparing against the active envelope is not enough — the echo can arrive before
+ * JS has updated it. playUrl is the single point where JS drives native, so recording it here
+ * covers every navigation entry point without touching any of them.
+ */
+export function lastJsInitiatedNativeNav(): { envelopeId?: string; atMs: number } {
+  return jsInitiatedNav;
 }
 
 export async function nativeExoPlayUrl(
@@ -341,6 +444,8 @@ export async function nativeExoPlayUrl(
     resetQueue?: boolean;
     gaplessEnabled?: boolean;
     crossfade?: boolean;
+    /** Checked before/during the post-play resume watchdog — return true to skip forcing a resume (e.g. the user paused). */
+    cancelled?: () => boolean;
   } & NativeExoPlayMetadata,
 ): Promise<void> {
   const trimmed = url?.trim() ?? '';
@@ -361,6 +466,8 @@ export async function nativeExoPlayUrl(
       : proxied;
   const autoPlay = options?.autoPlay !== false;
   const artworkUrl = await resolveNativeExoForegroundArtwork(options?.artworkUrl);
+  // Stamped before the call, so the claim is already in place when native echoes the transition.
+  jsInitiatedNav = { envelopeId: options?.envelopeId?.trim() || undefined, atMs: Date.now() };
   try {
     await NativeExoPlayback.playUrl({
       url: playUrl,
@@ -377,7 +484,7 @@ export async function nativeExoPlayUrl(
       durationSeconds: options?.durationSeconds,
     });
     if (autoPlay) {
-      await waitForNativeExoPlaying();
+      await waitForNativeExoPlaying(2500, options?.cancelled);
     }
   } catch (err) {
     throw err instanceof Error ? err : new Error(String(err));
@@ -395,11 +502,29 @@ export async function nativeExoEnqueueNext(
     /^https?:\/\//i.test(proxied) && proxied.includes('/api/')
       ? appendSandboxClientQuery(proxied)
       : proxied;
-  const artworkUrl = await resolveNativeExoForegroundArtwork(options?.artworkUrl);
+  // Never send data:/blob: artwork to native enqueueNext — the native side can't
+  // load those anyway, and a 100KB+ base64 string forwarded for every upcoming
+  // album track floods the Capacitor bridge, freezing the UI (pause feels dead).
+  const rawArt = options?.artworkUrl?.trim() ?? '';
+  let artworkUrl: string | undefined;
+  if (rawArt && !rawArt.startsWith('data:') && !rawArt.startsWith('blob:')) {
+    try {
+      artworkUrl = await resolveNativeExoForegroundArtwork(rawArt);
+    } catch {
+      // Artwork is cosmetic — never let it block enqueueing the next track. Resolving
+      // it outside a try (and calling it even for empty art) meant a failure here threw
+      // before enqueueNext ran, silently breaking gapless queue advance.
+      artworkUrl = undefined;
+    }
+  }
   try {
     await NativeExoPlayback.enqueueNext({
       url: playUrl,
       replayGainDb: options?.replayGainDb,
+      // Without this the native side keys this track's metadata off the URL alone, and any
+      // rewrite between enqueue and playback loses the match — the lock screen then keeps the
+      // previous track's title and cover across an album boundary.
+      envelopeId: options?.envelopeId,
       title: options?.title,
       artist: options?.artist,
       album: options?.album,

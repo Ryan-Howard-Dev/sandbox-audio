@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState, useTransition } from 
 import {
   Download,
   Loader2,
+  Play,
   Podcast,
   Search,
 } from 'lucide-react';
 import type { MediaEnvelope } from '../sandboxLayer1';
 import { fetchPodcastFeed } from '../podcastRss';
+import { selectNewPodcastEpisodes } from '../podcastNewEpisodes';
 import {
   fetchPodcastMirrorStatus,
   requestPodcastMirrorPull,
@@ -22,6 +24,7 @@ import {
   getUnplayedCountsByFeed,
   isEpisodeUnplayed,
   loadEpisodesForFeed,
+  loadAllEpisodes,
   loadSubscriptions,
   removeSubscription,
   saveEpisodesForFeed,
@@ -86,10 +89,22 @@ export default function PodcastsView({
   drillBackRef,
   episodeNotifCount = 0,
 }: PodcastsViewProps) {
-  const [tab, setTab] = useState<'discover' | 'library'>('discover');
-  const [libraryMounted, setLibraryMounted] = useState(false);
+  // Opens on the user's own shows (Library), like Music and Audiobooks — Discover is a
+  // deliberate step out, not the landing page for a pillar you already own content in.
+  /*
+   * Library is the right landing tab once you follow anything — the recurring job is "what's
+   * new in my shows", and Discover costs a network round trip that is useless offline. With
+   * zero subscriptions there is nothing to land on, so Discover is the only useful screen.
+   * Read synchronously so the first paint is already correct rather than switching under you.
+   */
+  const [tab, setTab] = useState<'discover' | 'library'>(() =>
+    loadSubscriptions().length === 0 ? 'discover' : 'library',
+  );
+  const [libraryMounted, setLibraryMounted] = useState(true);
   const [tabPending, startTabTransition] = useTransition();
   const [libraryView, setLibraryView] = useState<'shows' | 'downloaded'>('shows');
+  const [librarySearchOpen, setLibrarySearchOpen] = useState(false);
+  const [libraryQuery, setLibraryQuery] = useState('');
   const [offlineEpisodes, setOfflineEpisodes] = useState<OfflinePodcastEpisode[]>(
     loadOfflinePodcastEpisodes,
   );
@@ -244,6 +259,24 @@ export default function PodcastsView({
   const unplayedByFeed = useMemo(() => {
     void playbackTick;
     return getUnplayedCountsByFeed();
+  }, [subscriptions, playbackTick]);
+
+  const visibleSubscriptions = useMemo(() => {
+    const q = libraryQuery.trim().toLowerCase();
+    if (!q) return subscriptions;
+    return subscriptions.filter(
+      (sub) =>
+        sub.title?.toLowerCase().includes(q) || sub.author?.toLowerCase().includes(q),
+    );
+  }, [subscriptions, libraryQuery]);
+
+  // Recomputed on playbackTick so an episode leaves the strip as soon as it is played.
+  const newEpisodes = useMemo(() => {
+    void playbackTick;
+    if (subscriptions.length === 0) return [];
+    return selectNewPodcastEpisodes(loadAllEpisodes(), subscriptions, {
+      isUnplayed: isEpisodeUnplayed,
+    });
   }, [subscriptions, playbackTick]);
 
   const downloadedCount = useMemo(() => {
@@ -430,9 +463,8 @@ export default function PodcastsView({
       <header className="page-header-row mb-0">
         <div className="min-w-0 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-accent mb-1">
-              Global discovery
-            </p>
+            {/* No eyebrow. "Global discovery" labelled the page for nobody — the tabs below
+                already say what this is, and Music has no equivalent. */}
             <h1 className="font-display text-[1.75rem] font-bold tracking-tight leading-none text-[var(--text)]">
               Podcasts
             </h1>
@@ -459,14 +491,8 @@ export default function PodcastsView({
 
       <div className="podcasts-station-toolbar">
         <div className="podcasts-tabs-row">
+        {/* Library first, then Discover — same spine as Music and Audiobooks. */}
         <nav className="podcasts-tabs" aria-label="Podcast sections">
-          <button
-            type="button"
-            className={`podcasts-tab touch-manipulation${tab === 'discover' ? ' podcasts-tab--active' : ''}`}
-            onClick={() => selectTab('discover')}
-          >
-            Discover
-          </button>
           <button
             type="button"
             className={`podcasts-tab touch-manipulation${tab === 'library' && libraryView === 'shows' ? ' podcasts-tab--active' : ''}${tabPending && tab === 'library' ? ' podcasts-tab--pending' : ''}`}
@@ -480,13 +506,22 @@ export default function PodcastsView({
           </button>
           <button
             type="button"
+            className={`podcasts-tab touch-manipulation${tab === 'discover' ? ' podcasts-tab--active' : ''}`}
+            onClick={() => selectTab('discover')}
+          >
+            Discover
+          </button>
+          <button
+            type="button"
             className={`podcasts-tab podcasts-tab--downloaded touch-manipulation${tab === 'library' && libraryView === 'downloaded' ? ' podcasts-tab--active' : ''}`}
             onClick={goToDownloaded}
             aria-current={tab === 'library' && libraryView === 'downloaded' ? 'page' : undefined}
-            aria-label={`Offline episodes${offlineEpisodeCount > 0 ? `, ${offlineEpisodeCount}` : ''}`}
+            aria-label={`Downloaded episodes${offlineEpisodeCount > 0 ? `, ${offlineEpisodeCount}` : ''}`}
           >
             <Download className="w-3.5 h-3.5 shrink-0" aria-hidden />
-            <span className="podcasts-tab-label" aria-hidden>Offline</span>
+            {/* "Downloaded", not "Offline": this is a filter over the library (libraryView),
+                not a third section, and Music already calls that state downloaded. */}
+            <span className="podcasts-tab-label" aria-hidden>Downloaded</span>
             <span
               className={`podcasts-count-badge${offlineEpisodeCount === 0 ? ' podcasts-count-badge--empty' : ''}`}
               aria-hidden
@@ -495,7 +530,35 @@ export default function PodcastsView({
             </span>
           </button>
         </nav>
+        {/* Magnifier, matching Music's Library. This filters shows already on the device, so
+            it is instant and needs no submit — unlike Discover's box, which fires a remote
+            query and keeps its field. Same icon, different job, deliberately. */}
+        {tab === 'library' ? (
+          <button
+            type="button"
+            className={`podcasts-library-search-btn touch-manipulation${librarySearchOpen ? ' is-active' : ''}`}
+            onClick={() => {
+              setLibrarySearchOpen((open) => !open);
+              if (librarySearchOpen) setLibraryQuery('');
+            }}
+            aria-label="Search your shows"
+            aria-expanded={librarySearchOpen}
+          >
+            <Search className="w-4 h-4" />
+          </button>
+        ) : null}
         </div>
+        {tab === 'library' && librarySearchOpen ? (
+          <input
+            type="search"
+            className="podcasts-library-search-input"
+            value={libraryQuery}
+            onChange={(e) => setLibraryQuery(e.target.value)}
+            placeholder="Search your shows"
+            aria-label="Search your shows"
+            autoFocus
+          />
+        ) : null}
       </div>
 
       {tab === 'discover' ? (
@@ -648,13 +711,57 @@ export default function PodcastsView({
             />
           ) : (
             <div className="podcasts-content pt-4">
+              {/* New episodes before the show grid: the grid alone made the landing tab look
+                  static even when episodes had arrived, since counts sat on tiles you had to
+                  open. Episodes are what's perishable here. */}
+              {newEpisodes.length > 0 ? (
+                <section className="podcasts-new-episodes" aria-label="New episodes">
+                  <h2 className="podcasts-section-title">New episodes</h2>
+                  <ul className="podcasts-new-episodes-list">
+                    {newEpisodes.map(({ episode, showTitle, showArtworkUrl }) => (
+                      <li key={episode.id}>
+                        <button
+                          type="button"
+                          className="podcasts-new-episode touch-manipulation"
+                          onClick={() =>
+                            void onPlay(episodeEnvelope(episode, showTitle, showArtworkUrl))
+                          }
+                        >
+                          {showArtworkUrl ? (
+                            <img
+                              className="podcasts-new-episode-art"
+                              src={showArtworkUrl}
+                              alt=""
+                              aria-hidden
+                            />
+                          ) : (
+                            <span className="podcasts-new-episode-art" aria-hidden />
+                          )}
+                          <span className="podcasts-new-episode-text">
+                            <span className="podcasts-new-episode-title">{episode.title}</span>
+                            <span className="podcasts-new-episode-show">{showTitle}</span>
+                          </span>
+                          <Play className="w-4 h-4 text-accent shrink-0" aria-hidden />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
               <PodcastLibraryShowGrid
-                subscriptions={subscriptions}
+                subscriptions={visibleSubscriptions}
                 unplayedByFeed={unplayedByFeed}
                 episodeCountByFeed={episodeCountByFeed}
                 onOpenShow={openShow}
                 onDiscoverMore={() => selectTab('discover')}
                 onUnsubscribe={handleUnsubscribe}
+              />
+              {/* Import lives with the user's own shows, not only under Discover — Library
+                  is the landing tab and importing an OPML is a library action. Collapsed
+                  by default so it never competes with the show grid. */}
+              <PodcastManualSubscribeSection
+                onSubscribed={handleManualSubscribed}
+                onError={setError}
               />
             </div>
           )}

@@ -74,6 +74,9 @@ export interface FeedDiscoverHomeSectionProps {
   lang: string;
   onPlayDiscoveryMix: (tracks: MediaEnvelope[], mix: DiscoveryMix) => void;
   onSaveMix?: (mix: DiscoveryMix) => void;
+  onDownloadMix?: (mix: DiscoveryMix) => void;
+  onShareMix?: (mix: DiscoveryMix) => void;
+  mfyDrillBackRef?: React.MutableRefObject<(() => boolean) | null>;
   onPlayTrack?: (env: MediaEnvelope) => void;
   onGoToExplore?: () => void;
   onPickExploreCategory?: (label: string, group: ExploreGroup) => void;
@@ -94,6 +97,9 @@ export default function FeedDiscoverHomeSection({
   lang,
   onPlayDiscoveryMix,
   onSaveMix,
+  onDownloadMix,
+  onShareMix,
+  mfyDrillBackRef,
   onPlayTrack,
   onGoToExplore,
   onPickExploreCategory,
@@ -149,6 +155,9 @@ export default function FeedDiscoverHomeSection({
         releases={releases}
         onPlayDiscoveryMix={onPlayDiscoveryMix}
         onSaveMix={onSaveMix}
+        onDownloadMix={onDownloadMix}
+        onShareMix={onShareMix}
+        mfyDrillBackRef={mfyDrillBackRef}
         onPlayTrack={onPlayTrack}
         onGoToExplore={onGoToExplore}
         onPickExploreCategory={onPickExploreCategory}

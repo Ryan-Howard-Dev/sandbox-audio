@@ -57,31 +57,62 @@ function catalogFetchUrls(relativeUrl: string): string[] {
   return direct ? [direct] : [];
 }
 
+/*
+ * Why a catalog fetch came back with nothing.
+ *
+ * Every failure here used to collapse to the same empty array: a refused connection, an HTTP
+ * error, an HTML captive-portal reply, and a genuine zero-result query were indistinguishable to
+ * the caller and to the user, who is told "no matches for this query" either way. That is how a
+ * search returning nothing on a device with working network went unexplained — there was no signal
+ * to read anywhere in the stack.
+ */
+function catalogFetchHost(url: string): string {
+  try {
+    return new URL(url, 'https://localhost').host || 'relative';
+  } catch {
+    return 'unparsed';
+  }
+}
+
 export async function fetchCatalogApiResults(url: string): Promise<CatalogProviderItem[]> {
   if (isAirGapEnabled()) return [];
   const urls = catalogFetchUrls(url);
+  if (urls.length === 0) {
+    console.warn(`[catalogFetch] no candidate urls for ${url} — nothing was requested`);
+    return [];
+  }
   const timeoutMs = isCapacitorNative()
     ? NATIVE_CATALOG_FETCH_TIMEOUT_MS
     : DEFAULT_FETCH_TIMEOUT_MS;
   const attempts = isCapacitorNative() ? NATIVE_CATALOG_RETRIES : 1;
+  const outcomes: string[] = [];
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     for (const fetchUrl of urls) {
+      const host = catalogFetchHost(fetchUrl);
       try {
         const res = await fetchWithTimeout(fetchUrl, undefined, timeoutMs);
-        if (!res.ok) continue;
+        if (!res.ok) {
+          outcomes.push(`${host} http=${res.status}`);
+          continue;
+        }
         const contentType = res.headers.get('content-type') ?? '';
-        if (!isJsonLikeContentType(contentType)) continue;
+        if (!isJsonLikeContentType(contentType)) {
+          outcomes.push(`${host} contentType=${contentType || 'none'}`);
+          continue;
+        }
         const data = (await res.json()) as { results?: CatalogProviderItem[] };
         const results = data.results ?? [];
         if (results.length > 0) return results;
-      } catch {
-        /* try next URL */
+        outcomes.push(`${host} ok-but-empty`);
+      } catch (err) {
+        outcomes.push(`${host} threw=${err instanceof Error ? err.message : String(err)}`);
       }
     }
     if (attempt < attempts - 1) {
       await sleep(1500 * (attempt + 1));
     }
   }
+  console.warn(`[catalogFetch] empty for ${url} after ${outcomes.join(' | ')}`);
   return [];
 }
 

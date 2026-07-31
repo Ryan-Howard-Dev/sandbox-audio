@@ -3,6 +3,7 @@
  * Plain JSON in locker storage; optional TIER34_DEVICE_SYNC_SECRET gates PUT/GET.
  */
 
+import { timingSafeEqual } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Request } from 'express';
@@ -92,7 +93,29 @@ export function getDeviceSecretsPayload(): {
   return { updatedAt: store.updatedAt, secrets: store.secrets };
 }
 
-/** Auth: X-Sandbox-Client + optional TIER34_DEVICE_SYNC_SECRET (or X-Sandbox-Token). */
+/** Constant-time compare that tolerates unequal lengths without leaking them. */
+export function secretsMatch(provided: string, expected: string): boolean {
+  if (!provided || !expected) return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
+/**
+ * Auth for the device-secret endpoints: X-Sandbox-Client, plus TIER34_DEVICE_SYNC_SECRET when set.
+ *
+ * The token header used to be accepted on presence alone — `if (sandboxToken) return ok` — and it
+ * was never compared to anything. Since the client only ever sends X-Sandbox-Token and never
+ * X-Tier34-Device-Sync, that was the *only* live path, which made setting the secret worthless:
+ * any LAN client could write Prowlarr and Real-Debrid keys with `X-Sandbox-Token: anything` while
+ * the operator believed the endpoint was locked. Both headers now have to carry the secret
+ * itself, compared in constant time.
+ *
+ * With no secret configured the endpoints stay open to LAN clients. That is the deliberate
+ * self-hosted default, not an oversight — tightening it would lock out every existing install on
+ * upgrade. It is the operator's switch to throw, and now throwing it actually does something.
+ */
 export function verifyDeviceSyncAuth(
   req: Request,
 ): { ok: true } | { ok: false; status: number; error: string } {
@@ -102,14 +125,12 @@ export function verifyDeviceSyncAuth(
   }
 
   const envSecret = process.env.TIER34_DEVICE_SYNC_SECRET?.trim();
+  if (!envSecret) return { ok: true };
+
   const providedSecret = String(req.headers['x-tier34-device-sync'] ?? '').trim();
   const sandboxToken = String(req.headers['x-sandbox-token'] ?? '').trim();
-
-  if (envSecret) {
-    if (providedSecret === envSecret) return { ok: true };
-    if (sandboxToken) return { ok: true };
-    return { ok: false, status: 401, error: 'Invalid device sync credentials' };
+  if (secretsMatch(providedSecret, envSecret) || secretsMatch(sandboxToken, envSecret)) {
+    return { ok: true };
   }
-
-  return { ok: true };
+  return { ok: false, status: 401, error: 'Invalid device sync credentials' };
 }

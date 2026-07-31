@@ -326,6 +326,8 @@ export function lockerEntryToEnvelope(entry: LockerEntry): MediaEnvelope {
     sourceId: entry.id,
     artworkUrl: resolveLockerEntryGroupArt(entry),
     releaseYear: entry.releaseYear,
+    /* Last link in the chain: measured at import, stored on the row, shown on the badge. */
+    bitrateKbps: entry.bitrateKbps,
   };
 }
 
@@ -334,8 +336,11 @@ export function buildSmartTrackContexts(
   playHistory: StoredPlayHit[],
 ): SmartTrackContext[] {
   const historyById = new Map(playHistory.map((h) => [h.envelopeId, h]));
+  // NOTE: do not filter on entry.url. Downloaded locker tracks keep their audio in the
+  // native file (nativeSourcePath) or the IndexedDB blob and leave `url` EMPTY — a row is
+  // only built at all when one of those exists (see rowToEntry). Gating on url here threw
+  // away every downloaded track, which is why every smart playlist read "0 tracks".
   return lockerEntries
-    .filter((e) => e.url?.trim())
     .map((entry) => {
       const envelopeId = `local-${entry.id}`;
       const hit = historyById.get(envelopeId);
@@ -604,7 +609,9 @@ export function resolveEnvelopeIdsToTracks(
     seen.add(id);
     const lockerId = id.startsWith('local-') ? id.slice(6) : id;
     const entry = byLockerId.get(lockerId);
-    if (entry?.url) tracks.push(lockerEntryToEnvelope(entry));
+    // Any entry that exists in the locker is playable (native path or IDB blob); `url` is
+    // empty for downloads, so requiring it here emptied every smart playlist.
+    if (entry) tracks.push(lockerEntryToEnvelope(entry));
   }
   return tracks;
 }

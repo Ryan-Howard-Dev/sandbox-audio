@@ -14,6 +14,7 @@ import type { RepeatMode } from '../queuePersistence';
 import MobileHomeVinylSettingsSheet from '../mobile/MobileHomeVinylSettingsSheet';
 import { shouldShowMobileHomeVinylSettings } from '../mobile/mobileHomeVinylLogic';
 import type { AudioFsmState, MediaEnvelope } from '../sandboxLayer1';
+import { isAnyAudiobookEnvelopeId } from '../spokenWordPlayback';
 import {
   applyHeroDisplayFromSettingsEvent,
   loadHeroDisplayMode,
@@ -263,7 +264,16 @@ export interface HomeHeroPlayerProps {
   /** Centered under progress bar (Tidal-style now playing). */
   fidelityLabel?: string;
   resolveElapsedSeconds?: number;
+  /**
+   * A different track is resolving behind the one being shown, because the shown one is still the
+   * audible one. The banner is then the only receipt the user has for their skip, so it has to
+   * survive the expanded layout's usual suppression — a screen that looks unchanged reads as a
+   * dropped tap.
+   */
+  resolvingNextTrack?: boolean;
   onCancelResolve?: () => void;
+  /** Idle home: tapping the vinyl opens universal search (its signature gesture). */
+  onIdleSearch?: () => void;
   /** Render the floating album/vinyl toggle over the artwork. Default true (home). */
   inlineVinylSettings?: boolean;
   /** Tap the artwork to flip album cover ↔ vinyl (expanded now-playing). */
@@ -308,7 +318,9 @@ export default function HomeHeroPlayer({
   onRepeatCycle,
   fidelityLabel,
   resolveElapsedSeconds = 0,
+  resolvingNextTrack = false,
   onCancelResolve,
+  onIdleSearch,
   inlineVinylSettings = true,
   flipOnArtworkTap = false,
 }: HomeHeroPlayerProps) {
@@ -349,6 +361,11 @@ export default function HomeHeroPlayer({
     : resolveHeroShowShades(effectiveHeroDisplay, hasArt, { idleHome: trueIdle });
   const gradientSeed = title?.trim() || album?.trim() || 'Sandbox';
   const heroArtist = displayHeroArtist(artist, album);
+  const bookTitle = album?.trim() ?? '';
+  const showBookLine =
+    isAnyAudiobookEnvelopeId(envelope?.envelopeId) &&
+    bookTitle.length > 0 &&
+    bookTitle !== title?.trim();
   const duration = durationSeconds > 0 ? durationSeconds : 0;
   const progress =
     duration > 0
@@ -370,7 +387,7 @@ export default function HomeHeroPlayer({
   );
   const resolvedVinylSize = vinylSize ?? (compact ? 'compact' : 'home');
   const hideResolveBanner =
-    expanded ||
+    (expanded && !resolvingNextTrack) ||
     Boolean(envelope?.envelopeId && isPodcastEnvelopeId(envelope.envelopeId));
 
   useEffect(() => {
@@ -409,9 +426,9 @@ export default function HomeHeroPlayer({
     setHeroDisplayLocal(next);
     onHeroDisplayModeChange?.(next);
   };
-  const flipEnabled = Boolean(
-    flipOnArtworkTap && expanded && !compact && hasLoadedTrack && !isPodcast,
-  );
+  // Not gated on `expanded` — the Home hero's default (non-compact, non-expanded) view should
+  // flip on tap too, matching the Now Playing sheet. Compact/mini still taps-to-expand instead.
+  const flipEnabled = Boolean(flipOnArtworkTap && !compact && hasLoadedTrack && !isPodcast);
   const heroDisplayToggleLabel = showAlbumPoster
     ? t('settings.architect.heroDisplayVinylShades')
     : t('settings.architect.heroDisplayAlbumCover');
@@ -505,6 +522,15 @@ export default function HomeHeroPlayer({
               <ChevronDown className="w-5 h-5" strokeWidth={2} />
             </button>
           ) : null}
+          {trueIdle && onIdleSearch ? (
+            <button
+              type="button"
+              className="home-vinyl-search-hit touch-manipulation"
+              onClick={onIdleSearch}
+              aria-label={t('nav.search')}
+              data-testid="home-vinyl-search"
+            />
+          ) : null}
           {showAlbumPoster ? (
             <div className="home-hero-poster-wrap shrink-0" style={trackGlowStyle}>
               <img
@@ -560,10 +586,12 @@ export default function HomeHeroPlayer({
         <p className="home-idle-welcome">{t('home.welcomeTagline')}</p>
       ) : (
         <div className="home-featured-meta">
-          {!hideResolveBanner && state === 'Resolving' ? (
+          {!hideResolveBanner && (state === 'Resolving' || resolvingNextTrack) ? (
             <div className="home-connecting-banner-slot home-connecting-banner-slot--visible">
               <ResolvingPlaybackBanner
-                state={state}
+                // The FSM can read Idle for a beat mid-handoff while the next stream is still being
+                // fetched. The banner is the receipt for the skip, so it must not blink out there.
+                state={resolvingNextTrack && state !== 'Connecting' ? 'Resolving' : state}
                 elapsedSeconds={resolveElapsedSeconds}
                 onCancel={onCancelResolve}
                 compact={compact}
@@ -585,6 +613,13 @@ export default function HomeHeroPlayer({
               <p className="home-hero-artist">{heroArtist}</p>
             )
           ) : null}
+          {/*
+            An audiobook's title is the chapter, so the book itself appeared nowhere on the
+            player — "CHAPTER 6" by "Jane Austen", with no Pride and Prejudice. For music the
+            album is already reachable through the artist line, so this is spoken-word only, and
+            it lands in the gap that otherwise sat empty between the artist and the transport.
+          */}
+          {showBookLine ? <p className="home-hero-book">{album}</p> : null}
 
           {!compact && (
             <>

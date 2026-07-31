@@ -7,7 +7,7 @@ import { isAirGapEnabled } from './airGapMode';
 import type { MediaEnvelope } from './sandboxLayer1';
 import { fetchWithTimeout } from './fetchWithTimeout';
 import { scheduleMusicBrainz } from './musicbrainzScheduler';
-import { getLockerEntriesSnapshot } from './lockerStorage';
+import { getLockerEntriesSnapshot, resolveLockerEntryGroupArt } from './lockerStorage';
 import { lockerEntryToEnvelope } from './smartPlaylistEngine';
 import type { FollowedArtist } from './followedArtists';
 import {
@@ -19,6 +19,11 @@ import {
 import { fetchSearchCatalog } from './searchCatalog';
 
 export const RECENT_RELEASE_DAYS = 120;
+
+/** Artists processed per refresh — see the cap comment in fetchFollowedArtistFeed. */
+export const FEED_ARTIST_CAP = 24;
+/** MusicBrainz rate limit is ~1 req/sec; this paces the sequential loop. */
+const MB_THROTTLE_MS = 200;
 const MB_USER_AGENT =
   'SandboxMusic/1.0.0 (https://github.com/sandbox-music; followed-feed)';
 
@@ -279,7 +284,9 @@ function fetchLockerReleases(artist: FollowedArtist): FollowedFeedRelease[] {
       title: entry.title,
       artist: entryArtist,
       detail: entry.albumName ? `${entry.albumName} · Your library` : 'Added to your library',
-      artworkUrl: entry.albumArt,
+      // entry.albumArt is usually empty because downloaded covers live in the blob
+      // store — resolve through the album group so these rows are not imageless.
+      artworkUrl: resolveLockerEntryGroupArt(entry, entries) ?? entry.albumArt,
       envelope: lockerEntryToEnvelope(entry),
       sortKey: entry.addedAt,
     });
@@ -564,18 +571,51 @@ export async function fetchFollowedArtistFeed(
     const allEvents: FollowedFeedEvent[] = [];
     const allAnnouncements: FollowedFeedAnnouncement[] = [];
 
-    for (const artist of artists) {
-      const [catalog, locker, mbSlice] = await Promise.all([
-        fetchCatalogReleases(artist),
-        Promise.resolve(fetchLockerReleases(artist)),
-        fetchMbArtistSlice(artist),
-      ]);
+    /*
+     * Capped and sequential. The MusicBrainz throttle below is what forces sequential work, so
+     * an unbounded follow list turns into unbounded latency before anything renders — 60
+     * followed artists meant 60 round trips plus 12s of pure sleep. Past this many, the feed is
+     * long enough that the tail was never going to be read.
+     */
+    const queue = artists.slice(0, FEED_ARTIST_CAP);
 
-      allReleases.push(...catalog, ...locker, ...mbSlice.recent);
+    for (let i = 0; i < queue.length; i++) {
+      const artist = queue[i]!;
+      /*
+       * Per-artist isolation. This loop used to sit bare inside the outer try, so one artist
+       * throwing — a MusicBrainz timeout, a malformed payload — discarded every result already
+       * gathered and dropped the whole feed back to stale cache. One bad artist should cost you
+       * that artist, not the feed.
+       */
+      let catalog: FollowedFeedRelease[] = [];
+      let locker: FollowedFeedRelease[] = [];
+      let mbSlice: MbArtistSlice = { recent: [], events: [], announcements: [] };
+      try {
+        [catalog, locker, mbSlice] = await Promise.all([
+          fetchCatalogReleases(artist),
+          Promise.resolve(fetchLockerReleases(artist)),
+          fetchMbArtistSlice(artist),
+        ]);
+      } catch {
+        continue;
+      }
+
+      // This feed is for genuinely NEW releases, so tracks already sitting in the
+      // locker do not belong here — surfacing "Your library" rows made a discovery
+      // surface look like it was just replaying the library back at you. Keep them
+      // only as a last resort when an artist has no real release news at all.
+      const externalReleases = [...catalog, ...mbSlice.recent];
+      allReleases.push(
+        ...(externalReleases.length > 0 ? externalReleases : locker.slice(0, 1)),
+      );
       allEvents.push(...mbSlice.events);
       allAnnouncements.push(...mbSlice.announcements);
 
-      await new Promise((r) => setTimeout(r, 200));
+      // MusicBrainz asks for roughly one request a second, so the pause stays — but not after
+      // the last artist, where it only delayed the render with nothing left to throttle.
+      if (i < queue.length - 1) {
+        await new Promise((r) => setTimeout(r, MB_THROTTLE_MS));
+      }
     }
 
     const payload: CachedFeedPayload = {

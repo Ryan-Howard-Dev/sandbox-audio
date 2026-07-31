@@ -7,10 +7,15 @@ import {VitePWA} from 'vite-plugin-pwa';
 export default defineConfig(() => {
   // E2E bridge is opt-in only (SANDBOX_ANDROID_E2E=true). Never on release/user APKs.
   const androidDebugE2e = process.env.SANDBOX_ANDROID_E2E === 'true';
+  // App-level Last.fm API key baked in at build time so every user gets similar-artist radio
+  // with zero setup. Read-only endpoints (getSimilar) need only a key — no user OAuth. Set
+  // SANDBOX_LASTFM_API_KEY=<key> when building; leave empty to require a per-user key instead.
+  const lastfmAppApiKey = process.env.SANDBOX_LASTFM_API_KEY?.trim() ?? '';
   return {
     define: {
       __SANDBOX_ANDROID_E2E__: androidDebugE2e,
       'import.meta.env.VITE_E2E_BRIDGE': JSON.stringify(androidDebugE2e ? 'true' : ''),
+      __LASTFM_APP_API_KEY__: JSON.stringify(lastfmAppApiKey),
     },
     plugins: [
       react(),

@@ -29,12 +29,46 @@ import org.json.JSONArray;
 @CapacitorPlugin(name = "YtDlpMobile")
 public class YtDlpMobilePlugin extends Plugin {
 
+    /**
+     * Format preference, widest-last.
+     *
+     * The audio-only branches are tried first because a bare audio stream is smaller and decodes
+     * cheaper. They are not sufficient on their own: with player_client=android YouTube regularly
+     * offers no audio-only format at all, only progressive streams carrying video and audio
+     * together. The old selector stopped at worstaudio, so those videos failed outright with
+     * "Requested format is not available" — and the caller then paid for a second, slower resolve
+     * to recover. Measured on device that turned a 3.5s resolve into 14.1s, on every track.
+     *
+     * The progressive fallbacks cost bandwidth we do not use, since the video track is ignored on
+     * playback, but a stream that plays beats a stream that does not exist.
+     */
+    private static final String AUDIO_FORMAT_SELECTOR =
+        "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/"
+            + "best[acodec!=none][ext=mp4]/best[acodec!=none]/best";
+
     private static final String TAG = "YtDlpMobile";
     private static final long INIT_WAIT_MS = 45_000;
     /** Playback resolve — fail fast so UI can recover on cellular. */
     private static final long RESOLVE_TIMEOUT_MS = 45_000;
-    /** Explicit locker download — may run longer. */
-    private static final long DOWNLOAD_TIMEOUT_MS = 600_000;
+    /**
+     * Per-track download cap. With ffmpeg audio-extraction the files are only a
+     * few MB, so a track that hasn't finished in 2 min is stuck (unfindable /
+     * hanging search) and must be skipped so the rest of the album keeps going —
+     * 10 minutes stalled the whole album on one bad track.
+     */
+    /**
+     * Absolute ceiling for one track. Generous on purpose: a long track plus ffmpeg audio
+     * extraction on a slow phone can legitimately take several minutes, and a flat 2-minute
+     * cancel was killing healthy downloads mid-transfer.
+     */
+    private static final long DOWNLOAD_TIMEOUT_MS = 900_000;
+    /**
+     * Cancel only when yt-dlp has reported no progress for this long. This is what actually
+     * catches a hung download; the loop of unfindable tracks is prevented separately by the
+     * JS-side resolve-failure cache, not by a short wall-clock timeout.
+     */
+    private static final long DOWNLOAD_STALL_TIMEOUT_MS = 90_000;
+    private static final long DOWNLOAD_POLL_MS = 5_000;
     private static final long SEARCH_TIMEOUT_MS = 45_000;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -81,6 +115,13 @@ public class YtDlpMobilePlugin extends Plugin {
         long startMs = System.currentTimeMillis();
         try {
             YoutubeDL.getInstance().init(getContext());
+            // Required so `-x` (extract-audio) works — downloads are always
+            // remuxed/extracted to audio-only m4a, never stored as video.
+            try {
+                com.yausername.ffmpeg.FFmpeg.getInstance().init(getContext());
+            } catch (Throwable ffmpegErr) {
+                Log.w(TAG, "ffmpeg init failed (audio extraction unavailable): " + ffmpegErr.getMessage());
+            }
             initialized = true;
             try {
                 version = YoutubeDL.getInstance().version(getContext());
@@ -93,11 +134,65 @@ public class YtDlpMobilePlugin extends Plugin {
             } else {
                 Log.i(TAG, "youtubedl-android initialized in " + elapsedMs + " ms");
             }
+            maybeUpdateYtDlp();
         } catch (YoutubeDLException e) {
             initFailed = true;
             initError = e.getMessage() != null ? e.getMessage() : "yt-dlp init failed";
             long elapsedMs = System.currentTimeMillis() - startMs;
             Log.e(TAG, "failed to initialize youtubedl-android after " + elapsedMs + " ms", e);
+        }
+    }
+
+    private static final String UPDATE_PREFS = "ytdlp_update_v1";
+    private static final String LAST_UPDATE_KEY = "last_update_ms";
+    /** How stale the extractor may get before another update is attempted. */
+    private static final long UPDATE_INTERVAL_MS = 7L * 24 * 60 * 60 * 1000;
+
+    /**
+     * Refresh the yt-dlp binary itself, not the library wrapping it.
+     *
+     * The dependency pins a yt-dlp snapshot taken when that library was released, and YouTube
+     * changes its extractor contract far faster than the library ships. Measured on device, the
+     * bundled build could no longer obtain adaptive audio from any player client — every request
+     * came back "Requested format is not available", leaving only a 360p progressive stream whose
+     * audio is capped at 96 kbps. Nothing in the app's own code can fix that; the extractor has to
+     * be newer.
+     *
+     * Rate limited to once a week and run after init rather than before it, so a slow or refused
+     * download delays nothing: playback keeps working on the bundled version either way. Failures
+     * are logged and swallowed for the same reason.
+     */
+    private void maybeUpdateYtDlp() {
+        try {
+            android.content.SharedPreferences prefs =
+                getContext().getSharedPreferences(UPDATE_PREFS, android.content.Context.MODE_PRIVATE);
+            long last = prefs.getLong(LAST_UPDATE_KEY, 0L);
+            long now = System.currentTimeMillis();
+            if (now - last < UPDATE_INTERVAL_MS) return;
+
+            long t = System.currentTimeMillis();
+            YoutubeDL.UpdateStatus status =
+                YoutubeDL.getInstance()
+                    .updateYoutubeDL(getContext(), YoutubeDL.UpdateChannel.STABLE.INSTANCE);
+            // Recorded even when already up to date, so a device with no newer build available
+            // does not retry the network call on every launch.
+            prefs.edit().putLong(LAST_UPDATE_KEY, now).apply();
+            String updated = null;
+            try {
+                updated = YoutubeDL.getInstance().version(getContext());
+            } catch (Exception ignored) {
+                /* version is a nicety */
+            }
+            if (updated != null) version = updated;
+            Log.i(
+                TAG,
+                "yt-dlp update status=" + status
+                    + " version=" + (updated != null ? updated : "unknown")
+                    + " ms=" + (System.currentTimeMillis() - t));
+        } catch (Throwable e) {
+            // Offline, air-gapped, GitHub unreachable, or the API changed — none of which should
+            // stop playback on the version already on disk.
+            Log.w(TAG, "yt-dlp update skipped: " + e.getMessage());
         }
     }
 
@@ -168,7 +263,7 @@ public class YtDlpMobilePlugin extends Plugin {
         executor.execute(
             () -> {
                 try {
-                    JSObject result = (JSObject) task.get(DOWNLOAD_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                    JSObject result = awaitDownloadWithStallWatchdog(task, trimmed);
                     if (result == null) {
                         rejectCall(call, "download failed");
                     } else {
@@ -177,7 +272,7 @@ public class YtDlpMobilePlugin extends Plugin {
                     }
                 } catch (TimeoutException e) {
                     task.cancel(true);
-                    Log.w(TAG, "downloadAudio timeout query=" + trimmed);
+                    Log.w(TAG, "downloadAudio stalled/timeout query=" + trimmed);
                     rejectCall(call, "yt-dlp download timed out");
                 } catch (Exception e) {
                     String message = e.getMessage() != null ? e.getMessage() : "download failed";
@@ -189,6 +284,41 @@ public class YtDlpMobilePlugin extends Plugin {
                     }
                 }
             });
+    }
+
+    /**
+     * Wait for a download, cancelling only on a genuine stall (no yt-dlp progress for
+     * DOWNLOAD_STALL_TIMEOUT_MS) or after the absolute ceiling. Polling in slices lets a
+     * slow-but-progressing transfer run to completion instead of being cut off.
+     */
+    @Nullable
+    private JSObject awaitDownloadWithStallWatchdog(Future<?> task, String query)
+        throws Exception {
+        long deadline = System.currentTimeMillis() + DOWNLOAD_TIMEOUT_MS;
+        long lastBytes = -1L;
+        long lastGrowthAt = System.currentTimeMillis();
+        while (true) {
+            try {
+                return (JSObject) task.get(DOWNLOAD_POLL_MS, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException slice) {
+                long now = System.currentTimeMillis();
+                if (now >= deadline) {
+                    Log.w(TAG, "downloadAudio hit absolute ceiling query=" + query);
+                    throw slice;
+                }
+                // Bytes landing on disk means it is working, however slowly.
+                long bytes = YoutubeDlStreamResolver.currentDownloadBytes();
+                if (bytes != lastBytes) {
+                    lastBytes = bytes;
+                    lastGrowthAt = now;
+                } else if (now - lastGrowthAt > DOWNLOAD_STALL_TIMEOUT_MS) {
+                    Log.w(
+                        TAG,
+                        "downloadAudio stalled at " + bytes + " bytes query=" + query);
+                    throw slice;
+                }
+            }
+        }
     }
 
     @Nullable
@@ -216,7 +346,7 @@ public class YtDlpMobilePlugin extends Plugin {
         }
 
         YoutubeDLRequest streamReq = new YoutubeDLRequest(target);
-        streamReq.addOption("-f", "bestaudio[ext=m4a]/bestaudio/best[height<=0]/best");
+        streamReq.addOption("-f", AUDIO_FORMAT_SELECTOR);
         streamReq.addOption("-o", new File(getContext().getFilesDir(), "ytdlp-locker/%(id)s.%(ext)s").getAbsolutePath());
         streamReq.addOption("--no-playlist");
         streamReq.addOption("--no-warnings");
@@ -436,7 +566,7 @@ public class YtDlpMobilePlugin extends Plugin {
         }
 
         YoutubeDLRequest streamReq = new YoutubeDLRequest(target);
-        streamReq.addOption("-f", "bestaudio[ext=m4a]/bestaudio/best[height<=0]/best");
+        streamReq.addOption("-f", AUDIO_FORMAT_SELECTOR);
         streamReq.addOption("-g");
         streamReq.addOption("--no-playlist");
         streamReq.addOption("--no-warnings");
@@ -465,7 +595,7 @@ public class YtDlpMobilePlugin extends Plugin {
     private JSObject resolveTextQueryDirect(String query) {
         try {
             YoutubeDLRequest req = new YoutubeDLRequest("ytsearch1:" + query);
-            req.addOption("-f", "bestaudio[ext=m4a]/bestaudio/best[height<=0]/best");
+            req.addOption("-f", AUDIO_FORMAT_SELECTOR);
             req.addOption("-g");
             req.addOption("--no-playlist");
             req.addOption("--no-warnings");

@@ -80,8 +80,11 @@ function AudiobookChapterRow({
       ? formatTime(chapter.durationSeconds)
       : '';
 
+  // `is-active`, not `--active`: the styling rule is `.podcasts-show-episode-row.is-active`, so
+  // the BEM-style modifier this used matched nothing and the playing chapter was never marked.
+  // Podcast rows already use `is-active`; these had silently drifted.
   return (
-    <li className={`podcasts-show-episode-row${showActive ? ' podcasts-show-episode-row--active' : ''}`}>
+    <li className={`podcasts-show-episode-row${showActive ? ' is-active' : ''}`}>
       <button
         type="button"
         className="podcasts-show-episode-copy touch-manipulation text-left flex-1 min-w-0 py-3"

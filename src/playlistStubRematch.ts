@@ -8,8 +8,8 @@ import type { MediaEnvelope } from './sandboxLayer1';
 import type { StoredPlaylist } from './playlistStorage';
 import { isImportedShellWithoutTracks } from './importPlatforms';
 import {
+  filterPlayableLockerIds,
   getLockerEntries,
-  lockerEntryIsPlayable,
   resolveLockerEnvelopeForPlayback,
 } from './lockerStorage';
 import { envelopeClaimsLocker } from './play/ensureLockerPlayable';
@@ -38,10 +38,14 @@ function trackNeedsLockerRepair(track: MediaEnvelope): boolean {
   return envelopeClaimsLocker(track);
 }
 
-async function trackLockerRefIsStale(track: MediaEnvelope): Promise<boolean> {
+/** `playableIds` is precomputed in bulk by the caller — see filterPlayableLockerIds. */
+async function trackLockerRefIsStale(
+  track: MediaEnvelope,
+  playableIds: Set<string>,
+): Promise<boolean> {
   if (!trackNeedsLockerRepair(track)) return false;
   const sourceId = track.sourceId?.trim();
-  if (sourceId && (await lockerEntryIsPlayable(sourceId))) {
+  if (sourceId && playableIds.has(sourceId)) {
     if (isAndroid()) {
       const url = track.url?.trim() ?? '';
       if (url && !url.startsWith('blob:')) return false;
@@ -59,11 +63,16 @@ export async function rematchPlaylistTracksFromLocker(
 ): Promise<{ playlist: StoredPlaylist; repaired: number }> {
   if (playlist.tracks.length === 0) return { playlist, repaired: 0 };
 
+  // One bulk playability pass for the whole playlist, not one blob read per track.
+  const playableIds = await filterPlayableLockerIds(
+    playlist.tracks.map((t) => t.sourceId?.trim() ?? ''),
+  );
+
   let repaired = 0;
   const nextTracks: MediaEnvelope[] = [];
 
   for (const track of playlist.tracks) {
-    if (!(await trackLockerRefIsStale(track))) {
+    if (!(await trackLockerRefIsStale(track, playableIds))) {
       nextTracks.push(track);
       continue;
     }

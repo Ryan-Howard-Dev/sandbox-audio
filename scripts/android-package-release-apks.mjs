@@ -30,10 +30,19 @@ if (apks.length === 0) {
 }
 
 const pkgVersion = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
-const tagVersion =
-  process.env.RELEASE_VERSION?.trim() ||
-  process.env.GITHUB_REF_NAME?.replace(/^v/i, '') ||
-  pkgVersion;
+
+/*
+ * GITHUB_REF_NAME is only a version on tag builds. On pull_request events it is
+ * "<PR-number>/merge", and that slash turned the output filename into a nested path whose
+ * parent does not exist — the job died with ENOENT copying to
+ * "release-android/sandbox-music-1/merge-arm64-v8a.apk". Accept the ref only when it actually
+ * looks like a version, and sanitise whatever we end up with so a filename can never contain
+ * a path separator.
+ */
+const refName = process.env.GITHUB_REF_NAME?.replace(/^v/i, '').trim();
+const refIsVersion = Boolean(refName && /^\d+(\.\d+)*([-+][\w.]+)?$/.test(refName));
+const rawVersion = process.env.RELEASE_VERSION?.trim() || (refIsVersion ? refName : pkgVersion);
+const tagVersion = rawVersion.replace(/[^\w.+-]/g, '-');
 
 mkdirSync(outDir, { recursive: true });
 

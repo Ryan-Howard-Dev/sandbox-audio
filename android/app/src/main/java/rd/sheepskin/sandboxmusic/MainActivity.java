@@ -32,7 +32,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.JSObject;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
@@ -187,6 +189,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(LockerMirrorPlugin.class);
         registerPlugin(DeviceMusicScanPlugin.class);
         registerPlugin(DownloadForegroundPlugin.class);
+        registerPlugin(NativeTextToSpeechPlugin.class);
         super.onCreate(savedInstanceState);
         instanceRef = new WeakReference<>(this);
         registerScreenLockReceiver();
@@ -579,9 +582,38 @@ public class MainActivity extends BridgeActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        forwardE2eDeepLink(intent);
         handleWakeAlarmIntent(intent);
         handleFollowedReleaseIntent(intent);
         handlePlaylistImportIntent(intent);
+    }
+
+    /**
+     * Hand sandboxmusic://e2e/* to the web layer directly instead of relying on appUrlOpen.
+     *
+     * Capacitor's event is not dependable for these. Firing one at the already-running app logs
+     * "delivered to currently running top-most instance" and then nothing reaches JS — for some
+     * URLs and not others, in the same session, seconds apart. From the outside that is
+     * indistinguishable from a probe that started and hung, which is where a long debugging
+     * detour went. The activity already has the intent, so it can dispatch the event itself and
+     * take the guesswork out of the automation path. Scoped to the e2e host: no other deep link
+     * changes route.
+     */
+    private void forwardE2eDeepLink(Intent intent) {
+        if (intent == null || intent.getData() == null) {
+            return;
+        }
+        Uri uri = intent.getData();
+        if (!"sandboxmusic".equals(uri.getScheme()) || !"e2e".equals(uri.getHost())) {
+            return;
+        }
+        Bridge bridge = getBridge();
+        if (bridge == null) {
+            return;
+        }
+        JSObject payload = new JSObject();
+        payload.put("url", uri.toString());
+        bridge.triggerWindowJSEvent("sandboxE2eDeepLink", payload.toString());
     }
 
     @Override

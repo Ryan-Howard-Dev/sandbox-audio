@@ -97,6 +97,21 @@ async function runDeferredVaultBoot(
   repairPlaylistsFromLocker(list);
   void healInheritedAlbumArtToStorage();
   void runSessionStubRepairIfNeeded();
+  // Background sweep of orphaned locker blobs (old re-download-loop leftovers).
+  // Runs once, only after the index has loaded, and never deletes referenced audio.
+  void import('./storageReclaim').then((m) => m.autoCleanOrphanBlobsOnce());
+  // Resolve real genres + sub-genres in the background so the Genres tab and
+  // weekly mixes are populated even before the user opens them.
+  void import('./genreEnrichment').then((m) => {
+    if (m.genreEnrichmentPending(list)) {
+      void m
+        .enrichLockerGenres(list)
+        .then((r) => console.info('[genreEnrich] boot pass', r))
+        .catch((e) => console.warn('[genreEnrich] boot pass failed', e));
+    } else {
+      console.info('[genreEnrich] boot pass skipped — nothing pending');
+    }
+  });
 
   void pullMissingLockerBlobsFromRemote().then((r) => {
     if (r.pulled > 0) {

@@ -527,7 +527,27 @@ async function fetchAudioBlobWithProgress(
   }
 }
 
+/**
+ * Archive.org items publish a torrent, and its SHA-1 piece hashes let a download be *checked*
+ * rather than trusted because the transfer returned 200. Tried first for archive URLs; any other
+ * host, an item with no torrent, or a failure falls through to the ordinary fetch below.
+ * Verification is an upgrade on the normal path, so it must never stop a download that would
+ * otherwise have worked.
+ */
+async function fetchVerifiedArchiveBlob(url: string): Promise<Blob | null> {
+  try {
+    const { fetchVerifiedArchiveAudio } = await import('./torrentDownload');
+    const verified = await fetchVerifiedArchiveAudio(url);
+    if (!verified) return null;
+    return new Blob([verified.bytes as unknown as BlobPart]);
+  } catch {
+    return null;
+  }
+}
+
 async function fetchAudioBlob(url: string): Promise<Blob> {
+  const verified = await fetchVerifiedArchiveBlob(url);
+  if (verified) return verified;
   return fetchAudioBlobWithProgress(url);
 }
 

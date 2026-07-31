@@ -22,6 +22,7 @@ export type LockerReconcileOptions = {
 export type LockerPlayabilityMode = 'fast' | 'full';
 
 import { isBootUiInteractive } from './bootInteractivity';
+import { memoizeStringFn } from './memoizeStringFn';
 import {
   featuredArtistsFromTrackTitle,
   proxiedArtworkUrl,
@@ -32,7 +33,14 @@ import {
 import { lookupBundledTrackArtistLine } from './albumBundledCredits';
 import { catalogArtworkUrl, useDirectMediaUpstream } from './catalogDirect';
 import { extractEmbeddedCover } from './embeddedCover';
+import { isBatterySaverEnabled } from './batterySaverSettings';
 import { fetchWithTimeout } from './fetchWithTimeout';
+import {
+  measureLoudness,
+  parseReplayGainPeakDbfs,
+  parseReplayGainTagDb,
+  trackGainFromLoudness,
+} from './replayGainIngest';
 import type { MediaEnvelope } from './sandboxLayer1';
 import { loadDeviceCapacity } from './sandboxSettings';
 import { DEVICE_CAPACITY_OPTIONS, type DeviceCapacity } from './stations/theme';
@@ -49,6 +57,12 @@ export interface LockerEntry {
   title: string;
   artist: string;
   genre: string;
+  /**
+   * Specific style under `genre` (Trap under Hip-Hop, Nu Metal under Rock).
+   * Genre shelves group by this when present, so libraries don't collapse into
+   * two umbrella shelves. Set by enrichment or by hand in Edit info.
+   */
+  subGenre?: string;
   durationSeconds: number;
   url: string;
   addedAt: number;
@@ -76,6 +90,13 @@ export interface LockerEntry {
   lyrics?: string;
   /** ID3 TKEY initial key for harmonic mixing. */
   initialKey?: string;
+  /**
+   * Measured average bitrate (kbps), when the stored row has one.
+   *
+   * Carried so the now-playing badge can state a property of the audio. Absent means unknown, and
+   * the badge shows nothing rather than a number nobody measured.
+   */
+  bitrateKbps?: number;
   /** True only when IDB bytes or Android native cache exist — set at vault load. */
   offlineReady?: boolean;
   /** User edited title/artist/album via Edit info — auto-repair must never overwrite. */
@@ -97,8 +118,14 @@ export function isLockerCacheContentUri(path: string): boolean {
 function isStableNativeAudioPath(path: string): boolean {
   const trimmed = path?.trim() ?? '';
   if (!trimmed || isLockerCacheContentUri(trimmed)) return false;
+  // ytdlp-playback lives in cacheDir — genuinely ephemeral, reject.
   if (/\/ytdlp-playback\//i.test(trimmed)) return false;
-  if (/\/ytdlp-locker\//i.test(trimmed)) return false;
+  // ytdlp-locker under cache/ is the LEGACY temp location (migrated away on boot); reject it.
+  // But files/ytdlp-locker is the DURABLE download destination for locker acquisition
+  // (see YoutubeDlStreamResolver "Download audio for locker acquisition — uses durable
+  // files/ytdlp-locker"). Rejecting the durable copy made every downloaded track look absent,
+  // so offlineReady never latched true and the album auto-completer re-downloaded them forever.
+  if (/\/cache\/ytdlp-locker\//i.test(trimmed)) return false;
   return /^file:\/\//i.test(trimmed) || trimmed.startsWith('/');
 }
 
@@ -127,6 +154,32 @@ export class LockerCapacityExceededError extends Error {
     this.limitBytes = limitBytes;
     this.projectedBytes = projectedBytes;
   }
+}
+
+/**
+ * Average bitrate of a file, in kbps, from its own bytes and duration.
+ *
+ * Every locker import used to be stamped `bitrate: 320` regardless of what the file was. That is
+ * not a measurement, it is a placeholder, and a 96 kbps podcast rip and a FLAC were both recorded
+ * as 320. The now-playing badge is supposed to tell a listener what they are hearing, so it could
+ * not honestly show that number — which is why it showed the transport instead, and why the badge
+ * said "MOBILE" and then "LOCKER" rather than a bitrate.
+ *
+ * Bytes over duration is the real average for the whole file, container overhead included. It
+ * matches what a player reports closely enough to be worth stating, and it is derived from the
+ * file rather than assumed about it. Returns undefined when either input is unusable, so an
+ * unknown bitrate stays unknown instead of becoming a guess.
+ */
+export function averageBitrateKbps(
+  byteLength: number | null | undefined,
+  durationSeconds: number | null | undefined,
+): number | undefined {
+  const bytes = Number(byteLength ?? 0);
+  const seconds = Number(durationSeconds ?? 0);
+  if (!Number.isFinite(bytes) || !Number.isFinite(seconds)) return undefined;
+  if (bytes <= 0 || seconds <= 0) return undefined;
+  const kbps = Math.round((bytes * 8) / seconds / 1000);
+  return kbps > 0 ? kbps : undefined;
 }
 
 export function capacityLimitBytes(capacity?: DeviceCapacity): number | null {
@@ -263,6 +316,16 @@ function storedAudioToBlob(value: unknown): Blob | null {
   return null;
 }
 
+/**
+ * One object URL PER ROW — deliberately not shared across an album.
+ *
+ * Sharing one URL per album was tried as a perf fix (it cut a 1274ms blocking pass to 79ms,
+ * since createObjectURL over IDB-backed blobs is slow in Android WebView) and had to be reverted:
+ * the art-heal paths below revoke an entry's previous blob: URL before minting a replacement, so
+ * a shared URL meant healing one track blanked the cover for every other track on that album —
+ * including the track currently playing. Any future attempt at this must make revocation
+ * refcount-aware first.
+ */
 function resolveAlbumArtForRow(row: {
   albumArt?: string;
   albumArtBlob?: Blob;
@@ -830,8 +893,19 @@ export function isTruncatedArtistName(
 }
 
 /** "Kanye West Bittersweet" — real artist name with song-title words glued on. */
+/** "A & B", "A, B", "A x B", "A feat. B" — a collaboration billing, not a mashup. */
+const COLLAB_BILLING_RE =
+  /(\s*&\s*|\s*,\s*|\s+and\s+|\s+x\s+|\s+feat\.?\s+|\s+ft\.?\s+|\s+featuring\s+|\s+with\s+|\s+vs\.?\s+)/i;
+
 export function isArtistTitleMashupName(name: string | undefined): boolean {
-  const key = normalizeLockerKeyPart((name ?? '').trim());
+  const raw = (name ?? '').trim();
+  // Check the RAW string first: normalizeLockerKeyPart strips "&" and ",", so by the time
+  // we have a key, "Future & Metro Boomin" is indistinguishable from an artist-plus-title
+  // mashup and the prefix test below wrongly rejects it. That rejection made
+  // isUsableArtistName() false for the album-artist tag, which pushed the tracks carrying
+  // featured artists into a second "Local Upload" album — the duplicate joint albums.
+  if (COLLAB_BILLING_RE.test(raw)) return false;
+  const key = normalizeLockerKeyPart(raw);
   if (!key) return false;
   for (const prefix of KNOWN_ARTIST_NAME_PREFIXES) {
     if (key === prefix) return false;
@@ -1066,14 +1140,15 @@ export function resolveLyricsSearchArtist(
 }
 
 /** Normalize album/artist strings for stable locker grouping keys. */
-export function normalizeLockerKeyPart(value: string): string {
-  return value
+/** Memoized: album/artist grouping calls this per row, repeatedly, on the same names. */
+export const normalizeLockerKeyPart = memoizeStringFn((value: string): string =>
+  value
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
+    .trim(),
+);
 
 /**
  * Collapse collab billing variants for locker album keys
@@ -1424,26 +1499,83 @@ export function resolveLockerEntryGroupArt(
 }
 
 /**
+ * Precompute one album cover per group in a single O(n) pass.
+ *
+ * `resolveLockerEntryGroupArt` re-filters the whole pool for every entry — O(n²), which on a
+ * large vault is seconds of synchronous main-thread work (both in the boot warm chain and in
+ * every shell cache-sync re-render). Build this map once, then resolve each row via
+ * `resolveLockerEntryGroupArtFromMap` for O(1) per-row lookup.
+ */
+export function buildLockerGroupArtMap(
+  entries: ReadonlyArray<LockerEntry>,
+): Map<string, string | undefined> {
+  const siblingsByKey = new Map<string, LockerEntry[]>();
+  for (const entry of entries) {
+    const key = lockerAlbumGroupKey(entry);
+    if (!key) continue;
+    const bucket = siblingsByKey.get(key);
+    if (bucket) bucket.push(entry);
+    else siblingsByKey.set(key, [entry]);
+  }
+  const artByKey = new Map<string, string | undefined>();
+  for (const [key, siblings] of siblingsByKey) {
+    // albumKey is always set here, so the entry arg only feeds the (unreachable) no-key branch.
+    artByKey.set(
+      key,
+      resolveLockerTrackThumbArt(siblings[0]!, key, siblings, undefined, undefined),
+    );
+  }
+  return artByKey;
+}
+
+/**
+ * O(1) per-row album art via a map from {@link buildLockerGroupArtMap}.
+ * Matches {@link resolveLockerEntryGroupArt} exactly: keyed rows return the group's resolved
+ * art (or undefined when the group has none — no per-row fallback), unkeyed rows sanitize their own.
+ */
+export function resolveLockerEntryGroupArtFromMap(
+  entry: Pick<LockerEntry, 'albumName' | 'albumArtist' | 'artist' | 'albumArt'>,
+  artByKey: ReadonlyMap<string, string | undefined>,
+): string | undefined {
+  const albumKey = lockerAlbumGroupKey(entry);
+  if (!albumKey) return sanitizeCoverArtUrl(entry.albumArt);
+  return artByKey.get(albumKey);
+}
+
+/**
  * In-memory heal: every track inherits album-group art when any sibling (or session cache) has cover.
  * Safe to call on every vault cache refresh — never deletes rows or blobs.
  */
 export function inheritLockerAlbumArt(entries: LockerEntry[]): LockerEntry[] {
   if (entries.length === 0) return entries;
 
-  const groupArtByKey = new Map<string, string>();
+  // Group siblings once (O(n)) instead of re-filtering the whole vault per entry (was O(n²)
+  // and the dominant multi-second cost of the boot vault-warm chain on large libraries).
+  const siblingsByKey = new Map<string, LockerEntry[]>();
   for (const entry of entries) {
     const key = lockerAlbumGroupKey(entry);
-    if (!key || groupArtByKey.has(key)) continue;
-    const siblings = entries.filter((row) => lockerAlbumGroupKey(row) === key);
+    if (!key) continue;
+    const bucket = siblingsByKey.get(key);
+    if (bucket) bucket.push(entry);
+    else siblingsByKey.set(key, [entry]);
+  }
+
+  // Seed the session known-good cache for every group first (unchanged ordering/behavior),
+  // then resolve one art per group so per-row resolution reads a fully-seeded cache.
+  for (const [key, siblings] of siblingsByKey) {
     const art = pickLockerAlbumCover(siblings);
-    if (art) {
-      groupArtByKey.set(key, art);
-      rememberKnownGoodAlbumArt(key, art);
-    }
+    if (art) rememberKnownGoodAlbumArt(key, art);
+  }
+  const artByKey = new Map<string, string | undefined>();
+  for (const [key, siblings] of siblingsByKey) {
+    artByKey.set(
+      key,
+      resolveLockerTrackThumbArt(siblings[0]!, key, siblings, undefined, undefined),
+    );
   }
 
   return entries.map((entry) => {
-    const resolved = resolveLockerEntryGroupArt(entry, entries);
+    const resolved = resolveLockerEntryGroupArtFromMap(entry, artByKey);
     if (!resolved) return entry;
     const current = sanitizeCoverArtUrl(entry.albumArt);
     if (!current) return { ...entry, albumArt: resolved };
@@ -1950,6 +2082,65 @@ export async function getLockerArtBlob(entryId: string): Promise<Blob | null> {
   return readEntryArtBlob(entryId);
 }
 
+/**
+ * Write one cover blob onto many entries in a SINGLE transaction.
+ *
+ * The per-entry path (updateLockerEntryMetadata) opens its own transaction each time, so
+ * propagating art across a few hundred tracks cost thousands of IndexedDB opens and blocked
+ * the main thread for seconds when the locker was opened.
+ */
+export async function applyArtBlobToEntries(ids: string[], blob: Blob): Promise<number> {
+  if (ids.length === 0 || blob.size === 0) return 0;
+  const db = await initDB();
+  if (!db.objectStoreNames.contains(BLOB_STORE_NAME)) return 0;
+  const written = await new Promise<number>((resolve) => {
+    let count = 0;
+    const tx = db.transaction(BLOB_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(BLOB_STORE_NAME);
+    for (const id of ids) {
+      const getReq = store.get(id);
+      getReq.onsuccess = () => {
+        const existing = (getReq.result ?? { id }) as TrackBlobRow;
+        store.put({ ...existing, id, albumArtBlob: blob });
+        count += 1;
+      };
+    }
+    tx.oncomplete = () => resolve(count);
+    tx.onerror = () => resolve(count);
+    tx.onabort = () => resolve(count);
+  });
+  for (const id of ids) dropCachedAlbumArt(id);
+  return written;
+}
+
+/**
+ * Ids in the blob store that actually hold cover art, read in ONE transaction.
+ *
+ * Callers that need to know "which of my 300 tracks have art?" must use this instead of
+ * calling getLockerArtBlob() per track — that pattern issued ~600 separate IndexedDB opens
+ * when the locker was opened (measured), which is what made the library feel slow.
+ */
+export async function listLockerArtBlobIds(): Promise<Set<string>> {
+  const db = await initDB();
+  if (!db.objectStoreNames.contains(BLOB_STORE_NAME)) return new Set();
+  return new Promise<Set<string>>((resolve) => {
+    const ids = new Set<string>();
+    const tx = db.transaction(BLOB_STORE_NAME, 'readonly');
+    const req = tx.objectStore(BLOB_STORE_NAME).openCursor();
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) {
+        resolve(ids);
+        return;
+      }
+      const row = cursor.value as TrackBlobRow | undefined;
+      if (row?.albumArtBlob && typeof cursor.key === 'string') ids.add(cursor.key);
+      cursor.continue();
+    };
+    req.onerror = () => resolve(ids);
+  });
+}
+
 /** Drop persisted cover bytes from the blob store (keeps audio blob when present). */
 async function clearEntryArtBlob(id: string): Promise<void> {
   const db = await initDB();
@@ -1981,6 +2172,104 @@ async function clearEntryArtBlob(id: string): Promise<void> {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+}
+
+export interface TrackBlobPruneResult {
+  /** Rows whose audio bytes were (or would be) removed. */
+  deleted: number;
+  freedBytes: number;
+  kept: number;
+  total: number;
+  /** True when a live prune was blocked because the keep-set was empty. */
+  refusedEmptyKeep: boolean;
+}
+
+/**
+ * Reclaim audio bytes from the IndexedDB blob store for tracks NOT in keepIds.
+ * Album-art bytes in the same row are preserved. `keepIds` must contain every
+ * track whose audio still lives in IndexedDB (no durable native copy) — a live
+ * prune is refused when keepIds is empty, since that usually means the locker
+ * index has not loaded yet rather than "delete every offline copy".
+ */
+export async function pruneTrackBlobs(
+  keepIds: Set<string>,
+  options: { dryRun?: boolean; allowEmptyKeep?: boolean } = {},
+): Promise<TrackBlobPruneResult> {
+  const dryRun = options.dryRun ?? true;
+  // An empty keep-set is legitimate when every track has a durable native copy
+  // (nothing needs its IndexedDB audio). Callers that have verified the locker
+  // index is loaded pass allowEmptyKeep:true; otherwise we refuse, since an empty
+  // keep usually means the index has not loaded yet.
+  const allowEmptyKeep = options.allowEmptyKeep ?? false;
+  const db = await initDB();
+  if (!db.objectStoreNames.contains(BLOB_STORE_NAME)) {
+    return { deleted: 0, freedBytes: 0, kept: 0, total: 0, refusedEmptyKeep: false };
+  }
+
+  const targets: Array<{ id: string; bytes: number }> = [];
+  let kept = 0;
+  let total = 0;
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(BLOB_STORE_NAME, 'readonly');
+    const req = tx.objectStore(BLOB_STORE_NAME).openCursor();
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) {
+        resolve();
+        return;
+      }
+      const row = cursor.value as TrackBlobRow;
+      const audio = storedAudioToBlob(row.audioBlob);
+      if (audio) {
+        total += 1;
+        const id = String(row.id);
+        if (keepIds.has(id)) kept += 1;
+        else targets.push({ id, bytes: audio.size });
+      }
+      cursor.continue();
+    };
+    req.onerror = () => reject(req.error);
+  });
+
+  const freedBytes = targets.reduce((sum, t) => sum + t.bytes, 0);
+  const refusedEmptyKeep =
+    !dryRun && !allowEmptyKeep && keepIds.size === 0 && total > 0;
+  if (dryRun || refusedEmptyKeep) {
+    return { deleted: targets.length, freedBytes, kept, total, refusedEmptyKeep };
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction([STORE_NAME, BLOB_STORE_NAME], 'readwrite');
+    const blobStore = tx.objectStore(BLOB_STORE_NAME);
+    const trackStore = tx.objectStore(STORE_NAME);
+    for (const target of targets) {
+      const getReq = blobStore.get(target.id);
+      getReq.onsuccess = () => {
+        const row = getReq.result as TrackBlobRow | undefined;
+        if (!row) return;
+        if (row.albumArtBlob) {
+          blobStore.put({ id: target.id, albumArtBlob: row.albumArtBlob } satisfies TrackBlobRow);
+        } else {
+          blobStore.delete(target.id);
+        }
+      };
+      const trackReq = trackStore.get(target.id);
+      trackReq.onsuccess = () => {
+        const row = trackReq.result as Record<string, unknown> | undefined;
+        if (!row) return;
+        // Reclaimed here because a durable native file exists — mark it so the
+        // boot healers don't re-import an IndexedDB copy (which undid the reclaim).
+        row.hasAudioBlob = false;
+        row.nativeDurable = true;
+        trackStore.put(row);
+      };
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+
+  await refreshLockerCache();
+  return { deleted: targets.length, freedBytes, kept, total, refusedEmptyKeep: false };
 }
 
 /** Backfill missing track lengths for existing locker uploads. */
@@ -2059,6 +2348,10 @@ export interface Id3Tags {
   initialKey?: string;
   /** Unsynchronised lyrics (USLT frame). */
   lyrics?: string;
+  /** TXXX replaygain_track_gain, in dB. Authoritative when present — no estimate needed. */
+  replayGainTrackGainDb?: number;
+  /** TXXX replaygain_track_peak, converted from linear to dBFS. */
+  replayGainTrackPeakDbfs?: number;
   /** True only when IDB bytes or Android native cache exist — set at vault load. */
   offlineReady?: boolean;
 }
@@ -2072,18 +2365,39 @@ function readSynchsafeInt(view: DataView, offset: number): number {
   );
 }
 
+/** ID3 encodings 1 (UTF-16 + BOM) and 2 (UTF-16BE) use two-byte characters and terminators. */
+function isWideId3Encoding(encoding: number): boolean {
+  return encoding === 1 || encoding === 2;
+}
+
+/**
+ * Offset of the string terminator at or after `start`, or the end of the buffer.
+ *
+ * Scanning a UTF-16 string one byte at a time stops at the zero high byte of its first ASCII
+ * character, so `Test Track` decoded as `T`. Every UTF-16-tagged file — the Windows Media Player
+ * and older Mp3tag default — imported with one-character titles and artists.
+ */
+function id3TerminatorIndex(encoding: number, bytes: Uint8Array, start = 0): number {
+  if (isWideId3Encoding(encoding)) {
+    for (let i = start; i + 1 < bytes.length; i += 2) {
+      if (bytes[i] === 0 && bytes[i + 1] === 0) return i;
+    }
+    return bytes.length;
+  }
+  for (let i = start; i < bytes.length; i++) {
+    if (bytes[i] === 0) return i;
+  }
+  return bytes.length;
+}
+
 function decodeId3Bytes(encoding: number, bytes: Uint8Array): string {
   if (bytes.length === 0) return '';
-  let end = bytes.length;
-  for (let i = 0; i < bytes.length; i++) {
-    if (bytes[i] === 0) {
-      end = i;
-      break;
-    }
-  }
-  const slice = bytes.subarray(0, end);
-  if (encoding === 1 || encoding === 2) {
+  const slice = bytes.subarray(0, id3TerminatorIndex(encoding, bytes));
+  if (encoding === 1) {
     return new TextDecoder('utf-16').decode(slice).replace(/\0/g, '').trim();
+  }
+  if (encoding === 2) {
+    return new TextDecoder('utf-16be').decode(slice).replace(/\0/g, '').trim();
   }
   if (encoding === 3) {
     return new TextDecoder('utf-8').decode(slice).trim();
@@ -2100,10 +2414,28 @@ function decodeId3Text(data: Uint8Array): string {
 function decodeId3Lyrics(data: Uint8Array): string {
   if (data.length < 5) return '';
   const encoding = data[0];
-  let offset = 4;
-  while (offset < data.length && data[offset] !== 0) offset++;
-  if (offset < data.length) offset++;
-  return decodeId3Bytes(encoding, data.subarray(offset));
+  const terminator = id3TerminatorIndex(encoding, data, 4);
+  const textStart = terminator + (isWideId3Encoding(encoding) ? 2 : 1);
+  if (textStart >= data.length) return '';
+  return decodeId3Bytes(encoding, data.subarray(textStart));
+}
+
+/**
+ * TXXX: encoding + null-terminated description + value, both in that encoding.
+ *
+ * The terminator is two bytes wide for the UTF-16 encodings, so scanning byte-by-byte would
+ * split a description whose last character has a zero high byte.
+ */
+function decodeId3UserText(data: Uint8Array): { description: string; value: string } | null {
+  if (data.length < 2) return null;
+  const encoding = data[0];
+  const terminator = id3TerminatorIndex(encoding, data, 1);
+  if (terminator >= data.length) return null;
+  const valueStart = terminator + (isWideId3Encoding(encoding) ? 2 : 1);
+  return {
+    description: decodeId3Bytes(encoding, data.subarray(1, terminator)),
+    value: decodeId3Bytes(encoding, data.subarray(valueStart)),
+  };
 }
 
 /** Minimal ID3v2 tag reader for common text frames. */
@@ -2141,13 +2473,23 @@ export function parseId3v2Tags(buffer: ArrayBuffer): Id3Tags {
     else if (id === 'USLT' && !tags.lyrics) {
       const lyrics = decodeId3Lyrics(new Uint8Array(buffer, offset, frameSize));
       if (lyrics) tags.lyrics = lyrics;
+    } else if (id === 'TXXX') {
+      const user = decodeId3UserText(new Uint8Array(buffer, offset, frameSize));
+      const key = user?.description.trim().toLowerCase();
+      if (key === 'replaygain_track_gain' && tags.replayGainTrackGainDb == null) {
+        const gain = parseReplayGainTagDb(user?.value);
+        if (gain != null) tags.replayGainTrackGainDb = gain;
+      } else if (key === 'replaygain_track_peak' && tags.replayGainTrackPeakDbfs == null) {
+        const peak = parseReplayGainPeakDbfs(user?.value);
+        if (peak != null) tags.replayGainTrackPeakDbfs = peak;
+      }
     }
     offset += frameSize;
   }
   return tags;
 }
 
-async function readId3FromFile(file: File): Promise<Id3Tags> {
+async function readId3FromFile(file: Blob): Promise<Id3Tags> {
   try {
     const head = file.slice(0, Math.min(file.size, 256 * 1024));
     return parseId3v2Tags(await head.arrayBuffer());
@@ -2303,6 +2645,7 @@ function rowToEntry(t: {
   title: string;
   artist: string;
   genre?: string;
+  subGenre?: string;
   durationSeconds?: number;
   audioBlob?: Blob;
   hasAudioBlob?: boolean;
@@ -2326,6 +2669,13 @@ function rowToEntry(t: {
   trackProducers?: string;
   trackSoloists?: string;
   lyrics?: string;
+  /*
+   * Deliberately not `bitrate`. That column exists on every row ever written and held a hardcoded
+   * 320 regardless of the file, and a measured 320 is indistinguishable from the placeholder. A
+   * separate field is only ever written by the measurement, so rows predating it read as unknown
+   * instead of confidently wrong.
+   */
+  bitrateKbps?: number;
   addedAt?: number;
   nativeAudioCached?: boolean;
   nativeSourcePath?: string;
@@ -2342,6 +2692,7 @@ function rowToEntry(t: {
     title: formatDisplayTrackTitle(t.title ?? ''),
     artist: (t.artist ?? '').trim() || 'Local Upload',
     genre: t.genre ?? 'Local',
+    subGenre: t.subGenre,
     durationSeconds: t.durationSeconds ?? 0,
     url,
     addedAt: t.addedAt ?? Date.now(),
@@ -2363,6 +2714,7 @@ function rowToEntry(t: {
     trackProducers: t.trackProducers,
     trackSoloists: t.trackSoloists,
     lyrics: t.lyrics,
+    bitrateKbps: t.bitrateKbps && t.bitrateKbps > 0 ? t.bitrateKbps : undefined,
   };
 }
 
@@ -2394,6 +2746,16 @@ type LockerRow = {
   trackSoloists?: string;
   lyrics?: string;
   addedAt?: number;
+  /**
+   * Loudness-normalization gain in dB, applied as-is at playback.
+   *
+   * Distinct from the legacy `replayGainDb`, which held peak dBFS despite the name and played
+   * back inverted. Rows written before this fix have no `trackGainDb`, so they read as "unknown"
+   * and get the documented fallback until re-imported — never the old wrong value.
+   */
+  trackGainDb?: number | null;
+  /** Set once loudness analysis has been attempted, successfully or not — stops re-decoding. */
+  trackGainAnalyzedAt?: number;
 };
 
 let lockerCache: LockerEntry[] | null = null;
@@ -2807,6 +3169,49 @@ export async function lockerEntryIsPlayable(entryId: string): Promise<boolean> {
   return lockerEntryHasRecoverableAudio(entryId);
 }
 
+/**
+ * Bulk playability for many ids at once — returns the subset that can play.
+ *
+ * Prefer this over looping lockerEntryIsPlayable(). That call reads the entire audio blob out
+ * of IndexedDB just to test `size > 0`, then reads the row, then probes the native bridge; run
+ * sequentially over a 300-track locker it pulled ~1GB through IDB and blocked the Playlists tab
+ * for 10s. Here the whole answer comes from two cached passes (blob keys + row hints) plus a
+ * synchronous decision per id.
+ */
+export async function filterPlayableLockerIds(ids: Iterable<string>): Promise<Set<string>> {
+  const out = new Set<string>();
+  // Keep the caller's original id spelling in the result — callers pass both `x` and `local-x`.
+  const wanted = new Map<string, string[]>();
+  for (const raw of ids) {
+    const id = (raw ?? '').trim().replace(/^local-/, '');
+    if (!id) continue;
+    const bucket = wanted.get(id);
+    if (bucket) bucket.push(raw);
+    else wanted.set(id, [raw]);
+  }
+  if (wanted.size === 0) return out;
+
+  const blobIds = await ensureBlobStoreIdCache();
+  const hints = await ensureLockerRowHintCache();
+  for (const [id, originals] of wanted) {
+    const hint = hints.get(id);
+    const playable =
+      blobIds.has(id) ||
+      (hint !== undefined &&
+        lockerRowHasHealSignals(
+          {
+            id,
+            hasAudioBlob: hint.hasAudioBlob,
+            nativeAudioCached: hint.nativeAudioCached,
+            nativeSourcePath: hint.nativeSourcePath,
+          },
+          blobIds,
+        ));
+    if (playable) for (const original of originals) out.add(original);
+  }
+  return out;
+}
+
 function resolveLockerPlayabilityMode(
   mode?: LockerPlayabilityMode,
 ): LockerPlayabilityMode {
@@ -2846,7 +3251,10 @@ export async function enrichLockerEntriesPlayability(
     }
     out.push({ ...entry, url, offlineReady: ready });
     idx += 1;
-    if (mode === 'full' && idx % 24 === 0) await yieldToMain();
+    // 'fast' mode runs unconditionally on cold boot, before first interaction — with a large
+    // locker this loop was the actual multi-second main-thread block behind app-feels-frozen
+    // reports, since only 'full' mode used to yield here.
+    if (idx % 24 === 0) await yieldToMain();
   }
   return out;
 }
@@ -3190,6 +3598,23 @@ async function ensureBlobStoreIdCache(): Promise<Set<string>> {
     });
   }
   return blobStoreIdCachePromise;
+}
+
+/** Heal-signal hints per row, filled in by readLockerEntriesFromDb. */
+let cachedRowHints: Map<string, LockerRowHealHint> | null = null;
+
+async function ensureLockerRowHintCache(): Promise<Map<string, LockerRowHealHint>> {
+  if (cachedRowHints) return cachedRowHints;
+  /*
+   * getLockerEntries() fills cachedRowHints as a side effect of its row pass — but only when it
+   * actually reads. With the vault cache already warm it returns immediately and the hints stay
+   * empty, which would report every native-only track (nativeSourcePath, no IDB blob) as
+   * unplayable. So read the rows directly in that case.
+   */
+  await getLockerEntries();
+  if (cachedRowHints) return cachedRowHints;
+  await readLockerEntriesFromDb({ skipArtBlobPreload: true });
+  return cachedRowHints ?? new Map();
 }
 
 async function readAllBlobStoreIds(): Promise<string[]> {
@@ -3556,6 +3981,10 @@ export async function backfillLockerBlobStoreFromNativePaths(): Promise<number> 
     const rec = row as Record<string, unknown>;
     const id = String(rec.id ?? '').trim();
     if (!id || blobIds.has(id)) continue;
+    // Storage-reclaim marked this track as backed by a durable native file, so it
+    // needs no redundant IndexedDB copy — re-creating one here is what previously
+    // undid the reclaim (the 6GB kept coming back).
+    if (rec.nativeDurable === true) continue;
     const path = typeof rec.nativeSourcePath === 'string' ? rec.nativeSourcePath.trim() : '';
     if (!path || !isImportableLockerNativePath(path)) continue;
     if (await persistFileUriToBlobStore(id, path)) {
@@ -3584,6 +4013,9 @@ export async function healHollowRowsFromYtdlpTemps(): Promise<number> {
     const rec = row as Record<string, unknown>;
     const id = String(rec.id ?? '').trim();
     if (!id || blobIds.has(id)) continue;
+    // A reclaimed track already has durable native audio — not hollow. Skip so its
+    // IDB copy is not re-created (which previously undid the storage reclaim).
+    if (rec.nativeDurable === true) continue;
     const path = typeof rec.nativeSourcePath === 'string' ? rec.nativeSourcePath.trim() : '';
     if (!path || !/\/ytdlp-locker\//i.test(path)) continue;
     if (await persistFileUriToBlobStore(id, path)) {
@@ -3732,6 +4164,9 @@ async function readLockerEntriesFromDb(options?: {
         typeof rec.nativeSourcePath === 'string' ? rec.nativeSourcePath : undefined,
     });
   }
+  // Retain the hints: building them is free here (the rows are already in hand), and it lets
+  // filterPlayableLockerIds answer bulk playability without re-reading a single row.
+  cachedRowHints = rowHints;
 
   const artBlobs = new Map<string, Blob>();
   if (!options?.skipArtBlobPreload && db.objectStoreNames.contains(BLOB_STORE_NAME)) {
@@ -3747,12 +4182,18 @@ async function readLockerEntriesFromDb(options?: {
     }
   }
 
-  const entries = rows
-    .map((t) => {
-      const albumArtBlob = artBlobs.get(t.id) ?? t.albumArtBlob;
-      return rowToEntry({ ...t, albumArtBlob });
-    })
-    .filter((e): e is LockerEntry => e !== null);
+  // Plain .map() here used to run fully synchronously across the whole locker (each row does
+  // real work: Blob construction + URL.createObjectURL for embedded art) — on a large library
+  // this alone was multiple seconds of unbroken main-thread work before the first paint.
+  const { yieldToMain } = await import('./yieldToMain');
+  const entries: LockerEntry[] = [];
+  for (let i = 0; i < rows.length; i += 1) {
+    if (i > 0 && i % 24 === 0) await yieldToMain();
+    const t = rows[i]!;
+    const albumArtBlob = artBlobs.get(t.id) ?? t.albumArtBlob;
+    const entry = rowToEntry({ ...t, albumArtBlob });
+    if (entry) entries.push(entry);
+  }
 
   return { entries, rowHints };
 }
@@ -3854,7 +4295,8 @@ export async function saveLockerFilesAsAlbum(
         genre: id3.genre?.trim() || 'Local',
         albumName: album,
         albumArtBlob: imageFile,
-        bitrate: 320,
+        bitrate: averageBitrateKbps(file.size, durations[i] ?? 0),
+        bitrateKbps: averageBitrateKbps(file.size, durations[i] ?? 0),
         durationSeconds: durations[i] ?? 0,
         isCustom: true,
         audioBlob: file,
@@ -3992,7 +4434,8 @@ export async function saveLockerBlobFromNativeFile(
     albumArtist: meta.albumArtist?.trim() || existingRow?.albumArtist || undefined,
     releaseYear: meta.releaseYear?.trim() || existingRow?.releaseYear || undefined,
     genre: meta.genre?.trim() || existingRow?.genre || 'Downloaded',
-    bitrate: 320,
+    bitrate: averageBitrateKbps(nativeBytes, durationSeconds),
+    bitrateKbps: averageBitrateKbps(nativeBytes, durationSeconds),
     durationSeconds,
     isCustom: true,
     hasAudioBlob: true,
@@ -4001,7 +4444,7 @@ export async function saveLockerBlobFromNativeFile(
     addedAt: existingRow?.addedAt ?? Date.now(),
     trackNumber: meta.trackNumber ?? existingRow?.trackNumber,
     discNumber: meta.discNumber ?? existingRow?.discNumber,
-    replayGainDb: (existingRow as LockerRow & { replayGainDb?: number | null })?.replayGainDb ?? null,
+    trackGainDb: existingRow?.trackGainDb ?? null,
     creditsJson: existingRow?.creditsJson,
     albumArt: existingRow?.albumArt,
   };
@@ -4047,27 +4490,276 @@ export async function saveLockerBlobFromNativeFile(
   return { entry: out, bytes: nativeBytes };
 }
 
-/** Lightweight peak scan — placeholder ReplayGain dB for future normalization. */
-async function estimateReplayGainDb(blob: Blob): Promise<number | undefined> {
+/**
+ * Loudness-based track gain, in dB, ready for playback to apply directly.
+ *
+ * Tags win when the file carries them: a tagger measured the whole file with a real R128/RG
+ * implementation, which beats an RMS estimate over the first few minutes and costs no decode.
+ * Otherwise measure. Returns undefined when neither is possible — playback then falls back to
+ * the documented flat gain rather than to a wrong number.
+ */
+async function deriveTrackGainDb(
+  blob: Blob,
+  tags?: Pick<Id3Tags, 'replayGainTrackGainDb' | 'replayGainTrackPeakDbfs'>,
+): Promise<number | undefined> {
+  const tagged = tags?.replayGainTrackGainDb;
+  if (tagged != null && Number.isFinite(tagged)) return tagged;
   if (typeof AudioContext === 'undefined') return undefined;
   // Full decode on large files OOMs mobile WebView during background downloads.
   if (blob.size > 6 * 1024 * 1024) return undefined;
   try {
     const ctx = new AudioContext();
     const audio = await ctx.decodeAudioData(await blob.slice(0, 6 * 1024 * 1024).arrayBuffer());
-    let peak = 0;
+    const channels: Float32Array[] = [];
     for (let ch = 0; ch < audio.numberOfChannels; ch++) {
-      const data = audio.getChannelData(ch);
-      for (let i = 0; i < data.length; i += 128) {
-        const v = Math.abs(data[i] ?? 0);
-        if (v > peak) peak = v;
-      }
+      channels.push(audio.getChannelData(ch));
     }
+    const measured = measureLoudness(channels);
     await ctx.close();
-    if (peak <= 0) return undefined;
-    return Math.round(20 * Math.log10(peak) * 10) / 10;
+    if (!measured) return undefined;
+    return trackGainFromLoudness(measured) ?? undefined;
   } catch {
     return undefined;
+  }
+}
+
+const trackGainBackfillInFlight = new Set<string>();
+
+async function writeTrackGainRow(id: string, trackGainDb: number | null): Promise<void> {
+  const existing = await readLockerRowById(id);
+  if (!existing) return;
+  const db = await initDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    // Re-read then spread: this must add two fields, never rewrite a row from stale values.
+    tx.objectStore(STORE_NAME).put({ ...existing, trackGainDb, trackGainAnalyzedAt: Date.now() });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * Fill in `trackGainDb` for a row imported before ingest measured loudness correctly.
+ *
+ * On demand for one track, never as a library sweep. Decoding audio is expensive, and a
+ * background pass over a full locker is exactly the kind of unrequested work this app avoids —
+ * so tracks the user actually plays get analysed and the rest cost nothing. Skipped under
+ * battery saver, since this is discretionary by definition.
+ *
+ * The result applies from the *next* play of the track: changing gain mid-track would be an
+ * audible volume jump on a song already playing.
+ *
+ * Marks the row analysed even when analysis fails, so an oversized or undecodable file is not
+ * re-decoded on every play. Only the two gain fields are touched — locker rows are user data
+ * (ADR-001) and this must never rewrite metadata.
+ */
+export async function backfillLockerTrackGain(entryId: string): Promise<number | null> {
+  const id = entryId?.trim();
+  if (!id || trackGainBackfillInFlight.has(id)) return null;
+  if (isBatterySaverEnabled()) return null;
+  trackGainBackfillInFlight.add(id);
+  try {
+    const row = await readLockerRowById(id);
+    if (!row) return null;
+    const existing = row.trackGainDb;
+    if (typeof existing === 'number' && Number.isFinite(existing)) return existing;
+    if (row.trackGainAnalyzedAt != null) return null;
+
+    const blob = await getLockerAudioBlob(id);
+    // No audio resident yet (native cache still warming) — leave the row unmarked and retry on a
+    // later play rather than recording a permanent failure for a track that is merely not ready.
+    if (!blob) return null;
+
+    const gain = await deriveTrackGainDb(blob, await readId3FromFile(blob));
+    await writeTrackGainRow(id, gain ?? null);
+    return gain ?? null;
+  } catch {
+    return null;
+  } finally {
+    trackGainBackfillInFlight.delete(id);
+  }
+}
+
+async function writeBitrateRow(id: string, bitrateKbps: number): Promise<void> {
+  const existing = await readLockerRowById(id);
+  if (!existing) return;
+  const db = await initDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    // Re-read then spread: adds one field, never rewrites a row from stale values.
+    tx.objectStore(STORE_NAME).put({ ...existing, bitrateKbps });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * Fill in `bitrateKbps` for a track imported before the bitrate was measured.
+ *
+ * Every older row carries a hardcoded 320 in the legacy `bitrate` column, which is a placeholder
+ * and not worth showing, so those tracks display nothing until measured. Without this the badge
+ * would only ever populate for newly imported files and an existing library would stay blank
+ * forever.
+ *
+ * On demand for the track being played, following backfillLockerTrackGain — but far cheaper than
+ * that one, because bitrate needs no decode: it is the stored byte count over the known duration.
+ */
+export async function backfillLockerBitrate(entryId: string): Promise<number | null> {
+  const id = entryId?.trim();
+  if (!id) return null;
+  try {
+    const row = await readLockerRowById(id);
+    if (!row) return null;
+    const existing = (row as LockerRow & { bitrateKbps?: number }).bitrateKbps;
+    if (typeof existing === 'number' && existing > 0) return existing;
+
+    /*
+     * Blob first, then the native cache. A downloaded track keeps its audio in the native file
+     * cache and has no IndexedDB blob at all, so reading only the blob store measured nothing for
+     * exactly the tracks a listener owns — the badge stayed blank on their whole library.
+     */
+    const blob = await getLockerAudioBlob(id);
+    let bytes = blob?.size ?? 0;
+    if (bytes <= 0) {
+      const { nativeLockerBlobBytes } = await import('./nativeExoLockerBridge');
+      bytes = await nativeLockerBlobBytes(id);
+    }
+    // Nothing resident yet (cache still warming) — leave the row alone and retry on a later play.
+    if (bytes <= 0) return null;
+
+    const kbps = averageBitrateKbps(bytes, Number(row.durationSeconds ?? 0));
+    if (!kbps) return null;
+    await writeBitrateRow(id, kbps);
+    const cached = (lockerCache ?? []).find((e) => e.id === id);
+    if (cached) cached.bitrateKbps = kbps;
+    return kbps;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Envelope with its bitrate filled in, measuring the file first if the row has never been measured.
+ *
+ * This has to happen *before* the envelope is handed to the player. The backfill originally ran in
+ * runDeferredPlaySideEffects, which is called after `audio.loadEnvelope` and whose result is
+ * discarded — so the number was computed correctly, stored correctly, and then never reached the
+ * badge, which had already rendered from the envelope loaded a line earlier.
+ *
+ * Cheap enough to sit on the play path: one IndexedDB read and at most one native file-size call.
+ * No decode, unlike the loudness backfill, which is why that one can stay deferred and this cannot.
+ * Anything that is not a locker track, or already carries a bitrate, is returned untouched.
+ */
+export async function withMeasuredBitrate<T extends MediaEnvelope>(envelope: T): Promise<T> {
+  if (!envelope) return envelope;
+  const alreadyMeasured = typeof envelope.bitrateKbps === 'number' && envelope.bitrateKbps > 0;
+  const isLocker =
+    envelope.provider === 'local-vault' || envelope.envelopeId?.startsWith('local-') === true;
+  if (!isLocker) return envelope;
+  const sourceId = envelope.sourceId?.trim() || envelope.envelopeId?.replace(/^local-/, '');
+  if (!sourceId) return envelope;
+
+  let next = envelope;
+  if (!alreadyMeasured) {
+    const measured = await backfillLockerBitrate(sourceId);
+    if (measured) next = { ...next, bitrateKbps: measured };
+  }
+
+  /*
+   * For a lossless file, depth and rate say more than any bitrate: they describe what was
+   * captured, while the encoded size only describes how well it compressed. STREAMINFO sits in the
+   * first few hundred bytes, so this reads a small slice rather than the whole file.
+   */
+  if (next.bitsPerSample == null && isLosslessLockerName(next)) {
+    const header = await readLockerAudioHead(sourceId);
+    if (header) {
+      const { parseFlacStreamInfo } = await import('./flacStreamInfo');
+      const info = parseFlacStreamInfo(header);
+      if (info) {
+        next = { ...next, bitsPerSample: info.bitsPerSample, sampleRateHz: info.sampleRateHz };
+      }
+    }
+  }
+  return next;
+}
+
+/**
+ * Read any byte range of a locker track, from wherever its audio actually lives.
+ *
+ * Container metadata is not always at the front — an MP4 written without faststart keeps it behind
+ * the audio — so walking to it needs ranges from anywhere in the file. Still only kilobytes at a
+ * time: the point is to seek past the audio, never to load it.
+ */
+export async function lockerAudioByteReader(
+  entryId: string,
+): Promise<{ read: (offset: number, length: number) => Promise<Uint8Array | null>; size: number } | null> {
+  const id = entryId?.trim();
+  if (!id) return null;
+
+  const blob = await getLockerAudioBlob(id);
+  if (blob) {
+    return {
+      size: blob.size,
+      read: async (offset, length) => {
+        if (offset < 0 || length <= 0 || offset >= blob.size) return null;
+        const end = Math.min(offset + length, blob.size);
+        return new Uint8Array(await blob.slice(offset, end).arrayBuffer());
+      },
+    };
+  }
+
+  const { nativeLockerBlobBytes, nativeLockerBlobHead } = await import('./nativeExoLockerBridge');
+  const size = await nativeLockerBlobBytes(id);
+  if (size <= 0) return null;
+  return {
+    size,
+    read: async (offset, length) => nativeLockerBlobHead(id, length, offset),
+  };
+}
+
+/**
+ * Chapters embedded in a locker audiobook, or an empty list.
+ *
+ * A book shipped as one M4B is otherwise a single unbroken track — no chapter list, no resume to a
+ * chapter. Reads only container headers, so a nine-hour file costs kilobytes.
+ */
+export async function lockerAudiobookChapters(
+  entryId: string,
+): Promise<Array<{ startSeconds: number; title: string }>> {
+  try {
+    const source = await lockerAudioByteReader(entryId);
+    if (!source) return [];
+    const { readM4bChapters } = await import('./m4bChapters');
+    return await readM4bChapters(source.read, source.size);
+  } catch {
+    return [];
+  }
+}
+
+/** Worth opening the file only when something already suggests it is lossless. */
+function isLosslessLockerName(envelope: MediaEnvelope): boolean {
+  const blob = `${envelope.mimeType ?? ''} ${envelope.url ?? ''} ${envelope.title ?? ''}`;
+  return /flac/i.test(blob);
+}
+
+/**
+ * First slice of a locker file — enough for STREAMINFO, which must come first.
+ *
+ * Blob store first, native cache second, exactly as the bitrate backfill does. A downloaded track
+ * has no IndexedDB blob at all, so reading only the blob store answered nothing for the tracks a
+ * listener actually owns.
+ */
+async function readLockerAudioHead(id: string, bytes = 8_192): Promise<Uint8Array | null> {
+  try {
+    const blob = await getLockerAudioBlob(id);
+    if (blob) {
+      const slice = blob.slice(0, Math.min(bytes, blob.size));
+      return new Uint8Array(await slice.arrayBuffer());
+    }
+    const { nativeLockerBlobHead } = await import('./nativeExoLockerBridge');
+    return await nativeLockerBlobHead(id, bytes);
+  } catch {
+    return null;
   }
 }
 
@@ -4098,20 +4790,22 @@ export async function saveLockerBlob(
 
   await assertLockerCapacityForUpload(file.size);
 
-  const replayGainDb =
-    meta.skipHeavyAnalysis || file.size > 6 * 1024 * 1024
-      ? undefined
-      : await estimateReplayGainDb(file);
-
   let lyrics: string | undefined;
   let trackNumber = meta.trackNumber;
   let discNumber = meta.discNumber;
+  let id3: Id3Tags | undefined;
   if (file instanceof File) {
-    const id3 = await readId3FromFile(file);
+    id3 = await readId3FromFile(file);
     lyrics = id3.lyrics?.trim() || undefined;
     if (trackNumber == null) trackNumber = parseId3Position(id3.track).index;
     if (discNumber == null) discNumber = parseId3Position(id3.disc).index;
   }
+
+  // A ReplayGain tag is free to read, so honour it even when heavy analysis is off.
+  const trackGainDb =
+    meta.skipHeavyAnalysis || file.size > 6 * 1024 * 1024
+      ? id3?.replayGainTrackGainDb
+      : await deriveTrackGainDb(file, id3);
 
   if (isAndroid()) {
     const { registerLockerBlobFromBlob, probeNativeLockerContentUri } = await import(
@@ -4133,7 +4827,8 @@ export async function saveLockerBlob(
     albumArtist: meta.albumArtist?.trim() || existingRow?.albumArtist || undefined,
     releaseYear: meta.releaseYear?.trim() || existingRow?.releaseYear || undefined,
     genre: meta.genre?.trim() || existingRow?.genre || 'Downloaded',
-    bitrate: 320,
+    bitrate: averageBitrateKbps(file.size, durationSeconds),
+    bitrateKbps: averageBitrateKbps(file.size, durationSeconds),
     durationSeconds,
     isCustom: true,
     audioBlob: file,
@@ -4141,7 +4836,9 @@ export async function saveLockerBlob(
     addedAt: existingRow?.addedAt ?? Date.now(),
     trackNumber: trackNumber ?? existingRow?.trackNumber,
     discNumber: discNumber ?? existingRow?.discNumber,
-    replayGainDb: replayGainDb ?? (existingRow as LockerRow & { replayGainDb?: number | null })?.replayGainDb ?? null,
+    trackGainDb: trackGainDb ?? existingRow?.trackGainDb ?? null,
+    // Legacy peak-as-gain value. Preserved (locker rows are user data, ADR-001) but never read.
+    replayGainDb: (existingRow as LockerRow & { replayGainDb?: number | null })?.replayGainDb ?? null,
     lyrics: lyrics ?? existingRow?.lyrics,
     creditsJson: existingRow?.creditsJson,
     albumArt: existingRow?.albumArt,
@@ -4200,7 +4897,7 @@ export async function saveLockerFile(
 
   await assertLockerCapacityForUpload(file.size);
 
-  const replayGainDb = await estimateReplayGainDb(file);
+  const trackGainDb = await deriveTrackGainDb(file, id3);
 
   const resolvedTitle =
     title?.trim() ||
@@ -4218,13 +4915,14 @@ export async function saveLockerFile(
     albumArtist: id3.albumArtist?.trim() || undefined,
     releaseYear: id3.year?.trim() || undefined,
     genre: id3.genre?.trim() || 'Local',
-    bitrate: 320,
+    bitrate: averageBitrateKbps(file.size, durationSeconds),
+    bitrateKbps: averageBitrateKbps(file.size, durationSeconds),
     durationSeconds,
     isCustom: true,
     audioBlob: file,
     url: URL.createObjectURL(file),
     addedAt: Date.now(),
-    replayGainDb: replayGainDb ?? null,
+    trackGainDb: trackGainDb ?? null,
     lyrics: id3.lyrics?.trim() || undefined,
     initialKey: id3.initialKey?.trim() || undefined,
   };
@@ -4275,6 +4973,7 @@ export async function updateLockerEntryMetadata(
     title?: string;
     artist?: string;
     genre?: string;
+    subGenre?: string;
     durationSeconds?: number;
     albumArtist?: string;
     composer?: string;
@@ -4978,6 +5677,7 @@ export async function updateAlbumGroupMetadata(
     composer?: string;
     discCount?: string;
     genre?: string;
+    subGenre?: string;
     performers?: string;
     producers?: string;
     engineers?: string;

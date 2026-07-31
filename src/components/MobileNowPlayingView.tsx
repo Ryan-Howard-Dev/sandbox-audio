@@ -36,6 +36,8 @@ import {
   verticalPanVelocity,
 } from '../mobile/verticalPanGesture';
 import HomeHeroPlayer from './HomeHeroPlayer';
+import MixRadioChips from './MixRadioChips';
+import PlayerQueueSheet from './PlayerQueueSheet';
 import StemSlidersPanel from './StemSlidersPanel';
 import MobileHomeVinylSettingsSheet from '../mobile/MobileHomeVinylSettingsSheet';
 import PodcastPlayerControls from './podcasts/PodcastPlayerControls';
@@ -69,12 +71,25 @@ export interface MobileNowPlayingViewProps {
   onOpenLyrics: () => void;
   onOpenCast: () => void;
   onOpenQueue?: () => void;
+  /**
+   * Queue rendered as a sheet over a collapsed player instead of the separate drawer. Absent (or a
+   * podcast) falls back to onOpenQueue, so the queue button never becomes a dead control.
+   */
+  queueSheet?: {
+    playQueue: MediaEnvelope[];
+    queueIndex: number;
+    onPlayQueueIndex?: (index: number) => void;
+    onRemoveFromQueue?: (index: number) => void;
+    onReorderQueue?: (fromIndex: number, toIndex: number) => void;
+  };
   castState: CastState;
   playingFromLabel: string;
   onGoToVinyl?: () => void;
   mixRadioEnabled?: boolean;
   onArtistMix?: () => void;
   onTrackRadio?: () => void;
+  /** Opens the owner's playlist picker for the playing track. */
+  onAddToPlaylist?: () => void;
   mixRadioSession?: MixRadioSession | null;
   saveMixRadioEnabled?: boolean;
   onSaveMixRadioToPlaylist?: () => void;
@@ -91,6 +106,8 @@ export interface MobileNowPlayingViewProps {
   showMobileShell?: boolean;
   onCancelResolve?: () => void;
   audioState?: AudioFsmState;
+  /** A different track is resolving behind the audible one — see HomeHeroPlayer. */
+  resolvingNextTrack?: boolean;
   stemSliders?: import('./StemSlidersPanel').StemSlidersPanelProps;
   isPodcast?: boolean;
   podcastPlaybackSpeed?: number;
@@ -141,12 +158,14 @@ export default function MobileNowPlayingView({
   onOpenLyrics,
   onOpenCast,
   onOpenQueue,
+  queueSheet,
   castState,
   playingFromLabel,
   onGoToVinyl,
   mixRadioEnabled,
   onArtistMix,
   onTrackRadio,
+  onAddToPlaylist,
   mixRadioSession,
   saveMixRadioEnabled,
   onSaveMixRadioToPlaylist,
@@ -163,6 +182,7 @@ export default function MobileNowPlayingView({
   showMobileShell = true,
   onCancelResolve,
   audioState = 'Idle',
+  resolvingNextTrack = false,
   stemSliders,
   isPodcast = false,
   podcastPlaybackSpeed = 1,
@@ -187,6 +207,14 @@ export default function MobileNowPlayingView({
   const { t } = useTranslation();
 
   const [vinylSettingsOpen, setVinylSettingsOpen] = useState(false);
+  const [queueSheetOpen, setQueueSheetOpen] = useState(false);
+
+  /*
+   * The sheet is only offered when there is a queue to put in it and this is not a podcast, which
+   * has its own episode list. Everything else keeps the old drawer, so the queue button is never a
+   * control that does nothing — the failure this replaces was a button that opened an empty view.
+   */
+  const canShowQueueSheet = !isPodcast && !!queueSheet && queueSheet.playQueue.length > 0;
   const [heroDisplay, setHeroDisplay] = useState(loadHeroDisplayMode);
   const displayArt = resolvePlaybackCoverArt(albumArt, envelope);
   const gradientSeed = title?.trim() || album?.trim() || 'Sandbox';
@@ -213,17 +241,27 @@ export default function MobileNowPlayingView({
 
   const resolveElapsedSeconds = usePlaybackResolveElapsed(audioState, envelope?.envelopeId);
 
-  const mobileOfflineResolve =
-    isAndroid() && hasActiveMobileResolvers() && preferFreshMobileResolve();
+  /*
+   * The badge under the title describes the audio, or it says nothing.
+   *
+   * It used to read "MOBILE" whenever a mobile resolver happened to be installed — a global
+   * condition unrelated to what is playing, so a locker FLAC and a YouTube stream carried the same
+   * word. Falling back to the transport instead only traded one wrong answer for a redundant one:
+   * the footer already says "PLAYING FROM LOCKER", so the badge repeated it three lines higher.
+   *
+   * This line sits under the track name, which is where it belongs and where it stays. It shows
+   * the measured bitrate when one is known, the lossless format when the file is lossless, and
+   * falls back to the source only when neither is — so the line always says the most specific true
+   * thing available about the audio. The duplicate "playing from" line at the foot of the player
+   * is gone; one statement, in one place.
+   */
   const streamLabel = envelope
-    ? mobileOfflineResolve
-      ? 'MOBILE'
-      : displayTransportLabel(
-          envelope.provider,
-          envelope.transport,
-          envelope.url,
-          envelope.resolutionSource,
-        )
+    ? displayTransportLabel(
+        envelope.provider,
+        envelope.transport,
+        envelope.url,
+        envelope.resolutionSource,
+      )
     : null;
   const qualityLabel =
     resolvePlaybackFidelityLabel(envelope, {
@@ -231,6 +269,8 @@ export default function MobileNowPlayingView({
       t,
       policy: loadFidelityPolicy(),
     }) ?? undefined;
+  /** First character of the profile name — falls back to the generic glyph when unusable. */
+  const profileInitial = profileName?.trim().charAt(0).toUpperCase() ?? '';
 
   useEffect(() => {
     const sync = (event: Event) => {
@@ -383,6 +423,11 @@ export default function MobileNowPlayingView({
             <span />
           </div>
           <header className="mobile-np-header mobile-np-header--unified mobile-np-header--tidal">
+            {/*
+              A bare person glyph could mean profile, artist or account. The initial says which
+              profile you are in, which is the actual question, and reuses the bordered avatar
+              treatment already defined for it.
+            */}
             <button
               type="button"
               className="mobile-np-icon-btn touch-manipulation"
@@ -390,17 +435,28 @@ export default function MobileNowPlayingView({
               aria-label={t('shell.profile', { name: profileName })}
               title={profileName}
             >
-              <User className="w-5 h-5" strokeWidth={2} />
+              {profileInitial ? (
+                <span className="mobile-np-profile" aria-hidden>
+                  {profileInitial}
+                </span>
+              ) : (
+                <User className="w-5 h-5" strokeWidth={2} />
+              )}
             </button>
 
             <div className="mobile-np-header-center">
+              {/*
+                Collapsing the player is the least consequential action on this screen, and it was
+                the heaviest chrome on it: centre stage, and a larger glyph than its neighbours.
+                Matched to their size and muted so it reads as chrome rather than a call to action.
+              */}
               <button
                 type="button"
                 className="mobile-np-icon-btn touch-manipulation mobile-np-collapse-btn"
                 onClick={handleClose}
                 aria-label={t('nowPlaying.close')}
               >
-                <ChevronDown className="w-6 h-6" strokeWidth={2} />
+                <ChevronDown className="w-5 h-5" strokeWidth={2} />
               </button>
             </div>
 
@@ -460,6 +516,7 @@ export default function MobileNowPlayingView({
             repeatMode={repeatMode}
             fidelityLabel={qualityLabel}
             resolveElapsedSeconds={resolveElapsedSeconds}
+            resolvingNextTrack={resolvingNextTrack}
             onCancelResolve={onCancelResolve}
             moreMenu={{
               sleepTimerOpen,
@@ -471,6 +528,7 @@ export default function MobileNowPlayingView({
               mixRadioEnabled,
               onArtistMix,
               onTrackRadio,
+              onAddToPlaylist,
               mixRadioSession,
               saveMixRadioEnabled,
               onSaveMixRadioToPlaylist,
@@ -510,11 +568,11 @@ export default function MobileNowPlayingView({
           className={`mobile-np-footer mobile-np-footer--unified mobile-np-footer--tidal${isPodcast ? ' mobile-np-footer--podcast' : ''}`}
         >
           <div className="mobile-np-footer-leading">
-            {onOpenQueue ? (
+            {canShowQueueSheet || onOpenQueue ? (
               <button
                 type="button"
                 className="mobile-np-icon-btn touch-manipulation"
-                onClick={onOpenQueue}
+                onClick={canShowQueueSheet ? () => setQueueSheetOpen(true) : onOpenQueue}
                 aria-label={t('player.queue')}
               >
                 <ListMusic className="w-5 h-5" strokeWidth={2} />
@@ -599,6 +657,39 @@ export default function MobileNowPlayingView({
             </button>
           </div>
         </footer>
+
+        {/*
+          The queue as a sheet over this player rather than a screen that replaces it. Modelled on
+          YouTube Music: the player collapses to a bar the transport still lives in, so reaching the
+          queue never costs you play/pause. Save is passed through as a primary button because
+          saving the queue you are currently hearing is the reason to open this at all.
+        */}
+        {canShowQueueSheet ? (
+          <PlayerQueueSheet
+            open={queueSheetOpen}
+            onClose={() => setQueueSheetOpen(false)}
+            playQueue={queueSheet.playQueue}
+            queueIndex={queueSheet.queueIndex}
+            activeEnvelope={envelope}
+            mixRadioSession={mixRadioSession}
+            playingFromLabel={playingFromLabel}
+            title={title}
+            artist={artist}
+            albumArt={displayArt}
+            isPlaying={isPlaying}
+            onTogglePlay={onTogglePlay}
+            onSkipBack={onSkipBack}
+            onSkipForward={onSkipForward}
+            onPlayQueueIndex={queueSheet.onPlayQueueIndex}
+            onRemove={queueSheet.onRemoveFromQueue}
+            onReorder={queueSheet.onReorderQueue}
+            onSaveQueue={onSaveMixRadioToPlaylist}
+            saveDisabled={!saveMixRadioEnabled}
+            mixRadioEnabled={mixRadioEnabled}
+            onArtistMix={onArtistMix}
+            onTrackRadio={onTrackRadio}
+          />
+        ) : null}
 
         {!isPodcast ? (
           <MobileHomeVinylSettingsSheet

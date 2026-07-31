@@ -19,6 +19,8 @@ export interface ExploreViewProps {
   onPlayDiscoveryMix?: (tracks: MediaEnvelope[], mix: import('../discoveryMixes').DiscoveryMix) => void;
   onPlayInstantMix?: (tracks: MediaEnvelope[], label: string) => void;
   onSaveInstantPlaylist?: (tracks: MediaEnvelope[], name: string) => void;
+  onDownloadMix?: (mix: import('../discoveryMixes').DiscoveryMix) => void;
+  onShareMix?: (mix: import('../discoveryMixes').DiscoveryMix) => void;
   releases?: FollowedFeedRelease[];
   /** Open vertical video discovery feed (TikTok-style). */
   onOpenVideoFeed?: () => void;
@@ -69,6 +71,8 @@ export default function ExploreView({
   onPlayDiscoveryMix,
   onPlayInstantMix,
   onSaveInstantPlaylist,
+  onDownloadMix,
+  onShareMix,
   releases = [],
   onOpenVideoFeed,
   embedded = false,
@@ -163,6 +167,8 @@ export default function ExploreView({
             onPlayDiscoveryMix={onPlayDiscoveryMix}
             onPlayInstantMix={onPlayInstantMix}
             onSaveInstantPlaylist={onSaveInstantPlaylist}
+            onDownloadMix={onDownloadMix}
+            onShareMix={onShareMix}
             onSeeAll={handleSeeAll}
             releases={releases}
             mobile={mobile}

@@ -35,7 +35,7 @@ Measured with PowerShell `(Get-Content … | Measure-Object -Line).Lines` on 202
 
 ### Strengths
 
-- **Broad test coverage** — 124 Vitest files, 544 tests; strong coverage for playback, podcasts, locker, search, and catalog paths.
+- **Broad test coverage** — 233 Vitest files, 1,700 tests, 0 failures (measured 2026-07-31 via `npx vitest run`; vitest `include` is `src/**/*.test.ts` + `tier34-server/**/*.test.ts`). Strong coverage for playback, podcasts, locker, search, and catalog paths. Superseding figures of 124/544 (2026-07-09) and 224/1,545 (commit `2925782`) that are still quoted in dated audit records; those remain correct as of their own snapshot dates.
 - **Partial shell extraction already done** — Hooks (`useMobileShell`, `usePlayerHomeNavigation`, `useAndroidShellBridges`, …) and lazy station chunks reduce initial bundle vs monolith baseline.
 - **Playback logic modularizing** — `playbackSession.ts`, `podcastPlayback.ts`, `ensureLockerPlayable.ts`, `exoQueueSync.ts`, `play/*` policies extracted from the shell.
 

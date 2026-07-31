@@ -28,6 +28,7 @@ import { isAndroid } from './platformEnv';
 import { isOfflineUnplayableStreamUrl, localDevicePlayUrlReachable } from './nativeExoStreamResolver';
 import { getTier34BaseUrl, isServerReachableCached } from './tier34/client';
 import { logTierResolution } from './tierResolutionLog';
+import { youtubeStreamAudioProfile } from './youtubeItag';
 
 export type ResolutionSource = 'locker' | 'cache' | 'server' | 'mobile' | 'preview';
 
@@ -433,6 +434,20 @@ export async function resolvePlaybackSource(
 export const HYBRID_OFFLINE_MESSAGE =
   'Playback source unavailable. Install a mobile resolver, reconnect to Sandbox Server, or download media to Locker.';
 
+/**
+ * Resolver bitrates in kbps, whichever unit the resolver used.
+ *
+ * yt-dlp reports an average bitrate in kbps; other resolvers hand back raw bits per second. A
+ * stream is not 128000 kbps, so anything implausibly large is treated as bps. Zero and negative
+ * values mean the resolver did not know, and stay unknown.
+ */
+function normaliseResolvedBitrateKbps(bitrate: number | undefined): number | undefined {
+  const value = Number(bitrate ?? 0);
+  if (!Number.isFinite(value) || value <= 0) return undefined;
+  const kbps = value > 10_000 ? Math.round(value / 1000) : Math.round(value);
+  return kbps > 0 ? kbps : undefined;
+}
+
 export function envelopeFromResolved(
   base: MediaEnvelope,
   resolved: ResolvedPlaybackSource,
@@ -445,6 +460,22 @@ export function envelopeFromResolved(
     title: resolved.title ?? base.title,
     artist: resolved.artist ?? base.artist,
     durationSeconds: resolved.durationSeconds ?? base.durationSeconds,
+    /*
+     * The resolver already measured this and it was being dropped here, which is why a streamed
+     * track showed its transport ("HTTP", "MOBILE") where the bitrate belongs.
+     */
+    bitrateKbps:
+      normaliseResolvedBitrateKbps(resolved.bitrate) ??
+      /*
+       * yt-dlp reports bitrate 0 for the stream path, so this used to fall through to the
+       * transport label — "MOBILE", which names the code that fetched the bytes rather than
+       * anything about how they sound. The URL already states the encoding: its itag pins the
+       * codec and a bitrate fixed by the format, so the badge can say "AAC · 96 kbps" from a fact
+       * rather than a guess. Read, never measured — a progressive stream carries video in the same
+       * file, and bytes over duration would overstate the audio several times over.
+       */
+      youtubeStreamAudioProfile(resolved.uri)?.bitrateKbps ??
+      base.bitrateKbps,
     resolutionSource: resolved.source,
   };
 }

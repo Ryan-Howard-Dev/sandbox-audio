@@ -17,6 +17,7 @@ import androidx.media3.common.Player;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.DefaultLoadControl;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import com.getcapacitor.JSObject;
@@ -57,6 +58,9 @@ public class NativeExoPlaybackPlugin extends Plugin {
     private final Map<Integer, Float> queueIndexToGainLinear = new HashMap<>();
     private final ExoVolumeFader volumeFader;
     private final ExoPlaybackLoudness loudnessHelper = new ExoPlaybackLoudness();
+    private final ExoSpeechClarity speechClarity = new ExoSpeechClarity();
+    /** Held so the effect can be re-attached after the audio session id changes. */
+    @Nullable private ExoSpeechClarity.Params speechClarityParams;
     /** App volume slider 0–1.5 (150% = software boost above system max). */
     private float userVolumeLinear = 1f;
     private boolean pendingAutoPlay = false;
@@ -92,6 +96,16 @@ public class NativeExoPlaybackPlugin extends Plugin {
         String artist = "";
         String album = "";
         String artworkUrl = "";
+        /**
+         * Which track this metadata belongs to.
+         *
+         * Held here because the mirrored lastEnvelopeId used to advance only on an explicit
+         * playUrl. Title, artist and artwork moved with every transition while the id stayed on
+         * whatever was last played outright, so getStatus reported one track's id alongside
+         * another's title — and JS, which reconciles on the id, then believed the wrong item was
+         * playing and drew its artwork.
+         */
+        String envelopeId = "";
     }
 
     private String trackMetaKey(@Nullable String url, @Nullable String envelopeId) {
@@ -126,6 +140,7 @@ public class NativeExoPlaybackPlugin extends Plugin {
         if (artist != null && !artist.trim().isEmpty()) meta.artist = artist.trim();
         if (album != null && !album.trim().isEmpty()) meta.album = album.trim();
         if (artworkUrl != null && !artworkUrl.trim().isEmpty()) meta.artworkUrl = artworkUrl.trim();
+        if (envelopeId != null && !envelopeId.trim().isEmpty()) meta.envelopeId = envelopeId.trim();
     }
 
     private void applyTrackMetaForUrl(@Nullable String url) {
@@ -135,11 +150,40 @@ public class NativeExoPlaybackPlugin extends Plugin {
             key = "url:" + url.trim();
         }
         TrackMeta meta = trackMetaByKey.get(key);
-        if (meta == null) return;
+        if (meta == null) {
+            /*
+             * Lookup missed, so we have no metadata for the item now playing. Returning here used
+             * to leave lastTitle/lastArtist/lastAlbum/lastArtworkUrl holding the PREVIOUS track's
+             * values, and syncForegroundMetadata would then publish those to the MediaSession —
+             * so the lock screen kept the old title and, most visibly, the old cover (a VULTURES
+             * track showing BULLY - DELUXE artwork). Stale-but-plausible is worse than absent:
+             * drop the artwork so nothing wrong is displayed, and log the miss.
+             *
+             * This is the R-004 failure mode: transitions are matched by URL, and any difference
+             * between the URI ExoPlayer reports and the one JS registered breaks the match. The
+             * durable fix is to key off a stable track id (MediaItem.mediaId) instead of the URL.
+             */
+            android.util.Log.w(
+                "NativeExo",
+                "no track meta for key=" + key + " — clearing artwork to avoid showing the previous track's cover"
+            );
+            lastArtworkUrl = "";
+            // Same reasoning as the artwork: an id we know is wrong is worse than none, because
+            // JS matches on it and will confidently resolve the previous track's metadata.
+            lastEnvelopeId = "";
+            return;
+        }
         if (!meta.title.isEmpty()) lastTitle = meta.title;
         if (!meta.artist.isEmpty()) lastArtist = meta.artist;
         if (!meta.album.isEmpty()) lastAlbum = meta.album;
         if (!meta.artworkUrl.isEmpty()) lastArtworkUrl = meta.artworkUrl;
+        /*
+         * The id moves with the rest of it. Leaving it behind is what let getStatus answer with
+         * one track's title and another's envelopeId: JS reconciles the player against the id, so
+         * it kept resolving to the previous item and drew that track's artwork and duration over
+         * whatever was actually playing.
+         */
+        if (!meta.envelopeId.isEmpty()) lastEnvelopeId = meta.envelopeId;
     }
 
     private void runOnMain(Runnable action) {
@@ -396,12 +440,44 @@ public class NativeExoPlaybackPlugin extends Plugin {
             DefaultDataSource.Factory dataSourceFactory =
                 new DefaultDataSource.Factory(getContext(), httpFactory);
 
+            // Audio-only player: build NO video renderers at all. Many locker tracks are
+            // YouTube-sourced .mp4 containers with a video stream. setTrackSelectionParameters
+            // (disable video track) proved insufficient — the QTI video decoder was still
+            // instantiated and fed, decoding frames to nowhere (renderFps=0) until its pipeline
+            // jammed ("too many frames in pipeline"). Because ExoPlayer runs on the MAIN looper
+            // here, that jam blocked the main thread and froze the whole app mid-track. With no
+            // video renderer in the factory, the video stream is never decoded, period.
+            DefaultRenderersFactory renderersFactory =
+                new DefaultRenderersFactory(getContext()) {
+                    @Override
+                    protected void buildVideoRenderers(
+                        Context context,
+                        int extensionRendererMode,
+                        androidx.media3.exoplayer.mediacodec.MediaCodecSelector mediaCodecSelector,
+                        boolean enableDecoderFallback,
+                        Handler eventHandler,
+                        androidx.media3.exoplayer.video.VideoRendererEventListener eventListener,
+                        long allowedVideoJoiningTimeMs,
+                        java.util.ArrayList<androidx.media3.exoplayer.Renderer> out) {
+                        // Intentionally add nothing — audio-only.
+                    }
+                };
+
             player =
                 new ExoPlayer.Builder(getContext())
                     .setLooper(Looper.getMainLooper())
+                    .setRenderersFactory(renderersFactory)
                     .setMediaSourceFactory(new DefaultMediaSourceFactory(dataSourceFactory))
                     .setLoadControl(loadControl)
                     .build();
+
+            // Belt-and-suspenders: also disable video track selection.
+            player.setTrackSelectionParameters(
+                player.getTrackSelectionParameters()
+                    .buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
+                    .build()
+            );
 
             AudioAttributes attrs =
                 new AudioAttributes.Builder()
@@ -484,6 +560,9 @@ public class NativeExoPlaybackPlugin extends Plugin {
                             evt.put("index", idx);
                             evt.put("queueLength", p.getMediaItemCount());
                             evt.put("reason", reason);
+                            if (mediaItem != null && mediaItem.mediaId != null && !mediaItem.mediaId.isEmpty()) {
+                                evt.put("mediaId", mediaItem.mediaId);
+                            }
                             if (mediaItem != null && mediaItem.localConfiguration != null) {
                                 Uri uri = mediaItem.localConfiguration.uri;
                                 if (uri != null) {
@@ -971,6 +1050,10 @@ public class NativeExoPlaybackPlugin extends Plugin {
             return;
         }
         loudnessHelper.ensureAttached(p);
+        // Same hook as the loudness enhancer: this runs on track change and gain change, which is
+        // where the audio session id can move out from under an attached effect. apply() no-ops
+        // when nothing has changed, so calling it here is cheap.
+        reapplySpeechClarity(p);
         float combined = userVolumeLinear * replayGainLinear;
         if (combined <= 0f) {
             p.setVolume(0f);
@@ -1032,6 +1115,78 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 ret.put("userVolumeLinear", userVolumeLinear);
                 call.resolve(ret);
             });
+    }
+
+    /**
+     * Compression and presence EQ for spoken word, or `enabled: false` to leave the signal alone.
+     *
+     * The tuning is passed in rather than duplicated here so speechClarity.ts stays the one place
+     * the numbers live; this side only decides whether the hardware can honour them.
+     */
+    @PluginMethod
+    public void setSpeechClarity(PluginCall call) {
+        boolean enabled = Boolean.TRUE.equals(call.getBoolean("enabled", false));
+        if (!enabled) {
+            speechClarityParams = null;
+            runOnMain(
+                call,
+                () -> {
+                    speechClarity.release();
+                    JSObject ret = new JSObject();
+                    ret.put("ok", true);
+                    ret.put("active", false);
+                    ret.put("supported", ExoSpeechClarity.isSupported());
+                    call.resolve(ret);
+                });
+            return;
+        }
+
+        if (!ExoSpeechClarity.isSupported()) {
+            // Reported rather than rejected: too old for the effect is a fact about the device,
+            // not a failed call, and the caller wants to know which it was.
+            speechClarityParams = null;
+            JSObject ret = new JSObject();
+            ret.put("ok", true);
+            ret.put("active", false);
+            ret.put("supported", false);
+            call.resolve(ret);
+            return;
+        }
+
+        final ExoSpeechClarity.Params params = new ExoSpeechClarity.Params(
+            floatArg(call, "highPassHz", 90f),
+            floatArg(call, "presenceHz", 3000f),
+            floatArg(call, "presenceGainDb", 3.5f),
+            floatArg(call, "thresholdDb", -24f),
+            floatArg(call, "kneeDb", 10f),
+            floatArg(call, "ratio", 3f),
+            floatArg(call, "attackMs", 5f),
+            floatArg(call, "releaseMs", 250f),
+            floatArg(call, "makeupDb", 4f));
+        speechClarityParams = params;
+
+        runOnMain(
+            call,
+            () -> {
+                speechClarity.apply(player, params);
+                JSObject ret = new JSObject();
+                ret.put("ok", true);
+                ret.put("active", true);
+                ret.put("supported", true);
+                call.resolve(ret);
+            });
+    }
+
+    private static float floatArg(PluginCall call, String key, float fallback) {
+        Double value = call.getDouble(key);
+        if (value == null || value.isNaN() || value.isInfinite()) return fallback;
+        return value.floatValue();
+    }
+
+    /** Re-attach after anything that can change the audio session id. */
+    private void reapplySpeechClarity(@Nullable ExoPlayer p) {
+        if (p == null) return;
+        speechClarity.apply(p, speechClarityParams);
     }
 
     @PluginMethod
@@ -1207,7 +1362,7 @@ public class NativeExoPlaybackPlugin extends Plugin {
                         }
 
                         applyCombinedVolume(p);
-                        MediaItem item = MediaItem.fromUri(Uri.parse(trimmed));
+                        MediaItem item = mediaItemFor(trimmed, lastEnvelopeId);
                         int newIndex;
                         if (resetQueue || p.getMediaItemCount() == 0) {
                             p.setMediaItem(item);
@@ -1303,10 +1458,10 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 String artist = call.getString("artist");
                 String album = call.getString("album");
                 String artworkUrl = call.getString("artworkUrl");
-                int newIndex = p.getMediaItemCount();
-                p.addMediaItem(MediaItem.fromUri(Uri.parse(trimmed)));
-                storeGainForIndex(newIndex, replayGainDb);
                 String envelopeId = call.getString("envelopeId");
+                int newIndex = p.getMediaItemCount();
+                p.addMediaItem(mediaItemFor(trimmed, envelopeId));
+                storeGainForIndex(newIndex, replayGainDb);
                 storeTrackMetaForUrl(trimmed, envelopeId, title, artist, album, artworkUrl);
                 if (p.getPlaybackState() == Player.STATE_IDLE) {
                     p.prepare();
@@ -1318,6 +1473,22 @@ public class NativeExoPlaybackPlugin extends Plugin {
                 ret.put("index", newIndex);
                 call.resolve(ret);
             });
+    }
+
+    /**
+     * A MediaItem carrying the JS envelope id as its mediaId.
+     *
+     * The URL cannot identify a track. The same chapter plays from an https stream, a local proxy
+     * URL or a content:// stream-cache entry depending on what happens to be cached, so a
+     * transition matched by URL misses precisely when caching kicks in — and a miss means JS never
+     * learns the track changed. The envelope id is stable across all three.
+     */
+    private static MediaItem mediaItemFor(String url, String envelopeId) {
+        MediaItem.Builder builder = new MediaItem.Builder().setUri(Uri.parse(url));
+        if (envelopeId != null && !envelopeId.trim().isEmpty()) {
+            builder.setMediaId("env:" + envelopeId.trim());
+        }
+        return builder.build();
     }
 
     private int indexOfUrl(ExoPlayer p, String url) {
@@ -1488,6 +1659,129 @@ public class NativeExoPlaybackPlugin extends Plugin {
             });
     }
 
+    /**
+     * Byte size of a locker blob on disk.
+     *
+     * Downloaded tracks keep their audio in the native cache rather than an IndexedDB blob, so the
+     * web layer has no way to measure them — which left the now-playing badge unable to state a
+     * bitrate for exactly the tracks a listener owns. The file is right here; its length is all
+     * that is needed to divide by the known duration.
+     */
+    /**
+     * First bytes of a locker blob, base64 encoded.
+     *
+     * A downloaded track keeps its audio in the native cache with no IndexedDB blob, so the web
+     * layer cannot read its container header — which left the fidelity badge unable to state depth
+     * and sample rate for exactly the tracks a listener owns. Only the head is returned: FLAC
+     * STREAMINFO is mandatory and comes first, so a few kilobytes answer the question without
+     * copying an entire album across the bridge.
+     */
+    @PluginMethod
+    public void getLockerBlobHead(PluginCall call) {
+        final String rawId = call.getString("id");
+        if (rawId == null || rawId.trim().isEmpty()) {
+            call.reject("id required");
+            return;
+        }
+        final String id = rawId.trim();
+        final int requested = call.getInt("bytes", 8192);
+        final int limit = Math.max(1, Math.min(requested, 65536));
+        /*
+         * An offset, because MP4 keeps its metadata behind the audio in files that were not
+         * written faststart. Walking to it needs ranges from anywhere in the file, not just the
+         * front — but still only a few kilobytes at a time.
+         */
+        final long offset = Math.max(0L, call.getLong("offset", 0L));
+        playbackExecutor.execute(
+            () -> {
+                try {
+                    File file = LockerBlobRegistry.getFile(getContext(), id);
+                    if (file == null || !file.exists() || offset >= file.length()) {
+                        JSObject empty = new JSObject();
+                        empty.put("base64", "");
+                        mainHandler.post(() -> call.resolve(empty));
+                        return;
+                    }
+                    int size = (int) Math.min(limit, file.length() - offset);
+                    byte[] head = new byte[size];
+                    try (java.io.RandomAccessFile in = new java.io.RandomAccessFile(file, "r")) {
+                        in.seek(offset);
+                        int read = 0;
+                        while (read < size) {
+                            int n = in.read(head, read, size - read);
+                            if (n < 0) break;
+                            read += n;
+                        }
+                        if (read < size) {
+                            head = java.util.Arrays.copyOf(head, Math.max(read, 0));
+                        }
+                    }
+                    JSObject ret = new JSObject();
+                    ret.put("base64", android.util.Base64.encodeToString(head, android.util.Base64.NO_WRAP));
+                    mainHandler.post(() -> call.resolve(ret));
+                } catch (Exception e) {
+                    String msg = e.getMessage() != null ? e.getMessage() : "head read failed";
+                    mainHandler.post(() -> call.reject(msg));
+                }
+            });
+    }
+
+    @PluginMethod
+    public void getLockerBlobBytes(PluginCall call) {
+        final String rawId = call.getString("id");
+        if (rawId == null || rawId.trim().isEmpty()) {
+            call.reject("id required");
+            return;
+        }
+        final String id = rawId.trim();
+        playbackExecutor.execute(
+            () -> {
+                try {
+                    File file = LockerBlobRegistry.getFile(getContext(), id);
+                    long bytes = (file != null && file.exists()) ? file.length() : 0L;
+                    JSObject ret = new JSObject();
+                    ret.put("bytes", bytes);
+                    mainHandler.post(() -> call.resolve(ret));
+                } catch (Exception e) {
+                    String msg = e.getMessage() != null ? e.getMessage() : "size failed";
+                    mainHandler.post(() -> call.reject(msg));
+                }
+            });
+    }
+
+    @PluginMethod
+    public void listLockerBlobs(PluginCall call) {
+        playbackExecutor.execute(
+            () -> {
+                try {
+                    com.getcapacitor.JSArray ids = LockerBlobRegistry.listBlobIds(getContext());
+                    JSObject ret = new JSObject();
+                    ret.put("ids", ids);
+                    mainHandler.post(() -> call.resolve(ret));
+                } catch (Exception e) {
+                    String msg = e.getMessage() != null ? e.getMessage() : "list failed";
+                    mainHandler.post(() -> call.reject(msg));
+                }
+            });
+    }
+
+    @PluginMethod
+    public void pruneLockerBlobs(PluginCall call) {
+        final com.getcapacitor.JSArray keepIds = call.getArray("keepIds", null);
+        final boolean dryRun = Boolean.TRUE.equals(call.getBoolean("dryRun", true));
+        playbackExecutor.execute(
+            () -> {
+                try {
+                    JSObject result =
+                        LockerBlobRegistry.pruneOrphanBlobs(getContext(), keepIds, dryRun);
+                    mainHandler.post(() -> call.resolve(result));
+                } catch (Exception e) {
+                    String msg = e.getMessage() != null ? e.getMessage() : "prune failed";
+                    mainHandler.post(() -> call.reject(msg));
+                }
+            });
+    }
+
     @PluginMethod
     public void getLockerBlobUri(PluginCall call) {
         String id = call.getString("id");
@@ -1622,6 +1916,7 @@ public class NativeExoPlaybackPlugin extends Plugin {
             () -> {
                 volumeFader.cancel();
                 loudnessHelper.release();
+                speechClarity.release();
                 if (player != null) {
                     player.release();
                     player = null;

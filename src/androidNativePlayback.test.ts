@@ -53,7 +53,10 @@ describe('nativeExoEnqueueNext', () => {
     expect(mockEnqueue).toHaveBeenCalledWith({ url: uri });
   });
 
-  it('converts blob artwork to data URL before enqueueNext', async () => {
+  it('omits blob/data artwork instead of forwarding it to enqueueNext', async () => {
+    // Deliberate behaviour change: a 100KB+ base64 string forwarded for every upcoming
+    // album track floods the Capacitor bridge and freezes the UI (pause feels dead), and
+    // native cannot load blob:/data: anyway. Queue the track, drop the artwork.
     const uri = 'content://rd.sheepskin.sandboxmusic.locker/track-2';
     await nativeExoEnqueueNext(uri, {
       title: 'Track',
@@ -62,8 +65,23 @@ describe('nativeExoEnqueueNext', () => {
     expect(mockEnqueue).toHaveBeenCalledWith({
       url: uri,
       title: 'Track',
-      artworkUrl: 'data:image/jpeg;base64,abc',
+      artworkUrl: undefined,
     });
+  });
+
+  it('forwards envelopeId so native can key metadata off a stable id', async () => {
+    // Dropping envelopeId here left native keying this track's metadata off the URL alone.
+    // Any rewrite between enqueue and playback then lost the match, and the lock screen kept
+    // the previous track's title and cover across an album boundary.
+    const uri = 'content://rd.sheepskin.sandboxmusic.locker/track-4';
+    await nativeExoEnqueueNext(uri, {
+      envelopeId: 'locker-vultures-03',
+      title: 'CARNIVAL',
+      album: 'VULTURES 1',
+    });
+    expect(mockEnqueue).toHaveBeenCalledWith(
+      expect.objectContaining({ url: uri, envelopeId: 'locker-vultures-03' }),
+    );
   });
 });
 

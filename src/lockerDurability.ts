@@ -3,18 +3,17 @@
  * Metadata rows are never deleted when blobs go missing; tracks are marked hollow and re-queued.
  */
 
-import { Capacitor, registerPlugin } from '@capacitor/core';
-import type { NativeExoPlaybackPlugin } from './androidNativePlayback';
+import { Capacitor } from '@capacitor/core';
+import { NativeExoPlayback } from './nativePluginHandles';
 import { isAndroid } from './platformEnv';
 import { queueDeadLockerTrackReacquire } from './lockerDeadTrackReacquire';
 import {
   auditLockerVaultHealth,
   getLockerAudioBlob,
+  getLockerEntriesSnapshot,
   type LockerEntry,
   readLockerEntriesForDurability,
 } from './lockerStorage';
-
-const NativeExoPlayback = registerPlugin<NativeExoPlaybackPlugin>('NativeExoPlayback');
 
 const MANIFEST_KEY = 'locker-integrity-manifest-v1';
 const MANIFEST_VERSION = 1 as const;
@@ -24,6 +23,13 @@ export type LockerIntegrityEntry = {
   blobBytes: number;
   nativePath?: string;
   updatedAt: number;
+  /**
+   * Set the first time a scan finds no audio anywhere (IDB or native) for an otherwise
+   * "playable" row. Only acted on (hollow + re-download) if it's STILL missing on a
+   * later, independent scan — a single flaky check (e.g. native bridge congestion) can't
+   * nuke a real download; it takes two separate boots agreeing the audio is actually gone.
+   */
+  suspectedMissingAt?: number;
 };
 
 export type LockerIntegrityManifest = {
@@ -152,8 +158,13 @@ export async function verifyLockerIntegrityOnBoot(): Promise<{
     });
   }
 
-  const manifest = loadManifest();
+  // This scan can span seconds (it yields to the main thread every 16 rows), during which
+  // the user can delete or (re)download tracks. Snapshot-in/merge-out below avoids clobbering
+  // those concurrent manifest writes, and the live-cache check avoids re-queuing a re-download
+  // for a track the user deleted while the scan was still running.
+  const manifestAtStart = loadManifest();
   const rows = await readLockerEntriesForDurability();
+  const pendingEntries: Record<string, LockerIntegrityEntry> = {};
   let verified = 0;
   let markedHollow = 0;
   let reacquireQueued = 0;
@@ -164,16 +175,21 @@ export async function verifyLockerIntegrityOnBoot(): Promise<{
     if (rowIndex > 0 && rowIndex % 16 === 0) await yieldToMain();
     const id = row.id.trim();
     if (!id) continue;
+    const liveEntries = getLockerEntriesSnapshot();
+    if (liveEntries && !liveEntries.some((e) => e.id === id)) {
+      // Deleted by the user since this scan started — leave it alone.
+      continue;
+    }
     const blob = await getLockerAudioBlob(id);
     const blobBytes = blob?.size ?? 0;
-    const entry = manifest.entries[id];
+    const entry = manifestAtStart.entries[id];
     const claimedPlayable =
       row.offlineReady === true ||
       Boolean((row as { hasAudioBlob?: boolean }).hasAudioBlob) ||
       (entry?.blobBytes ?? 0) > 0;
 
     if (blobBytes > 0) {
-      manifest.entries[id] = {
+      pendingEntries[id] = {
         id,
         blobBytes,
         nativePath: row.nativeSourcePath,
@@ -183,12 +199,50 @@ export async function verifyLockerIntegrityOnBoot(): Promise<{
       continue;
     }
 
+    // getLockerAudioBlob only reads the IndexedDB blob store — tracks whose audio lives in
+    // native storage (the normal case on Android) read back 0 bytes here even though the file
+    // is safely on disk. Use the authoritative recoverable-audio check, which also accepts a
+    // durable nativeSourcePath (files/ytdlp-locker/*.mp4 — where downloaded locker audio
+    // actually lives) and the native content:// registry. Without this, natively-stored tracks
+    // looked "hollow" every boot and got wastefully re-downloaded ("still re-downloading").
+    if (isAndroid()) {
+      try {
+        const { lockerEntryHasRecoverableAudio } = await import('./lockerStorage');
+        if (await lockerEntryHasRecoverableAudio(id)) {
+          pendingEntries[id] = {
+            id,
+            blobBytes: entry?.blobBytes ?? 0,
+            nativePath: row.nativeSourcePath,
+            updatedAt: Date.now(),
+          };
+          verified += 1;
+          continue;
+        }
+      } catch {
+        /* probe optional — fall through to the claimedPlayable check below */
+      }
+    }
+
     if (!claimedPlayable) continue;
+
+    // Metadata says playable but neither IDB nor native storage has the bytes. Don't act on
+    // a single scan's word for it — record the suspicion and only hollow + re-download once
+    // a LATER, independent scan (a separate boot) still can't find it either.
+    if (!entry?.suspectedMissingAt) {
+      pendingEntries[id] = {
+        id,
+        blobBytes: 0,
+        nativePath: row.nativeSourcePath,
+        updatedAt: entry?.updatedAt ?? Date.now(),
+        suspectedMissingAt: Date.now(),
+      };
+      continue;
+    }
 
     // Metadata says playable but bytes are missing — mark hollow, keep row, queue re-download.
     await markLockerRowHollow(id);
     markedHollow += 1;
-    manifest.entries[id] = {
+    pendingEntries[id] = {
       id,
       blobBytes: 0,
       nativePath: row.nativeSourcePath,
@@ -201,7 +255,17 @@ export async function verifyLockerIntegrityOnBoot(): Promise<{
     }
   }
 
-  saveManifest(manifest);
+  const latestManifest = loadManifest();
+  for (const [id, pendingEntry] of Object.entries(pendingEntries)) {
+    const existedAtStart = id in manifestAtStart.entries;
+    const stillExists = id in latestManifest.entries;
+    // Only clobber a concurrent write if the id wasn't removed from the manifest
+    // (e.g. via a locker delete) while this scan was running.
+    if (!existedAtStart || stillExists) {
+      latestManifest.entries[id] = pendingEntry;
+    }
+  }
+  saveManifest(latestManifest);
 
   if (markedHollow > 0 || reacquireQueued > 0) {
     console.info('[lockerDurability] integrity boot verify', {

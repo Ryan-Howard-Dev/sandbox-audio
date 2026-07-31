@@ -42,7 +42,7 @@ export type CinemaCastMode =
   | 'popout';
 
 const IDLE_PAYLOAD: CinemaCastPayload = {
-  title: 'Sovereign Music Console',
+  title: 'Sandbox Audio',
   artist: 'Ready to cast',
   isPlaying: false,
   currentTimeSeconds: 0,

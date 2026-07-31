@@ -1,5 +1,6 @@
 import type { CandidateSource, MediaEnvelope } from '../sandboxLayer1';
 import { resolveEnvelopeReplayGainDb } from '../replayGainPlayback';
+import { shouldBackfillLockerTrackGain } from '../replayGainIngest';
 import {
   applyAggressivePrefetchIfEnabled,
   storeStreamCacheAfterPlay,
@@ -32,6 +33,32 @@ export async function runDeferredPlaySideEffects(
   if (playable.replayGainDb == null) {
     const replayGainDb = await resolveEnvelopeReplayGainDb(playable);
     playable = { ...playable, replayGainDb };
+
+    // 0 means "no gain stored", which is every locker row imported before ingest measured
+    // loudness correctly. Analyse this one track in the background so the next play of it is
+    // normalised; without this those rows would take the flat fallback forever, since a library
+    // that is already imported never gets re-imported. Fire-and-forget: it must not delay
+    // playback, and the result deliberately does not apply to the track currently playing.
+    if (shouldBackfillLockerTrackGain({ ...playable, replayGainDb })) {
+      const sourceId = playable.sourceId!;
+      void import('../lockerStorage')
+        .then((m) => m.backfillLockerTrackGain(sourceId))
+        .catch(() => undefined);
+    }
+  }
+
+  /*
+   * Measure the bitrate of a locker track that predates it being measured, so the badge under the
+   * track name can state a real number instead of nothing. Unlike the gain backfill above this
+   * needs no decode — stored bytes over known duration — and it applies to the track playing now,
+   * because the envelope is still being assembled here.
+   */
+  if (playable.bitrateKbps == null && playable.provider === 'local-vault' && playable.sourceId) {
+    const sourceId = playable.sourceId;
+    const measured = await import('../lockerStorage')
+      .then((m) => m.backfillLockerBitrate(sourceId))
+      .catch(() => null);
+    if (measured) playable = { ...playable, bitrateKbps: measured };
   }
 
   const skipSpectral =

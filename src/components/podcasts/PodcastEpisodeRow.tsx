@@ -259,7 +259,9 @@ function PodcastEpisodeRow({
         >
           <span className="podcasts-show-episode-title">{episode.title}</span>
           <span className="podcasts-show-episode-meta">{metaParts.join(' · ')}</span>
-          {!useCardLayout && descriptionPreview ? (
+          {/* Shown in the library card too. Hiding it there left the row with a title and a
+              play button and no way to tell what the episode is about without opening the ⋮. */}
+          {descriptionPreview ? (
             <span className="podcasts-show-episode-desc">{descriptionPreview}</span>
           ) : null}
         </button>

@@ -260,14 +260,60 @@ export function parseSitemapLocs(xml: string, hostIncludes: string): ScrapeIndex
     if (!url || !url.includes(hostIncludes)) continue;
     const slug = url.replace(/\/$/, '').split('/').pop() ?? '';
     if (!slug || slug === 'xml') continue;
-    out.push({
-      sourceId: url,
-      title: slugToTitle(slug.replace(/-audiobook$|-book$/i, '')),
-      author: hostIncludes.includes('golden') ? 'Golden Audiobooks' : 'Audiobooks4Soul',
-      url,
-    });
+    const { title, author } = splitScrapedAuthorTitle(
+      slugToTitle(slug.replace(/-audiobook$|-book$/i, '')),
+      hostIncludes.includes('golden') ? 'Golden Audiobooks' : 'Audiobooks4Soul',
+    );
+    out.push({ sourceId: url, title, author, url });
   }
   return out;
+}
+
+/**
+ * Split a scraped post title of the form "Author - Book Title" into its two parts.
+ *
+ * Both WordPress scrape sources publish posts titled that way, and both took the whole string as
+ * the title and hardcoded the *site name* as the author. So a book displayed as "Hans Christian
+ * Andersen - Hans Christian Andersen's Fairy Tales" by "Golden Audiobooks": the author repeated
+ * inside the title, the real author discarded, and the site name shown twice because the source
+ * label already prints it.
+ *
+ * Only splits on a dash with surrounding whitespace, so hyphenated words are untouched, and only
+ * when the left side is short enough to plausibly be a name — a title that merely contains a dash
+ * keeps its full text rather than losing its first clause to the author field.
+ */
+export function splitScrapedAuthorTitle(
+  rawTitle: string,
+  fallbackAuthor: string,
+): { title: string; author: string } {
+  const text = rawTitle.trim();
+  const match = /^(.{2,60}?)\s+[-–—]\s+(.{2,})$/.exec(text);
+  const left = match?.[1]?.trim();
+  const right = match?.[2]?.trim();
+  if (!left || !right || left.split(/\s+/).length > 6) {
+    return { title: stripScrapedTitleSuffix(text), author: fallbackAuthor };
+  }
+  return { title: stripScrapedTitleSuffix(right), author: left };
+}
+
+/**
+ * Drop the SEO tail these sites append to post titles.
+ *
+ * Post titles read "The War of the Worlds Audiobook" or "The Big Short Audio Book Online" — the
+ * format is for search engines, not for a book card, a player, or a lock screen. Only trailing
+ * words are removed, so a title that genuinely contains one of them mid-string survives.
+ */
+export function stripScrapedTitleSuffix(rawTitle: string): string {
+  const cleaned = rawTitle
+    .trim()
+    .replace(
+      /[\s|,–—-]*\b(free\s+)?(full\s+)?audio[\s-]?books?(\s+(online|free|full|unabridged|download))*\s*$/i,
+      '',
+    )
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  // Never strip a title down to nothing — a book actually called "Audiobook" keeps its name.
+  return cleaned || rawTitle.trim();
 }
 
 export function parseGoldenSearchPage(html: string): ScrapeIndexEntry[] {
@@ -277,12 +323,11 @@ export function parseGoldenSearchPage(html: string): ScrapeIndexEntry[] {
   let match: RegExpExecArray | null;
   while ((match = re.exec(html)) !== null) {
     const url = match[1]!.endsWith('/') ? match[1]! : `${match[1]}/`;
-    out.push({
-      sourceId: url,
-      title: stripHtmlText(match[2]),
-      author: 'Golden Audiobooks',
-      url,
-    });
+    const { title, author } = splitScrapedAuthorTitle(
+      stripHtmlText(match[2]),
+      'Golden Audiobooks',
+    );
+    out.push({ sourceId: url, title, author, url });
   }
   return out;
 }
@@ -323,14 +368,10 @@ export function parseAudiobooks4soulCatalogPage(html: string): ScrapeIndexEntry[
   while ((match = re.exec(html)) !== null) {
     const url = match[1]!.endsWith('/') ? match[1]! : `${match[1]}/`;
     if (url.includes('/category/') || url.includes('/tag/') || url.includes('/page/')) continue;
-    const title = stripHtmlText(match[2]);
-    if (!title || title.length < 3) continue;
-    out.push({
-      sourceId: url,
-      title,
-      author: 'Audiobooks4Soul',
-      url,
-    });
+    const rawTitle = stripHtmlText(match[2]);
+    if (!rawTitle || rawTitle.length < 3) continue;
+    const { title, author } = splitScrapedAuthorTitle(rawTitle, 'Audiobooks4Soul');
+    out.push({ sourceId: url, title, author, url });
   }
   return out;
 }

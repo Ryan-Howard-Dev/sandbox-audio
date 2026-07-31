@@ -22,7 +22,9 @@ describe('navPinTabs', () => {
 
   it('dedupes and fills to four slots', () => {
     saveNavPinTabs(['discover', 'discover', 'home']);
-    expect(loadNavPinTabs()).toEqual(['discover', 'home', 'locker', 'search']);
+    // Fills from DEFAULT_NAV_PIN_TABS, which is now the three format pillars
+    // (home · music/locker · podcasts · audiobooks); Search moved to the Home vinyl.
+    expect(loadNavPinTabs()).toEqual(['discover', 'home', 'locker', 'podcasts']);
   });
 
   it('swaps slot when assigning duplicate tab', () => {

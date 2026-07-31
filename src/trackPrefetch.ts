@@ -20,6 +20,7 @@ import {
   isOfflineUnplayableStreamUrl,
 } from './nativeExoStreamResolver';
 import { preferFreshMobileResolve } from './mobileResolverRegistry';
+import { EXPIRY_SAFETY_MARGIN_MS, parseStreamExpiry } from './resolvedStreamCache';
 import {
   getCachedPlayEnvelope,
   playCacheKey,
@@ -81,24 +82,74 @@ export async function tryInstantPlayable(
   options?: InstantPlayableOptions,
 ): Promise<MediaEnvelope | null> {
   const sync = getSyncCachedPlayable(env);
-  if (sync) return sync;
+  if (sync) {
+    logInstantOutcome(env, 'hit:play-cache');
+    return sync;
+  }
 
-  if (
+  const remoteOnMobile =
     !options?.forPrefetch &&
     preferFreshMobileResolve() &&
     env.provider !== 'local-vault' &&
     env.provider !== 'stream-cache' &&
     env.provider !== 'indexeddb' &&
-    env.provider !== 'blob'
-  ) {
+    env.provider !== 'blob';
+
+  if (!isEnvelopeStreamCached(env)) {
+    // Nothing warmed this track. Either prefetch has not reached it yet, or stream caching is
+    // switched off in settings — in which case this whole path can never hit and the play tap
+    // always pays for a full resolve.
+    logInstantOutcome(env, remoteOnMobile ? 'miss:not-cached (fresh-preferred)' : 'miss:not-cached');
     return null;
   }
-  if (isEnvelopeStreamCached(env)) {
+  {
     const stream = await getStreamCacheEnvelope(env);
     const streamUrl = stream?.url?.trim() ?? '';
-    if (streamUrl && !isOfflineUnplayableStreamUrl(streamUrl)) return stream;
+    if (streamUrl && !isOfflineUnplayableStreamUrl(streamUrl)) {
+      /*
+       * The play path used to throw this away outright whenever a fresh mobile resolve was
+       * preferred, so every tap and every skip paid the full ~15s extraction even though prefetch
+       * had already resolved the track seconds earlier. The caution was right — a dead URL fails
+       * silently and looks like a broken app — but it was written when nothing could tell a live
+       * URL from an expired one.
+       *
+       * These URLs state their own deadline, so the question is answerable: reuse it when it can
+       * be shown to still be good, re-resolve when it cannot. A URL with no stated expiry is not
+       * proof of freshness, so that case still re-resolves rather than gambling.
+       */
+      if (!remoteOnMobile) {
+        logInstantOutcome(env, 'hit:stream-cache');
+        return stream;
+      }
+      const expiresAt = parseStreamExpiry(streamUrl);
+      if (expiresAt != null && expiresAt - EXPIRY_SAFETY_MARGIN_MS > Date.now()) {
+        logInstantOutcome(env, 'hit:stream-cache (expiry ok)');
+        return stream;
+      }
+      logInstantOutcome(
+        env,
+        expiresAt == null
+          ? 'miss:no-stated-expiry — cannot prove fresh, re-resolving'
+          : `miss:expired ${Math.round((expiresAt - Date.now()) / 1000)}s left`,
+      );
+      return null;
+    }
+    logInstantOutcome(env, 'miss:cached-but-unplayable-url');
   }
   return null;
+}
+
+/**
+ * Why a play tap did or did not skip resolution.
+ *
+ * The difference between an instant play and a fifteen-second wait is one branch here, and from
+ * outside the app both look identical apart from the delay. Naming the branch is what turns
+ * "still slow" into a specific thing to fix.
+ */
+function logInstantOutcome(env: MediaEnvelope, outcome: string): void {
+  console.warn(
+    `[tryInstantPlayable] ${outcome} track="${env.artist} — ${env.title}" provider=${env.provider}`,
+  );
 }
 
 async function applyLockerShortcut(env: MediaEnvelope): Promise<MediaEnvelope> {
@@ -248,20 +299,51 @@ export function isLockerVaultPlayQueue(queue: MediaEnvelope[]): boolean {
   return queue.length > 0 && queue.every((t) => t.provider === 'local-vault');
 }
 
+/**
+ * Which queue positions are worth resolving ahead of time, in priority order.
+ *
+ * Pure so the wrap-around and the back-skip case can be asserted without driving real resolves,
+ * which is how the previous track came to be left out for as long as it was.
+ */
+export function prefetchQueueIndices(
+  queueIndex: number,
+  queueLength: number,
+  repeatMode: string,
+  ahead = PREFETCH_AHEAD,
+): number[] {
+  if (queueLength <= 0) return [];
+  const indices: number[] = [];
+  for (let offset = 1; offset <= ahead; offset++) {
+    let idx = queueIndex + offset;
+    if (idx >= queueLength) {
+      if (repeatMode === 'all') idx = idx - queueLength;
+      else break;
+    }
+    if (idx >= 0 && idx < queueLength && idx !== queueIndex && !indices.includes(idx)) {
+      indices.push(idx);
+    }
+  }
+
+  /*
+   * The previous track, last. A forward-only window guarantees that skipping back is slow, and
+   * back is the skip most likely to be pressed at all — it is what someone reaches for when they
+   * did not want the track that just started. Last in the list because it is one track against
+   * several ahead, and the ones ahead are still the common case.
+   */
+  const previous =
+    queueIndex - 1 >= 0 ? queueIndex - 1 : repeatMode === 'all' ? queueLength - 1 : -1;
+  if (previous >= 0 && previous < queueLength && previous !== queueIndex && !indices.includes(previous)) {
+    indices.push(previous);
+  }
+  return indices;
+}
+
 /** Prefetch the next N tracks in the play queue. */
 export function prefetchUpcomingQueueTracks(input: PrefetchQueueInput): void {
   const { playQueue, queueIndex, repeatMode, findCandidates, onResolvedUrl } = input;
   if (playQueue.length === 0) return;
 
-  const indices: number[] = [];
-  for (let offset = 1; offset <= PREFETCH_AHEAD; offset++) {
-    let idx = queueIndex + offset;
-    if (idx >= playQueue.length) {
-      if (repeatMode === 'all') idx = idx - playQueue.length;
-      else break;
-    }
-    if (idx >= 0 && idx < playQueue.length) indices.push(idx);
-  }
+  const indices = prefetchQueueIndices(queueIndex, playQueue.length, repeatMode);
 
   for (const idx of indices) {
     const track = playQueue[idx];

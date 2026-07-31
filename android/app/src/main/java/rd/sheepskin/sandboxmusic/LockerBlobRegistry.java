@@ -3,12 +3,14 @@ package rd.sheepskin.sandboxmusic;
 import android.content.Context;
 import android.net.Uri;
 import androidx.annotation.Nullable;
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -215,6 +217,97 @@ public final class LockerBlobRegistry {
         putDirStats(ret, "cacheBlob", legacyBlobs);
         putDirStats(ret, "cacheYtdlp", legacyYtdlp);
         return ret;
+    }
+
+    /**
+     * Garbage-collect durable locker_blobs whose basename (track id) is referenced
+     * by no current locker entry. {@code keepIdsRaw} are raw track ids from the JS
+     * locker index; they are sanitised here to match on-disk filenames.
+     *
+     * HARD SAFETY RULE: if the keep-set is empty we refuse to delete anything (an
+     * empty index almost always means "not loaded yet", not "wipe everything").
+     * Callers must pass {@code dryRun=true} to preview freed bytes without deleting.
+     */
+    public static JSObject pruneOrphanBlobs(
+        @Nullable Context context,
+        @Nullable JSArray keepIdsRaw,
+        boolean dryRun
+    ) {
+        JSObject ret = new JSObject();
+        int deleted = 0;
+        int kept = 0;
+        int total = 0;
+        long freed = 0;
+
+        HashSet<String> keep = new HashSet<>();
+        if (keepIdsRaw != null) {
+            for (int i = 0; i < keepIdsRaw.length(); i++) {
+                String raw = keepIdsRaw.optString(i, null);
+                if (raw != null && !raw.trim().isEmpty()) {
+                    keep.add(sanitizeId(raw.trim()));
+                }
+            }
+        }
+
+        boolean refusedEmptyKeep = false;
+        if (context != null) {
+            File dir = new File(context.getFilesDir(), "locker_blobs");
+            File[] entries = dir.isDirectory() ? dir.listFiles() : null;
+            if (entries != null) {
+                for (File f : entries) {
+                    if (!f.isFile()) continue;
+                    total += 1;
+                    String name = f.getName();
+                    int dot = name.lastIndexOf('.');
+                    String id = dot > 0 ? name.substring(0, dot) : name;
+                    if (keep.contains(id)) {
+                        kept += 1;
+                        continue;
+                    }
+                    long len = f.length();
+                    if (dryRun) {
+                        deleted += 1;
+                        freed += len;
+                        continue;
+                    }
+                    // Live delete — blocked entirely when the keep-set is empty.
+                    if (keep.isEmpty()) {
+                        refusedEmptyKeep = true;
+                        continue;
+                    }
+                    if (f.delete()) {
+                        deleted += 1;
+                        freed += len;
+                        FILES.remove(id);
+                    }
+                }
+            }
+        }
+
+        ret.put("deletedCount", deleted);
+        ret.put("freedBytes", freed);
+        ret.put("keptCount", kept);
+        ret.put("totalCount", total);
+        ret.put("dryRun", dryRun);
+        ret.put("refusedEmptyKeep", refusedEmptyKeep);
+        return ret;
+    }
+
+    /** Basenames (sanitised ids) of every durable locker blob file on disk. */
+    public static JSArray listBlobIds(@Nullable Context context) {
+        JSArray arr = new JSArray();
+        if (context == null) return arr;
+        File dir = new File(context.getFilesDir(), "locker_blobs");
+        File[] entries = dir.isDirectory() ? dir.listFiles() : null;
+        if (entries != null) {
+            for (File f : entries) {
+                if (!f.isFile() || f.length() <= 0) continue;
+                String name = f.getName();
+                int dot = name.lastIndexOf('.');
+                arr.put(dot > 0 ? name.substring(0, dot) : name);
+            }
+        }
+        return arr;
     }
 
     private static boolean dirHasFiles(File dir) {

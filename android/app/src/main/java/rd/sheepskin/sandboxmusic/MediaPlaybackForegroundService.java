@@ -25,6 +25,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.media.app.NotificationCompat.MediaStyle;
+import androidx.media.session.MediaButtonReceiver;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -240,6 +241,18 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
         updatePlaybackState(playing, position, duration, rate, System.currentTimeMillis());
     }
 
+    /**
+     * True when the foreground service already owns audio focus. This service is the only
+     * component with full pause-on-loss / resume-on-gain handling, so other components must
+     * not raise a second, competing AudioFocusRequest while it holds focus — the OS can hand
+     * the returning AUDIOFOCUS_GAIN to the other holder, which cannot resume playback, and
+     * the track stays paused forever.
+     */
+    public static boolean serviceHoldsAudioFocus() {
+        MediaPlaybackForegroundService instance = runningInstance;
+        return instance != null && instance.hasAudioFocus;
+    }
+
     public static void requestStop(@Nullable Context context) {
         synchronized (MediaPlaybackForegroundService.class) {
             pendingStartAfterDestroy = false;
@@ -405,9 +418,29 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
             MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
         );
         mediaSession.setCallback(sessionCallback);
+        /*
+         * Register a media button receiver. Without this the session shows
+         * mediaButtonReceiver=null in dumpsys and only gets transport events while it is the
+         * most-recently-active session — so once the screen locks, or another media app plays,
+         * lock-screen next/prev stop arriving reliably. Both reference apps on the test device
+         * register one (Tidal: ExtendedMediaButtonReceiver, YT Music: the stock AndroidX class).
+         */
+        mediaSession.setMediaButtonReceiver(
+            MediaButtonReceiver.buildMediaButtonPendingIntent(
+                this,
+                PlaybackStateCompat.ACTION_PLAY_PAUSE
+            )
+        );
         // AudioAttributes are applied via AndroidAudioSessionHelper on audio focus.
         mediaSession.setPlaybackToLocal(AudioManager.STREAM_MUSIC);
         mediaSession.setActive(true);
+        /*
+         * The Android Auto browse service is usually created before playback starts, so it will
+         * have stood up its own placeholder session. Hand it this one now, otherwise two sessions
+         * stay active and the system can route volume and media buttons to the placeholder — which
+         * is attached to no audio.
+         */
+        SandboxMediaBrowserService.adoptPlaybackSession(mediaSession.getSessionToken());
     }
 
     @Override
@@ -422,6 +455,16 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
             synchronized (MediaPlaybackForegroundService.class) {
                 serviceStartInFlight = false;
             }
+        }
+        /*
+         * Hardware / lock-screen transport arrives here as ACTION_MEDIA_BUTTON via the receiver
+         * registered in ensureMediaSession(); hand it to the session so sessionCallback's
+         * onSkipToNext/onSkipToPrevious/onPlay/onPause fire as they do for in-app controls.
+         */
+        if (Intent.ACTION_MEDIA_BUTTON.equals(action)) {
+            ensureMediaSession();
+            MediaButtonReceiver.handleIntent(mediaSession, intent);
+            return START_NOT_STICKY;
         }
         if (ACTION_STOP.equals(action)) {
             stopForegroundService();
@@ -480,9 +523,15 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
             metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ART_URI, artworkUrl);
             metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, artworkUrl);
         }
-        if (artworkBitmap != null) {
-            metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, artworkBitmap);
-            metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, artworkBitmap);
+        // A MediaSession metadata update crosses a Binder transaction with a hard ~1 MB cap.
+        // Embedding art bitmaps here is dangerous: two full copies of a 512px ARGB_8888 bitmap
+        // is ~2 MB, which threw TransactionTooLargeException on every queue transition and
+        // exhausted the process's Binder buffer ("No space left on device") — that killed ALL
+        // IPC including the Capacitor JS bridge, freezing the app while audio kept playing.
+        // Embed at most ONE small copy (well under the cap), and prefer the URI form above.
+        Bitmap sessionArt = sessionMetadataBitmap(artworkBitmap);
+        if (sessionArt != null && !sessionArt.isRecycled()) {
+            metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, sessionArt);
         }
         try {
             session.setMetadata(metadataBuilder.build());
@@ -555,12 +604,15 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
                     "ART loaded " + bitmap.getWidth() + "x" + bitmap.getHeight() +
                         " url=" + summarizeArtUrl(urlToLoad)
                 );
-                Bitmap prior = artworkBitmap;
                 artworkBitmap = bitmap;
                 lastLoadedArtworkUrl = urlToLoad;
-                if (prior != null && prior != bitmap && !prior.isRecycled()) {
-                    prior.recycle();
-                }
+                // Do NOT recycle the previous bitmap here. It runs on the artwork executor while
+                // the main thread may be midway through NotificationCompat.build() (which calls
+                // Bitmap.copy() on the large icon) or while the framework still holds it via
+                // MediaSession metadata. Recycling underneath either threw
+                // "Can't copy a recycled bitmap" from a binder/notification thread, and that
+                // uncaught exception killed the whole process — audio kept playing from the
+                // audio thread while the UI froze on a dead app. GC reclaims these safely.
                 mainHandler.post(this::refreshSession);
             } else if (bitmap == null) {
                 android.util.Log.w(
@@ -572,11 +624,16 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
     }
 
     private static boolean isNativeLoadableArtUri(String url) {
+        // NOTE: data: URLs are deliberately excluded. They are not a lightweight URI the system
+        // can dereference — the whole base64 payload lives in the string. Putting a ~730 KB
+        // data URL into ALBUM_ART_URI + ART_URI + DISPLAY_ICON_URI stuffed ~2.2 MB into the
+        // MediaSession metadata parcel, blowing the ~1 MB Binder limit on every queue
+        // transition and exhausting the process Binder buffer (froze the whole app). For data:
+        // art we rely solely on the small scaled bitmap embedded via METADATA_KEY_ALBUM_ART.
         return url.startsWith("http://")
             || url.startsWith("https://")
             || url.startsWith("content://")
-            || url.startsWith("file://")
-            || url.startsWith("data:");
+            || url.startsWith("file://");
     }
 
     private static String summarizeArtUrl(String url) {
@@ -590,6 +647,44 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
     }
 
     private static final int ARTWORK_MAX_PX = 512;
+
+    /**
+     * Max edge for the bitmap embedded in MediaSession metadata. A Binder transaction caps at
+     * ~1 MB; 384px ARGB_8888 is ~590 KB (one copy), leaving headroom for the rest of the
+     * metadata. Keep this comfortably below the point where 384*384*4 + overhead nears 1 MB.
+     */
+    private static final int SESSION_ART_MAX_PX = 384;
+
+    private static Bitmap sessionArtCacheSource;
+    private static Bitmap sessionArtCacheScaled;
+
+    /** A Binder-safe (small) copy of the artwork for MediaSession metadata; cached per source. */
+    @Nullable
+    private static Bitmap sessionMetadataBitmap(@Nullable Bitmap source) {
+        if (source == null || source.isRecycled()) return null;
+        if (source == sessionArtCacheSource
+            && sessionArtCacheScaled != null
+            && !sessionArtCacheScaled.isRecycled()) {
+            return sessionArtCacheScaled;
+        }
+        int maxDim = Math.max(source.getWidth(), source.getHeight());
+        Bitmap scaled;
+        if (maxDim <= SESSION_ART_MAX_PX) {
+            scaled = source;
+        } else {
+            float ratio = (float) SESSION_ART_MAX_PX / (float) maxDim;
+            int w = Math.max(1, Math.round(source.getWidth() * ratio));
+            int h = Math.max(1, Math.round(source.getHeight() * ratio));
+            try {
+                scaled = Bitmap.createScaledBitmap(source, w, h, true);
+            } catch (RuntimeException e) {
+                return null;
+            }
+        }
+        sessionArtCacheSource = source;
+        sessionArtCacheScaled = scaled;
+        return scaled;
+    }
 
     @Nullable
     private Bitmap fetchBitmap(String urlString) {
@@ -646,14 +741,38 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
         }
     }
 
+    /**
+     * inSampleSize that keeps the longest edge within {@link #ARTWORK_MAX_PX}. Notification and
+     * MediaSession artwork crosses a Binder transaction (~1 MB cap); a full-size cover (e.g.
+     * 1000x1000 ≈ 979 KB) sits right at that limit and risks TransactionTooLargeException.
+     */
+    private static int artworkSampleSize(int width, int height) {
+        int sample = 1;
+        int maxDim = Math.max(width, height);
+        while (maxDim / sample > ARTWORK_MAX_PX) {
+            sample *= 2;
+        }
+        return sample;
+    }
+
+    @Nullable
+    private Bitmap decodeSampledByteArray(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) return null;
+        BitmapFactory.Options bounds = new BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.length, bounds);
+        BitmapFactory.Options decode = new BitmapFactory.Options();
+        decode.inSampleSize = artworkSampleSize(bounds.outWidth, bounds.outHeight);
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.length, decode);
+    }
+
     @Nullable
     private Bitmap decodeDataUrlBitmap(String dataUrl) {
         try {
             int comma = dataUrl.indexOf(',');
             if (comma < 0) return null;
             byte[] bytes = android.util.Base64.decode(dataUrl.substring(comma + 1), android.util.Base64.DEFAULT);
-            if (bytes.length == 0) return null;
-            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            return decodeSampledByteArray(bytes);
         } catch (Exception ignored) {
             return null;
         }
@@ -663,7 +782,13 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
     private Bitmap decodeContentUriBitmap(Uri uri) {
         try (InputStream in = getContentResolver().openInputStream(uri)) {
             if (in == null) return null;
-            return BitmapFactory.decodeStream(in);
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            byte[] chunk = new byte[8192];
+            int read;
+            while ((read = in.read(chunk)) != -1) {
+                buffer.write(chunk, 0, read);
+            }
+            return decodeSampledByteArray(buffer.toByteArray());
         } catch (Exception ignored) {
             return null;
         }
@@ -674,7 +799,12 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
         try {
             String path = uri.getPath();
             if (path == null || path.isEmpty()) return null;
-            return BitmapFactory.decodeFile(path);
+            BitmapFactory.Options bounds = new BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(path, bounds);
+            BitmapFactory.Options decode = new BitmapFactory.Options();
+            decode.inSampleSize = artworkSampleSize(bounds.outWidth, bounds.outHeight);
+            return BitmapFactory.decodeFile(path, decode);
         } catch (Exception ignored) {
             return null;
         }
@@ -736,8 +866,11 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
             builder.setCategory(NotificationCompat.CATEGORY_TRANSPORT);
         }
 
-        if (artworkBitmap != null) {
-            builder.setLargeIcon(artworkBitmap);
+        // Read once into a local: artworkBitmap is volatile and swapped from the artwork
+        // executor, so re-reading the field could hand build() a bitmap that changed underneath.
+        Bitmap largeIcon = artworkBitmap;
+        if (largeIcon != null && !largeIcon.isRecycled()) {
+            builder.setLargeIcon(largeIcon);
         }
 
         return builder.build();
@@ -748,8 +881,23 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
             return;
         }
         NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm != null) {
+        if (nm == null) {
+            return;
+        }
+        // Never let artwork trouble kill the process: an exception escaping here (recycled or
+        // oversized bitmap, transaction-too-large) propagates as an uncaught exception and
+        // Android SIGKILLs the app mid-playback. Degrade to a text-only notification instead.
+        try {
             nm.notify(NOTIFICATION_ID, buildNotification());
+        } catch (RuntimeException artworkFailure) {
+            android.util.Log.w("MediaPlaybackFGS", "notification build failed — retrying without art", artworkFailure);
+            artworkBitmap = null;
+            lastLoadedArtworkUrl = null;
+            try {
+                nm.notify(NOTIFICATION_ID, buildNotification());
+            } catch (RuntimeException ignored) {
+                // Give up on this refresh rather than crash the service.
+            }
         }
     }
 

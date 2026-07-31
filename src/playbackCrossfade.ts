@@ -13,6 +13,12 @@
 import { CROSSFADE_DURATION_SEC, loadCrossfadeEnabled, loadSandboxSonicEnabled } from './sandboxSettings';
 import { loadPodcastVoiceBoostEnabled } from './podcastSettings';
 import { PodcastVoiceBoostChain, resolveVoiceBoostEnabled } from './podcastVoiceBoost';
+import {
+  PODCAST_CLARITY,
+  speechClarityProfileFor,
+  type SpeechClarityProfile,
+} from './speechClarity';
+import { detectSonicOutputRoute } from './sandboxSonic';
 import { updatePlaybackDiagnostics } from './playbackDiagnostics';
 import { computePlaybackGainDb, replayGainMultiplier } from './replayGainPlayback';
 import { SandboxSonicChain } from './sandboxSonic';
@@ -26,6 +32,8 @@ export class PlaybackCrossfadeRouter {
   private voiceBoost: PodcastVoiceBoostChain | null = null;
   private podcastPlayback = false;
   private podcastFeedId: string | null = null;
+  /** Set while an audiobook is playing — narration gets the firmer of the two speech tunings. */
+  private speechProfile: SpeechClarityProfile | null = null;
   private episodeVolumeBoostDb = 0;
   private masterGain: GainNode | null = null;
   private boundElement: HTMLAudioElement | null = null;
@@ -74,13 +82,29 @@ export class PlaybackCrossfadeRouter {
     this.voiceBoost?.disconnect();
     this.masterGain.disconnect();
 
-    const voiceBoostOn =
-      this.podcastPlayback && resolveVoiceBoostEnabled(this.podcastFeedId);
-    if (voiceBoostOn) {
+    // Audiobooks always get the speech chain — a narrator's whisper-to-shout range is the reason
+    // it exists, and unlike podcasts there is no per-feed opt-out to consult.
+    const audiobookProfile = this.speechProfile?.id === 'audiobook' ? this.speechProfile : null;
+    const profile =
+      audiobookProfile ??
+      (this.podcastPlayback && resolveVoiceBoostEnabled(this.podcastFeedId)
+        ? PODCAST_CLARITY
+        : null);
+    const voiceBoostOn = profile != null;
+    if (profile) {
+      // The two profiles differ in every compressor parameter, so a chain built for one cannot be
+      // reused for the other — rebuild when the kind of speech changes.
+      if (this.voiceBoost && this.voiceBoost.profile.id !== profile.id) {
+        this.voiceBoost.dispose();
+        this.voiceBoost = null;
+      }
       if (!this.voiceBoost) {
-        this.voiceBoost = new PodcastVoiceBoostChain(this.ctx);
+        this.voiceBoost = new PodcastVoiceBoostChain(this.ctx, profile);
       }
       this.voiceBoost.setEnabled(true);
+      // Detected independently of the Sandbox Sonic chain: speech should get the phone-speaker
+      // treatment even when the user has the music EQ switched off.
+      void this.applySpeechOutputRoute();
     }
 
     let tail: AudioNode = this.replayGain;
@@ -108,6 +132,34 @@ export class PlaybackCrossfadeRouter {
     updatePlaybackDiagnostics({ sonicRoute: null, earSafetyGain: 1 });
   }
 
+  private async applySpeechOutputRoute(): Promise<void> {
+    const chain = this.voiceBoost;
+    if (!chain) return;
+    try {
+      const route = await detectSonicOutputRoute();
+      // The chain can be torn down while detection is in flight (track change, station change).
+      if (this.voiceBoost === chain) chain.setOutputRoute(route);
+    } catch {
+      /* route detection is a refinement, not a requirement */
+    }
+  }
+
+  /**
+   * Spoken-word playback — audiobook, podcast, or neither.
+   *
+   * Passing the envelope id rather than a boolean lets the router pick the tuning: a performed
+   * audiobook needs firmer compression than two people talking, and the difference is audible.
+   */
+  setSpeechEnvelope(envelopeId: string | null | undefined): void {
+    const next = speechClarityProfileFor(envelopeId);
+    const changed = (this.speechProfile?.id ?? null) !== (next?.id ?? null);
+    this.speechProfile = next;
+    if (!this.ctx || !changed) return;
+    this.syncSonicChain();
+    void this.sonic?.refreshRoute(true);
+    this.applyReplayGainImmediate();
+  }
+
   /** Podcast-only Voice Boost — rebuilds output chain when toggled. */
   setPodcastPlayback(active: boolean): void {
     const changed = this.podcastPlayback !== active;
@@ -122,7 +174,10 @@ export class PlaybackCrossfadeRouter {
       void this.sonic?.refreshRoute(true);
       this.applyReplayGainImmediate();
     }
-    if (!active && this.voiceBoost) {
+    // Only tear the chain down if nothing else still wants it. Audiobooks are not podcasts, so
+    // this runs with active=false on every audiobook track — disposing unconditionally here would
+    // build the narration chain in syncSonicChain and immediately destroy it again.
+    if (!active && this.voiceBoost && this.speechProfile?.id !== 'audiobook') {
       this.voiceBoost.dispose();
       this.voiceBoost = null;
       this.syncSonicChain();

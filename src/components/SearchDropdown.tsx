@@ -25,9 +25,20 @@ export interface SearchDropdownProps {
   query: string;
   open: boolean;
   loading: boolean;
+  /**
+   * Cross-format chooser. Search opens on a format decision (Music / Pods / Books) and
+   * only then shows that format's own browse content — so the music quick picks and genre
+   * rows below belong to the Music tab, not to search in general.
+   */
+  formatTabs?: React.ReactNode;
+  /** Results for the selected non-music format (rendered in place of music browse). */
+  formatResults?: React.ReactNode;
+  /** False when a non-music format is selected — hides music browse/quick picks. */
+  showMusicBrowse?: boolean;
   catalog: CatalogSearchResult;
   playlists?: UnifiedPlaylistResult[];
   podcastsEnabled?: boolean;
+  videosEnabled?: boolean;
   activeIndex?: number;
   connectivityHint?: string | null;
   dropdownRef?: React.Ref<HTMLDivElement>;
@@ -137,9 +148,13 @@ export default function SearchDropdown({
   query,
   open,
   loading,
+  formatTabs,
+  formatResults,
+  showMusicBrowse = true,
   catalog,
   playlists = [],
   podcastsEnabled = false,
+  videosEnabled = false,
   activeIndex = -1,
   connectivityHint = null,
   dropdownRef,
@@ -266,7 +281,11 @@ export default function SearchDropdown({
       ) : null}
 
       <div className="search-dropdown-scroll overflow-y-auto music-scrollbar">
-        {showBrowse ? (
+        {/* Format chooser first — everything below is scoped to the chosen pillar. */}
+        {formatTabs ? <div className="search-dropdown-formats">{formatTabs}</div> : null}
+        {formatResults}
+
+        {showBrowse && showMusicBrowse ? (
           <>
             <p className="search-dropdown-empty-lead">What do you want to play?</p>
             {visibleRecentSearches.length > 0 ? (
@@ -293,6 +312,7 @@ export default function SearchDropdown({
               onPickCategory={onBrowsePick}
               onQuickFilter={onQuickFilter}
               podcastsEnabled={podcastsEnabled}
+              videosEnabled={videosEnabled}
             />
           </>
         ) : null}

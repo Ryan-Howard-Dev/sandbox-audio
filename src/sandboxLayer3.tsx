@@ -26,6 +26,8 @@ import {
   ScrollText,
   Podcast,
   BookOpen,
+  BookAudio,
+  Music as MusicIcon,
   X,
   Cast,
   Radio,
@@ -42,6 +44,10 @@ import {
   subscribeBatterySaver,
 } from './batterySaverSettings';
 import MobileNavMoreSheet, { type MobileNavMoreItem } from './components/MobileNavMoreSheet';
+import MusicSegmentBar, { type MusicSegmentId } from './components/MusicSegmentBar';
+import UniversalSearchPanel from './components/UniversalSearchPanel';
+import type { UniversalFormat, UniversalHit } from './universalSearch';
+import { loadAudiobookSeeds } from './audiobookLibrary';
 import OnboardingWizard from './components/OnboardingWizard';
 import ServerSetup from './components/ServerSetup';
 import PodcastChapterSheet from './components/podcasts/PodcastChapterSheet';
@@ -68,6 +74,27 @@ import {
   searchArtistScrollKey,
 } from './scrollRestore';
 import { closeSandboxOverlay } from './hooks/useDismissableOverlay';
+import SystemLogin from './shell/SystemLogin';
+import {
+  BASE_NAV,
+  NAV_PIN_META,
+  readAudiobooksEnabled,
+  readDiscoverStationEnabled,
+  readLibraryStationEnabled,
+  readPodcastsEnabled,
+  readProAudio,
+  readSonicLockerStationEnabled,
+  type MobileTabId,
+  type NavItemId,
+  type StationId,
+} from './shell/shellNav';
+import { isAnyAudiobookEnvelopeId, usesIntervalSeekTransport } from './spokenWordPlayback';
+import {
+  audiobookBookKeyFromEnvelopeId,
+  getAudiobookProgress,
+  saveAudiobookProgress,
+  shouldPersistAudiobookProgress,
+} from './audiobookProgress';
 import { installE2eLiveHandlers } from './e2eHandlerBootstrap';
 import { logE2e, markE2ePlaybackHandlersLive, registerE2eHandlers } from './e2eDevAction';
 import {
@@ -108,9 +135,12 @@ import {
   resolveLockerArtworkUrl,
   resolveLockerEnvelopeForPlayback,
   resolveLockerEntryGroupArt,
+  buildLockerGroupArtMap,
+  resolveLockerEntryGroupArtFromMap,
   subscribeLockerCache,
   tracksForAlbumGroup,
   warmLockerCache,
+  withMeasuredBitrate,
   type LockerEntry,
 } from './lockerStorage';
 import { sortLockerTracks } from './lockerTrackOrder';
@@ -133,6 +163,7 @@ import {
 } from './play/queueAdvancePolicy';
 import {
   resolveActivePlayQueue,
+  shouldAdoptNativeExoTransition,
   shouldSuppressJsAdvanceAfterNativeGapless,
   trackPlaybackMatureForAdvance,
 } from './play/queueAdvanceGate';
@@ -152,7 +183,7 @@ import { computePlayQueueSeed } from './play/albumPlayQueue';
 import { startAutoSimilarRadioIfNeeded } from './play/standaloneSimilarRadio';
 import { ensureLockerPlayable, envelopeClaimsLocker, shouldRunLockerPlaybackGate } from './play/ensureLockerPlayable';
 import { attemptDeadLockerReacquire } from './lockerDeadTrackReacquire';
-import { findQueueIndexForExoUrl, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
+import { findQueueIndexForExoTransition, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
 import {
   estimateStreamDownloadMb,
   formatCellularDownloadNotice,
@@ -199,6 +230,7 @@ import {
   probeHeroVisualFromDom,
 } from './homeHeroPlayerLogic';
 import MixRadioSaveDialog, { type MixRadioSaveMode } from './components/MixRadioSaveDialog';
+import AddToPlaylistPicker from './components/AddToPlaylistPicker';
 import {
   buildArtistMix,
   buildTrackRadio,
@@ -209,6 +241,8 @@ import {
 } from './playerMixRadio';
 import { buildDiscoveryMixContinuation } from './discoveryMixRadio';
 import type { DiscoveryMix } from './discoveryMixes';
+import { discoveryMixAsPlaylist } from './discoveryMixShare';
+import { shareOrDownloadPlaylist } from './playlistCollaborativeShare';
 import { initAndroidAppResume } from './androidAppResume';
 import { initAndroidWiredDacStability, resolveNativeExoTransitionPrefs } from './androidWiredDacPlayback';
 import {
@@ -308,6 +342,15 @@ import {
   type PlaybackDisplayFields,
 } from './playbackSession';
 import {
+  applyNowPlayingAuthority,
+  isNowPlayingCommitCurrent,
+  nextHeldNowPlaying,
+  resolveAuthoritativeEnvelope,
+  resolveNowPlayingAuthority,
+  shouldCommitAudibleNowPlaying,
+  type HeldNowPlaying,
+} from './nowPlayingAuthority';
+import {
   getActiveChapter,
   seekSecondsForNextChapter,
   seekSecondsForPreviousChapter,
@@ -381,6 +424,7 @@ import {
   type UnifiedSearchSection,
 } from './unifiedSearch';
 import { fetchWebCatalogTracks, WEB_LEAK_SEARCH_MAX_WAIT_MS } from './webCatalogSearch';
+import { searchYouTubeTracks } from './youtubeSearch';
 import { lockerEntryToEnvelope } from './smartPlaylistEngine';
 import { exploreDisplayQuery, type ExploreGroup } from './exploreCatalog';
 import { isNewMusicQuery, newMusicSearchLabel } from './newMusicQuery';
@@ -398,7 +442,12 @@ import { usePlaybackResolveElapsed } from './hooks/usePlaybackResolveElapsed';
 import { useStableEnvelopeId } from './hooks/useStableEnvelopeId';
 import { resolvePlaybackFidelityLabel } from './trackFidelityLabel';
 import { isOfflineUnplayableStreamUrl } from './nativeExoStreamResolver';
-import { getNativeExoPlaybackStatus, nativeExoPlaybackStatus, subscribeNativeExoStatus } from './androidNativePlayback';
+import {
+  getNativeExoPlaybackStatus,
+  lastJsInitiatedNativeNav,
+  nativeExoPlaybackStatus,
+  subscribeNativeExoStatus,
+} from './androidNativePlayback';
 import { isNativeExoAudible, clearLastPlayIntent, lastPlayIntentToEnvelope, loadLastPlayIntent } from './lastPlayIntent';
 import { getYtDlpMobileStatus, waitForYtDlpInit } from './ytDlpMobile';
 import {
@@ -599,139 +648,15 @@ const PLAYBACK_RESOLVE_STUCK_TIMEOUT_MS = 90_000;
 const PLAYBACK_CONNECT_STUCK_TIMEOUT_MS = 30_000;
 const MOBILE_EXECUTE_TRACK_TIMEOUT_MS = 300_000;
 
+/** Stations whose own layout opens with a search field — the floating button would duplicate it. */
+const STATIONS_WITH_OWN_SEARCH = new Set(['audiobooks', 'podcasts']);
+
 const EMPTY_CATALOG: CatalogSearchResult = {
   suggestions: [],
   artists: [],
   albums: [],
   tracks: [],
 };
-
-type StationId =
-  | 'home'
-  | 'discover'
-  | 'library'
-  | 'sonic-locker'
-  | 'search'
-  | 'locker'
-  | 'podcasts'
-  | 'audiobooks'
-  | 'insights'
-  | 'settings'
-  | 'dj';
-
-type MobileTabId = StationId | 'mobile-search' | 'mobile-menu';
-type NavItemId = StationId | 'profile';
-
-const NAV_PIN_META: Record<
-  NavPinTabId,
-  { labelKey: string; shortLabelKey?: string; icon: React.ElementType }
-> = {
-  home: { labelKey: 'nav.home', icon: Home },
-  locker: { labelKey: 'nav.library', icon: HardDrive },
-  discover: { labelKey: 'nav.discover', shortLabelKey: 'nav.discoverShort', icon: Compass },
-  search: { labelKey: 'nav.search', icon: Search },
-  podcasts: { labelKey: 'nav.podcasts', shortLabelKey: 'nav.podcastsShort', icon: Podcast },
-  audiobooks: { labelKey: 'nav.audiobooks', shortLabelKey: 'nav.audiobooksShort', icon: BookOpen },
-  settings: { labelKey: 'nav.settings', shortLabelKey: 'nav.settingsShort', icon: Settings },
-};
-
-
-const BASE_NAV: Array<{ id: StationId; labelKey: string; icon: React.ElementType }> = [
-  { id: 'home', labelKey: 'nav.home', icon: Home },
-  { id: 'locker', labelKey: 'nav.locker', icon: HardDrive },
-  { id: 'discover', labelKey: 'nav.discover', icon: Compass },
-  { id: 'sonic-locker', labelKey: 'nav.sonicLocker', icon: Radio },
-];
-
-function readProAudio(): boolean {
-  return prefsGetItem('isProAudioEnabled') === 'true';
-}
-
-function readLibraryStationEnabled(): boolean {
-  return loadLibraryStationEnabled();
-}
-
-function readPodcastsEnabled(): boolean {
-  return loadPodcastsEnabled();
-}
-
-function readAudiobooksEnabled(): boolean {
-  return loadAudiobooksEnabled();
-}
-
-function readDiscoverStationEnabled(): boolean {
-  return loadDiscoverStationEnabled();
-}
-
-function readSonicLockerStationEnabled(): boolean {
-  return loadSonicLockerStationEnabled();
-}
-
-function SystemLogin({
-  profiles,
-  onEnter,
-  onSelect,
-}: {
-  profiles: ReturnType<typeof useProfile>['profiles'];
-  onEnter: (name: string) => void;
-  onSelect: (id: string) => void;
-}) {
-  const [name, setName] = useState('');
-  const { t } = useTranslation();
-
-  return (
-    <div className="h-screen overflow-hidden flex flex-col items-center justify-center px-6 bg-[var(--bg-void)] text-[var(--text)]">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="text-center space-y-2">
-          <p className="font-display text-2xl font-black uppercase tracking-[0.2em] text-accent">
-            {t('login.appName')}
-          </p>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-mid)]">
-            {t('login.title')}
-          </p>
-        </div>
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (name.trim()) onEnter(name.trim());
-          }}
-        >
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t('login.placeholder')}
-            className="w-full h-12 px-4 rounded-lg font-mono text-sm border border-[var(--border)] bg-[var(--bg-surface)] focus-accent"
-          />
-          <button
-            type="submit"
-            disabled={!name.trim()}
-            className="w-full h-12 rounded-lg font-mono text-xs font-bold uppercase tracking-wider disabled:opacity-40 btn-accent touch-manipulation"
-          >
-            {t('login.enterStation')}
-          </button>
-        </form>
-        {profiles.length > 0 && (
-          <ul className="space-y-1.5 max-h-48 overflow-y-auto music-scrollbar">
-            {profiles.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(p.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] font-mono text-xs uppercase touch-manipulation"
-                >
-                  <User className="w-4 h-4 shrink-0 text-accent" />
-                  <span className="truncate text-[var(--text-mid)]">{p.displayName}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function SandboxShell() {
   const { t, lang } = useTranslation();
@@ -741,6 +666,24 @@ export default function SandboxShell() {
   const [station, setStation] = useState<StationId>('home');
   const [lockerSection, setLockerSection] = useState<LockerSectionId>('artists');
   const [lockerHomeResetKey, setLockerHomeResetKey] = useState(0);
+  // Keep Podcasts/Audiobooks mounted after first visit (hidden when inactive) so
+  // switching tabs does not unmount them and re-fetch Discover every time.
+  /** Which pillar the search sheet is scoped to (Music / Pods / Books). */
+  const [searchFormat, setSearchFormat] = useState<UniversalFormat>('music');
+  /**
+   * Seeds for the Books taste row. Read from the persisted audiobook scan rather than
+   * re-scanning here — the Audiobooks station owns scanning, and search must stay cheap.
+   */
+  const [audiobookSeeds, setAudiobookSeeds] = useState(() => loadAudiobookSeeds());
+  const audiobookAuthorSeeds = audiobookSeeds.authors;
+  const audiobookOwnedTitles = audiobookSeeds.titles;
+  // Re-read after visiting Books, which is when a scan may have refreshed them.
+  useEffect(() => {
+    if (station === 'audiobooks') return;
+    setAudiobookSeeds(loadAudiobookSeeds());
+  }, [station]);
+  const [podcastsMounted, setPodcastsMounted] = useState(false);
+  const [audiobooksMounted, setAudiobooksMounted] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const shellSearchField = useImeFriendlyInput(searchInput, setSearchInput, searchInputRef);
@@ -818,6 +761,7 @@ export default function SandboxShell() {
   const searchScrollParentRef = useRef(SEARCH_RESULTS_SCROLL_KEY);
   const catalogRequestRef = useRef(0);
   const searchRunGenerationRef = useRef(0);
+  const artistOpenGenerationRef = useRef(0);
   const webSupplementTracksRef = useRef<CatalogTrack[]>([]);
   const [playQueue, setPlayQueue] = useState<MediaEnvelope[]>([]);
   const playQueueRef = useRef(playQueue);
@@ -895,6 +839,7 @@ export default function SandboxShell() {
   const settingsDrillBackRef = useRef<(() => boolean) | null>(null);
   const playlistsDrillBackRef = useRef<(() => boolean) | null>(null);
   const exploreDrillBackRef = useRef<(() => boolean) | null>(null);
+  const mfyDrillBackRef = useRef<(() => boolean) | null>(null);
   const lockerDrillBackRef = useRef<(() => boolean) | null>(null);
   const podcastsDrillBackRef = useRef<(() => boolean) | null>(null);
   const audiobooksDrillBackRef = useRef<(() => boolean) | null>(null);
@@ -916,6 +861,9 @@ export default function SandboxShell() {
     window.addEventListener('resize', sync);
     return () => window.removeEventListener('resize', sync);
   }, []);
+  // Video discovery is a screen activity: allowed on desktop, tablet and Android TV, but
+  // deliberately disabled on phone and in car mode — the phone is a listening-only device.
+  const videosEnabled = !isCarMode && (isTV || tabletShell || !showMobileShell);
   const [onboardingComplete, setOnboardingComplete] = useState(() => loadOnboardingComplete());
   const [serverSetupDismissed, setServerSetupDismissed] = useState(false);
   const showOnboarding = !onboardingComplete && shouldShowOnboardingWizard();
@@ -998,6 +946,12 @@ export default function SandboxShell() {
   const [artworkUrl, setArtworkUrl] = useState('');
   const [playbackDisplaySeed, setPlaybackDisplaySeed] =
     useState<PlaybackDisplayFields | null>(null);
+  /**
+   * Last track confirmed to be the one coming out of the speaker. Kept because the audio layer's
+   * own envelope flips to the skip target the instant it is tapped, and without a copy of what is
+   * actually audible there is nothing left to draw during the resolve gap.
+   */
+  const [heldNowPlaying, setHeldNowPlaying] = useState<HeldNowPlaying | null>(null);
   const [proAudio, setProAudio] = useState(readProAudio);
   const [batterySaver, setBatterySaver] = useState(loadBatterySaverEnabled);
   const [podcastsEnabled, setPodcastsEnabled] = useState(readPodcastsEnabled);
@@ -1034,6 +988,22 @@ export default function SandboxShell() {
   const podcastChaptersOpenRef = useRef(podcastChaptersOpen);
   podcastChaptersOpenRef.current = podcastChaptersOpen;
   const [mobilePlayerPending, setMobilePlayerPending] = useState(false);
+  // Watchdog: online tracks resolve via yt-dlp, which can occasionally hang. Without this, a
+  // hung resolve leaves the mini/full player stuck on "loading" with no way to stop it (the
+  // user had to force-close the app). If we're still pending after this long, cancel the
+  // in-flight play (bump the generation so its continuation no-ops), stop native audio, and
+  // clear the loading state so the UI is usable again.
+  useEffect(() => {
+    if (!mobilePlayerPending) return;
+    const timer = window.setTimeout(() => {
+      bumpPlayGeneration();
+      void prepareCleanPlaybackStop(() => audio.stop());
+      setMobilePlayerPending(false);
+      showAppToast(t('player.playbackTimedOut'), 3000);
+    }, 30_000);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mobilePlayerPending]);
 
   const [androidNativePlaybackLive, setAndroidNativePlaybackLive] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -1080,6 +1050,8 @@ export default function SandboxShell() {
   >(() => {});
   const [mixRadioSaveOpen, setMixRadioSaveOpen] = useState(false);
   const [mixRadioSaveBusy, setMixRadioSaveBusy] = useState(false);
+  /* Playlist picker for the track on the player — the players themselves never hold the envelope. */
+  const [playerAddToPlaylistOpen, setPlayerAddToPlaylistOpen] = useState(false);
   const [appToast, setAppToast] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ANDROID_SERVER_BANNER_KEY = 'sandbox_android_server_banner_dismissed';
@@ -1240,7 +1212,7 @@ export default function SandboxShell() {
     ).map((n) => ({
       id: n.id,
       label:
-        n.id === 'locker' && navPinTabs.includes('locker') ? t('nav.library') : t(n.labelKey),
+        n.id === 'locker' && navPinTabs.includes('locker') ? t('nav.music') : t(n.labelKey),
       icon: n.icon,
     }));
     items.push({ id: 'search', label: t('nav.search'), icon: Search });
@@ -1248,7 +1220,7 @@ export default function SandboxShell() {
       items.push({ id: 'podcasts', label: t('nav.podcasts'), icon: Podcast });
     }
     if (audiobooksEnabled) {
-      items.push({ id: 'audiobooks', label: t('nav.audiobooks'), icon: BookOpen });
+      items.push({ id: 'audiobooks', label: t('nav.audiobooks'), icon: BookAudio });
     }
     if (libraryStationEnabled) {
       items.push({ id: 'library', label: t('nav.serverLibrary'), icon: Server });
@@ -1266,47 +1238,15 @@ export default function SandboxShell() {
   }, [proAudio, podcastsEnabled, audiobooksEnabled, libraryStationEnabled, discoverStationEnabled, sonicLockerEnabled, navPinTabs, profile.activeProfile?.displayName, t]);
 
   const mobileMenuItems = useMemo((): MobileNavMoreItem[] => {
-    const feedBadge =
-      discoverStationEnabled && discoverReleaseBadge > 0 ? discoverReleaseBadge : undefined;
-    const items: MobileNavMoreItem[] = [
-      {
-        id: 'discover-feed',
-        label: t('discover.tabs.feed'),
-        subtitle: t('discover.home.lead'),
-        icon: Radio,
-        tone: 'accent',
-        badge: feedBadge,
-      },
-      {
-        id: 'discover-explore',
-        label: t('nav.menuExplore'),
-        subtitle: t('nav.menuExploreHint'),
-        icon: Compass,
-        tone: 'accent',
-      },
-      {
-        id: 'discover-playlists',
-        label: t('nav.menuPlaylists'),
-        subtitle: t('nav.menuPlaylistsHint'),
-        icon: ListMusic,
-        tone: 'accent-bright',
-      },
-    ];
+    // Discover now lives inside the Music tab's segment bar (Library / Genres /
+    // Playlists / Discover), so it is no longer a separate menu destination.
+    const items: MobileNavMoreItem[] = [];
     if (sonicLockerEnabled) {
       items.push({
         id: 'sonic-locker',
         label: t('nav.sonicLocker'),
         subtitle: t('nav.browseSonicLockerHint'),
         icon: Radio,
-        tone: 'accent',
-      });
-    }
-    if (audiobooksEnabled) {
-      items.push({
-        id: 'audiobooks',
-        label: t('nav.audiobooks'),
-        subtitle: t('nav.browseAudiobooksHint'),
-        icon: BookOpen,
         tone: 'accent',
       });
     }
@@ -1330,17 +1270,16 @@ export default function SandboxShell() {
   }, [audiobooksEnabled, discoverReleaseBadge, discoverStationEnabled, sonicLockerEnabled, t]);
 
   const mobileMenuActiveId = useMemo(() => {
-    if (station === 'discover' && discoverTab === 'feed') return 'discover-feed';
-    if (station === 'discover' && discoverTab === 'explore') return 'discover-explore';
-    if (station === 'discover' && discoverTab === 'playlists') return 'discover-playlists';
     if (station === 'sonic-locker') return 'sonic-locker';
     if (station === 'audiobooks') return 'audiobooks';
     if (station === 'insights') return 'insights';
     if (station === 'settings') return 'settings';
     return undefined;
-  }, [station, discoverTab]);
+  }, [station]);
 
   const mobileTabActiveId = useMemo((): MobileTabId => {
+    // Discover is a segment of the Music tab, so it keeps the Music (locker) pin lit.
+    if (station === 'discover') return 'locker';
     return resolveMobileTabActiveId({
       station,
       discoverTab,
@@ -1525,6 +1464,43 @@ export default function SandboxShell() {
     [closeMobileSearch, openSettings, handleMobileTabNavigate],
   );
 
+  // Music tab = Locker + Discover behind one segment switcher.
+  const musicSegment: MusicSegmentId =
+    station === 'discover'
+      ? 'discover'
+      : lockerSection === 'genres'
+        ? 'genres'
+        : lockerSection === 'playlists'
+          ? 'playlists'
+          : 'library';
+
+  const handleMusicSegment = useCallback(
+    (segment: MusicSegmentId) => {
+      closeMobileSearch();
+      setMobileNowPlayingOpen(false);
+      // Segments have very different content heights, so without this the scroll position
+      // carried over and the page appeared to expand/jump when switching. Always land at
+      // the top so every segment opens the same way.
+      shellMainRef.current?.scrollTo({ top: 0 });
+      if (segment === 'discover') {
+        setDiscoverDrillFromTab(null);
+        setDiscoverTab('feed');
+        setStation('discover');
+        return;
+      }
+      setDiscoverDrillFromTab(null);
+      setLockerSection(
+        segment === 'genres' ? 'genres' : segment === 'playlists' ? 'playlists' : 'artists',
+      );
+      setStation('locker');
+    },
+    [closeMobileSearch],
+  );
+
+  const musicSegmentBar = showMobileShell ? (
+    <MusicSegmentBar active={musicSegment} onSelect={handleMusicSegment} />
+  ) : undefined;
+
   useEffect(() => {
     setIsTV(detectTVPlatform());
     syncCarModeFromPrefs();
@@ -1646,6 +1622,11 @@ export default function SandboxShell() {
   }, [station]);
 
   useEffect(() => {
+    if (station === 'podcasts') setPodcastsMounted(true);
+    if (station === 'audiobooks') setAudiobooksMounted(true);
+  }, [station]);
+
+  useEffect(() => {
     if (station === 'dj' && !proAudio) {
       setStation('settings');
     }
@@ -1682,6 +1663,10 @@ export default function SandboxShell() {
           url: e.url,
         })),
       );
+      // Precompute album art once (O(n)) instead of resolveLockerEntryGroupArt per row (O(n²)).
+      // This runs inside setState on every vault cache update, so on a large vault the old path
+      // was seconds of synchronous work re-rendering the whole shell each time.
+      const groupArt = buildLockerGroupArtMap(entries);
       setLockerEnvelopes(
         entries.map((e) => ({
           envelopeId: `local-${e.id}`,
@@ -1693,7 +1678,7 @@ export default function SandboxShell() {
           provider: 'local-vault' as const,
           transport: 'element-src' as const,
           sourceId: e.id,
-          artworkUrl: resolveLockerEntryGroupArt(e, entries),
+          artworkUrl: resolveLockerEntryGroupArtFromMap(e, groupArt),
           releaseYear: e.releaseYear,
         })),
       );
@@ -1771,14 +1756,39 @@ export default function SandboxShell() {
 
       const applyWebTracks = (tracks: CatalogTrack[]) => {
         if (tracks.length === 0) return;
-        webSupplementTracksRef.current = tracks;
+        // Merge (dedupe by id) rather than replace, so parallel supplements — web-catalog and
+        // YouTube — accumulate instead of clobbering each other.
+        const byId = new Map<string, CatalogTrack>(
+          webSupplementTracksRef.current.map((tk) => [tk.id, tk] as [string, CatalogTrack]),
+        );
+        for (const tk of tracks) if (!byId.has(tk.id)) byId.set(tk.id, tk);
+        const merged: CatalogTrack[] = [...byId.values()];
+        webSupplementTracksRef.current = merged;
         setWebSupplementError(null);
         setUnifiedSearchResult((prev) => {
-          const next = applyWebSupplementToUnified(prev, tracks, trimmed);
+          const next = applyWebSupplementToUnified(prev, merged, trimmed);
           setSearchCatalog(next.catalog);
           return next;
         });
       };
+
+      // YouTube supplement — finds mixtapes, singles, demos, bootlegs and DJ sets the iTunes
+      // catalog doesn't carry. Keyless via on-device yt-dlp; returns [] (no-op) off Android.
+      // Deferred slightly so the primary catalog results and any immediate play tap get network
+      // priority first (the resolve for a tapped track must not be starved by discovery calls).
+      window.setTimeout(() => {
+        if (searchRunGenerationRef.current !== runGen) return;
+        void searchYouTubeTracks(trimmed, 12)
+          .then((ytTracks) => {
+            if (searchRunGenerationRef.current !== runGen) return;
+            if (ytTracks.length > 0) applyWebTracks(ytTracks);
+          })
+          .catch(() => {});
+      }, 900);
+      // NOTE: The Internet Archive supplement was removed from auto-search — resolving each
+      // item's audio file meant 8+ archive.org requests per search, which flooded the network
+      // and starved playback resolution (a tapped song would sit stuck on "loading"). The
+      // searchArchiveOrgTracks helper remains for a future explicit "search Archive.org" action.
 
       const finalizeUnifiedWithWeb = (unified: UnifiedSearchResult) => {
         const web = webSupplementTracksRef.current;
@@ -1912,6 +1922,18 @@ export default function SandboxShell() {
         const webBuffered = webSupplementTracksRef.current.length;
         return Math.max(hits, unifiedTracks, webBuffered);
       },
+      getSearchHitSummary: (limit = 5) => {
+        // Reads searchHits first because that is the list playSearchQuery indexes into — reporting
+        // the unified list instead would describe an order nothing plays from.
+        const hits = searchHitsRef.current.slice(0, limit).map((h) => {
+          const env = h.primaryEnvelope;
+          return `${env?.artist ?? '?'} — ${env?.title ?? '?'}`;
+        });
+        if (hits.length > 0) return hits;
+        return unifiedSearchResultRef.current.tracks
+          .slice(0, limit)
+          .map((t) => `${t.artist} — ${t.title}`);
+      },
       playMobileQuery: async (query) => {
         const env: MediaEnvelope = {
           envelopeId: `e2e-mobile-${Date.now()}`,
@@ -1967,13 +1989,36 @@ export default function SandboxShell() {
         const envelope = hit?.primaryEnvelope ?? catalogTrack?.envelope;
         const candidates = hit?.sources;
         if (!envelope) {
-          console.warn('[playSearchQuery] no envelope', { query, hitIndex, hits: searchHitsRef.current.length });
+          /*
+           * One line, interpolated. This used to pass an object, which the Android bridge prints
+           * as "[object Object]" — so the one diagnostic covering a failed search told you only
+           * that it had failed, which is what you already knew from the FAIL line.
+           */
+          console.warn(
+            `[playSearchQuery] no envelope query="${query}" hitIndex=${hitIndex} ` +
+              `hits=${searchHitsRef.current.length} ` +
+              `catalogTracks=${unifiedSearchResultRef.current.tracks.length} ` +
+              `stillLoading=${searchLoadingRef.current || unifiedSearchLoadingRef.current}`,
+          );
           return false;
         }
         if (isAndroid() && hasActiveMobileResolvers()) {
           ensureYtDlpMobileReady();
           await waitForYtDlpInit();
         }
+        /*
+         * What was chosen, and out of what. A search can rank correctly and still play the wrong
+         * recording — the list and the pick are separate steps, and without this the only visible
+         * evidence is the track that came out of the speaker.
+         */
+        console.warn(
+          `[playSearchQuery] picked "${envelope.artist} — ${envelope.title}" ` +
+            `id=${envelope.envelopeId} provider=${envelope.provider} ` +
+            `sources=${candidates?.length ?? 0} ` +
+            `hit0="${searchHitsRef.current[0]?.primaryEnvelope?.artist} — ` +
+            `${searchHitsRef.current[0]?.primaryEnvelope?.title}" ` +
+            `hits=${searchHitsRef.current.length}`,
+        );
         await playEnvelopeRef.current(envelope, candidates, {
           autoPlay: true,
           seedSearchQueue: true,
@@ -2408,6 +2453,10 @@ export default function SandboxShell() {
   }, [restoreSearchSnapshot, clearSearchView]);
 
   const handleShellBack = useCallback((): boolean => {
+    if (playerAddToPlaylistOpen) {
+      closeSandboxOverlay(() => setPlayerAddToPlaylistOpen(false));
+      return true;
+    }
     if (mixRadioSaveOpen) {
       closeSandboxOverlay(() => setMixRadioSaveOpen(false));
       return true;
@@ -2465,6 +2514,11 @@ export default function SandboxShell() {
     if (exploreDrillBackRef.current?.()) {
       return true;
     }
+    // Ahead of the tab-level resolver: the expanded mix page is a drill-down *inside* the Feed
+    // tab, so letting the resolver run first would leave it open and switch tabs underneath it.
+    if (mfyDrillBackRef.current?.()) {
+      return true;
+    }
     const discoverBack = resolveDiscoverHardwareBack({
       station: stationRef.current,
       discoverTab: discoverTabRef.current,
@@ -2494,19 +2548,16 @@ export default function SandboxShell() {
         setSearchLoading(false);
         return true;
       }
-      return false;
     }
     if (station === 'locker') {
       if (lockerDrillBackRef.current?.()) {
         return true;
       }
-      return false;
     }
     if (station === 'podcasts') {
       if (podcastsDrillBackRef.current?.()) {
         return true;
       }
-      return false;
     }
     if (station === 'audiobooks') {
       if (audiobooksDrillBackRef.current?.()) {
@@ -2522,8 +2573,15 @@ export default function SandboxShell() {
       setStation(settingsReturnStationRef.current);
       return true;
     }
+    // Root of any non-home station: hardware back returns Home instead of
+    // minimizing the app. Only Home itself falls through to minimize.
+    if (stationRef.current !== 'home') {
+      setStation('home');
+      return true;
+    }
     return false;
   }, [
+    playerAddToPlaylistOpen,
     mixRadioSaveOpen,
     sleepTimerPanelOpen,
     castPickerOpen,
@@ -2615,17 +2673,23 @@ export default function SandboxShell() {
     async (artistName: string) => {
       const trimmed = artistName?.trim();
       if (!trimmed || /^local upload$/i.test(trimmed)) return;
+      // Resolving an artist by name hits the network (fetchSearchCatalog); tapping a second
+      // artist row before the first resolve lands used to let whichever lookup finished LAST
+      // win and navigate, even if it was the stale/earlier tap — showing the wrong artist page.
+      const generation = ++artistOpenGenerationRef.current;
       setQueueDrawerOpen(false);
       setTvQueueOpen(false);
       setMobileNowPlayingOpen(false);
       try {
         const artist = await resolveCatalogArtistByName(trimmed);
+        if (artistOpenGenerationRef.current !== generation) return;
         if (!artist?.name?.trim() || !artist?.id?.trim()) {
           handleSelectArtist(buildCatalogArtistStub(trimmed), { returnStation: station });
           return;
         }
         handleSelectArtist(artist, { returnStation: station });
       } catch (err) {
+        if (artistOpenGenerationRef.current !== generation) return;
         console.warn('[search] handleOpenArtistByName failed', trimmed, err);
         handleSelectArtist(buildCatalogArtistStub(trimmed), { returnStation: station });
       }
@@ -2886,6 +2950,54 @@ export default function SandboxShell() {
     [downloadTierPreference, albumDrillAlbum, showMobileShell, showAppToast],
   );
 
+  /**
+   * Re-link imported-playlist stubs to real locker entries whenever the locker changes.
+   *
+   * Importing a playlist creates stubs, then enqueues background downloads. The rematch
+   * used to run once, immediately after acquisition returned — before those downloads had
+   * actually landed — so nothing matched and imported playlists stayed permanently full of
+   * unplayable stubs. Watching the locker instead links each track as it arrives.
+   */
+  useEffect(() => {
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const relink = () => {
+      timer = null;
+      void (async () => {
+        const playlists = loadPlaylists();
+        const hasStubs = playlists.some((pl) => unmatchedImportStubs(pl).length > 0);
+        if (!hasStubs || disposed) return;
+        const pool: MediaEnvelope[] = [];
+        for (const entry of getLockerEntriesSnapshot() ?? []) {
+          if (await lockerEntryIsPlayable(entry.id)) {
+            pool.push(lockerEntryToEnvelope(entry));
+          }
+        }
+        if (disposed || pool.length === 0) return;
+        const { playlists: next, totalMatched } = rematchAllPlaylistStubsFromLocker(
+          playlists,
+          pool,
+        );
+        if (totalMatched > 0) savePlaylists(next);
+      })();
+    };
+
+    const schedule = () => {
+      if (timer) clearTimeout(timer);
+      // Debounced: a batch download fires many locker updates in quick succession.
+      timer = setTimeout(relink, 1500);
+    };
+
+    schedule();
+    const unsubscribe = subscribeLockerCache(schedule);
+    return () => {
+      disposed = true;
+      if (timer) clearTimeout(timer);
+      unsubscribe();
+    };
+  }, []);
+
   const handleDownloadImportedPlaylist = useCallback(
     (pl: StoredPlaylist) => {
       const remaining = unmatchedImportStubs(pl);
@@ -2949,6 +3061,37 @@ export default function SandboxShell() {
       })();
     },
     [downloadTierPreference, showAppToast],
+  );
+
+  /** Universal search row tapped — route to the pillar that owns it. */
+  const handleUniversalSearchSelect = useCallback(
+    (hit: UniversalHit) => {
+      if (hit.format === 'music') {
+        const entry = hit.payload as { id?: string } | undefined;
+        if (hit.owned && entry?.id) {
+          const env = (getLockerEntriesSnapshot() ?? []).find((e) => e.id === entry.id);
+          if (env) {
+            void handlePlayEnvelope(lockerEntryToEnvelope(env));
+            return;
+          }
+        }
+        void runSearch(`${hit.title} ${hit.subtitle}`.trim());
+        return;
+      }
+      // Podcast/audiobook rows open their own station, which owns subscribe/download.
+      closeMobileSearch();
+      setStation(hit.format === 'podcast' ? 'podcasts' : 'audiobooks');
+    },
+    [closeMobileSearch, runSearch],
+  );
+
+  const handleUniversalOpenFormat = useCallback(
+    (format: UniversalFormat) => {
+      if (format === 'music') return;
+      closeMobileSearch();
+      setStation(format === 'podcast' ? 'podcasts' : 'audiobooks');
+    },
+    [closeMobileSearch],
   );
 
   const handleCacheSearchHit = useCallback(
@@ -3143,6 +3286,7 @@ export default function SandboxShell() {
       selectedIndex: number,
       envs: MediaEnvelope[],
     ) => {
+      if (!import.meta.env.DEV) return;
       console.warn(
         `[locker-queue] ${phase} ${JSON.stringify({
           selectedTrackId: selectedSourceId ?? envs[selectedIndex]?.sourceId ?? 'unknown',
@@ -3155,6 +3299,13 @@ export default function SandboxShell() {
     [],
   );
 
+  /**
+   * What the screen currently says, for consumers that run outside render (the E2E playback probe).
+   * Reading audio.envelope there reported the track being resolved, which is exactly the drift the
+   * probe was built to detect.
+   */
+  const nowPlayingDisplayRef = useRef<PlaybackDisplayFields | null>(null);
+  const authoritativeEnvelopeRef = useRef<MediaEnvelope | null>(null);
   const audioEnvelopeRef = useRef(audio.envelope);
   const audioStateRef = useRef(audio.state);
   audioEnvelopeRef.current = audio.envelope;
@@ -3169,8 +3320,17 @@ export default function SandboxShell() {
   audioStreamDurationRef.current = audio.streamDurationSeconds;
   /** True once the current track reaches Playing — gates gapless auto-advance. */
   const trackReachedPlayingRef = useRef(false);
+  /** Wall-clock ms timestamp of the false->true edge above — see trackPlaybackMatureForAdvance. */
+  const trackReachedPlayingAtRef = useRef(0);
   /** Native Exo gapless queue advanced — suppress duplicate JS resolve/advance. */
   const exoGaplessTransitionAtRef = useRef(0);
+  /**
+   * Envelope handed to the audio layer as an already-playable stream (tryInstantPlayable, sync
+   * cache, locker hit). Those tracks start with no silent gap, so their metadata must swap at once
+   * — holding the previous track's identity there would invent the very delay the fast path
+   * removes.
+   */
+  const instantHandoffEnvelopeIdRef = useRef('');
 
   const sessionPeakSecondsRef = useRef(0);
 
@@ -3185,7 +3345,14 @@ export default function SandboxShell() {
           : 0;
       const skipped =
         !completed && computeSkipped(listenedMs, durationMs, false);
-      recordPlaySession(env, peak, completed, skipped);
+      // Derive listening context so taste weighting can tell an album listen from a single tap.
+      const queueNow = playQueueRef.current;
+      const playContext: 'album' | 'single' | 'radio' | 'playlist' = mixRadioSessionRef.current
+        ? 'radio'
+        : queueNow.length > 1 && queueNow.some((tr) => tr.envelopeId === env.envelopeId)
+          ? 'album'
+          : 'single';
+      recordPlaySession(env, peak, completed, skipped, playContext);
       if (completed || !skipped) {
         void scrobbleTrack(env, listenedMs);
       }
@@ -3260,33 +3427,45 @@ export default function SandboxShell() {
       }
 
       const playTapStartedAt = performance.now();
+      /*
+       * Not DEV-gated. This measures the gap between tapping a track and hearing it, which is a
+       * property of the phone — on-device extraction, real network, real CPU — and cannot be
+       * observed on a dev server at all. Gating it to DEV meant the one instrument aimed at the
+       * one complaint ("it takes fifteen seconds") had never run on the device it describes.
+       *
+       * console.warn, not log: release WebView logcat drops console.log under load, which is
+       * exactly when the slow taps happen. Four lines per tap is not a volume problem.
+       */
       const logPlayTiming = (phase: string, extra?: Record<string, unknown>) => {
-        console.log(
-          `[handlePlayEnvelope] timing ${JSON.stringify({
-            phase,
-            elapsedMs: Math.round(performance.now() - playTapStartedAt),
-            title: env.title,
-            ...extra,
-          })}`,
+        console.warn(
+          `[playTiming] ${Math.round(performance.now() - playTapStartedAt)}ms ${phase} ` +
+            `track="${env.artist} — ${env.title}"` +
+            (extra ? ` ${JSON.stringify(extra)}` : ''),
         );
       };
+      // Baseline, so every later phase is readable as a gap rather than an absolute number.
+      logPlayTiming('tap', { provider: env.provider, envelopeId: env.envelopeId });
 
-      console.warn(
-        `[handlePlayEnvelope] tap ${JSON.stringify({
-          title: env.title,
-          artist: env.artist,
-          envelopeId: env.envelopeId,
-          hasUrl: Boolean(env.url?.trim()),
-          mobileActive: hasActiveMobileResolvers(),
-          serverReachable: isTier34ReachableCached(),
-          connectRole: connectRolePref,
-          networkSync: networkSyncEnabled,
-        })}`,
-      );
+      if (import.meta.env.DEV) {
+        console.warn(
+          `[handlePlayEnvelope] tap ${JSON.stringify({
+            title: env.title,
+            artist: env.artist,
+            envelopeId: env.envelopeId,
+            hasUrl: Boolean(env.url?.trim()),
+            mobileActive: hasActiveMobileResolvers(),
+            serverReachable: isTier34ReachableCached(),
+            connectRole: connectRolePref,
+            networkSync: networkSyncEnabled,
+          })}`,
+        );
+      }
 
       const generation = beginPlayIntent(env.envelopeId);
       playGenerationRef.current = generation;
       trackReachedPlayingRef.current = false;
+      trackReachedPlayingAtRef.current = 0;
+      instantHandoffEnvelopeIdRef.current = '';
       if (options?.seedSearchQueue) {
         autoSimilarRadioSeedRef.current = null;
       }
@@ -3338,13 +3517,18 @@ export default function SandboxShell() {
         queueSeed?.index ??
         Math.max(0, activePlayQueue.findIndex((e) => e.envelopeId === env.envelopeId));
       const isStale = () => !isPlayIntentCurrent(generation, env.envelopeId);
-      const envelopeLoadOpts = (extra?: { autoPlay?: boolean; seamless?: boolean; instant?: boolean }) => ({
-        autoPlay: extra?.autoPlay ?? loadOptions.autoPlay,
-        seamless: extra?.seamless ?? queueAdvanceSeamless,
-        instant: extra?.instant,
-        playToken: generation,
-        playEnvelopeId: env.envelopeId,
-      });
+      const envelopeLoadOpts = (extra?: { autoPlay?: boolean; seamless?: boolean; instant?: boolean }) => {
+        // Every fast path funnels through here with instant:true, so this is the one place that has
+        // to record it for the now-playing authority check.
+        if (extra?.instant) instantHandoffEnvelopeIdRef.current = env.envelopeId;
+        return {
+          autoPlay: extra?.autoPlay ?? loadOptions.autoPlay,
+          seamless: extra?.seamless ?? queueAdvanceSeamless,
+          instant: extra?.instant,
+          playToken: generation,
+          playEnvelopeId: env.envelopeId,
+        };
+      };
 
       const lockerSeedArt =
         env.provider === 'local-vault' ? resolveLockerEntryAlbumArt(env) : undefined;
@@ -3380,10 +3564,7 @@ export default function SandboxShell() {
           if (!isStale()) {
             audio.failResolve();
             showAppToast(
-              t('player.podcastMissingAudio', {
-                defaultValue:
-                  'No audio URL for this episode — open the show and pull to refresh the feed',
-              }),
+              t('player.podcastMissingAudio'),
               6000,
             );
           }
@@ -3564,7 +3745,7 @@ export default function SandboxShell() {
           ) {
             showAppToast(
               t('player.lockerAudioReacquiring', {
-                defaultValue: `Re-downloading "${seedEnvelope.title}"…`,
+                title: seedEnvelope.title,
               }),
               5000,
             );
@@ -3600,7 +3781,9 @@ export default function SandboxShell() {
           );
           if (resolvedArtwork) playable = { ...playable, artworkUrl: resolvedArtwork };
           markActivePlaybackSession();
-          const syncedPlayable = preserveTappedEnvelopeIdentity(seedEnvelope, playable);
+          const syncedPlayable = await withMeasuredBitrate(
+            preserveTappedEnvelopeIdentity(seedEnvelope, playable),
+          );
           persistLockerPlayRepair(seedEnvelope, syncedPlayable);
           audio.loadEnvelope(syncedPlayable, envelopeLoadOpts({ seamless: true, instant: true }));
           void runDeferredPlaySideEffects({
@@ -3648,7 +3831,9 @@ export default function SandboxShell() {
           );
           if (resolvedArtwork) playable = { ...playable, artworkUrl: resolvedArtwork };
           markActivePlaybackSession();
-          const syncedPlayable = preserveTappedEnvelopeIdentity(seedEnvelope, playable);
+          const syncedPlayable = await withMeasuredBitrate(
+            preserveTappedEnvelopeIdentity(seedEnvelope, playable),
+          );
           persistLockerPlayRepair(seedEnvelope, syncedPlayable);
           audio.loadEnvelope(syncedPlayable, envelopeLoadOpts({ seamless: true, instant: true }));
           void runDeferredPlaySideEffects({
@@ -3709,7 +3894,9 @@ export default function SandboxShell() {
           );
           if (resolvedArtwork) playable = { ...playable, artworkUrl: resolvedArtwork };
           markActivePlaybackSession();
-          const syncedPlayable = preserveTappedEnvelopeIdentity(seedEnvelope, playable);
+          const syncedPlayable = await withMeasuredBitrate(
+            preserveTappedEnvelopeIdentity(seedEnvelope, playable),
+          );
           persistLockerPlayRepair(seedEnvelope, syncedPlayable);
           audio.loadEnvelope(syncedPlayable, envelopeLoadOpts({ seamless: true, instant: true }));
           void runDeferredPlaySideEffects({
@@ -3774,7 +3961,7 @@ export default function SandboxShell() {
           ) {
             showAppToast(
               t('player.lockerAudioReacquiring', {
-                defaultValue: `Re-downloading "${seedEnvelope.title}"…`,
+                title: seedEnvelope.title,
               }),
               5000,
             );
@@ -3810,7 +3997,9 @@ export default function SandboxShell() {
           );
           if (resolvedArtwork) playable = { ...playable, artworkUrl: resolvedArtwork };
           markActivePlaybackSession();
-          const syncedPlayable = preserveTappedEnvelopeIdentity(seedEnvelope, playable);
+          const syncedPlayable = await withMeasuredBitrate(
+            preserveTappedEnvelopeIdentity(seedEnvelope, playable),
+          );
           persistLockerPlayRepair(seedEnvelope, syncedPlayable);
           audio.loadEnvelope(syncedPlayable, envelopeLoadOpts({ seamless: true, instant: true }));
           void runDeferredPlaySideEffects({
@@ -3879,7 +4068,7 @@ export default function SandboxShell() {
               ) {
                 showAppToast(
                   t('player.lockerAudioReacquiring', {
-                    defaultValue: `Re-downloading "${playable.title}"…`,
+                    title: playable.title,
                   }),
                   5000,
                 );
@@ -3904,7 +4093,7 @@ export default function SandboxShell() {
             ) {
               showAppToast(
                 t('player.lockerAudioReacquiring', {
-                  defaultValue: `Re-downloading "${playable.title}"…`,
+                  title: playable.title,
                 }),
                 5000,
               );
@@ -4013,6 +4202,9 @@ export default function SandboxShell() {
           seedArtwork && !playable.artworkUrl
             ? { ...playable, artworkUrl: seedArtwork }
             : playable;
+        // Reaching here at all means the instant path missed and this tap will pay for a full
+        // resolve. The gap between this line and 'resolved' is the wait the listener feels.
+        logPlayTiming('execute-start', { provider: playable.provider });
         const needsMobileExecuteTimeout =
           isAndroid() &&
           hasActiveMobileResolvers() &&
@@ -4050,14 +4242,16 @@ export default function SandboxShell() {
           source: playable.resolutionSource,
           provider: playable.provider,
         });
-        console.warn(
-          `[handlePlayEnvelope] resolved ${JSON.stringify({
-            title: playable.title,
-            hasUrl: Boolean(playable.url?.trim()),
-            source: playable.resolutionSource,
-            provider: playable.provider,
-          })}`,
-        );
+        if (import.meta.env.DEV) {
+          console.warn(
+            `[handlePlayEnvelope] resolved ${JSON.stringify({
+              title: playable.title,
+              hasUrl: Boolean(playable.url?.trim()),
+              source: playable.resolutionSource,
+              provider: playable.provider,
+            })}`,
+          );
+        }
         playable = await ensureCatalogPlaybackIdentity(seedEnvelope, playable, candidates);
         if (isStale()) return false;
 
@@ -4094,14 +4288,16 @@ export default function SandboxShell() {
           return failResolve(true);
         }
 
-        console.warn(
-          `[handlePlayEnvelope] load ${JSON.stringify({
-            title: playable.title,
-            urlLen: playable.url?.trim().length ?? 0,
-            source: playable.resolutionSource,
-            autoPlay: loadOptions.autoPlay,
-          })}`,
-        );
+        if (import.meta.env.DEV) {
+          console.warn(
+            `[handlePlayEnvelope] load ${JSON.stringify({
+              title: playable.title,
+              urlLen: playable.url?.trim().length ?? 0,
+              source: playable.resolutionSource,
+              autoPlay: loadOptions.autoPlay,
+            })}`,
+          );
+        }
         logPlayTiming('load', {
           urlLen: playable.url?.trim().length ?? 0,
           source: playable.resolutionSource,
@@ -4349,6 +4545,17 @@ export default function SandboxShell() {
 
   const handleSearchPlay = useCallback(
     (env: MediaEnvelope, candidates?: CandidateSource[]) => {
+      /*
+       * The entry point, logged before anything can swallow it. handlePlayEnvelope already times
+       * itself, but a silent log there is ambiguous: it means either the tap was slow or the tap
+       * never arrived, and those need opposite investigations. This line separates them — if it
+       * appears and the timing does not, the play call itself is being dropped; if neither
+       * appears, the gesture never reached this handler at all.
+       */
+      console.warn(
+        `[handleSearchPlay] play requested track="${env.artist} — ${env.title}" ` +
+          `provider=${env.provider} sources=${candidates?.length ?? 0}`,
+      );
       void handlePlayEnvelope(env, candidates, { seedSearchQueue: true }).catch((err) => {
         console.warn('[handleSearchPlay] playback failed:', err);
         showAppToast(t('artist.playbackHybridUnavailable'), 3800);
@@ -4862,16 +5069,25 @@ export default function SandboxShell() {
       listAlbumTracks: () =>
         albumDrillTracksRef.current.map((t) => ({ title: t.title, id: t.id })),
       getPlaybackProbe: () => {
-        const env = audio.envelope ?? audioEnvelopeRef.current ?? sessionEnvelopeRef.current;
+        // Report the identity the screen is showing, not the one being resolved: this probe exists
+        // to catch the two drifting apart, and reading audio.envelope here made it agree with the
+        // bug instead of detecting it.
+        const shown = nowPlayingDisplayRef.current;
+        const env =
+          authoritativeEnvelopeRef.current ??
+          audio.envelope ??
+          audioEnvelopeRef.current ??
+          sessionEnvelopeRef.current;
         return {
-          title: env?.title?.trim() ?? audio.title?.trim() ?? '',
-          artist: env?.artist?.trim() ?? audio.artist?.trim() ?? '',
-          album: env?.album,
-          envelopeId: env?.envelopeId,
+          title: shown?.title?.trim() || env?.title?.trim() || audio.title?.trim() || '',
+          artist: shown?.artist?.trim() || env?.artist?.trim() || audio.artist?.trim() || '',
+          album: shown?.album || env?.album,
+          envelopeId: shown?.envelopeId || env?.envelopeId,
           state: audioStateRef.current,
           positionSecs: audioCurrentTimeRef.current,
           durationSecs: audioDurationRef.current,
-          artworkUrl: env?.artworkUrl,
+          artworkUrl: shown?.artworkUrl || env?.artworkUrl,
+          bitrateKbps: env?.bitrateKbps,
           nativeState:
             audio.nativeExoActive && audio.nativeExoEffectivePlaying
               ? 'playing'
@@ -4879,6 +5095,23 @@ export default function SandboxShell() {
                 ? 'active'
                 : undefined,
         };
+      },
+      getQueueProbe: () => {
+        const queue = playQueueRef.current ?? [];
+        return {
+          index: queueIndexRef.current,
+          length: queue.length,
+          envelopeIds: queue.map((t) => t?.envelopeId ?? ''),
+        };
+      },
+      // The same action the player button, car mode and media shortcuts call — routed through
+      // shortcutCtxRef like those do, so this probe cannot drift from what a user's tap does.
+      skipNext: () => {
+        const queue = playQueueRef.current ?? [];
+        if (queue.length < 2) return { ok: false, outcome: 'queue-too-short' };
+        shortcutCtxRef.current.skipForward();
+        const outcome = lastSkipOutcomeRef.current;
+        return { ok: outcome === 'advance' || outcome === 'in-place', outcome };
       },
       thumbUpCurrent: () => {
         const env = audio.envelope ?? audioEnvelopeRef.current ?? sessionEnvelopeRef.current;
@@ -5262,6 +5495,10 @@ export default function SandboxShell() {
         setShuffleOn(false);
         clearLastPlayIntent();
         await prepareCleanPlaybackStop(() => audio.stop());
+        // No new play attempt follows this stop — unlike the other prepareCleanPlaybackStop
+        // call sites — so nothing else will clear a mobile loading spinner left over from an
+        // in-flight play that this just invalidated.
+        setMobilePlayerPending(false);
       },
     });
     markE2ePlaybackHandlersLive();
@@ -5767,16 +6004,59 @@ export default function SandboxShell() {
       if (!isExoMediaItemTransitionEvent(detail)) return;
       void (async () => {
         const queue = playQueueRef.current;
-        const idx = await findQueueIndexForExoUrl(queue, detail.url);
+        /*
+         * mediaId first, URL as fallback — the remaining half of #36, now landed.
+         *
+         * This was deliberately left on URL matching because mediaId resolved skip echoes too and
+         * caused a visible double-advance. shouldAdoptNativeExoTransition below is the real fix
+         * for that: playUrl records what JS navigated to and echoes are ignored however they were
+         * matched, so URL matching was only ever suppressing the race by accident.
+         *
+         * What forced the change: URL matching misses whenever the stream cache serves a track,
+         * because the queue holds an https URL and the transition reports content://…stream-cache.
+         * On a cached LibriVox book that meant JS adopted nothing — native advanced two chapters
+         * while envelopeId stayed frozen on the first, so the queue index never moved.
+         *
+         * Verified on device, which is what it was waiting for: queue-skip-probe across chapter
+         * boundaries on a 22-chapter book, index advancing by exactly one with no stray indexes.
+         */
+        const idx = await findQueueIndexForExoTransition(queue, {
+          mediaId: detail.mediaId,
+          url: detail.url,
+        });
         if (idx < 0) return;
         const track = queue[idx];
         if (!track) return;
-        if (track.envelopeId === audioEnvelopeRef.current?.envelopeId) return;
+        const jsNav = lastJsInitiatedNativeNav();
+        const adopt = shouldAdoptNativeExoTransition({
+          transitionEnvelopeId: track.envelopeId,
+          activeEnvelopeId: audioEnvelopeRef.current?.envelopeId,
+          pendingJsNavEnvelopeId: jsNav.envelopeId,
+          pendingJsNavAtMs: jsNav.atMs,
+          reason: typeof detail.reason === 'number' ? detail.reason : undefined,
+        });
+        /*
+         * Both sides of the R-018 race, in one line each. The probe can say the index overshot but
+         * not why: an adopted echo and a second JS advance land identically. This prints the gate's
+         * inputs at the moment it decides, so a failing run shows which one moved the index.
+         */
+        logE2e(
+          'exo-transition',
+          adopt,
+          `idx=${idx} from=${queueIndexRef.current} reason=${detail.reason ?? 'none'} adopt=${adopt} sinceJsNavMs=${Date.now() - (jsNav.atMs || 0)} jsNavEnv=${jsNav.envelopeId ?? 'none'} transitionEnv=${track.envelopeId} activeEnv=${audioEnvelopeRef.current?.envelopeId ?? 'none'}`,
+        );
+        if (!adopt) {
+          return;
+        }
         exoGaplessTransitionAtRef.current = Date.now();
         setQueueIndex(idx);
         syncThumbsFromFeedback(track.envelopeId);
         adoptInPlaceQueueTrack(track, 0);
-        trackReachedPlayingRef.current = true;
+        // Do NOT force trackReachedPlayingRef true here — a native transition is not proof this
+        // track is actually audible yet (an erroneous/corrupted transition would "prove" it
+        // instantly, defeating trackPlaybackMatureForAdvance's minimum-play-time guard and
+        // letting a bad transition cascade into rapid-fire track skipping). Let the dedicated
+        // state-driven effect confirm real playback before this flag flips.
         void primeLockerNativeQueueFrom(queue, idx);
         prefetchUpcomingQueueTracks({
           playQueue: playQueueRef.current,
@@ -5799,7 +6079,7 @@ export default function SandboxShell() {
   }, [audio, syncThumbsFromFeedback, findHitCandidates, adoptInPlaceQueueTrack, primeLockerNativeQueueFrom]);
 
   const queueRestoredRef = useRef(false);
-  const queueRestorePendingRef = useRef<{ seekTo: number } | null>(null);
+  const queueRestorePendingRef = useRef<{ seekTo: number; envelopeId: string } | null>(null);
   const [queuePersistReady, setQueuePersistReady] = useState(false);
 
   useEffect(() => {
@@ -5842,7 +6122,7 @@ export default function SandboxShell() {
             if (intent) {
               queueRestoredRef.current = true;
               const env = lastPlayIntentToEnvelope(intent);
-              queueRestorePendingRef.current = { seekTo: 0 };
+              queueRestorePendingRef.current = { seekTo: 0, envelopeId: env.envelopeId };
               setHomeAwaitingUserResume(false);
               void playEnvelopeRef.current(env, findHitCandidates(env), { autoPlay: false });
               return;
@@ -5897,6 +6177,7 @@ export default function SandboxShell() {
 
         queueRestorePendingRef.current = {
           seekTo: restored.currentTimeSeconds,
+          envelopeId: track.envelopeId,
         };
         setHomeAwaitingUserResume(false);
         void playEnvelopeRef.current(track, findHitCandidates(track), { autoPlay: false });
@@ -5997,10 +6278,7 @@ export default function SandboxShell() {
       failedPlaybackToastGenRef.current = gen;
       if (isPodcastEnvelopeId(env.envelopeId)) {
         showAppToast(
-          t('player.podcastMissingAudio', {
-            defaultValue:
-              'Podcast playback failed — open the show and pull to refresh the feed',
-          }),
+          t('player.podcastPlaybackFailed'),
           3800,
         );
         setMobilePlayerPending(false);
@@ -6077,7 +6355,7 @@ export default function SandboxShell() {
           } else if (await attemptDeadLockerReacquire(env.title, env.artist, env.album)) {
             showAppToast(
               t('player.lockerAudioReacquiring', {
-                defaultValue: `Re-downloading "${env.title}"…`,
+                title: env.title,
               }),
               5000,
             );
@@ -6193,11 +6471,23 @@ export default function SandboxShell() {
   useEffect(() => {
     const pending = queueRestorePendingRef.current;
     if (!pending) return;
+    // The boot-time restore's own load runs async (warmLockerCache, rehydrateQueueState, etc.)
+    // and can still be in flight — or already superseded — by the time the user manually taps a
+    // different track. Without this check, whichever track next reaches Ready/Playing gets the
+    // restore's stale seek+pause applied to IT instead, killing playback the user just started
+    // (seconds after tapping play, for a track that has nothing to do with the restore). Only
+    // discard once we have DEFINITIVE evidence of a mismatch (a different envelope actually
+    // loaded) — a still-null/loading envelope just means the intended restore hasn't landed yet.
+    if (audio.envelope && audio.envelope.envelopeId !== pending.envelopeId) {
+      queueRestorePendingRef.current = null;
+      return;
+    }
     if (audio.state === 'Failed') {
       queueRestorePendingRef.current = null;
       return;
     }
     if (audio.state !== 'Ready' && audio.state !== 'Playing') return;
+    if (!audio.envelope || audio.envelope.envelopeId !== pending.envelopeId) return;
 
     const { seekTo } = pending;
     queueRestorePendingRef.current = null;
@@ -6224,6 +6514,44 @@ export default function SandboxShell() {
     });
   }, []);
 
+  /*
+   * Per-book listening position. The queue persistence below is one global slot: play a song and
+   * your place in a ten-hour book is gone. This keys on the book instead, so every title keeps its
+   * own position indefinitely.
+   *
+   * Polls refs on an interval rather than running per render — position updates fire several
+   * times a second and this must not drive React work. The cleanup write is what captures the
+   * position when the chapter changes, the player closes, or the app is backgrounded.
+   */
+  useEffect(() => {
+    const bookKey = audiobookBookKeyFromEnvelopeId(audio.envelope?.envelopeId);
+    if (!bookKey) return;
+    let last = getAudiobookProgress(bookKey) ?? undefined;
+    const persist = () => {
+      const env = audioEnvelopeRef.current;
+      const next = {
+        bookKey,
+        chapterIndex: Math.max(0, queueIndexRef.current),
+        offsetSeconds: Math.max(0, Math.floor(audioCurrentTimeRef.current)),
+        durationSeconds: Math.max(0, Math.floor(audioDurationRef.current)),
+        chapterCount: playQueueRef.current.length,
+        updatedAt: Date.now(),
+        // The book, not the chapter — album carries the book title for an audiobook envelope.
+        title: env?.album?.trim() || env?.title?.trim(),
+        author: env?.artist?.trim(),
+        artworkUrl: env?.artworkUrl,
+      };
+      if (!shouldPersistAudiobookProgress(last, next)) return;
+      saveAudiobookProgress(next);
+      last = next;
+    };
+    const timer = window.setInterval(persist, 5000);
+    return () => {
+      window.clearInterval(timer);
+      persist();
+    };
+  }, [audio.envelope?.envelopeId]);
+
   useEffect(() => {
     if (!queuePersistReady || isConnectRemoteRef.current) return;
     saveQueueState({
@@ -6248,6 +6576,9 @@ export default function SandboxShell() {
 
   useEffect(() => {
     if (audio.state === 'Playing' || audio.nativeExoEffectivePlaying) {
+      if (!trackReachedPlayingRef.current) {
+        trackReachedPlayingAtRef.current = Date.now();
+      }
       trackReachedPlayingRef.current = true;
     }
   }, [audio.state, audio.nativeExoEffectivePlaying]);
@@ -6266,11 +6597,15 @@ export default function SandboxShell() {
           reachedPlaying: trackReachedPlayingRef.current,
           peakSeconds: sessionPeakSecondsRef.current,
           currentSeconds: audioCurrentTimeRef.current,
+          msSinceReachedPlaying: trackReachedPlayingRef.current
+            ? Date.now() - trackReachedPlayingAtRef.current
+            : undefined,
         })
       ) {
         return;
       }
       trackReachedPlayingRef.current = false;
+      trackReachedPlayingAtRef.current = 0;
       const seamless = resolveNativeExoTransitionPrefs().gapless;
       const endedEnvForSuppress = audioEnvelopeRef.current;
       if (
@@ -6411,7 +6746,8 @@ export default function SandboxShell() {
           setQueueIndex(next);
           syncThumbsFromFeedback(track.envelopeId);
           adoptInPlaceQueueTrack(track, inPlaceSeek);
-          trackReachedPlayingRef.current = true;
+          // See onExoTransition above — an in-place seek isn't proof of real playback either;
+          // let the state-driven effect confirm it before trackPlaybackMatureForAdvance trusts it.
           void primeLockerNativeQueueFrom(q, next);
           return;
         }
@@ -6576,7 +6912,12 @@ export default function SandboxShell() {
     async (
       tracks: MediaEnvelope[],
       shuffle?: boolean,
-      options?: { fromMixRadio?: MixRadioSession },
+      options?: {
+        fromMixRadio?: MixRadioSession;
+        /** Resume point — chapter to open on, and where inside it to land. */
+        startIndex?: number;
+        startSeconds?: number;
+      },
     ) => {
       if (tracks.length === 0) return;
       if (!options?.fromMixRadio) {
@@ -6598,23 +6939,34 @@ export default function SandboxShell() {
       const ordered = shuffle
         ? [...tracks].sort(() => Math.random() - 0.5)
         : [...tracks];
+      const startIndex = Math.min(
+        Math.max(0, Math.floor(options?.startIndex ?? 0)),
+        ordered.length - 1,
+      );
       setPlayQueue(ordered);
-      setQueueIndex(0);
+      setQueueIndex(startIndex);
       playQueueRef.current = ordered;
-      queueIndexRef.current = 0;
+      queueIndexRef.current = startIndex;
       if (ordered.length > 1) {
         setRepeatMode((mode) => (mode === 'one' ? 'none' : mode));
       }
       if (options?.fromMixRadio) setMixRadioSession(options.fromMixRadio);
-      const first = ordered[0];
-      const primePromise = primeLockerNativeQueueFrom(ordered, 0);
+      const first = ordered[startIndex];
+      const primePromise = primeLockerNativeQueueFrom(ordered, startIndex);
       const started = await handlePlayEnvelope(first, findHitCandidates(first));
       await primePromise;
       if (started && ordered.length > 1) {
-        await primeLockerNativeQueueFrom(ordered, 0);
+        await primeLockerNativeQueueFrom(ordered, startIndex);
       }
+      /*
+       * Seek after playback starts, not before — the position is meaningless until the media is
+       * loaded. Below a couple of seconds is not worth a seek: it would trade a visible jump for
+       * nothing a listener would notice.
+       */
+      const startSeconds = options?.startSeconds ?? 0;
+      if (started && startSeconds > 2) audio.seek(startSeconds);
     },
-    [handlePlayEnvelope, findHitCandidates, sendConnectCommand, primeLockerNativeQueueFrom],
+    [handlePlayEnvelope, findHitCandidates, sendConnectCommand, primeLockerNativeQueueFrom, audio],
   );
 
   const handleExploreInstantMix = useCallback(
@@ -6702,6 +7054,36 @@ export default function SandboxShell() {
       );
     },
     [findHitCandidates, showAppToast, t],
+  );
+
+  /*
+   * Mix-page Download and Share. Download reuses the travel prefetch — "download" on a mix means
+   * make it playable offline, not export a file — so it inherits the cellular/offline guards and
+   * progress toasts rather than growing a second, subtly different caching path.
+   */
+  const handleDownloadMix = useCallback(
+    (mix: DiscoveryMix) => {
+      if (mix.tracks.length === 0) return;
+      void handlePrepareForTravel(mix.tracks);
+    },
+    [handlePrepareForTravel],
+  );
+
+  const handleShareMix = useCallback(
+    async (mix: DiscoveryMix) => {
+      if (mix.tracks.length === 0) return;
+      try {
+        const result = await shareOrDownloadPlaylist(discoveryMixAsPlaylist(mix), 'm3u');
+        if (result === 'shared') showAppToast('Mix shared');
+        else if (result === 'clipboard') showAppToast('M3U copied to clipboard');
+        else showAppToast('M3U downloaded');
+      } catch (err) {
+        // The share sheet resolves as AbortError when the user backs out — not a failure.
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        showAppToast('Share failed', 4000);
+      }
+    },
+    [showAppToast],
   );
 
   const suggestedQueueTracks = useMemo(
@@ -6821,7 +7203,9 @@ export default function SandboxShell() {
       sendConnectCommand({ cmd: 'SKIP_PREV' });
       return;
     }
-    if (audio.envelope && isPodcastEnvelopeId(audio.envelope.envelopeId)) {
+    // Audiobooks included: a twelve-hour book had music's transport, so this button jumped a
+    // whole chapter instead of stepping back a few seconds. See spokenWordPlayback.
+    if (audio.envelope && usesIntervalSeekTransport(audio.envelope.envelopeId)) {
       const interval = loadPodcastSeekIntervalSeconds();
       const dur =
         audio.streamDurationSeconds ||
@@ -6876,12 +7260,23 @@ export default function SandboxShell() {
     adoptInPlaceQueueTrack,
   ]);
 
+  /*
+   * Why the last skip did what it did. A skip that Up Next declines ('none') and a skip the queue
+   * loses look identical from outside — both leave the index where it was — so the probe could
+   * only ever report "did not advance". Recorded here so it can report which.
+   */
+  const lastSkipOutcomeRef = useRef<
+    '' | 'remote' | 'seek' | 'none' | 'no-track' | 'in-place' | 'advance'
+  >('');
+
   const skipForward = useCallback(() => {
+    lastSkipOutcomeRef.current = '';
     if (isConnectRemoteRef.current) {
+      lastSkipOutcomeRef.current = 'remote';
       sendConnectCommand({ cmd: 'SKIP_NEXT' });
       return;
     }
-    if (audio.envelope && isPodcastEnvelopeId(audio.envelope.envelopeId)) {
+    if (audio.envelope && usesIntervalSeekTransport(audio.envelope.envelopeId)) {
       const interval = loadPodcastSeekIntervalSeconds();
       const dur =
         audio.streamDurationSeconds ||
@@ -6889,6 +7284,7 @@ export default function SandboxShell() {
         audio.envelope.durationSeconds ||
         0;
       const next = audio.currentTimeSeconds + interval;
+      lastSkipOutcomeRef.current = 'seek';
       audio.seek(dur > 0 ? Math.min(next, dur) : next);
       return;
     }
@@ -6901,7 +7297,10 @@ export default function SandboxShell() {
       queue: playQueue,
       settings: upNextSettings,
     });
-    if (advance.action === 'none') return;
+    if (advance.action === 'none') {
+      lastSkipOutcomeRef.current = 'none';
+      return;
+    }
     const next =
       advance.action === 'repeat-one'
         ? queueIndex
@@ -6909,7 +7308,10 @@ export default function SandboxShell() {
           ? advance.index
           : queueIndex;
     const track = playQueue[next];
-    if (!track) return;
+    if (!track) {
+      lastSkipOutcomeRef.current = 'no-track';
+      return;
+    }
     if (!isPodcastEnvelopeId(track.envelopeId)) {
       sovereignUpNextPodcastCountRef.current = 0;
     }
@@ -6925,9 +7327,12 @@ export default function SandboxShell() {
     if (currentUrl && inPlaceSeek != null && !(inPlaceSeek < 0.25 && next > 0)) {
       setQueueIndex(next);
       syncThumbsFromFeedback(track.envelopeId);
+      lastSkipOutcomeRef.current = 'in-place';
       adoptInPlaceQueueTrack(track, inPlaceSeek);
       return;
     }
+    lastSkipOutcomeRef.current = 'advance';
+    logE2e('js-skip', true, `from=${queueIndex} to=${next} env=${track.envelopeId}`);
     setQueueIndex(next);
     void handlePlayEnvelope(track, findHitCandidates(track), { preservePlayQueue: true });
   }, [
@@ -7130,16 +7535,6 @@ export default function SandboxShell() {
     }
     return [...albums.values()].slice(0, 12);
   }, [lockerEnvelopes]);
-
-  const homeMostPlayed = useMemo(
-    () =>
-      getMostPlayed(4).map((h) => ({
-        id: h.envelopeId,
-        title: h.title,
-        subtitle: `${h.artist} · ${h.playCount} play${h.playCount === 1 ? '' : 's'}`,
-      })),
-    [audio.state, audio.title],
-  );
 
   const resolveEnvelopeById = useCallback(
     (envelopeId: string): MediaEnvelope | null => {
@@ -7377,16 +7772,20 @@ export default function SandboxShell() {
     const env = audio.envelope;
     if (!env?.envelopeId) return;
     void (async () => {
-      let raw = env.artworkUrl?.trim();
-      if (!raw && env.provider === 'local-vault') {
-        raw = resolveLockerEntryAlbumArt(env)?.trim() ?? '';
+      try {
+        let raw = env.artworkUrl?.trim();
+        if (!raw && env.provider === 'local-vault') {
+          raw = resolveLockerEntryAlbumArt(env)?.trim() ?? '';
+        }
+        if (!raw && env.provider === 'local-vault' && env.sourceId) {
+          raw = (await resolveLockerArtworkUrl(env.sourceId)) ?? '';
+        }
+        if (!raw) return;
+        const next = proxiedArtworkUrl(raw) ?? raw;
+        setArtworkUrl((prev) => stabilizePlaybackArtSrc(prev, next, env.envelopeId) || next);
+      } catch (err) {
+        console.warn('[sandboxLayer3] artwork backfill failed:', err);
       }
-      if (!raw && env.provider === 'local-vault' && env.sourceId) {
-        raw = (await resolveLockerArtworkUrl(env.sourceId)) ?? '';
-      }
-      if (!raw) return;
-      const next = proxiedArtworkUrl(raw) ?? raw;
-      setArtworkUrl((prev) => stabilizePlaybackArtSrc(prev, next, env.envelopeId) || next);
     })();
   }, [
     audio.envelope?.envelopeId,
@@ -7634,7 +8033,7 @@ export default function SandboxShell() {
     hasActivePlayback ||
     Boolean(audio.envelope?.envelopeId?.trim()) ||
     (!showMobileShell && !homeAwaitingUserResume && Boolean(lockerFeatured));
-  const nowPlayingDisplay = useMemo(
+  const liveNowPlayingDisplay = useMemo(
     () =>
       resolveNowPlayingDisplay({
         audioEnvelope: audio.envelope,
@@ -7661,19 +8060,68 @@ export default function SandboxShell() {
       hasActivePlayback,
     ],
   );
+  /*
+   * Not memoized on purpose: startedInstantly is read from a ref that the fast paths write
+   * microseconds before the state change that would invalidate a memo, and a stale memo there
+   * would put a spinner on a track that is already playing.
+   */
+  const nowPlayingAuthority = resolveNowPlayingAuthority({
+    loadingEnvelopeId: audio.envelope?.envelopeId,
+    heldEnvelopeId: heldNowPlaying?.envelopeId,
+    // The snapshot is dropped when playback stops, so a surviving snapshot is a stream that is
+    // still on the speaker (or paused on it) and therefore still owns the screen.
+    heldStillAudible: Boolean(heldNowPlaying),
+    audioState: audio.state,
+    startedInstantly:
+      Boolean(audio.envelope?.envelopeId) &&
+      instantHandoffEnvelopeIdRef.current === audio.envelope.envelopeId,
+    loadElapsedMs: playbackResolveElapsed * 1000,
+  });
+  const authoritativeEnvelope = resolveAuthoritativeEnvelope(
+    nowPlayingAuthority,
+    audio.envelope,
+    heldNowPlaying,
+  );
+  /*
+   * Last position the audible track was seen at. Recorded only while its own metadata is on screen,
+   * so the hold below cannot overwrite it with the incoming track's clock and show the previous
+   * song scrubbed back to zero.
+   */
+  const heldPositionSecondsRef = useRef(0);
+  if (nowPlayingAuthority.source !== 'held') {
+    heldPositionSecondsRef.current = audio.currentTimeSeconds;
+  }
+  const heldPositionSeconds = heldPositionSecondsRef.current;
+  const nowPlayingDisplay = useMemo(
+    () =>
+      applyNowPlayingAuthority(nowPlayingAuthority, liveNowPlayingDisplay, heldNowPlaying, {
+        heldPositionSeconds,
+        livePositionSeconds: audio.currentTimeSeconds,
+      }),
+    [
+      nowPlayingAuthority.source,
+      nowPlayingAuthority.envelopeId,
+      liveNowPlayingDisplay,
+      heldNowPlaying,
+      heldPositionSeconds,
+      audio.currentTimeSeconds,
+    ],
+  );
+  nowPlayingDisplayRef.current = nowPlayingDisplay;
+  authoritativeEnvelopeRef.current = authoritativeEnvelope;
   const homeTitle = nowPlayingDisplay.title;
   const homeArtist = nowPlayingDisplay.artist;
   const homeAlbum = nowPlayingDisplay.album;
   const homeArtRaw = useMemo(() => {
     const parallel = nowPlayingDisplay.artworkUrl?.trim() || artworkUrl?.trim() || '';
-    return resolvePlaybackCoverArt(parallel, audio.envelope);
+    return resolvePlaybackCoverArt(parallel, authoritativeEnvelope);
   }, [
     nowPlayingDisplay.artworkUrl,
     artworkUrl,
-    audio.envelope,
-    audio.envelope?.envelopeId,
-    audio.envelope?.provider,
-    audio.envelope?.sourceId,
+    authoritativeEnvelope,
+    authoritativeEnvelope?.envelopeId,
+    authoritativeEnvelope?.provider,
+    authoritativeEnvelope?.sourceId,
     lockerEnvelopes,
   ]);
   const homeArt = proxiedArtworkUrl(homeArtRaw) ?? homeArtRaw;
@@ -7683,6 +8131,78 @@ export default function SandboxShell() {
       : lockerFeatured
         ? 'Ready'
         : 'Idle';
+
+  /*
+   * Take over the screen only once the stream is the one making sound.
+   *
+   * Five fast presses of next leave four earlier loads racing behind the fifth, and the identity
+   * check below discards any of them that lands late — committing a track the user has already
+   * skipped past is the original bug arriving from behind. The audio layer's own play tokens stop
+   * a stale load from ever attaching; this is the same guard at the display end, where a snapshot
+   * captured in one render must not be written after a later render has moved on.
+   */
+  useEffect(() => {
+    const env = audio.envelope;
+    const envelopeId = env?.envelopeId ?? '';
+    if (!shouldCommitAudibleNowPlaying(audio.state, envelopeId)) return;
+    if (
+      !isNowPlayingCommitCurrent(
+        { envelopeId, playToken: playGenerationRef.current },
+        {
+          envelopeId: audioEnvelopeRef.current?.envelopeId,
+          playToken: currentPlayGeneration(),
+        },
+      )
+    ) {
+      return;
+    }
+    setHeldNowPlaying((prev) =>
+      nextHeldNowPlaying(prev, { envelopeId, display: liveNowPlayingDisplay, envelope: env }),
+    );
+  }, [audio.state, audio.envelope, liveNowPlayingDisplay]);
+
+  /**
+   * One give-up per abandoned load. Without the key the toast would re-fire on every render for as
+   * long as the failed envelope stayed loaded.
+   */
+  const abandonedLoadKeyRef = useRef('');
+  useEffect(() => {
+    if (nowPlayingAuthority.reason !== 'hold-timed-out') return;
+    const key = `${audio.envelope?.envelopeId ?? ''}:${playGenerationRef.current}`;
+    if (abandonedLoadKeyRef.current === key) return;
+    abandonedLoadKeyRef.current = key;
+    /*
+     * The stream never arrived. This is the same cancellation the stuck-playback watchdog performs,
+     * taken 70 seconds sooner: the alternative is a spinner sitting on top of a track that was
+     * playing fine, for a minute and a half, which is the stranded-UI failure this fix is not
+     * allowed to introduce. The screen keeps the audible track's identity throughout; where the
+     * app's existing failure recovery cannot heal the stream it clears the player, which is its
+     * settled answer to "this will not play" and is at least never a lie.
+     */
+    bumpPlayGeneration();
+    playGenerationRef.current = currentPlayGeneration();
+    setMobilePlayerPending(false);
+    audio.failResolve();
+    const stillPlaying = heldNowPlaying?.display?.title?.trim();
+    showAppToast(
+      stillPlaying
+        ? t('player.skipResolveGaveUp', { title: stillPlaying })
+        : t('player.skipResolveGaveUpUnknown'),
+      5000,
+    );
+  }, [
+    nowPlayingAuthority.reason,
+    audio.envelope?.envelopeId,
+    audio,
+    heldNowPlaying,
+    showAppToast,
+    t,
+  ]);
+
+  /** A stop leaves nothing on the speaker, so there is no longer an audible track to protect. */
+  useEffect(() => {
+    if (!audio.envelope && audio.state === 'Idle') setHeldNowPlaying(null);
+  }, [audio.envelope, audio.state]);
 
   const playerDownloadEnabled =
     homeHasLoadedTrack &&
@@ -7812,11 +8332,17 @@ export default function SandboxShell() {
     ? serverStemMix.stemTimeSeconds
     : isConnectRemote && remoteMirror
       ? remoteMirror.currentTimeSeconds
-      : audio.currentTimeSeconds;
+      : nowPlayingAuthority.source === 'held'
+        ? nowPlayingDisplay.positionSeconds
+        : audio.currentTimeSeconds;
   const npDurationSeconds =
     isConnectRemote && remoteMirror && remoteMirror.durationSeconds > 0
       ? remoteMirror.durationSeconds
-      : (() => {
+      : nowPlayingAuthority.source === 'held'
+        ? // beginResolve has already adopted the resolving track's length; the scrubber has to keep
+          // describing the track you can hear, or a 3-minute song reads as a 9-minute one.
+          nowPlayingDisplay.durationSeconds || 0
+        : (() => {
           const catalog =
             audio.envelope?.durationSeconds ??
             lockerFeatured?.durationSeconds ??
@@ -7839,7 +8365,7 @@ export default function SandboxShell() {
     : isConnectRemote && remoteMirror
       ? remoteMirror.isPlaying
       : audio.state === 'Playing' || audio.nativeExoEffectivePlaying;
-  const npEnvelope = isConnectRemote ? lyricsEnvelope : audio.envelope;
+  const npEnvelope = isConnectRemote ? lyricsEnvelope : authoritativeEnvelope;
   const npIsPodcast = Boolean(
     npEnvelope?.envelopeId && isPodcastEnvelopeId(npEnvelope.envelopeId),
   );
@@ -7859,6 +8385,33 @@ export default function SandboxShell() {
     seekSecondsForNextChapter(podcastChapters, npCurrentTimeSeconds) != null;
 
   const displayArt = homeArt;
+  /**
+   * Only non-null while the screen is holding a still-audible track through another track's
+   * resolve. The bar derives identity from the audio layer otherwise, and the audio layer has
+   * already moved on.
+   */
+  const playerBarHeldNowPlaying = useMemo(
+    () =>
+      nowPlayingAuthority.source === 'held'
+        ? {
+            title: homeTitle,
+            artist: homeArtist,
+            album: homeAlbum,
+            envelope: authoritativeEnvelope,
+            positionSeconds: npCurrentTimeSeconds,
+            durationSeconds: npDurationSeconds,
+          }
+        : null,
+    [
+      nowPlayingAuthority.source,
+      homeTitle,
+      homeArtist,
+      homeAlbum,
+      authoritativeEnvelope,
+      npCurrentTimeSeconds,
+      npDurationSeconds,
+    ],
+  );
   const showTopSearchBase = !isTV && !isCarMode && station !== 'settings' && station !== 'dj';
   const showHomeIdleChrome =
     showTopSearchBase && !showMobileShell && station === 'home' && !homeHasLoadedTrack;
@@ -7867,10 +8420,16 @@ export default function SandboxShell() {
   /** Album drill is full-page — never stack the typeahead panel over it. */
   const blockSearchDropdown = Boolean(albumDrillAlbum);
   const searchDropdownEffectiveOpen = searchDropdownOpen && !blockSearchDropdown;
-  /** Mobile shell header (downloads btn + optional search) — hidden on home/discover except search overlay. */
-  const showMobileShellHeader =
-    showMobileShell && (mobileSearchOpen || station === 'search' || station === 'locker');
-  const showShellHeaderOffset = showTopSearch || (showMobileShell && station === 'locker');
+  /**
+   * Mobile shell header — only the search overlay needs it now.
+   *
+   * It used to render on 'locker' purely to host the downloads button, costing a 52px empty band
+   * above the content. Discover never had it, so the segment tabs jumped 52px when you crossed
+   * between segments. The downloads button is a fixed-position FAB instead (see below), so every
+   * Music segment now starts flush at the top.
+   */
+  const showMobileShellHeader = showMobileShell && (mobileSearchOpen || station === 'search');
+  const showShellHeaderOffset = showTopSearch;
 
   const navActiveId: NavItemId = navItems.some((i) => i.id === station) ? station : 'home';
   const tvActiveStation: TVStationId =
@@ -7920,7 +8479,7 @@ export default function SandboxShell() {
           ) {
             showAppToast(
               t('player.lockerAudioReacquiring', {
-                defaultValue: `Re-downloading "${env.title}"…`,
+                title: env.title,
               }),
               5000,
             );
@@ -8089,9 +8648,9 @@ export default function SandboxShell() {
       return {
         title: title || t('player.unknownTitle'),
         artist: artist || t('player.unknownArtist'),
-        album: nowPlayingDisplay.album ?? audio.envelope?.album,
+        album: nowPlayingDisplay.album ?? authoritativeEnvelope?.album,
         artworkUrl: art || undefined,
-        envelopeId: nowPlayingDisplay.envelopeId || audio.envelope?.envelopeId,
+        envelopeId: nowPlayingDisplay.envelopeId || authoritativeEnvelope?.envelopeId,
       };
     },
   };
@@ -8143,8 +8702,18 @@ export default function SandboxShell() {
   useEffect(() => {
     const metadata = shortcutCtxRef.current.getMetadata();
     const isPlaying = audio.state === 'Playing' || audio.nativeExoEffectivePlaying;
-    const positionSeconds = audio.currentTimeSeconds;
-    const durationSeconds = audio.durationSeconds;
+    /*
+     * The lock screen and the notification are drawn from the same fields as the screen, so the
+     * hold has to reach them too. Left on the audio layer's own clock they would show the resolving
+     * track's length against the held track's title — the bug, one surface further out.
+     */
+    const holdingNowPlaying = nowPlayingAuthority.source === 'held';
+    const positionSeconds = holdingNowPlaying
+      ? nowPlayingDisplay.positionSeconds
+      : audio.currentTimeSeconds;
+    const durationSeconds = holdingNowPlaying
+      ? nowPlayingDisplay.durationSeconds || audio.durationSeconds
+      : audio.durationSeconds;
 
     syncMediaSessionState(metadata, isPlaying, positionSeconds, durationSeconds);
     void syncAndroidBackgroundMedia(
@@ -8171,6 +8740,10 @@ export default function SandboxShell() {
     audio.currentTimeSeconds,
     audio.durationSeconds,
     artworkUrl,
+    nowPlayingAuthority.source,
+    nowPlayingDisplay.envelopeId,
+    nowPlayingDisplay.positionSeconds,
+    nowPlayingDisplay.durationSeconds,
   ]);
 
   const showCarModeOffer =
@@ -8385,9 +8958,34 @@ export default function SandboxShell() {
           dropdownRef={searchDropdownRef}
           open={searchDropdownEffectiveOpen}
           loading={catalogLoading}
+          // Format chooser sits above everything; music browse only shows on Music.
+          showMusicBrowse={searchFormat === 'music'}
+          formatTabs={
+            <UniversalSearchPanel
+              tabsOnly
+              query={searchInput}
+              format={searchFormat}
+              onFormatChange={setSearchFormat}
+              onSelect={handleUniversalSearchSelect}
+            />
+          }
+          formatResults={
+            searchFormat !== 'music' ? (
+              <UniversalSearchPanel
+                resultsOnly
+                query={searchInput}
+                format={searchFormat}
+                onSelect={handleUniversalSearchSelect}
+                onOpenFormat={handleUniversalOpenFormat}
+                bookAuthorSeeds={audiobookAuthorSeeds}
+                bookOwnedTitles={audiobookOwnedTitles}
+              />
+            ) : null
+          }
           catalog={searchCatalog}
           playlists={unifiedSearchResult.playlists}
           podcastsEnabled={podcastsEnabled}
+          videosEnabled={videosEnabled}
           activeIndex={searchActiveIndex}
           connectivityHint={
             searchDropdownEffectiveOpen ? searchConnectivityHint(offlineStatus, lang) : null
@@ -8624,6 +9222,34 @@ export default function SandboxShell() {
         ) : null
       )}
 
+      {/* Search lives on the Home vinyl (see onIdleSearch), but that hit area only exists
+          while Home is idle — once a track is loaded the vinyl belongs to the player. So
+          keep the floating button everywhere EXCEPT idle Home, otherwise Home would have
+          no way to reach search at all.
+
+          Also except the stations that carry their own search field. Audiobooks and Podcasts
+          each open with a full-width search input, so the floating button put a second search
+          affordance on a screen that already had one — hovering over the content, no less. */}
+      {showMobileShell &&
+      !mobileSearchOpen &&
+      station !== 'search' &&
+      !STATIONS_WITH_OWN_SEARCH.has(station) &&
+      !(station === 'home' && !homeHasLoadedTrack) ? (
+        <button
+          type="button"
+          className="mobile-search-fab touch-manipulation"
+          onClick={openMobileSearch}
+          aria-label={t('nav.search')}
+        >
+          <Search className="w-5 h-5" strokeWidth={2} />
+        </button>
+      ) : null}
+
+      {/* No floating download button. Progress belongs with the content it describes — a bar at
+          the top of the collection and a chip on each track row (CollectionDownloadBar /
+          TrackDownloadProgress). The activity sheet remains reachable from the Locker ⋮ for the
+          queue-wide view: retries, failures, and clearing finished jobs. */}
+
       <main
         ref={shellMainRef}
         className={`shell-main relative z-[10] flex-1 min-h-0 w-full min-w-0 music-scrollbar ${
@@ -8648,7 +9274,7 @@ export default function SandboxShell() {
             : showShellHeaderOffset
               ? 'mt-[var(--shell-search-offset)]'
               : showMobileShell
-                ? 'mt-0'
+                ? 'shell-main--fab-clear'
                 : 'mt-16'
         }`}
       >
@@ -8746,7 +9372,7 @@ export default function SandboxShell() {
             artist={homeArtist}
             album={homeAlbum}
             albumArt={homeArt}
-            envelope={audio.envelope}
+            envelope={authoritativeEnvelope}
             state={homeDisplayState}
             isPlaying={audio.state === 'Playing' || audio.nativeExoEffectivePlaying}
             currentTimeSeconds={audio.currentTimeSeconds}
@@ -8831,7 +9457,7 @@ export default function SandboxShell() {
                       ) {
                         showAppToast(
                           t('player.lockerAudioReacquiring', {
-                            defaultValue: `Re-downloading "${env.title}"…`,
+                            title: env.title,
                           }),
                           5000,
                         );
@@ -8859,15 +9485,21 @@ export default function SandboxShell() {
                 if (env) void handlePlayEnvelope(env);
               }
             }}
-            compact={showMobileShell && homeHasLoadedTrack}
+            compact={showMobileShell && (homeHasLoadedTrack || mobilePlayerPending)}
             onOpenNowPlaying={
-              showMobileShell && homeHasLoadedTrack ? openMobileNowPlaying : undefined
+              // Allow opening the full player while a track is still resolving (yt-dlp can be
+              // slow) — otherwise the mini bar looked "stuck" and unresponsive during loading.
+              showMobileShell && (homeHasLoadedTrack || mobilePlayerPending)
+                ? openMobileNowPlaying
+                : undefined
             }
+            // Idle home vinyl is the app's search gesture (replaces the top-bar magnifier).
+            onIdleSearch={showMobileShell ? openMobileSearch : undefined}
             expanded={false}
             showMobileShell={showMobileShell}
             onGoToArtist={(name) => void handleOpenArtistByName(name)}
             onGoToAlbum={handleOpenAlbumByName}
-            envelope={homeAwaitingUserResume ? null : audio.envelope}
+            envelope={homeAwaitingUserResume ? null : authoritativeEnvelope}
             onSkipBack={showMobileShell ? skipBack : undefined}
             onSkipForward={showMobileShell ? skipForward : undefined}
             shuffleOn={shuffleOn}
@@ -8876,6 +9508,7 @@ export default function SandboxShell() {
             onRepeatCycle={cycleRepeat}
             fidelityLabel={playbackFidelityLabel ?? undefined}
             resolveElapsedSeconds={playbackResolveElapsed}
+            resolvingNextTrack={nowPlayingAuthority.showResolvingAffordance}
             onCancelResolve={handleDismissStuckPlayback}
             idleDiscovery={
               !showMobileShell
@@ -8908,6 +9541,9 @@ export default function SandboxShell() {
                     mixRadioEnabled: audio.state !== 'Idle' && Boolean(audio.envelope),
                     onArtistMix: () => void handleArtistMix(),
                     onTrackRadio: () => void handleTrackRadio(),
+                    onAddToPlaylist: npEnvelope
+                      ? () => setPlayerAddToPlaylistOpen(true)
+                      : undefined,
                     mixRadioSession,
                     saveMixRadioEnabled: Boolean(mixRadioSession) && playQueue.length > 0,
                     onSaveMixRadioToPlaylist: () => setMixRadioSaveOpen(true),
@@ -8941,6 +9577,8 @@ export default function SandboxShell() {
             <LazyDiscoverStationView
             activeTab={discoverTab}
             onTabChange={setDiscoverTab}
+            onExitToHome={() => setStation('home')}
+            segmentBar={musicSegmentBar}
             discoverDrillFromTab={discoverDrillFromTab}
             onDiscoverDrillFromTab={setDiscoverDrillFromTab}
             playlistsDrillBackRef={playlistsDrillBackRef}
@@ -8973,7 +9611,10 @@ export default function SandboxShell() {
             onPickExploreCategory={(label, group) => void runExploreSearch(label, group ?? 'quick')}
             onExploreInstantMix={handleExploreInstantMix}
             onSaveInstantPlaylist={handleSaveInstantPlaylist}
-            onOpenVideoFeed={handleOpenVideoFeed}
+            onDownloadMix={handleDownloadMix}
+            onShareMix={(mix) => void handleShareMix(mix)}
+            mfyDrillBackRef={mfyDrillBackRef}
+            onOpenVideoFeed={videosEnabled ? handleOpenVideoFeed : undefined}
             />,
           )}
         {station === 'search' && selectedArtist && !albumDrillQuery &&
@@ -9024,6 +9665,8 @@ export default function SandboxShell() {
             onCacheTrack={handleCacheTrack}
             />,
           ))}
+        {/* Cross-format results (Music / Pods / Books) sit above the music-specific
+            results, so one query answers across all three pillars. */}
         {station === 'search' && (!selectedArtist || albumDrillQuery) &&
           withStationSuspense(
             <LazySearchResultsView
@@ -9080,8 +9723,11 @@ export default function SandboxShell() {
             <LazyCollectionView
             section={lockerSection}
             onSectionChange={setLockerSection}
+            sectionBar={musicSegmentBar}
             homeResetKey={lockerHomeResetKey}
             lockerDrillBackRef={lockerDrillBackRef}
+            onOpenDownloads={() => setMobileDownloadSheetOpen(true)}
+            downloadAttentionCount={mobileDownloadBadge}
             vm={{
               url: audio.url,
               title: audio.title,
@@ -9117,35 +9763,50 @@ export default function SandboxShell() {
             />,
           )}
         </div>
-        {station === 'podcasts' && podcastsEnabled &&
-          withStationSuspense(
-            <LazyPodcastsView
-            activeEnvelopeId={podcastsActiveEnvelopeId}
-            onPlay={(env) => void handlePlayEnvelope(env)}
-            onPrimePlay={primePlayEnvelope}
-            onAddToQueue={(env) => handleAddToQueue([env])}
-            onQueueShowUnplayed={handleQueueShowUnplayed}
-            drillBackRef={podcastsDrillBackRef}
-            episodeNotifCount={podcastEpisodeBadge}
-          />,
-          )}
-        {station === 'audiobooks' && audiobooksEnabled &&
-          withStationSuspense(
-            <LazyAudiobooksView
-              onPlay={(env) => void handlePlayEnvelope(env)}
-              onPlayAlbum={(tracks, shuffle) => void handlePlayAlbum(tracks, shuffle)}
-              onPrimePlay={(env) => audio.primePlaybackGesture(env)}
-              activeEnvelopeId={audio.envelope?.envelopeId}
-              onError={(msg) => showAppToast(msg, 5000)}
-              onSuccess={(msg) => showAppToast(msg, 6000)}
-              onOpenAcquireSettings={() => {
-                setSettingsInitialTab('addons');
-                setStation('settings');
-              }}
-              drillBackRef={audiobooksDrillBackRef}
-            />,
-            'audiobooks',
-          )}
+        {podcastsMounted && podcastsEnabled && (
+          <div
+            className={station === 'podcasts' ? 'flex flex-col min-h-0 flex-1' : 'hidden'}
+            aria-hidden={station !== 'podcasts'}
+          >
+            {withStationSuspense(
+              <LazyPodcastsView
+                activeEnvelopeId={podcastsActiveEnvelopeId}
+                onPlay={(env) => void handlePlayEnvelope(env)}
+                onPrimePlay={primePlayEnvelope}
+                onAddToQueue={(env) => handleAddToQueue([env])}
+                onQueueShowUnplayed={handleQueueShowUnplayed}
+                drillBackRef={podcastsDrillBackRef}
+                episodeNotifCount={podcastEpisodeBadge}
+              />,
+            )}
+          </div>
+        )}
+        {audiobooksMounted && audiobooksEnabled && (
+          <div
+            className={station === 'audiobooks' ? 'flex flex-col min-h-0 flex-1' : 'hidden'}
+            aria-hidden={station !== 'audiobooks'}
+          >
+            {withStationSuspense(
+              <LazyAudiobooksView
+                onPlay={(env) => void handlePlayEnvelope(env)}
+                onPlayAlbum={(tracks, shuffle, resume) =>
+                  void handlePlayAlbum(tracks, shuffle, resume)
+                }
+                onPrimePlay={(env) => audio.primePlaybackGesture(env)}
+                activeEnvelopeId={audio.envelope?.envelopeId}
+                playheadSeconds={npCurrentTimeSeconds}
+                onError={(msg) => showAppToast(msg, 5000)}
+                onSuccess={(msg) => showAppToast(msg, 6000)}
+                onOpenAcquireSettings={() => {
+                  setSettingsInitialTab('addons');
+                  setStation('settings');
+                }}
+                drillBackRef={audiobooksDrillBackRef}
+              />,
+              'audiobooks',
+            )}
+          </div>
+        )}
         {station === 'library' && libraryStationEnabled &&
           withStationSuspense(
             <LazyLibraryStationView
@@ -9205,7 +9866,7 @@ export default function SandboxShell() {
       </main>
 
       {castMode === 'overlay' ? <CinemaCastOverlay /> : null}
-      {videoFeedOpen ? (
+      {videoFeedOpen && videosEnabled ? (
         <VerticalVideoFeed open onClose={() => setVideoFeedOpen(false)} />
       ) : null}
 
@@ -9263,6 +9924,13 @@ export default function SandboxShell() {
       <SleepTimerPanel
         open={sleepTimerPanelOpen}
         onClose={() => setSleepTimerPanelOpen(false)}
+      />
+
+      <AddToPlaylistPicker
+        open={playerAddToPlaylistOpen && Boolean(npEnvelope)}
+        onClose={() => setPlayerAddToPlaylistOpen(false)}
+        tracks={npEnvelope ? [npEnvelope] : []}
+        onDone={(message) => showAppToast(message)}
       />
 
       <MixRadioSaveDialog
@@ -9352,6 +10020,7 @@ export default function SandboxShell() {
             playerBar: {
                   audio,
                   artworkUrl: displayArt,
+                  heldNowPlaying: playerBarHeldNowPlaying,
                   shuffleOn,
                   repeatMode,
                   thumbUp,
@@ -9396,6 +10065,9 @@ export default function SandboxShell() {
                   mixRadioEnabled: audio.state !== 'Idle' && Boolean(audio.envelope),
                   onArtistMix: () => void handleArtistMix(),
                   onTrackRadio: () => void handleTrackRadio(),
+                  onAddToPlaylist: npEnvelope
+                    ? () => setPlayerAddToPlaylistOpen(true)
+                    : undefined,
                   mixRadioSession,
                   saveMixRadioEnabled: Boolean(mixRadioSession) && playQueue.length > 0,
                   onSaveMixRadioToPlaylist: () => setMixRadioSaveOpen(true),
@@ -9483,6 +10155,23 @@ export default function SandboxShell() {
                     setMobileNowPlayingOpen(false);
                     setQueueDrawerOpen(true);
                   },
+                  /*
+                   * Supplying this is what makes the queue a sheet over the player instead of a
+                   * drawer that replaces it. Without it MobileNowPlayingView falls back to
+                   * onOpenQueue above, so the button keeps working either way — but the sheet can
+                   * only ever open if this object is present, which is the difference between the
+                   * component existing and the feature existing.
+                   */
+                  queueSheet: {
+                    playQueue,
+                    queueIndex,
+                    onRemoveFromQueue: handleRemoveFromQueue,
+                    onReorderQueue: handleReorderQueue,
+                    // onPlayQueueIndex is deliberately absent: no jump-to-index handler exists in
+                    // this file, because the old drawer never let you tap a row to play it either.
+                    // The sheet treats it as optional and simply does not make rows tappable, which
+                    // is honest — a row that looks tappable and silently does nothing is worse.
+                  },
                   castState: speakerCast,
                   playingFromLabel: mobilePlayingFromLabel,
                   onGoToVinyl: () => {
@@ -9494,6 +10183,9 @@ export default function SandboxShell() {
                   mixRadioEnabled: audio.state !== 'Idle' && Boolean(audio.envelope),
                   onArtistMix: () => void handleArtistMix(),
                   onTrackRadio: () => void handleTrackRadio(),
+                  onAddToPlaylist: npEnvelope
+                    ? () => setPlayerAddToPlaylistOpen(true)
+                    : undefined,
                   mixRadioSession,
                   saveMixRadioEnabled: Boolean(mixRadioSession) && playQueue.length > 0,
                   onSaveMixRadioToPlaylist: () => setMixRadioSaveOpen(true),
@@ -9511,6 +10203,7 @@ export default function SandboxShell() {
                   onDownloadTrack: downloadCurrentTrack,
                   showMobileShell,
                   audioState: audio.state,
+                  resolvingNextTrack: nowPlayingAuthority.showResolvingAffordance,
                   onCancelResolve: handleDismissStuckPlayback,
                   stemSliders: stemSlidersPanelProps,
                   isPodcast: npIsPodcast,
@@ -9554,6 +10247,7 @@ export default function SandboxShell() {
         <PlayerBar
           audio={audio}
           artworkUrl={displayArt}
+          heldNowPlaying={playerBarHeldNowPlaying}
           shuffleOn={shuffleOn}
           repeatMode={repeatMode}
           thumbUp={thumbUp}
@@ -9611,6 +10305,9 @@ export default function SandboxShell() {
           mixRadioEnabled={audio.state !== 'Idle' && Boolean(audio.envelope)}
           onArtistMix={() => void handleArtistMix()}
           onTrackRadio={() => void handleTrackRadio()}
+          onAddToPlaylist={
+            npEnvelope ? () => setPlayerAddToPlaylistOpen(true) : undefined
+          }
           mixRadioSession={mixRadioSession}
           discoverySkipOnly={mixRadioSession?.skipOnly === true}
           saveMixRadioEnabled={Boolean(mixRadioSession) && playQueue.length > 0}

@@ -57,6 +57,12 @@ export interface FeedViewProps {
   onGoToExplore?: () => void;
   onPickExploreCategory?: (label: string, group: import('../exploreCatalog').ExploreGroup) => void;
   onSaveInstantPlaylist?: (tracks: MediaEnvelope[], name: string) => void;
+  /** Cache a mix's tracks for offline playback. */
+  onDownloadMix?: (mix: DiscoveryMix) => void;
+  /** Export/share a mix via the system share sheet. */
+  onShareMix?: (mix: DiscoveryMix) => void;
+  /** Android hardware back — pop the expanded mix page. */
+  mfyDrillBackRef?: React.MutableRefObject<(() => boolean) | null>;
   /** Inside Discover station tab (no duplicate page title). */
   embedded?: boolean;
   /** Mobile-native layout: carousels, artist-grouped followed feed. */
@@ -452,6 +458,9 @@ export default function FeedView({
   onGoToExplore,
   onPickExploreCategory,
   onSaveInstantPlaylist,
+  onDownloadMix,
+  onShareMix,
+  mfyDrillBackRef,
   embedded = false,
   mobile = false,
 }: FeedViewProps) {
@@ -566,7 +575,7 @@ export default function FeedView({
     const lockerRows: FeedRowItem[] = [];
     const locker = lockerSnap ?? [];
     for (const entry of [...locker].sort((a, b) => b.addedAt - a.addedAt).slice(0, 8)) {
-      if (!entry.url) continue;
+      // `url` is empty for downloaded tracks (audio is native/IDB), so no url gate here.
       lockerRows.push({
         id: entry.id,
         title: entry.title,
@@ -581,7 +590,11 @@ export default function FeedView({
 
   useEffect(() => {
     let cancelled = false;
-    setRefreshing(true);
+    // Only advertise "refreshing" when there is nothing cached to look at. Flipping this
+    // on every entry is what made For You feel like it was perpetually loading.
+    const cachedFollowed = getFollowedArtistFeedCache(followedArtists);
+    const followedIsFresh = Boolean(cachedFollowed && !cachedFollowed.fromCache);
+    if (!cachedFollowed) setRefreshing(true);
     setFetchError(null);
     setFetchUrl(getTier34BaseUrl());
 
@@ -608,8 +621,10 @@ export default function FeedView({
         }
       });
 
+      // A fresh cached feed is good enough — refetching it on every visit is what made
+      // this surface slow (per-artist catalog + MusicBrainz calls, throttled 200ms apart).
       const followedPromise =
-        followedArtists.length > 0
+        followedArtists.length > 0 && !followedIsFresh
           ? fetchFollowedArtistFeed(followedArtists).then((feed) => {
               if (cancelled) return;
               setFollowedFeed(feed);
@@ -854,6 +869,9 @@ export default function FeedView({
         lang={lang}
         onPlayDiscoveryMix={handlePlayDiscoveryMix}
         onSaveMix={onSaveInstantPlaylist ? handleSaveMix : undefined}
+        onDownloadMix={onDownloadMix}
+        onShareMix={onShareMix}
+        mfyDrillBackRef={mfyDrillBackRef}
         onPlayTrack={onPlay}
         onGoToExplore={onGoToExplore}
         onPickExploreCategory={onPickExploreCategory}

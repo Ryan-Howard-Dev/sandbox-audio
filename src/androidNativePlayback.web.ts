@@ -49,6 +49,11 @@ export class NativeExoPlaybackWeb extends WebPlugin implements NativeExoPlayback
     return { ok: false, speed: 1 };
   }
 
+  /** Off the phone the Web Audio speech chain handles this — see speechClarity.ts. */
+  async setSpeechClarity(): Promise<{ ok: boolean; active?: boolean; supported?: boolean }> {
+    return { ok: false, active: false, supported: false };
+  }
+
   async setBitPerfectEnabled(): Promise<{ ok: boolean; bitPerfectActive?: boolean }> {
     return { ok: false, bitPerfectActive: false };
   }
@@ -104,6 +109,16 @@ export class NativeExoPlaybackWeb extends WebPlugin implements NativeExoPlayback
     return {};
   }
 
+  /** No native cache off Android; 0 means unknown, and the caller leaves the bitrate unset. */
+  async getLockerBlobBytes(): Promise<{ bytes?: number }> {
+    return { bytes: 0 };
+  }
+
+  /** Likewise: an empty head means "could not read", not "empty file". */
+  async getLockerBlobHead(): Promise<{ base64?: string }> {
+    return { base64: '' };
+  }
+
   async importLockerBlobFromPath(): Promise<{ ok: boolean; contentUri?: string; bytes?: number }> {
     return { ok: false };
   }
@@ -129,6 +144,28 @@ export class NativeExoPlaybackWeb extends WebPlugin implements NativeExoPlayback
       cacheBlobBytes: 0,
       cacheYtdlpCount: 0,
       cacheYtdlpBytes: 0,
+    };
+  }
+
+  async listLockerBlobs(): Promise<{ ids: string[] }> {
+    return { ids: [] };
+  }
+
+  async pruneLockerBlobs(): Promise<{
+    deletedCount: number;
+    freedBytes: number;
+    keptCount: number;
+    totalCount: number;
+    dryRun: boolean;
+    refusedEmptyKeep: boolean;
+  }> {
+    return {
+      deletedCount: 0,
+      freedBytes: 0,
+      keptCount: 0,
+      totalCount: 0,
+      dryRun: true,
+      refusedEmptyKeep: false,
     };
   }
 

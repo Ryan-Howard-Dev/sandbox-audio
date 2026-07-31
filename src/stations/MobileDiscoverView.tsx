@@ -41,7 +41,14 @@ export interface MobileDiscoverViewProps {
   onPickExploreCategory: (label: string, group: ExploreGroup) => void;
   onExploreInstantMix?: (tracks: MediaEnvelope[], label: string) => void;
   onSaveInstantPlaylist?: (tracks: MediaEnvelope[], name: string) => void;
+  onDownloadMix?: (mix: import('../discoveryMixes').DiscoveryMix) => void;
+  onShareMix?: (mix: import('../discoveryMixes').DiscoveryMix) => void;
+  mfyDrillBackRef?: React.MutableRefObject<(() => boolean) | null>;
   onOpenVideoFeed?: () => void;
+  /** Top-level back — returns to Home from the Discover station root. */
+  onExitToHome?: () => void;
+  /** Shared Music segment bar rendered above the Discover sub-tabs. */
+  segmentBar?: React.ReactNode;
 }
 
 const TABS: DiscoverTabId[] = ['feed', 'explore'];
@@ -97,7 +104,12 @@ export default function MobileDiscoverView({
   onPickExploreCategory,
   onExploreInstantMix,
   onSaveInstantPlaylist,
+  onDownloadMix,
+  onShareMix,
+  mfyDrillBackRef,
   onOpenVideoFeed,
+  onExitToHome,
+  segmentBar,
 }: MobileDiscoverViewProps) {
   const { t } = useTranslation();
   const isPlaylistsView = activeTab === 'playlists';
@@ -116,10 +128,16 @@ export default function MobileDiscoverView({
   return (
     <div className="discover-mobile discover-page">
       <header className="discover-mobile-header">
+        {segmentBar && !isDedicatedView ? segmentBar : null}
         {isDedicatedView ? (
           <div className="discover-mobile-toolbar">
             <MobileShellBackButton onClick={handleDrillBack} />
             <h1 className="discover-mobile-toolbar-title">{t(`discover.tabs.${activeTab}`)}</h1>
+          </div>
+        ) : segmentBar ? null : onExitToHome ? (
+          <div className="discover-mobile-toolbar">
+            <MobileShellBackButton onClick={onExitToHome} />
+            <h1 className="discover-mobile-title">{t('discover.title')}</h1>
           </div>
         ) : (
           <h1 className="discover-mobile-title">{t('discover.title')}</h1>
@@ -152,6 +170,9 @@ export default function MobileDiscoverView({
               onGoToExplore={() => handleTabChange('explore')}
               onPickExploreCategory={onPickExploreCategory}
               onSaveInstantPlaylist={onSaveInstantPlaylist}
+              onDownloadMix={onDownloadMix}
+              onShareMix={onShareMix}
+              mfyDrillBackRef={mfyDrillBackRef}
             />
           </DiscoverTabSuspense>
         ) : null}
@@ -167,6 +188,8 @@ export default function MobileDiscoverView({
               onPlayDiscoveryMix={onPlayDiscoveryMix}
               onPlayInstantMix={onExploreInstantMix}
               onSaveInstantPlaylist={onSaveInstantPlaylist}
+              onDownloadMix={onDownloadMix}
+              onShareMix={onShareMix}
               onOpenVideoFeed={onOpenVideoFeed}
               showMadeForYou={false}
             />

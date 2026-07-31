@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ArrowLeft,
-  Globe,
   Loader2,
   Play,
   Plus,
@@ -368,16 +367,8 @@ export default function PodcastDiscoverPanel({
 
   return (
     <div className="podcasts-discover">
-      <div className="podcasts-discover-hero">
-        <Globe className="w-5 h-5 text-accent shrink-0" aria-hidden />
-        <div>
-          <p className="podcasts-discover-hero-title">Discover podcasts worldwide</p>
-          <p className="podcasts-discover-hero-lead">
-            Search millions of shows across open podcast directories and the global catalog. Tap a show to browse episodes.
-          </p>
-        </div>
-      </div>
-
+      {/* The search field and results say what this tab is. A hero card explaining it was
+          onboarding copy with no expiry — Music has no equivalent and does not need one. */}
       <form
         className="podcasts-discover-search"
         onSubmit={(e) => {
@@ -394,13 +385,12 @@ export default function PodcastDiscoverPanel({
           className="podcasts-discover-search-input"
           aria-label="Search global podcasts"
         />
-        <button
-          type="submit"
-          className="podcasts-discover-search-btn touch-manipulation"
-          disabled={searching || query.trim().length < 2}
-        >
-          {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-        </button>
+        {/* No Search button: the keyboard's enter key already submits, and the button was
+            eating the width that truncated the placeholder. The spinner stays — that is
+            feedback, not an affordance. */}
+        {searching ? (
+          <Loader2 className="w-4 h-4 shrink-0 animate-spin text-accent" aria-hidden />
+        ) : null}
       </form>
 
       <div className="podcasts-discover-categories hide-scrollbar">

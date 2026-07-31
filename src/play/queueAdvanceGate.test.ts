@@ -1,9 +1,185 @@
 import { describe, expect, it } from 'vitest';
 import {
+  JS_NAV_TRANSITION_OWNERSHIP_MS,
   resolveActivePlayQueue,
+  EXO_TRANSITION_REASON_AUTO,
+  EXO_TRANSITION_REASON_PLAYLIST_CHANGED,
+  EXO_TRANSITION_REASON_SEEK,
+  shouldAdoptNativeExoTransition,
   shouldSuppressJsAdvanceAfterNativeGapless,
   trackPlaybackMatureForAdvance,
 } from './queueAdvanceGate';
+
+/*
+ * Regression cover for the two playback breakages caused by keying the native queue off a stable
+ * mediaId (#36). URL matching missed often enough to hide a real defect: native fires a
+ * transition for every item change, including ones JS just caused, and adopting those re-drove
+ * the queue index on top of the JS advance. Reliable matching made every echo land, so skipping
+ * jumped between tracks and tapping a song played a different one.
+ *
+ * These enumerate the race directly, including the ordering an E2E cannot reach: the native echo
+ * arriving before the JS advance has updated the active envelope ref.
+ */
+describe('shouldAdoptNativeExoTransition', () => {
+  const now = 10_000;
+
+  it('adopts a genuine gapless advance JS did not initiate', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-1',
+        nowMs: now,
+      }),
+    ).toBe(true);
+  });
+
+  /*
+   * R-018. Every spurious transition captured on device carried reason=3: a skip re-primes the
+   * native queue, and the rebuild reports items ahead of the target. The ownership window could
+   * only lose that race — one such transition was measured at 2133ms, so any slower decode pushes
+   * it past 3000ms and the index jumps a track or two. A rebuild is never proof a listener moved.
+   */
+  it('ignores a playlist-rebuild transition even long after the JS navigation', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-5',
+        activeEnvelopeId: 'track-3',
+        pendingJsNavEnvelopeId: 'track-3',
+        pendingJsNavAtMs: now - 9_000,
+        reason: EXO_TRANSITION_REASON_PLAYLIST_CHANGED,
+        nowMs: now,
+      }),
+    ).toBe(false);
+  });
+
+  it('ignores a seek-driven transition', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-4',
+        activeEnvelopeId: 'track-1',
+        reason: EXO_TRANSITION_REASON_SEEK,
+        nowMs: now,
+      }),
+    ).toBe(false);
+  });
+
+  it('still adopts an AUTO advance once the ownership window has passed', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-1',
+        pendingJsNavEnvelopeId: 'track-1',
+        pendingJsNavAtMs: now - 9_000,
+        reason: EXO_TRANSITION_REASON_AUTO,
+        nowMs: now,
+      }),
+    ).toBe(true);
+  });
+
+  it('keeps the window as a backstop for an AUTO echo of the JS navigation', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-1',
+        pendingJsNavEnvelopeId: 'track-2',
+        pendingJsNavAtMs: now - 200,
+        reason: EXO_TRANSITION_REASON_AUTO,
+        nowMs: now,
+      }),
+    ).toBe(false);
+  });
+
+  it('ignores a transition to the track already playing', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-1',
+        activeEnvelopeId: 'track-1',
+        nowMs: now,
+      }),
+    ).toBe(false);
+  });
+
+  it('ignores the native echo of a JS-initiated skip', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-2',
+        pendingJsNavEnvelopeId: 'track-2',
+        pendingJsNavAtMs: now - 50,
+        nowMs: now,
+      }),
+    ).toBe(false);
+  });
+
+  /*
+   * The case the active-envelope guard alone cannot catch, and the one that actually shipped
+   * broken: the echo lands before JS has updated its active ref, so activeEnvelopeId is still
+   * the *previous* track and the comparison passes. Only the navigation claim rejects it.
+   */
+  it('ignores the echo even when it beats the JS ref update', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-1',
+        pendingJsNavEnvelopeId: 'track-2',
+        pendingJsNavAtMs: now - 10,
+        nowMs: now,
+      }),
+    ).toBe(false);
+  });
+
+  /*
+   * R-018. A skip calls playUrl with resetQueue, then the prefetch effect enqueues the next five
+   * tracks. Each enqueue produced a transition whose envelope was *not* the navigation target, so
+   * the old narrower rule adopted every one and each re-drove setQueueIndex — the observed
+   * overshoot of five to seven against a native queue of about six. Ownership now covers the
+   * whole window, not just the navigation's own envelope.
+   */
+  it('ignores prefetch transitions to tracks beyond the skip target', () => {
+    for (const ahead of ['track-3', 'track-4', 'track-5', 'track-6', 'track-7']) {
+      expect(
+        shouldAdoptNativeExoTransition({
+          transitionEnvelopeId: ahead,
+          activeEnvelopeId: 'track-2',
+          pendingJsNavEnvelopeId: 'track-2',
+          pendingJsNavAtMs: now - 40,
+          nowMs: now,
+        }),
+      ).toBe(false);
+    }
+  });
+
+  /* Once the window has passed, a genuine advance to a later track is adopted again. */
+  it('adopts a later track once the navigation window has expired', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-3',
+        activeEnvelopeId: 'track-2',
+        pendingJsNavEnvelopeId: 'track-2',
+        pendingJsNavAtMs: now - JS_NAV_TRANSITION_OWNERSHIP_MS - 1,
+        nowMs: now,
+      }),
+    ).toBe(true);
+  });
+
+  it('releases ownership once the window expires, so a stale claim cannot wedge it shut', () => {
+    expect(
+      shouldAdoptNativeExoTransition({
+        transitionEnvelopeId: 'track-2',
+        activeEnvelopeId: 'track-1',
+        pendingJsNavEnvelopeId: 'track-2',
+        pendingJsNavAtMs: now - JS_NAV_TRANSITION_OWNERSHIP_MS,
+        nowMs: now,
+      }),
+    ).toBe(true);
+  });
+
+  it('rejects a transition with no resolvable envelope', () => {
+    expect(
+      shouldAdoptNativeExoTransition({ transitionEnvelopeId: '  ', nowMs: now }),
+    ).toBe(false);
+  });
+});
 
 describe('trackPlaybackMatureForAdvance', () => {
   it('accepts when Playing was reached', () => {
@@ -34,6 +210,39 @@ describe('trackPlaybackMatureForAdvance', () => {
         currentSeconds: 0.1,
       }),
     ).toBe(false);
+  });
+
+  it('rejects reachedPlaying that flipped true only milliseconds ago (no peak proof either)', () => {
+    expect(
+      trackPlaybackMatureForAdvance({
+        reachedPlaying: true,
+        peakSeconds: 0,
+        currentSeconds: 0,
+        msSinceReachedPlaying: 15,
+      }),
+    ).toBe(false);
+  });
+
+  it('accepts reachedPlaying once it has held past the minimum window', () => {
+    expect(
+      trackPlaybackMatureForAdvance({
+        reachedPlaying: true,
+        peakSeconds: 0,
+        currentSeconds: 0,
+        msSinceReachedPlaying: 450,
+      }),
+    ).toBe(true);
+  });
+
+  it('still accepts on real listened time even if reachedPlaying flipped just now', () => {
+    expect(
+      trackPlaybackMatureForAdvance({
+        reachedPlaying: true,
+        peakSeconds: 2.1,
+        currentSeconds: 2.1,
+        msSinceReachedPlaying: 10,
+      }),
+    ).toBe(true);
   });
 });
 

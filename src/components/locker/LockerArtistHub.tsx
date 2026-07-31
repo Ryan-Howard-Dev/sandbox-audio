@@ -281,7 +281,12 @@ export interface LockerArtistHubProps {
   onShuffle?: () => void;
   onPlayTrack: (envelope: MediaEnvelope) => void;
   onPlayTracks: (envelopes: MediaEnvelope[], shuffle?: boolean) => void;
-  onOpenCollection: (collection: AlbumCollection) => void;
+  /**
+   * The edition matters: a collection can hold several, and opening without one falls back to
+   * the *preferred* edition — so tapping "The Real Me" opened "We Still Don't Trust You".
+   * Each tile already renders a specific edition; pass the one the user actually saw.
+   */
+  onOpenCollection: (collection: AlbumCollection, editionKey?: string) => void;
   onPlayCollection: (album: CollectionAlbumGroup) => void;
   albumArtSrc: (album: CollectionAlbumGroup) => string | undefined;
   trackArtSrc?: (entry: LockerEntry) => string | undefined;
@@ -541,7 +546,7 @@ export default function LockerArtistHub({
                       art={art}
                       tracks={edition.tracks}
                       artistLine={artistLine}
-                      onClick={() => onOpenCollection(collection)}
+                      onClick={() => onOpenCollection(collection, edition.key)}
                       onArtError={(failedSrc) => onAlbumArtError?.(album, failedSrc)}
                     />
                   </React.Fragment>
@@ -585,7 +590,7 @@ export default function LockerArtistHub({
                         if (isLockerSingleCollection(collection)) {
                           onPlayCollection(album);
                         } else {
-                          onOpenCollection(collection);
+                          onOpenCollection(collection, edition.key);
                         }
                       }}
                       overflowMenu={
@@ -645,7 +650,7 @@ export default function LockerArtistHub({
                       art={art}
                       tracks={edition.tracks}
                       artistLine={artistLine}
-                      onClick={() => onOpenCollection(collection)}
+                      onClick={() => onOpenCollection(collection, edition.key)}
                       onArtError={(failedSrc) => onAlbumArtError?.(album, failedSrc)}
                     />
                   </React.Fragment>

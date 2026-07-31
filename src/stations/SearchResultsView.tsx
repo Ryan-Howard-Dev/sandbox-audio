@@ -47,6 +47,7 @@ import { resolvedStreamMatchesCatalog } from '../playbackPipeline';
 import { resolveArtistRowArtwork } from '../artistImage';
 import { resolveAlbumRowArtwork } from '../albumCover';
 import type { CatalogAlbum, CatalogArtist, CatalogTrack } from '../searchCatalog';
+import { fuseRankedLists } from '../rankFusion';
 import {
   collectAlbumArtistCredits,
   collectAlbumGuestArtists,
@@ -1005,6 +1006,50 @@ export default function SearchResultsView({
     [unified?.tracks],
   );
 
+  /*
+   * Fused, not concatenated.
+   *
+   * This branch used to be [...webSupplementTracks, ...catalogTrackRows] — every YouTube row
+   * ahead of every catalog row, by position rather than relevance. Searching "Radiohead Weird
+   * Fishes" with the TRACKS tab selected therefore showed covers and big-band renditions while
+   * Radiohead's own recording sat below all of them, and selecting TRACKS was worse than leaving
+   * ALL, which falls through to the already-ranked unified.tracks.
+   *
+   * Same fix as applyWebSupplementToUnified: rank position decides, so each list's leader
+   * competes with the other's, and the catalog carries the modest weight because its rows arrive
+   * with real metadata where a web row is a best-effort title match.
+   */
+  const fusedTrackRows = useMemo(
+    () =>
+      fuseRankedLists<CatalogTrack>(
+        [
+          { source: 'catalog', items: catalogTrackRows, weight: 1.1 },
+          { source: 'web', items: webSupplementTracks },
+        ],
+        (track) => track.id,
+      ).map((row) => row.item),
+    [catalogTrackRows, webSupplementTracks],
+  );
+
+  /*
+   * What is actually in the list, at the moment it renders.
+   *
+   * Three separate changes aimed at this list moved nothing — a +2000 ranking bonus, a filter that
+   * tests as accepting the canonical row, and a merge fix — which means the list does not contain
+   * what reasoning about the code says it should. Guessing again is worthless; this prints the
+   * rows and settles whether the right recording is present at all.
+   */
+  useEffect(() => {
+    const rows = unified?.tracks ?? [];
+    console.warn(
+      `[unifiedTracks] n=${rows.length} ` +
+        rows
+          .slice(0, 8)
+          .map((t, i) => `${i}:"${t.artist} — ${t.title}"[${t.id}]`)
+          .join(' | '),
+    );
+  }, [unified?.tracks]);
+
   const streamableMatchesQuery = useMemo(
     () =>
       catalogSatisfiesTrackQuery(
@@ -1400,7 +1445,7 @@ export default function SearchResultsView({
       activeSection === 'locker'
         ? unified.lockerItems
         : activeSection === 'tracks' && webSupplementTracks.length > 0
-          ? [...webSupplementTracks, ...catalogTrackRows]
+          ? fusedTrackRows
           : unified.tracks;
 
     const tracksSectionLabel =

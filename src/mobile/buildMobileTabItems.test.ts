@@ -10,11 +10,13 @@ import {
 describe('buildMobileTabItems', () => {
   it('always yields five bottom destinations on default pins', () => {
     expect(mobileBottomNavTabCount(DEFAULT_NAV_PIN_TABS)).toBe(5);
+    // Default bottom nav is the three format pillars + Home + Menu. Search is no longer
+    // pinned here — it opens from the Home vinyl instead.
     expect(buildMobileBottomNavTabIds(DEFAULT_NAV_PIN_TABS)).toEqual([
       'home',
       'locker',
-      'mobile-search',
       'podcasts',
+      'audiobooks',
       MOBILE_MENU_TAB_ID,
     ]);
   });

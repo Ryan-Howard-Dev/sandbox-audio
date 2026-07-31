@@ -57,6 +57,43 @@ adb install android/app/build/outputs/apk/debug/app-debug.apk
 | Scrobbling | Settings → Playback → Last.fm | Now-playing + scrobble after 50% / track end |
 | Background | Home while playing | Notification + lock screen controls |
 
+### Phone E2E gate (deep-link probes)
+
+Build with the bridge embedded, otherwise the deep links are compiled out and nothing responds:
+
+```bash
+SANDBOX_ANDROID_E2E=true npm run build:android:apk
+adb install -r android/app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
+```
+
+Two harness settings before any run, both learned the hard way:
+
+```bash
+adb logcat -G 32M                 # results age out of the default buffer mid-run
+adb shell svc power stayon usb
+```
+
+Fire `probe-handlers` immediately before each probe. Delivery of a repeated deep link to an
+already-running app is unreliable — `am` reports the intent was delivered to the top instance and
+nothing reaches JS — and alternating URLs is what makes it land every time.
+
+```bash
+adb shell "am start -a android.intent.action.VIEW -d 'sandboxmusic://e2e/probe-handlers' rd.sheepskin.sandboxmusic"
+adb shell "am start -a android.intent.action.VIEW -d 'sandboxmusic://e2e/queue-skip-probe?skips=3' rd.sheepskin.sandboxmusic"
+adb logcat -d | grep SandboxE2E
+```
+
+| Probe | Precondition | Expected |
+| --- | --- | --- |
+| `queue-skip-probe?skips=3` | A **music album** playing, 2+ tracks | `AREA=queue-skip RESULT=PASS 3 skip(s) clean`. Music only — `usesIntervalSeekTransport` routes audiobook and podcast skips to an interval seek, so those correctly report `refused … outcome=seek` |
+| `probe-document-import` | None | `AREA=document-import RESULT=PASS` with `chunks>1`, `readBack=true`, `listed=true` |
+| `probe-book-import` | None | `AREA=book-import RESULT=PASS` with `chapters=2` and matching `readBackChapters` |
+| `probe-narration` | Volume audible | `AREA=narration RESULT=PASS spoke=true` — the device speaks one short phrase. Asserts the engine's own completion event, since synthesis that fails silently still resolves `speak()` |
+
+A failing `queue-skip-probe` prints step lines (`AREA=queue-skip-step`) showing which skip stalled,
+and `AREA=exo-transition` lines showing the adopt decision with its inputs. R-018 was found in
+those: every spurious transition carried `reason=3` (`PLAYLIST_CHANGED`).
+
 ## Android — new install + offline ExoPlayer
 
 Verify default native decode and locker `content://` playback after a clean install (see [android-playback.md](./android-playback.md)).

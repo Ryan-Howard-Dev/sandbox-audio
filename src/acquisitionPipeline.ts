@@ -269,6 +269,7 @@ async function syncOneAcquiredTrackToLocker(
         title: track.title,
         artist: ctx.trackArtists?.[track.trackId] ?? ctx.albumArtist ?? 'Unknown Artist',
         albumName: ctx.albumName,
+        albumArtist: ctx.albumArtist,
         releaseYear: ctx.releaseYear,
         durationSeconds: 0,
         addedAt: Date.now(),
@@ -842,6 +843,16 @@ let autoResumePending = false;
  */
 export async function autoResumePausedDownloadJobs(options?: {
   force?: boolean;
+  /**
+   * Discover and re-queue "incomplete" albums by diffing the online catalog listing against
+   * the locker. OFF by default: the catalog↔locker title/album matching is fuzzy, so on every
+   * boot it perpetually re-flagged already-downloaded tracks as missing and re-downloaded whole
+   * albums ("same albums over and over"), starving playback. Only an explicit user action to
+   * complete an album should pass this. Resuming genuinely user-initiated, interrupted download
+   * jobs still happens below regardless — that path is driven by real paused job state, not a
+   * catalog diff.
+   */
+  completeAlbums?: boolean;
 }): Promise<number> {
   if (autoResumeInFlight) {
     autoResumePending = true;
@@ -853,8 +864,11 @@ export async function autoResumePausedDownloadJobs(options?: {
   try {
     markAutoResumeScan();
     await revalidateDownloadQueueAgainstLocker();
-    const { autoQueueIncompleteAlbumDownloads } = await import('./lockerAlbumCompletion');
-    const queued = await autoQueueIncompleteAlbumDownloads();
+    let queued = 0;
+    if (options?.completeAlbums === true) {
+      const { autoQueueIncompleteAlbumDownloads } = await import('./lockerAlbumCompletion');
+      queued = await autoQueueIncompleteAlbumDownloads();
+    }
     await reconcilePausedDownloadJobsWithLocker();
     const needing = listDownloadJobsNeedingResume().filter(
       (job) =>

@@ -34,6 +34,12 @@ export interface PlayerBarMoreMenuProps {
   mixRadioEnabled?: boolean;
   onArtistMix?: () => void;
   onTrackRadio?: () => void;
+  /**
+   * Owner-supplied because the menu never sees the playing envelope — the picker needs the track,
+   * and threading a whole MediaEnvelope through PlayerBar and HomeHeroPlayer just to read one
+   * field would have added a prop to two components that have no other use for it.
+   */
+  onAddToPlaylist?: () => void;
   mixRadioSession?: MixRadioSession | null;
   saveMixRadioEnabled?: boolean;
   onSaveMixRadioToPlaylist?: () => void;
@@ -82,6 +88,7 @@ export default function PlayerBarMoreMenu({
   mixRadioEnabled = false,
   onArtistMix,
   onTrackRadio,
+  onAddToPlaylist,
   mixRadioSession = null,
   saveMixRadioEnabled = false,
   onSaveMixRadioToPlaylist,
@@ -293,6 +300,23 @@ export default function PlayerBarMoreMenu({
             onClick: () => {
               onOpenChange(false);
               onTrackRadio();
+            },
+          } satisfies LockerMenuAction,
+        ]
+      : []),
+    /*
+     * Sits with the radio actions rather than at the foot of the menu: "keep this one" and "give me
+     * more like this one" are the two things a listener wants from the track they are hearing, and
+     * splitting them put the more common of the two below the display and cast settings.
+     */
+    ...(!isPodcast && onAddToPlaylist
+      ? [
+          {
+            id: 'add-to-playlist',
+            label: t('player.menu.addToPlaylist'),
+            onClick: () => {
+              onOpenChange(false);
+              onAddToPlaylist();
             },
           } satisfies LockerMenuAction,
         ]

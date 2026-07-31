@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { MediaEnvelope } from '../../sandboxLayer1';
-import ModalOverlay from '../../stations/ModalOverlay';
 import {
   buildWeeklyDiscover,
   loadMadeForYouBundle,
@@ -17,10 +16,16 @@ export interface MadeForYouShelfProps {
   releases?: FollowedFeedRelease[];
   onPlayMix: (tracks: MediaEnvelope[], mix: DiscoveryMix) => void;
   onSaveMix?: (mix: DiscoveryMix) => void;
+  /** Cache the mix's tracks for offline playback. */
+  onDownloadMix?: (mix: DiscoveryMix) => void;
+  /** Export/share the mix via the system share sheet. */
+  onShareMix?: (mix: DiscoveryMix) => void;
   onPlayAlbum?: (tracks: MediaEnvelope[], shuffle?: boolean) => void;
   lastUpdatedAt?: number | null;
   lastUpdatedLabel?: string;
   mobile?: boolean;
+  /** Android hardware back — pop the expanded mix page. */
+  drillBackRef?: React.MutableRefObject<(() => boolean) | null>;
   /** compact = Daily + My Mix only (Explore hub). */
   variant?: 'full' | 'compact';
 }
@@ -29,10 +34,13 @@ export default function MadeForYouShelf({
   releases = [],
   onPlayMix,
   onSaveMix,
+  onDownloadMix,
+  onShareMix,
   onPlayAlbum,
   lastUpdatedAt,
   lastUpdatedLabel,
   mobile,
+  drillBackRef,
   variant = 'full',
 }: MadeForYouShelfProps) {
   const [bundle, setBundle] = useState<MadeForYouBundle | null>(null);
@@ -55,6 +63,20 @@ export default function MadeForYouShelf({
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Without this, hardware back on the expanded mix page skipped every discover handler and
+  // dropped the user on Home instead of returning to the shelf.
+  useEffect(() => {
+    if (!drillBackRef) return;
+    drillBackRef.current = () => {
+      if (!expandedMix) return false;
+      setExpandedMix(null);
+      return true;
+    };
+    return () => {
+      drillBackRef.current = null;
+    };
+  }, [drillBackRef, expandedMix]);
 
   const handleGenreChip = async (genre: string) => {
     setSelectedGenre(genre);
@@ -96,6 +118,33 @@ export default function MadeForYouShelf({
     (!compact && bundle.releaseRadar.tracks.length > 0) ||
     myMixes.some((m) => m.tracks.length > 0);
   if (!hasAny) return null;
+
+  /*
+   * Opening a mix replaces the shelf in place, like drilling into an album — it used to appear in
+   * a ModalOverlay, which read as a pop-up bolted onto the app rather than part of it.
+   */
+  if (expandedMix) {
+    return (
+      <section className="mfy-mix-page" aria-label={expandedMix.title}>
+        <DiscoveryMixFullPanel
+          mix={expandedMix}
+          onClose={() => setExpandedMix(null)}
+          onPlay={() => {
+            onPlayMix(expandedMix.tracks, expandedMix);
+            setExpandedMix(null);
+          }}
+          onShuffle={() => {
+            const shuffled = [...expandedMix.tracks].sort(() => Math.random() - 0.5);
+            onPlayMix(shuffled, expandedMix);
+            setExpandedMix(null);
+          }}
+          onSave={onSaveMix ? () => handleSave(expandedMix) : undefined}
+          onDownload={onDownloadMix ? () => onDownloadMix(expandedMix) : undefined}
+          onShare={onShareMix ? () => onShareMix(expandedMix) : undefined}
+        />
+      </section>
+    );
+  }
 
   return (
     <>
@@ -191,33 +240,11 @@ export default function MadeForYouShelf({
           mixes={myMixes}
           layout="multi"
           onPlayMix={onPlayMix}
+          onSeeAll={handleSeeAll}
           onSaveMix={onSaveMix ? handleSave : undefined}
         />
       </section>
 
-      <ModalOverlay
-        open={Boolean(expandedMix)}
-        onClose={() => setExpandedMix(null)}
-        title={expandedMix?.title}
-        maxWidth="max-w-lg"
-      >
-        {expandedMix ? (
-          <DiscoveryMixFullPanel
-            mix={expandedMix}
-            onClose={() => setExpandedMix(null)}
-            onPlay={() => {
-              onPlayMix(expandedMix.tracks, expandedMix);
-              setExpandedMix(null);
-            }}
-            onShuffle={() => {
-              const shuffled = [...expandedMix.tracks].sort(() => Math.random() - 0.5);
-              onPlayMix(shuffled, expandedMix);
-              setExpandedMix(null);
-            }}
-            onSave={onSaveMix ? () => handleSave(expandedMix) : undefined}
-          />
-        ) : null}
-      </ModalOverlay>
     </>
   );
 }

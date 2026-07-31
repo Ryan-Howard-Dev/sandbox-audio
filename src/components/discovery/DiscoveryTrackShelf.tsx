@@ -5,6 +5,12 @@ import { fetchExploreEnvelopes } from '../../exploreCatalog';
 import type { ExploreGroup } from '../../exploreCatalog';
 import { seedGradient } from '../../seedGradient';
 import type { HubShelfPick } from '../../exploreHubShelves';
+import {
+  readShelfCache,
+  shelfCacheIsStale,
+  shelfCacheKey,
+  writeShelfCache,
+} from '../../discoveryShelfCache';
 
 export interface DiscoveryTrackShelfProps {
   shelf: HubShelfPick;
@@ -41,7 +47,9 @@ function TrackCard({
         </span>
         <span className="hub-shelf-meta">
           <span className="hub-shelf-track">{track.title}</span>
-          <span className="hub-shelf-artist">{track.artist}</span>
+          <span className="hub-shelf-artist">
+            {track.releaseYear ? `${track.artist} · ${track.releaseYear}` : track.artist}
+          </span>
         </span>
         <Play className="hub-shelf-play w-3.5 h-3.5" aria-hidden />
       </button>
@@ -56,15 +64,30 @@ export default function DiscoveryTrackShelf({
   limit = 12,
   compact = false,
 }: DiscoveryTrackShelfProps) {
-  const [tracks, setTracks] = useState<MediaEnvelope[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = shelfCacheKey(shelf.group, shelf.label, limit);
+  // Seed from cache during the first render so the shelf paints instantly instead of
+  // flashing a spinner every time Discover is opened or scrolled.
+  const [tracks, setTracks] = useState<MediaEnvelope[]>(
+    () => readShelfCache(cacheKey)?.rows ?? [],
+  );
+  const [loading, setLoading] = useState(() => !readShelfCache(cacheKey));
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    const cached = readShelfCache(cacheKey);
+    if (cached) {
+      setTracks(cached.rows);
+      setLoading(false);
+      // Fresh enough — skip the network entirely this visit.
+      if (!shelfCacheIsStale(cached)) return;
+    } else {
+      setLoading(true);
+    }
     void fetchExploreEnvelopes(shelf.group, shelf.label, limit)
       .then((rows) => {
-        if (!cancelled) setTracks(rows);
+        if (cancelled || rows.length === 0) return;
+        setTracks(rows);
+        writeShelfCache(cacheKey, rows);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -72,7 +95,7 @@ export default function DiscoveryTrackShelf({
     return () => {
       cancelled = true;
     };
-  }, [shelf.group, shelf.label, limit]);
+  }, [shelf.group, shelf.label, limit, cacheKey]);
 
   if (!loading && tracks.length === 0) return null;
 

@@ -193,7 +193,11 @@ export function loadPlaylistTombstones(): PlaylistTombstone[] {
 }
 
 function savePlaylistTombstones(tombstones: PlaylistTombstone[]): void {
-  localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(tombstones));
+  try {
+    localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(tombstones));
+  } catch {
+    /* quota — non-fatal */
+  }
 }
 
 /** Record a deleted playlist id for cross-device tombstone replication. */
@@ -353,7 +357,18 @@ export function unpinPlaylistById(playlistId: string): void {
 }
 
 export function playlistCoverUrl(pl: StoredPlaylist): string | undefined {
-  return pl.coverUrl ?? pl.importCoverUrl;
+  const explicit = pl.coverUrl?.trim() || pl.importCoverUrl?.trim();
+  if (explicit) return explicit;
+  // Derive from the contents. Only imported playlists carry their own cover art, so
+  // locally-created and smart playlists had no image at all — hence every auto playlist
+  // rendering as a bare gradient. Prefer a persistent URL; a stale blob:/data: ref from a
+  // previous session would render broken.
+  const tracks = pl.tracks ?? [];
+  const persistent = tracks.find((t) => {
+    const art = t.artworkUrl?.trim();
+    return art && !/^(blob:|data:)/i.test(art);
+  });
+  return persistent?.artworkUrl?.trim() || undefined;
 }
 
 export function savePlaylists(
@@ -638,7 +653,20 @@ export function ensureCoreBuiltInPlaylists(
   lockerEntries: LockerEntry[],
   playHistory: StoredPlayHit[],
 ): StoredPlaylist[] {
-  let playlists = loadPlaylists();
+  const { playlists, changed } = buildCoreBuiltInPlaylists(lockerEntries, playHistory);
+  if (changed) savePlaylists(playlists, { skipSync: true });
+  return playlists;
+}
+
+/**
+ * Same work, but reports whether anything changed and never writes — so refreshSmartPlaylists can
+ * fold this into its own single save instead of each of them writing the whole store separately.
+ */
+function buildCoreBuiltInPlaylists(
+  lockerEntries: LockerEntry[],
+  playHistory: StoredPlayHit[],
+): { playlists: StoredPlaylist[]; changed: boolean } {
+  const playlists = loadPlaylists();
   let changed = false;
   const next = [...playlists];
 
@@ -675,8 +703,7 @@ export function ensureCoreBuiltInPlaylists(
     changed = true;
   }
 
-  if (changed) savePlaylists(next, { skipSync: true });
-  return changed ? next : playlists;
+  return { playlists: changed ? next : playlists, changed };
 }
 
 /** Rebuild smart playlist track caches from locker + play history. */
@@ -685,7 +712,13 @@ export function refreshSmartPlaylists(
   playHistory?: StoredPlayHit[],
 ): StoredPlaylist[] {
   const history = playHistory ?? getSmartPlaylistPlayHistory();
-  let playlists = ensureCoreBuiltInPlaylists(lockerEntries, history);
+  /*
+   * One save for both stages. Each savePlaylists is a full JSON.stringify of every playlist's
+   * complete track envelopes into synchronous localStorage, and it notifies subscribers who
+   * respond by calling loadPlaylists() and parsing all of it straight back — so a second write
+   * here cost another stringify plus a re-parse, and the extra notify re-entered this refresh.
+   */
+  const { playlists, changed: coreChanged } = buildCoreBuiltInPlaylists(lockerEntries, history);
   let changed = false;
   const next = playlists.map((pl) => {
     const rules = resolveSmartRules(pl);
@@ -697,6 +730,6 @@ export function refreshSmartPlaylists(
     changed = true;
     return { ...pl, tracks, updatedAt: Date.now() };
   });
-  if (changed) savePlaylists(next, { skipSync: true });
-  return changed ? next : playlists;
+  if (changed || coreChanged) savePlaylists(next, { skipSync: true });
+  return changed || coreChanged ? next : playlists;
 }

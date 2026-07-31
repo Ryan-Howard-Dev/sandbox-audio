@@ -86,6 +86,11 @@ jobs:
         run: npm ci
       - name: Generate Tauri icons
         run: node scripts/generate-tauri-icons.mjs
+      - name: Bundle portable Node
+        # tauri.conf.json lists resources/node/ unconditionally, and build:desktop does
+        # not run prebuild:desktop:assets — so without this the bundle aborts with
+        # "resource path 'resources/node' doesn't exist" (R-007).
+        run: node scripts/fetch-portable-node.mjs
       - name: Build desktop (Tauri)
         run: |
           set -euo pipefail
@@ -117,6 +122,11 @@ jobs:
         run: npm ci
       - name: Generate Tauri icons
         run: node scripts/generate-tauri-icons.mjs
+      - name: Bundle portable Node
+        # tauri.conf.json lists resources/node/ unconditionally, and build:desktop does
+        # not run prebuild:desktop:assets — so without this the bundle aborts with
+        # "resource path 'resources/node' doesn't exist" (R-007).
+        run: node scripts/fetch-portable-node.mjs
       - name: Build desktop (Tauri)
         run: npm run build:desktop
       - name: Upload Tauri Windows artifacts
@@ -218,6 +228,14 @@ jobs:
         uses: android-actions/setup-android@v3
       - name: Install dependencies
         run: npm ci
+      - name: Enable KVM
+        # ubuntu-latest ships /dev/kvm but not the group permission, so an x86_64 AVD never
+        # boots -- adb retries until the job times out. This is why every emulator job here
+        # has been failing. Documented prerequisite of android-emulator-runner.
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - name: Smoke E2E on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -227,8 +245,10 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 900000
           script: |
-            export SANDBOX_ANDROID_E2E=true
-            npm run build:android:apk
+            # NOTE: android-emulator-runner runs each script line in a separate
+            # `sh -c`, so `export` on its own line is lost before the build runs.
+            # The variable must be set inline on the command that needs it.
+            SANDBOX_ANDROID_E2E=true npm run build:android:apk
             chmod +x scripts/android-smoke-e2e.sh
             SKIP_BUILD=1 scripts/android-smoke-e2e.sh
 
@@ -253,6 +273,14 @@ jobs:
         uses: android-actions/setup-android@v3
       - name: Install dependencies
         run: npm ci
+      - name: Enable KVM
+        # ubuntu-latest ships /dev/kvm but not the group permission, so an x86_64 AVD never
+        # boots -- adb retries until the job times out. This is why every emulator job here
+        # has been failing. Documented prerequisite of android-emulator-runner.
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - name: Playback E2E on emulator (play spine + progress)
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -262,8 +290,10 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 900000
           script: |
-            export SANDBOX_ANDROID_E2E=true
-            npm run build:android:apk
+            # NOTE: android-emulator-runner runs each script line in a separate
+            # `sh -c`, so `export` on its own line is lost before the build runs.
+            # The variable must be set inline on the command that needs it.
+            SANDBOX_ANDROID_E2E=true npm run build:android:apk
             chmod +x scripts/android-playback-e2e.sh
             SKIP_BUILD=1 scripts/android-playback-e2e.sh
       - name: Upload playback E2E report

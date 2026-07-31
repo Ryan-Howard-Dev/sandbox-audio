@@ -29,6 +29,7 @@ import {
   type CatalogSearchResult,
   type CatalogTrack,
 } from './searchCatalog';
+import { fuseRankedLists } from './rankFusion';
 import { mergeWebCatalogResults } from './webCatalogSearch';
 import { tier34SearchLocker, type Tier34SearchHit } from './tier34/client';
 
@@ -541,6 +542,22 @@ export async function runUnifiedSearch(
           q,
         ),
   );
+  /*
+   * Third stage of the same trace. trackRows is what the catalog handed over, tracks is what
+   * survives mergeRankedTracks and the field filter — so a row present in the first and absent
+   * from the second is lost precisely here.
+   */
+  if (/radiohead/i.test(q)) {
+    const inRows = trackRows.filter((r) => /radiohead/i.test(r.track.artist)).length;
+    const merged = mergeRankedTracks(trackRows, q);
+    const afterMerge = merged.filter((t) => /radiohead/i.test(t.artist)).length;
+    const afterFilter = tracks.filter((t) => /radiohead/i.test(t.artist)).length;
+    console.warn(
+      `[unifiedTrace] rows=${trackRows.length} rowsRadiohead=${inRows} ` +
+        `afterMerge=${merged.length}/${afterMerge} afterFilter=${tracks.length}/${afterFilter}`,
+    );
+  }
+
   const albums = dedupeCatalogAlbums(rankAlbumRows(albumRows, q));
   const rankedArtists = mergeRankedArtists(artistRows, q);
   const artists = isLikelyTrackTitleQuery(q)
@@ -600,13 +617,25 @@ export function applyWebSupplementToUnified(
   const catalog = mergeWebCatalogResults(unified.catalog, webTracks, query);
   const existingNonWeb = unified.tracks.filter((t) => !t.id.startsWith('youtube-'));
   const webFromCatalog = catalog.tracks.filter((t) => t.id.startsWith('youtube-'));
-  const seen = new Set<string>();
-  const tracks: CatalogTrack[] = [];
-  for (const track of [...webFromCatalog, ...existingNonWeb]) {
-    if (seen.has(track.id)) continue;
-    seen.add(track.id);
-    tracks.push(track);
-  }
+
+  // These two lists are ranked by algorithms that know nothing about each other — the catalog by
+  // mergeRankedTracks, the web supplement by whatever order yt-dlp came back in — so their scores
+  // are not comparable and neither is the concatenation order. Prepending the web hits and then
+  // slicing to 12 meant a query that returned 12 YouTube rows pushed every iTunes row off the
+  // list entirely, however good the iTunes match was.
+  //
+  // Fusing on rank position instead means each list's leader competes with the other's leader.
+  // The catalog carries the modest weight because its rows come with real metadata — artwork,
+  // album, duration — where a web row is a best-effort title match; with k = 60 that puts the web
+  // list's first hit at roughly the catalog's eighth, so the supplement still reaches the visible
+  // twelve rather than being crowded out by the tilt.
+  const tracks = fuseRankedLists<CatalogTrack>(
+    [
+      { source: 'catalog', items: existingNonWeb, weight: 1.1 },
+      { source: 'web', items: webFromCatalog },
+    ],
+    (track) => track.id,
+  ).map((row) => row.item);
 
   const sections = [...unified.sections];
   if (tracks.length > 0 && !sections.includes('tracks')) {

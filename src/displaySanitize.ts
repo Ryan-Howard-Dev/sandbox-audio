@@ -192,7 +192,10 @@ export function catalogPreviewDurationSeconds(
 }
 
 const DISPLAY_FEAT_SUFFIX_RE =
-  /\s*[\(\[]\s*(?:feat\.?|ft\.?|featuring|with)\s+[^)\]]+[\)\]]|\s+(?:feat\.?|ft\.?|featuring|with)\s+.+$/i;
+  // Bracketed feat. billing (names optional — a truncated "(feat)" with no names
+  // must still be stripped rather than shown as a dangling "(FEAT)"), or a
+  // trailing "feat. …" suffix with names.
+  /\s*[\(\[]\s*(?:feat\.?|ft\.?|featuring|with)\s*[^)\]]*[\)\]]|\s+(?:feat\.?|ft\.?|featuring)\s+.+$/i;
 
 const TRACK_TITLE_FEAT_CAPTURE_RE =
   /\((?:feat\.?|ft\.?|featuring|with)\s+([^)]+)\)|\[(?:feat\.?|ft\.?|featuring|with)\s+([^\]]+)\]|\b(?:feat\.?|ft\.?|featuring|with)\s+(.+)$/i;

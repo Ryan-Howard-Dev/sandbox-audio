@@ -9,6 +9,7 @@ import type {
   MediaProvider,
   MediaTransport,
 } from './sandboxLayer1';
+import { isAirGapEnabled } from './airGapMode';
 import { catalogSearchUrl } from './catalogApi';
 import { fetchCatalogApiResults } from './catalogFetch';
 import {
@@ -32,6 +33,8 @@ import {
   isLikelyArtistNameQuery,
   isLikelyCombinedTrackQuery,
   resolveAlbumIntent,
+  textRelevanceScore,
+  titleTokensBeyondQuery,
   trackBelongsToAlbum,
   type AlbumIntentMatch,
   type CatalogAlbum,
@@ -974,6 +977,8 @@ function buildArchiveSearchQuery(q: string): string {
 }
 
 export async function searchArchive(query: string): Promise<MediaEnvelope[]> {
+  // Air-gap means no outbound requests, full stop. This reached archive.org unguarded (R-009).
+  if (isAirGapEnabled()) return [];
   const q = query.trim();
   if (!q) return [];
 
@@ -1064,6 +1069,8 @@ function upscaleCatalogArtwork(url?: string): string | undefined {
 
 /** Music catalog search — metadata envelopes; full streams resolve via tier 3/4/addons. */
 export async function searchCatalogProvider(query: string): Promise<MediaEnvelope[]> {
+  // Air-gap means no outbound requests, full stop. This reached the catalog API unguarded (R-009).
+  if (isAirGapEnabled()) return [];
   const q = query.trim();
   if (!q) return [];
 
@@ -1377,8 +1384,66 @@ function parseReleaseYear(value?: string): number {
 }
 
 /** Device (locker) first, then newest releases, then match confidence. */
-export function sortSearchHits(hits: ResolvedSearchHit[]): ResolvedSearchHit[] {
-  return [...hits].sort((a, b) => hitRankingScore(b) - hitRankingScore(a));
+/**
+ * Order search hits, best first.
+ *
+ * Pass the query. Without it this ranks by release year, and year at 100,000 a point swamps every
+ * other term — a 2024 DJ-mix compilation carrying a remix of the track outscores the album the
+ * track is actually from by 700,000, and confidence topping out at 10,000 can never close that.
+ * Searching "kendrick lamar humble" returned four remixes and a lullaby cover above the song.
+ *
+ * With a query, relevance is decided first and the old score becomes the tiebreak, so year still
+ * separates rows the query cannot — it just no longer overrules the query itself.
+ */
+export function sortSearchHits(
+  hits: ResolvedSearchHit[],
+  query?: string,
+): ResolvedSearchHit[] {
+  const q = query?.trim() ?? '';
+  if (!q) return [...hits].sort((a, b) => hitRankingScore(b) - hitRankingScore(a));
+
+  const relevance = new Map<ResolvedSearchHit, number>();
+  for (const hit of hits) relevance.set(hit, hitQueryRelevance(hit, q));
+
+  return [...hits].sort((a, b) => {
+    // Local library still wins outright: a track the listener owns is the answer to a search for
+    // it, whatever a catalog offers.
+    const localDiff = localTier(b) - localTier(a);
+    if (localDiff !== 0) return localDiff;
+    const relDiff = (relevance.get(b) ?? 0) - (relevance.get(a) ?? 0);
+    if (relDiff !== 0) return relDiff;
+    return hitRankingScore(b) - hitRankingScore(a);
+  });
+}
+
+/** 2 for a confident local match, 1 for a weaker one, 0 for catalog — mirrors hitRankingScore. */
+function localTier(hit: ResolvedSearchHit): number {
+  const localSources = hit.sources.filter((s) => s.provider === 'local-vault');
+  if (localSources.length === 0) return 0;
+  const conf = Math.max(
+    ...localSources.map((s) => ('confidence' in s ? (s as SearchScoredCandidate).confidence : 0.5)),
+  );
+  if (conf >= 0.82) return 2;
+  return conf >= 0.65 ? 1 : 0;
+}
+
+/**
+ * How well a hit answers the query, by its own metadata.
+ *
+ * Artist counts double: a query naming an artist is asking for their recording, and a title match
+ * alone is what let "Lullaby Versions of Kendrick Lamar" and a karaoke backing track through.
+ * Words in the title the query never asked for are subtracted, which is what separates "HUMBLE."
+ * from "HUMBLE. (Bassjackers Remix) [Mixed]" — the two are otherwise identical on token overlap.
+ */
+function hitQueryRelevance(hit: ResolvedSearchHit, query: string): number {
+  const env = hit.primaryEnvelope;
+  const artist = env?.artist ?? '';
+  const title = env?.title ?? '';
+  if (!artist && !title) return 0;
+  const score =
+    textRelevanceScore(artist, query) * 2 + textRelevanceScore(title, query);
+  const extras = titleTokensBeyondQuery(title, query, artist);
+  return score - Math.min(extras * 180, 900);
 }
 
 function hitRankingScore(hit: ResolvedSearchHit): number {
@@ -1759,7 +1824,7 @@ async function tieredFanOut(
   }
 
   if (onPartial && localResults.length > 0) {
-    onPartial(sortSearchHits(resolveIdentity(localResults)));
+    onPartial(sortSearchHits(resolveIdentity(localResults), query));
   }
 
   const [catalogRes, jamRes, archRes] = await Promise.allSettled([
@@ -1805,7 +1870,7 @@ async function tieredFanOut(
   ];
 
   if (onPartial && tier2Scored.length > localResults.length) {
-    onPartial(sortSearchHits(resolveIdentity(tier2Scored)));
+    onPartial(sortSearchHits(resolveIdentity(tier2Scored), query));
   }
 
   /** Album drill may skip Jamendo/Archive noise; proxy/debrid fan out per track in album mode. */
@@ -1897,7 +1962,7 @@ async function tieredFanOut(
     ...debridScored,
   ];
 
-  let hits = sortSearchHits(resolveIdentity(allScored));
+  let hits = sortSearchHits(resolveIdentity(allScored), query);
   if (albumMode && albumIntentTracks.length > 0) {
     hits = finalizeAlbumModeHits(hits, albumIntentTracks);
   } else if (!albumMode && resolvedHint) {
@@ -1969,8 +2034,11 @@ export async function engineSearch(
 
   const cached = albumHint || isChartQuery(query) ? undefined : searchCache.get(normalized);
   if (cached) {
+    // Query passed here too: a cached search that re-sorted without it would silently serve the
+    // year-ordered list this fix exists to replace, and only for repeat searches.
     const hits = sortSearchHits(
       resolveIdentity(cached.map((env) => envelopeToScored(env, 0.99))),
+      normalized,
     );
     const cachedIntent =
       albumHint ||
@@ -2015,7 +2083,7 @@ export async function engineSearch(
     options?.catalogOnly,
   );
   const sortedHits =
-    albumContext != null ? resolvedHits : sortSearchHits(resolvedHits);
+    albumContext != null ? resolvedHits : sortSearchHits(resolvedHits, query);
   const envelopes = sortedHits.map((h) => h.primaryEnvelope);
   if (envelopes.length) {
     searchCache.set(normalized, envelopes);

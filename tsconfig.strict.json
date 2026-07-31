@@ -7,6 +7,17 @@
   },
   "include": [
     "src/bootTasks.ts",
-    "src/musicbrainzScheduler.ts"
+    "src/musicbrainzScheduler.ts",
+    "src/audiobookProgress.ts",
+    "src/audiobookFidelity.ts",
+    "src/narrationVoices.ts",
+    "src/narrationReader.ts",
+    "src/epubParse.ts",
+    "src/epubImport.ts",
+    "src/spokenWordPlayback.ts",
+    "src/replayGainIngest.ts",
+    "src/documentLibrary.ts",
+    "src/bencode.ts",
+    "src/torrentMeta.ts"
   ]
 }

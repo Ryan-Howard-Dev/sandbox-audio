@@ -29,15 +29,24 @@ function channelIdFor(kind: NativeAlertChannel): string {
   return kind === 'music-release' ? MUSIC_RELEASE_CHANNEL_ID : PODCAST_EPISODE_CHANNEL_ID;
 }
 
-async function loadLocalNotifications() {
+/**
+ * Wrapped in an object on purpose. Returning the plugin proxy directly from an async function
+ * makes JS resolve it as a thenable — Capacitor's proxy answers *any* property access, so it
+ * answers `.then`, the runtime calls `LocalNotifications.then(resolve, reject)`, and Android
+ * throws `"LocalNotifications.then()" is not implemented on android`. The plugin never gets
+ * returned and every caller's await rejects. The extra object breaks the thenable check.
+ */
+async function loadLocalNotifications(): Promise<{
+  plugin: (typeof import('@capacitor/local-notifications'))['LocalNotifications'];
+}> {
   const mod = await import('@capacitor/local-notifications');
-  return mod.LocalNotifications;
+  return { plugin: mod.LocalNotifications };
 }
 
 /** Create Android notification channels (no-op on web). */
 export async function initNativeNotificationChannels(): Promise<void> {
   if (!isAndroid()) return;
-  const LocalNotifications = await loadLocalNotifications();
+  const { plugin: LocalNotifications } = await loadLocalNotifications();
   await LocalNotifications.createChannel({
     id: MUSIC_RELEASE_CHANNEL_ID,
     name: 'New releases',
@@ -60,7 +69,7 @@ export type NotificationPermissionState = 'granted' | 'denied' | 'prompt';
 
 export async function getNativeNotificationPermission(): Promise<NotificationPermissionState> {
   if (!isAndroid()) return 'denied';
-  const LocalNotifications = await loadLocalNotifications();
+  const { plugin: LocalNotifications } = await loadLocalNotifications();
   const status = await LocalNotifications.checkPermissions();
   if (status.display === 'granted') return 'granted';
   if (status.display === 'denied') return 'denied';
@@ -70,7 +79,7 @@ export async function getNativeNotificationPermission(): Promise<NotificationPer
 export async function requestNativeNotificationPermission(): Promise<NotificationPermissionState> {
   if (!isAndroid()) return 'denied';
   await initNativeNotificationChannels();
-  const LocalNotifications = await loadLocalNotifications();
+  const { plugin: LocalNotifications } = await loadLocalNotifications();
   const current = await LocalNotifications.checkPermissions();
   if (current.display === 'granted') return 'granted';
   if (current.display === 'denied') return 'denied';
@@ -98,7 +107,7 @@ export async function showNativeBackgroundAlert(
   if (isAndroid()) {
     const permission = await getNativeNotificationPermission();
     if (permission !== 'granted') return false;
-    const LocalNotifications = await loadLocalNotifications();
+    const { plugin: LocalNotifications } = await loadLocalNotifications();
     try {
       await LocalNotifications.schedule({
         notifications: [

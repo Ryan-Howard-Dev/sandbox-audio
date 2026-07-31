@@ -99,7 +99,24 @@ export function extractLockerArtistCandidates(entries: LockerEntry[]): LockerArt
   return [...map.values()];
 }
 
+// syncLockerAutoFollow fires this fire-and-forget on every locker-cache change (debounced, but
+// not awaited), so without a lock, back-to-back cache changes (e.g. a download batch, or the
+// boot-time locker/mirror sync) each spawn their OWN full sequential sweep across every
+// unresolved artist in the library — multiple sweeps hammering the network and native bridge
+// concurrently, right after the user's first tap. One sweep at a time; a change that arrives
+// mid-sweep gets picked up by the next call once this one finishes (still catches new artists).
+let resolveMissingMusicBrainzIdsInFlight: Promise<void> | null = null;
+
 async function resolveMissingMusicBrainzIds(): Promise<void> {
+  if (resolveMissingMusicBrainzIdsInFlight) return resolveMissingMusicBrainzIdsInFlight;
+  const task = resolveMissingMusicBrainzIdsRun().finally(() => {
+    resolveMissingMusicBrainzIdsInFlight = null;
+  });
+  resolveMissingMusicBrainzIdsInFlight = task;
+  return task;
+}
+
+async function resolveMissingMusicBrainzIdsRun(): Promise<void> {
   if (isAirGapEnabled()) return;
 
   const pending = getFollowedArtists().filter(

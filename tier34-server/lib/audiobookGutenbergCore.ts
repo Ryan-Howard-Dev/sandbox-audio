@@ -45,6 +45,22 @@ export function pickGutenbergCoverUrl(formats: Record<string, string>): string |
   return jpeg?.[1]?.trim();
 }
 
+/**
+ * Plain-text edition of the work.
+ *
+ * Prefers a declared charset, which is the full text; the bare  entry is sometimes a
+ * readme. Explicitly skips readme and index files, which would make a novel look like a pamphlet
+ * and defeat the length check this feeds.
+ */
+export function pickGutenbergTextUrl(formats: Record<string, string>): string | undefined {
+  const entries = Object.entries(formats).filter(
+    ([mime, url]) =>
+      mime.startsWith('text/plain') && url?.trim() && !/readme|index/i.test(url),
+  );
+  const withCharset = entries.find(([mime]) => mime.includes('charset='));
+  return (withCharset ?? entries[0])?.[1]?.trim();
+}
+
 export function pickGutenbergIndexUrl(formats: Record<string, string>): string | undefined {
   const readme = Object.entries(formats).find(
     ([mime, url]) => mime.startsWith('text/plain') && /readme/i.test(url),
@@ -90,6 +106,7 @@ export function gutendexBookToCatalog(book: GutendexBook): AudiobookCatalogBook 
     artworkUrl: pickGutenbergCoverUrl(formats),
     source: 'gutenberg',
     detailUrl: `https://www.gutenberg.org/ebooks/${sourceId}`,
+    textUrl: pickGutenbergTextUrl(formats),
   };
 }
 

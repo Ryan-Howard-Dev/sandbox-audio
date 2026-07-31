@@ -1,6 +1,7 @@
 /**
  * Four pinned primary navigation tabs plus a fixed Menu overflow (5 bottom destinations).
- * Default: Home · Library · Search · Podcasts · Menu (hamburger).
+ * Default: Home · Music · Podcasts · Audiobooks · Menu. Search moved to a persistent
+ * top-bar icon on every tab, freeing a slot for the three format pillars.
  */
 
 import { prefsGetItem, prefsSetItem } from './prefsStorage';
@@ -19,12 +20,12 @@ export const NAV_PIN_CANDIDATES = [
 
 export type NavPinTabId = (typeof NAV_PIN_CANDIDATES)[number];
 
-export const DEFAULT_NAV_PIN_TABS: NavPinTabId[] = ['home', 'locker', 'search', 'podcasts'];
+export const DEFAULT_NAV_PIN_TABS: NavPinTabId[] = ['home', 'locker', 'podcasts', 'audiobooks'];
 
 const NAV_PINS_KEY = 'sandbox_nav_pin_tabs_v1';
 /** Bumped when canonical mobile pin layout changes — re-applies defaults once per bump. */
 const NAV_PINS_LAYOUT_VERSION_KEY = 'sandbox_nav_pin_tabs_layout_v';
-export const NAV_PINS_LAYOUT_VERSION = 1;
+export const NAV_PINS_LAYOUT_VERSION = 2;
 export const NAV_PINS_CHANGE_EVENT = 'sandbox-nav-pins-change';
 
 const listeners = new Set<() => void>();
@@ -70,7 +71,7 @@ function readStoredNavPinTabs(): NavPinTabId[] {
 }
 
 /**
- * One-shot migration: lock bottom nav to Home · Library · Search · Pods (+ Menu).
+ * One-shot migration: lock bottom nav to Home · Music · Pods · Books (+ Menu).
  * Survives app updates; only re-runs when NAV_PINS_LAYOUT_VERSION increments.
  */
 export function ensureNavPinTabsLayout(): NavPinTabId[] {

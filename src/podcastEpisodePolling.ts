@@ -1,4 +1,5 @@
-import { Capacitor, registerPlugin } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
+import { FollowedReleaseNative } from './nativePluginHandles';
 import { isAndroid, isCapacitorNative } from './platformEnv';
 import { fetchPodcastFeed } from './podcastRss';
 import { onPodcastEpisodesUpdated } from './podcastEpisodeSync';
@@ -16,19 +17,6 @@ import {
 export const PODCAST_BACKGROUND_CHECK_EVENT = 'sandbox-podcast-background-check';
 
 const POLL_INTERVAL_MS = 30 * 60 * 1000;
-
-interface FollowedReleaseNativePlugin {
-  schedulePeriodicCheck(options: { intervalHours: number }): Promise<void>;
-  cancelPeriodicCheck(): Promise<void>;
-  addListener(
-    eventName: 'backgroundCheck',
-    listenerFunc: () => void,
-  ): Promise<{ remove: () => void }>;
-}
-
-const FollowedReleaseNative = registerPlugin<FollowedReleaseNativePlugin>(
-  'FollowedReleaseNative',
-);
 
 export async function forcePodcastEpisodeCheck(
   onUpdate?: (count: number) => void,

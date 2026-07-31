@@ -106,10 +106,37 @@ function trackEnvelope(track: CatalogTrack, albumName?: string): MediaEnvelope {
   };
 }
 
+/**
+ * Tracks that failed to resolve recently — short-circuited so an unfindable
+ * track (e.g. a censored title yt-dlp can't match) doesn't get re-attempted in
+ * a tight loop, which hammered the device and froze the UI.
+ */
+const recentResolveFailures = new Map<string, number>();
+const RESOLVE_FAILURE_COOLDOWN_MS = 15 * 60 * 1000;
+
+function resolveFailureKey(track: CatalogTrack, albumName?: string): string {
+  return `${track.artist}␟${track.title}␟${albumName ?? ''}`.toLowerCase();
+}
+
+/**
+ * Clear the recent-failure cache. Called when the user explicitly retries a
+ * download job so a manual retry actually re-attempts tracks instead of being
+ * short-circuited by the auto-loop guard.
+ */
+export function clearRecentResolveFailures(): void {
+  recentResolveFailures.clear();
+}
+
 async function resolveTrackAudioSource(
   track: CatalogTrack,
   albumName?: string,
 ): Promise<MobileAudioSource> {
+  const failKey = resolveFailureKey(track, albumName);
+  const failedAt = recentResolveFailures.get(failKey);
+  if (failedAt !== undefined && Date.now() - failedAt < RESOLVE_FAILURE_COOLDOWN_MS) {
+    throw new Error(`No mobile source for "${track.title}" (recently failed — not retrying)`);
+  }
+
   const env = trackEnvelope(track, albumName);
   const queries = buildPlayQueries(env);
   const ready = await waitForYtDlpInit();
@@ -132,6 +159,7 @@ async function resolveTrackAudioSource(
       console.warn('[mobileAcquisition] fetch failed', { query, err: lastErr });
     }
   }
+  recentResolveFailures.set(failKey, Date.now());
   throw new Error(`No mobile source for "${track.title}" — ${lastErr}`);
 }
 

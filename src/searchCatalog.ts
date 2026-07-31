@@ -6,6 +6,7 @@
  */
 
 import { isAirGapEnabled } from './airGapMode';
+import { memoizeStringFn } from './memoizeStringFn';
 import type { MediaEnvelope } from './sandboxLayer1';
 import {
   applyCachedArtistImages,
@@ -275,6 +276,41 @@ function queryTokensBeyondArtist(artistHaystack: string, query: string): string[
   return queryRelevantTokens(query).filter((t) => !hay.includes(t));
 }
 
+/**
+ * Words in the title the query never asked for.
+ *
+ * A query names what the listener wants, and every extra word in the title is a word making it
+ * something other than that. Token overlap alone cannot see this: "HUMBLE." and "HUMBLE.
+ * (Bassjackers Remix) [Mixed]" both contain every token of "kendrick lamar humble" that a title
+ * can contain, so they score identically — which is how remixes, karaoke versions and lullaby
+ * covers all ranked above the song that was actually searched for.
+ *
+ * The artist's own tokens are not counted as extra: a title like "HUMBLE. (Kendrick Lamar)"
+ * repeating the billing is not a different recording.
+ */
+export function titleTokensBeyondQuery(title: string, query: string, artist = ''): number {
+  const queryTokens = new Set(wordTokens(query));
+  const artistTokens = new Set(wordTokens(artist));
+  return wordTokens(title).filter(
+    (t) => !queryTokens.has(t) && !artistTokens.has(t) && !TRACK_QUERY_STOP_WORDS.has(t),
+  ).length;
+}
+
+/**
+ * Bare words, punctuation discarded.
+ *
+ * queryRelevantTokens splits on spaces only, which is fine for a typed query but not for a
+ * catalog title: "HUMBLE. (Bassjackers Remix)" tokenises there as "humble.", "(bassjackers" and
+ * "remix)", none of which ever equal the query's "humble". Comparing titles needs the brackets and
+ * trailing stops gone first.
+ */
+function wordTokens(value: string): string[] {
+  return normalizeName(value)
+    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+    .split(/\s+/)
+    .filter((t) => t.length > 1);
+}
+
 function extraQueryTokensMatchAlbumOrTitle(
   albumName: string | undefined,
   title: string,
@@ -316,6 +352,15 @@ function albumTitleRelevanceScore(albumTitle: string, query: string): number {
   return 0;
 }
 
+/**
+ * Cost of one unasked-for word in a title.
+ *
+ * Sized against the +800 that an exact token match earns: three junk words ("bassjackers remix
+ * mixed") outweigh it, one or two do not. A subtitle is not disqualifying — a pile of them is.
+ */
+const TITLE_EXTRA_TOKEN_PENALTY = 180;
+const MAX_TITLE_EXTRA_PENALTY = 900;
+
 function trackSearchRelevanceScore(track: CatalogTrack, query: string): number {
   const artistField = (track.artist ?? '').trim();
   const extraTokens = queryTokensBeyondArtist(artistField, query);
@@ -352,6 +397,16 @@ function trackSearchRelevanceScore(track: CatalogTrack, query: string): number {
     score += 800;
   }
 
+  /*
+   * Demote titles carrying words the query did not ask for. Capped, because this must order
+   * results rather than eliminate them: someone searching for a remix by name still matches those
+   * words in the query, so the remix keeps its tokens and the penalty falls away on its own.
+   */
+  const titleExtras = titleTokensBeyondQuery(track.title, query, track.artist ?? '');
+  if (titleExtras > 0) {
+    score -= Math.min(titleExtras * TITLE_EXTRA_TOKEN_PENALTY, MAX_TITLE_EXTRA_PENALTY);
+  }
+
   const isLocal = track.id.startsWith('local-');
   if (isLocal && extraTokens.length > 0) {
     score -= 500;
@@ -360,6 +415,63 @@ function trackSearchRelevanceScore(track: CatalogTrack, query: string): number {
   }
 
   return score;
+}
+
+/**
+ * Words that mean a recording is a stand-in for the real one.
+ *
+ * Karaoke backing tracks, instrumental versions, lullaby renditions and tribute-band covers exist
+ * in the catalog in large numbers because they are cheap to produce and they carry the original's
+ * title verbatim. That makes them score identically to the record a listener actually asked for,
+ * and searching "Radiohead Weird Fishes" returned four of them above Radiohead.
+ *
+ * Matched against title, artist and album together: the marker lands in a different field
+ * depending on the release — "Karaoke Freaks" is the artist, "(Instrumental Version)" is in the
+ * title, "Lullaby Renditions of Radiohead" is the album.
+ */
+const DERIVATIVE_MARKERS = [
+  'karaoke',
+  'backing track',
+  'instrumental version',
+  'in the style of',
+  'originally performed by',
+  'made famous by',
+  'as made famous',
+  'tribute to',
+  'tribute band',
+  'lullaby rendition',
+  'lullaby version',
+  'rockabye',
+  'music box version',
+  'made popular by',
+  'sing-along',
+  'singalong',
+  'vocal-free',
+  'minus one',
+] as const;
+
+/**
+ * True when a row is a derivative and the query never asked for one.
+ *
+ * Deliberately a filter rather than a penalty. A karaoke track scoring slightly lower still
+ * appears, and "there should be no karaoke versions" is not satisfied by a lower position — it is
+ * satisfied by absence.
+ *
+ * The escape hatch matters as much as the filter: someone searching for a karaoke track, an
+ * instrumental, or a specific tribute band is asking on purpose, and the same words in their query
+ * turn the whole thing off. Nothing is unreachable, it is only absent unless requested.
+ */
+function isUnrequestedDerivative(track: CatalogTrack, query: string): boolean {
+  const q = normalizeName(query);
+  // Asked for explicitly — hand them back.
+  if (DERIVATIVE_MARKERS.some((m) => q.includes(m))) return false;
+  if (COVER_QUERY_MARKERS.has(q) || q.split(' ').some((t) => COVER_QUERY_MARKERS.has(t))) {
+    return false;
+  }
+  const hay = normalizeName(
+    `${track.title ?? ''} ${track.artist ?? ''} ${track.album ?? ''}`,
+  );
+  return DERIVATIVE_MARKERS.some((m) => hay.includes(m));
 }
 
 function rankTracksByQueryRelevance(tracks: CatalogTrack[], query: string): CatalogTrack[] {
@@ -596,16 +708,17 @@ function mergeCatalogResults(
   };
 }
 
-function normalizeName(value: string): string {
-  return value
+/** Memoized: every album/track de-dupe loop re-normalizes the same artist and title strings. */
+const normalizeName = memoizeStringFn((value: string): string =>
+  value
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[ÿý]/g, 'y')
     .replace(/[¥$,]/g, ' ')
     .trim()
-    .replace(/\s+/g, ' ');
-}
+    .replace(/\s+/g, ' '),
+);
 
 /** iTunes billing splits (Ye vs Kanye West, JAŸ-Z vs Jay-Z, EsDeeKid spellings, …). */
 const ARTIST_ALIAS_GROUPS: readonly string[][] = [
@@ -1918,11 +2031,31 @@ function normalizeAlbumDedupeKey(title: string): string {
 
 /** Collapse billing variants (Future & Metro Boomin vs Future, Metro Boomin) for dedupe keys. */
 export function normalizeCatalogArtistKey(name: string): string {
-  return normalizeIdentityKey(name)
-    .replace(/\s*&\s*/g, ' and ')
-    .replace(/,/g, ' and ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  // Expand the separators on the RAW string: normalizeIdentityKey strips punctuation, so
+  // running it first destroys the "&" and "," that mark where one artist ends.
+  const withAnd = (name ?? '').replace(/\s*&\s*/g, ' and ').replace(/\s*,\s*/g, ' and ');
+  const expanded = normalizeIdentityKey(withAnd).replace(/\s+/g, ' ').trim();
+  // SORT the billed names so order cannot change identity: iTunes returns collaborations
+  // as "Future & Metro Boomin" and "Metro Boomin, Future" interchangeably, and unsorted
+  // keys treated those as two different albums. Matches normalizeLockerAlbumArtistKey.
+  const parts = expanded.split(/\s+and\s+/).map((p) => p.trim()).filter(Boolean);
+  return parts.length > 1 ? parts.sort().join(' and ') : expanded;
+}
+
+/**
+ * Lead billed name only.
+ *
+ * Collaboration albums come back from the catalog under inconsistent billings — the same
+ * release appears as "Future & Metro Boomin" on one entry and "Future" on another — so a
+ * full-billing key puts them in different buckets and the partial-duplicate collapse never
+ * compares them. That is why joint albums showed twice on the artist page (e.g. We Don't
+ * Trust You as 12 songs AND 4 songs). Keying identity on the lead artist makes those
+ * entries siblings so the collapse (and edition labelling) can see them together.
+ */
+function catalogPrimaryArtistKey(artist: string): string {
+  const key = normalizeCatalogArtistKey(artist);
+  const first = key.split(/\s+and\s+/)[0]?.trim();
+  return first || key;
 }
 
 function catalogAlbumDedupeKey(artist: string, title: string): string {
@@ -1999,7 +2132,9 @@ export function catalogAlbumIdentityKey(
   artist: string,
   title: string,
 ): string {
-  return catalogAlbumDedupeKey(artist, title);
+  // Lead-artist keyed (see catalogPrimaryArtistKey) so a collaboration billed differently
+  // across catalog entries still resolves to one album identity.
+  return `${catalogPrimaryArtistKey(artist)}::${normalizeAlbumDedupeKey(title)}`;
 }
 
 export function dedupeCatalogAlbums(albums: CatalogAlbum[]): CatalogAlbum[] {
@@ -2008,6 +2143,32 @@ export function dedupeCatalogAlbums(albums: CatalogAlbum[]): CatalogAlbum[] {
 
 /** Keep each iTunes collection visible (Deluxe, Standard, …) — only merge exact duplicates. */
 export function listCatalogAlbumEditions(albums: CatalogAlbum[]): CatalogAlbum[] {
+  // iTunes only exposes reliable explicitness on the artist *lookup* collections.
+  // Locker- and MusicBrainz-derived editions carry none, and when one of those wins
+  // the merge below (locker albums win via preferCatalogEdition / richer track counts)
+  // the E / Clean badge silently disappears for every album the user owns. Capture the
+  // rating by exact artist+title up front, then back-fill any survivor left ratingless.
+  const albumRatingKey = (a: CatalogAlbum) =>
+    `${normalizeCatalogArtistKey(a.artist)}::${normalizeName(a.title)}`;
+  const explicitTitleKeys = new Set<string>();
+  const cleanTitleKeys = new Set<string>();
+  // Locker albums often arrive without artworkUrl — downloaded covers live in the
+  // albumArtBlob, not the albumArt string field — so an owned album that wins the
+  // merge renders blank. Remember the best catalog cover by title to back-fill it.
+  const artByTitleKey = new Map<string, string>();
+  for (const album of albums) {
+    if (album.explicit || album.contentRating === 'explicit') {
+      explicitTitleKeys.add(albumRatingKey(album));
+    } else if (album.contentRating === 'clean') {
+      cleanTitleKeys.add(albumRatingKey(album));
+    }
+    const art = album.artworkUrl?.trim();
+    // Prefer stable https covers over transient blob:/data: locker URLs.
+    if (art && !/^(blob:|data:)/i.test(art) && !artByTitleKey.has(albumRatingKey(album))) {
+      artByTitleKey.set(albumRatingKey(album), art);
+    }
+  }
+
   const byCollectionId = new Map<number, CatalogAlbum>();
   const withoutId: CatalogAlbum[] = [];
 
@@ -2032,7 +2193,29 @@ export function listCatalogAlbumEditions(albums: CatalogAlbum[]): CatalogAlbum[]
     byExact.set(key, existing ? preferCatalogEdition(existing, album) : album);
   }
 
-  return collapsePartialAlbumReleases([...fromIds, ...byExact.values()]);
+  const merged = collapsePartialAlbumReleases([...fromIds, ...byExact.values()]);
+
+  // Restore explicitness dropped when a ratingless edition won the merge. Gap-fill
+  // only — never override an edition that already carries its own rating (the clean
+  // edition stays "Clean"). An explicit sibling anywhere for the same title means the
+  // album's content is explicit, so prefer that over a bare clean flag.
+  for (const album of merged) {
+    const key = albumRatingKey(album);
+    if (!album.explicit && !album.contentRating) {
+      if (explicitTitleKeys.has(key)) {
+        album.explicit = true;
+        album.contentRating = 'explicit';
+      } else if (cleanTitleKeys.has(key)) {
+        album.contentRating = 'clean';
+      }
+    }
+    const art = album.artworkUrl?.trim();
+    if (!art || /^(blob:|data:)/i.test(art)) {
+      const sibling = artByTitleKey.get(key);
+      if (sibling) album.artworkUrl = sibling;
+    }
+  }
+  return merged;
 }
 
 /** Drop obvious sampler/partial tiles when a much fuller sibling shares the same album identity. */
@@ -2593,15 +2776,27 @@ function processCatalogItems(
     : albumPool
   ).slice(0, 6);
 
-  const relevantTracks = rankTracksByQueryRelevance(tracks, q).filter((track) =>
-    catalogTrackMeetsSearchThreshold(track, q),
-  );
+  const relevantTracks = rankTracksByQueryRelevance(tracks, q)
+    .filter((track) => catalogTrackMeetsSearchThreshold(track, q))
+    .filter((track) => !isUnrequestedDerivative(track, q));
 
   return {
     suggestions: buildSuggestions(q, raw),
     artists,
     albums,
-    tracks: sortByReleaseYear(relevantTracks).slice(0, 8),
+    /*
+     * Relevance order, kept.
+     *
+     * This used to re-sort by release year after ranking by relevance, which discarded the ranking
+     * entirely and then cut the list to eight. Searching "Radiohead Weird Fishes" ranked
+     * Radiohead's own recording first and then dropped it: In Rainbows is 2007, the covers are
+     * recent, and newest-first pushed the canonical row past the slice. Measured on device, three
+     * Radiohead rows entered this function and none survived.
+     *
+     * Same fault as sortSearchHits had — year deciding an order the query should decide — so year
+     * is left to break ties inside rankTracksByQueryRelevance rather than overriding it here.
+     */
+    tracks: relevantTracks.slice(0, 8),
   };
 }
 
@@ -2726,15 +2921,30 @@ async function fetchRemoteSearchCatalogUncached(query: string): Promise<CatalogS
 
   const [searchBatches, artistItems, albumTracks] = await Promise.all([
     Promise.all(
-      searchTerms.map((term) =>
-        fetchCatalogApiResults(
+      searchTerms.map(async (term) => {
+        const items = await fetchCatalogApiResults(
           catalogSearchUrl({
             term,
             media: 'music',
             limit: CATALOG_SEARCH_LIMIT,
           }),
-        ),
-      ),
+        );
+        /*
+         * One line per query variant. This function fires several terms from
+         * buildCatalogSearchTerms and concatenates the responses, and the merged list ends up
+         * holding rows the primary term never returned while missing the one it returned first.
+         * Naming which term produced which rows is the only way to see that happen — reading the
+         * code has produced four wrong diagnoses of this list already.
+         */
+        console.warn(
+          `[catalogTerm] "${term}" n=${items.length} ` +
+            items
+              .slice(0, 5)
+              .map((it) => `${it.artistName ?? '?'} — ${it.trackName ?? '?'}`)
+              .join(' | '),
+        );
+        return items;
+      }),
     ),
     artistUrl ? fetchCatalogApiResults(artistUrl) : Promise.resolve([] as CatalogProviderItem[]),
     albumIntent ? fetchAlbumTracks(albumIntent.album) : Promise.resolve([] as CatalogTrack[]),
@@ -2754,10 +2964,47 @@ async function fetchRemoteSearchCatalogUncached(query: string): Promise<CatalogS
   }
 
   if (searchItems.length === 0 && artistItems.length === 0 && albumTracks.length === 0) {
+    console.warn(`[catalogSearch] provider returned nothing for "${q}" terms=${searchTerms.length}`);
     return EMPTY_CATALOG;
   }
 
   const base = processCatalogItems([...artistItems, ...searchItems], q);
+
+  /*
+   * Trace one known-good row through the two stages inside this function.
+   *
+   * The Tracks list renders eight covers and no Radiohead, while every search term returns
+   * Radiohead first — so the row is lost between the fetch and the render, and four attempts to
+   * find where by reading the code were all wrong. This says which stage drops it: present in
+   * searchItems but missing from base.tracks means processCatalogItems, missing from both means
+   * the dedup above.
+   */
+  if (/radiohead/i.test(q)) {
+    const inItems = searchItems.filter((it) => /^weird fishes/i.test(it.trackName ?? '')).length;
+    const rawRadiohead = searchItems.filter((it) => /radiohead/i.test(it.artistName ?? '')).length;
+    const mappedRadiohead = base.tracks.filter((t) => /radiohead/i.test(t.artist)).length;
+    console.warn(
+      `[catalogTrace] q="${q}" searchItems=${searchItems.length} weirdFishesItems=${inItems} ` +
+        `rawRadiohead=${rawRadiohead} mappedTracks=${base.tracks.length} mappedRadiohead=${mappedRadiohead} ` +
+        `firstMapped=${base.tracks.slice(0, 3).map((t) => `${t.artist}|${t.id}`).join(', ')}`,
+    );
+  }
+  /*
+   * Raw item counts beside mapped counts. A search that ends empty can fail at the network or in
+   * this mapping, and the two are indistinguishable downstream — the UI says "no matches" either
+   * way. Only logged when the mapping drops everything, which is the case worth seeing.
+   */
+  if (base.tracks.length === 0 && base.artists.length === 0 && base.albums.length === 0) {
+    const shapes = new Map<string, number>();
+    for (const item of [...artistItems, ...searchItems]) {
+      const shape = `wrapperType=${item.wrapperType ?? 'none'}/kind=${item.kind ?? 'none'}`;
+      shapes.set(shape, (shapes.get(shape) ?? 0) + 1);
+    }
+    const summary = [...shapes.entries()].map(([shape, n]) => `${shape}×${n}`).join(', ');
+    console.warn(
+      `[catalogSearch] mapped to nothing for "${q}" rawSearch=${searchItems.length} rawArtist=${artistItems.length} shapes=[${summary}]`,
+    );
+  }
 
   if (albumIntent && albumTracks.length > 0) {
     const intentAlbum = albumIntent.album;
@@ -3358,6 +3605,19 @@ async function supplementDiscographyFromMusicBrainz(
     singles: enrichedSingles,
     supplemented: enrichedAlbums.length > 0 || enrichedSingles.length > 0,
   };
+}
+
+/** @internal diagnostic seam — inspect locker-derived albums for an artist on device. */
+export async function __debugLocalArtistDiscography(name: string) {
+  const disc = await fetchLocalArtistDiscography(name);
+  return disc.albums.map((a) => ({
+    title: a.title,
+    artist: a.artist,
+    trackCount: a.trackCount,
+    id: a.id,
+    isCollectionEdition: a.isCollectionEdition,
+    editionCount: a.editionCount,
+  }));
 }
 
 async function fetchLocalArtistDiscography(artistName: string): Promise<ArtistDiscography> {
@@ -4244,13 +4504,27 @@ export async function fetchArtistDiscography(
     return rememberDiscography(cacheKey, staleData);
   }
 
+  /*
+   * Cold path: paint what we already own FIRST.
+   *
+   * The locker's own albums for this artist are on local disk and cost nothing to read, but
+   * this path used to await the full catalog fetch (iTunes + MusicBrainz, up to the
+   * discography timeout) before returning anything — so opening an artist you have music by
+   * showed an empty page for seconds. The stale-cache branch above already renders
+   * immediately and supplements; do the same here.
+   */
+  const localFirst = await fetchLocalArtistDiscography(name);
+  if (onSupplement && discographyHasCatalogContent(localFirst)) {
+    onSupplement(sanitizeArtistDiscography(localFirst));
+  }
+
   const live = await raceTimeout(
     fetchArtistDiscographyLive(name, artistCatalogId, cacheKey, cached?.data, onSupplement),
     DISCOGRAPHY_FETCH_TIMEOUT_MS,
   );
   if (live) return live;
 
-  const fallback = staleData ?? (await fetchLocalArtistDiscography(name));
+  const fallback = staleData ?? localFirst;
   if (discographyHasCatalogContent(fallback)) {
     return rememberDiscography(cacheKey, {
       ...fallback,
@@ -4862,6 +5136,16 @@ export function parseCombinedTrackQuery(query: string): CombinedTrackQuery | nul
 
   let best: { title: string; artist: string; score: number } | null = null;
 
+  /*
+   * This split is a guess, and it cannot be made reliable here. Both halves of "kendrick lamar
+   * humble" score the same 600 — to a scorer that only asks "could this be a name?", the lone word
+   * "humble" is as plausible as "kendrick lamar" — so the direction bonus decides, and the
+   * trailing tokens win. Weighting the artist score, or preferring longer artists, only moves the
+   * error to a different query shape; both were tried on device.
+   *
+   * The guess is therefore treated as a ranking hint by callers, never as grounds to reject a row.
+   * See catalogFieldsMatchSearchQuery.
+   */
   const consider = (title: string, artist: string, bonus: number) => {
     const artistScore = scoreArtistQueryPart(artist);
     if (artistScore < 500 || title.trim().length < 2) return;
@@ -5019,26 +5303,54 @@ export function parseArtistAlbumQuery(query: string): { artist: string; album: s
 }
 
 /** Require token overlap between a catalog row and the query (strict for artist+album splits). */
+/**
+ * The honest question: do the words the user typed appear anywhere in this row?
+ *
+ * This is what every speculative parse falls back to. It does not care which half of the query
+ * was meant to be the artist, so a bad guess costs ranking rather than results.
+ */
+function catalogFieldsMatchTokens(
+  fields: { artist?: string; album?: string; title?: string },
+  query: string,
+): boolean {
+  const tokens = queryRelevantTokens(query);
+  if (!tokens.length) return false;
+  const hay = normalizeName(`${fields.artist ?? ''} ${fields.album ?? ''} ${fields.title ?? ''}`);
+  return tokens.every((token) => hay.includes(token) || fuzzyTokenInHaystack(hay, token));
+}
+
 export function catalogFieldsMatchSearchQuery(
   fields: { artist?: string; album?: string; title?: string },
   query: string,
 ): boolean {
+  /*
+   * The combined split may accept a row early, but it may never reject one.
+   *
+   * parseCombinedTrackQuery is a guess about which half of "kendrick lamar humble" is the artist,
+   * and it cannot be made reliable — both halves score identically, so a tiebreak decides. Using
+   * that guess as a veto meant one bad coin flip discarded every correct row: iTunes returned 70
+   * matches for "kendrick lamar humble", the parse decided the artist was "humble", and all 70
+   * failed the artist check. The user saw "no matches for this query" with the network working.
+   *
+   * Falling through leaves the decision to the token check at the end of this function, which asks
+   * the honest question — do the words the user typed appear in this row — and does not care which
+   * half was meant to be the artist. A wrong guess now costs ranking, not results.
+   */
   const combined = parseCombinedTrackQuery(query);
   if (combined) {
     const artistField = fields.artist ?? '';
-    if (
-      artistRelevanceScore(artistField, combined.artist) < 500 &&
-      !artistNamesEquivalent(artistField, combined.artist)
-    ) {
-      return false;
+    const artistMatches =
+      artistRelevanceScore(artistField, combined.artist) >= 500 ||
+      artistNamesEquivalent(artistField, combined.artist);
+    if (artistMatches) {
+      const titleHay = normalizeName(`${fields.title ?? ''} ${fields.album ?? ''}`);
+      if (titleTokensMatchHay(combined.title, titleHay)) return true;
+      const cover = parseCoverTrackQuery(query);
+      if (cover?.titleHint && titleTokensMatchHay(cover.titleHint, titleHay)) return true;
     }
-    const titleHay = normalizeName(`${fields.title ?? ''} ${fields.album ?? ''}`);
-    if (titleTokensMatchHay(combined.title, titleHay)) return true;
-    const cover = parseCoverTrackQuery(query);
-    if (cover?.titleHint && titleTokensMatchHay(cover.titleHint, titleHay)) return true;
-    return false;
   }
 
+  /* Same rule as the combined split above: a parsed performer may accept a row, never veto one. */
   const cover = parseCoverTrackQuery(query);
   if (cover) {
     const artistField = fields.artist ?? '';
@@ -5046,7 +5358,7 @@ export function catalogFieldsMatchSearchQuery(
       artistRelevanceScore(artistField, cover.performer) < 500 &&
       !artistNamesEquivalent(artistField, cover.performer)
     ) {
-      return false;
+      return catalogFieldsMatchTokens(fields, query);
     }
     const titleHay = normalizeName(`${fields.title ?? ''} ${fields.album ?? ''}`);
     if (cover.titleHint) {
@@ -5069,14 +5381,30 @@ export function catalogFieldsMatchSearchQuery(
     return matched >= Math.max(1, refTokens.length - 2);
   }
 
+  /*
+   * Artist+album may veto, but only for a two-word query.
+   *
+   * With two words there is exactly one plausible split, and the veto earns its keep: "Future
+   * Zone" names an artist and an album, and a compilation called "Future Classic" carrying a track
+   * called "Zone" is a false positive the token check cannot distinguish, because all the words
+   * really are present. From three words up the split is a guess like any other — "kendrick lamar
+   * humble" parses as album "lamar humble" — and a guess must not be able to empty the results.
+   */
   const parsed = parseArtistAlbumQuery(query);
   if (parsed) {
-    if (artistRelevanceScore(fields.artist ?? '', parsed.artist) < 500) return false;
-    const titleHay = normalizeName(`${fields.album ?? ''} ${fields.title ?? ''}`);
-    const albumToken = normalizeName(parsed.album);
-    if (!albumToken) return false;
-    if (titleHay.includes(albumToken)) return true;
-    return albumTokensMatchQueryAlbum(parsed.album, fields.album, fields.title);
+    const shortQuery = queryRelevantTokens(query).length <= 2;
+    const artistMatches = artistRelevanceScore(fields.artist ?? '', parsed.artist) >= 500;
+    if (!artistMatches) {
+      if (shortQuery) return false;
+    } else {
+      const titleHay = normalizeName(`${fields.album ?? ''} ${fields.title ?? ''}`);
+      const albumToken = normalizeName(parsed.album);
+      if (albumToken && titleHay.includes(albumToken)) return true;
+      if (albumToken && albumTokensMatchQueryAlbum(parsed.album, fields.album, fields.title)) {
+        return true;
+      }
+      if (shortQuery) return false;
+    }
   }
 
   const tokens = queryRelevantTokens(query);
