@@ -33,6 +33,7 @@ import {
   readSoulseekDownloadBuffer,
   resolveSoulseekCandidate,
 } from './soulseek.js';
+import { verifyAcquisitionCandidate } from '../../src/acquisitionIdentity.ts';
 
 export type AcquireTier = 'best' | 'proxy' | 'debrid';
 
@@ -236,11 +237,11 @@ function recomputeProgress(job: AcquireJob): void {
   job.progress = Math.min(100, Math.round(weighted / states.length));
 }
 
-async function resolveForTier(
+async function resolveCandidatesForTier(
   query: string,
   tier: AcquireTier,
   opts: Pick<AcquireJob, 'prowlarrUrl' | 'prowlarrApiKey' | 'realDebridApiKey'>,
-): Promise<ResolveRow | null> {
+): Promise<ResolveRow[]> {
   let rows: ResolveRow[] = [];
 
   if (tier === 'proxy' || tier === 'best') {
@@ -268,7 +269,7 @@ async function resolveForTier(
     }));
   }
 
-  return rows.find((r) => r.url?.trim()) ?? null;
+  return rows.filter((r) => r.url?.trim());
 }
 
 function extractProxyTarget(url: string): string | null {
@@ -396,9 +397,50 @@ async function runAcquireJob(job: AcquireJob): Promise<void> {
 
     try {
       const query = `${track.title} ${track.artist}`.trim();
-      const hit = await resolveForTier(query, job.tier, job);
-      if (!hit?.url?.trim()) {
+      /*
+       * Identity before bytes. Resolvers return ranked candidates with titles like
+       * "Vultures (Live at Rolling Loud)" — taking the first URL used to vault the wrong
+       * recording under the catalog title. Walk candidates through the shared acquisition
+       * gate; surface the last rejection reason when none pass (no silent skip).
+       *
+       * Gated here (acquireWorker) rather than inside proxyResolve/debridResolve/sandboxIndexer
+       * so every tier that writes via this worker shares one check. Those resolver modules
+       * themselves are not gated.
+       */
+      const candidates = await resolveCandidatesForTier(query, job.tier, job);
+      if (candidates.length === 0) {
         throw new Error(`No source for "${track.title}"`);
+      }
+
+      let hit: ResolveRow | null = null;
+      const rejectReasons: string[] = [];
+      for (const candidate of candidates) {
+        const verdict = verifyAcquisitionCandidate(
+          {
+            title: track.title,
+            artist: track.artist,
+            album: job.albumTitle ?? track.albumName,
+            durationSeconds: track.durationSeconds,
+          },
+          {
+            title: candidate.title,
+            artist: candidate.artist,
+            durationSeconds: candidate.durationSeconds,
+            url: candidate.url,
+          },
+        );
+        if (verdict.ok === true) {
+          hit = candidate;
+          break;
+        }
+        rejectReasons.push(
+          `${candidate.title ?? candidate.url ?? 'candidate'}: ${verdict.reason}`,
+        );
+      }
+      if (!hit?.url?.trim()) {
+        throw new Error(
+          `Identity check blocked store for "${track.title}" — ${rejectReasons[0] ?? 'no acceptable candidate'}`,
+        );
       }
 
       patchTrack(job, track.id, { status: 'downloading', percent: 55 });

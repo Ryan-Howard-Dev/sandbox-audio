@@ -14,6 +14,15 @@ vi.mock('./mobileResolverRegistry', () => ({
 
 vi.mock('./ytDlpMobile', () => ({
   waitForYtDlpInit: vi.fn(async () => true),
+  searchYtDlpMobile: vi.fn(async () => [
+    {
+      id: 'abc',
+      title: 'Kanye West - KING (Official Audio)',
+      artist: 'YouTube',
+      watchUrl: 'https://www.youtube.com/watch?v=abc',
+      durationSeconds: 198,
+    },
+  ]),
   downloadViaYtDlpMobile: vi.fn(async () => ({
     uri: 'file:///data/user/0/rd.sheepskin.sandboxmusic/cache/ytdlp-playback/abc.m4a',
     watchUrl: 'https://www.youtube.com/watch?v=abc',
@@ -68,6 +77,7 @@ vi.mock('./lockerStorage', () => ({
 
 import { acquireTracksOnMobile, canAcquireOnMobile } from './mobileAcquisition';
 import { saveLockerBlobFromNativeFile } from './lockerStorage';
+import { downloadViaYtDlpMobile, searchYtDlpMobile } from './ytDlpMobile';
 
 describe('mobileAcquisition', () => {
   beforeEach(() => {
@@ -85,7 +95,7 @@ describe('mobileAcquisition', () => {
     expect(canAcquireOnMobile()).toBe(true);
   });
 
-  it('saves resolved track to locker', async () => {
+  it('saves resolved track to locker after identity verification', async () => {
     const result = await acquireTracksOnMobile(
       [
         {
@@ -100,6 +110,39 @@ describe('mobileAcquisition', () => {
     );
     expect(result.saved).toBe(1);
     expect(result.failed).toBe(0);
+    expect(searchYtDlpMobile).toHaveBeenCalled();
+    expect(downloadViaYtDlpMobile).toHaveBeenCalledWith(
+      'https://www.youtube.com/watch?v=abc',
+    );
     expect(saveLockerBlobFromNativeFile).toHaveBeenCalled();
+  });
+
+  it('does not store when only a live candidate is offered for a studio track', async () => {
+    vi.mocked(searchYtDlpMobile).mockResolvedValueOnce([
+      {
+        id: 'live1',
+        title: 'KING (Live from MSG)',
+        artist: 'Kanye West',
+        watchUrl: 'https://www.youtube.com/watch?v=live1',
+        durationSeconds: 205,
+      },
+    ]);
+    const result = await acquireTracksOnMobile(
+      [
+        {
+          kind: 'track',
+          id: 't1',
+          title: 'KING',
+          artist: 'Kanye West',
+          durationSeconds: 200,
+        },
+      ],
+      { mode: 'tracks' },
+    );
+    expect(result.saved).toBe(0);
+    expect(result.failed).toBe(1);
+    expect(result.errors[0]).toMatch(/Identity check blocked store|unrequested rendition/i);
+    expect(saveLockerBlobFromNativeFile).not.toHaveBeenCalled();
+    expect(downloadViaYtDlpMobile).not.toHaveBeenCalled();
   });
 });

@@ -60,9 +60,23 @@ import {
   preferFreshMobileResolve,
   type MobileResolverAddon,
 } from './mobileResolverRegistry';
+import {
+  diceCoefficient,
+  mobileResolveMatchesCatalog,
+  normalizeMatchText,
+} from './catalogIdentityMatch';
 
 export type { MobileResolverAddon };
 export { registerMobileResolverAddon as registerMobileResolver, tryMobileResolve };
+export {
+  resolvedIsUnrequestedRendition,
+  mobileResolveMatchesCatalog,
+  mobileResolveHasNoIndependentMetadata,
+  resetMobileResolveVerificationCounts,
+  getMobileResolveVerificationCounts,
+  MOBILE_DURATION_MIN_RATIO,
+  MOBILE_DURATION_MAX_RATIO,
+} from './catalogIdentityMatch';
 
 const TIER_TIMEOUT_MS = 10_000;
 const PARALLEL_QUERY_DEADLINE_MS = 18_000;
@@ -234,192 +248,7 @@ function catalogTierMatchesPlayback(
   );
 }
 
-/*
- * Mobile resolves are checked, but not by the tier rules.
- *
- * They used to be accepted unconditionally (R-001), which is how tapping one song could play
- * another. They cannot simply be held to the thresholds below, though: a yt-dlp or Piped hit
- * reports a decorated title — "Artist - Title (Official Video)" — and frequently the uploader as
- * the artist, so dice similarity against a clean catalog title scores far under the tier minimum
- * and would reject the correct stream. Rejecting a good stream reads to a listener as the app
- * being broken, which is worse than the bug being fixed.
- *
- * So this rejects on positive evidence of divergence and abstains where there is no signal.
- * Duration does most of the work: it is the field these resolvers report reliably, and a wrong
- * hit is usually the wrong length — an hour-long mix, a live version, a snippet. When a resolver
- * reports no metadata of its own, `envelopeFromResolved` falls back to the catalog's, so the
- * comparison is against itself and correctly finds nothing wrong.
- */
-const MOBILE_DURATION_MIN_RATIO = 0.7;
-const MOBILE_DURATION_MAX_RATIO = 1.4;
-const MOBILE_TITLE_MIN_SIM = 0.6;
-const MOBILE_ARTIST_CONFLICT_SIM = 0.35;
-
-/*
- * Renditions that carry the original's title verbatim.
- *
- * Duration was supposed to catch these. It does not: a live cut of a three-minute song is usually
- * three minutes, so the ratio gate abstains, and then containment actively waves it through —
- * "Vultures (Live at Rolling Loud)" contains "Vultures", so the title gate reads it as the
- * decorated-but-correct hit it was written to allow. Every check passes and the wrong recording
- * plays.
- *
- * Separate from DERIVATIVE_MARKERS in searchCatalog.ts, which covers karaoke, tribute and
- * instrumental renditions and is applied to search rows rather than to resolved streams.
- */
-const RENDITION_MARKERS = [
-  'live',
-  'acoustic',
-  'remix',
-  'rework',
-  'demo',
-  'sped up',
-  'slowed',
-  'reverb',
-  'cover',
-  'remastered',
-  'unplugged',
-  'acapella',
-  'a cappella',
-  'freestyle',
-  'instrumental',
-] as const;
-
-/*
- * Whole words only. Both sides reach here already normalised, so punctuation-bearing forms like
- * "(live" can never match, and plain substring matching would find "live" inside "deliver" and
- * "cover" inside "discover" — rejecting correct streams on a spelling coincidence.
- */
-const RENDITION_PATTERNS = RENDITION_MARKERS.map(
-  (marker) => new RegExp(`(^|\\s)${marker.replace(/ /g, '\\s+')}(\\s|$)`),
-);
-
-/**
- * True when the stream announces a rendition the catalog track never claimed to be.
- *
- * One-directional on purpose. Asking for a live album and receiving the live recording is
- * correct, so a marker present on both sides is no evidence of anything. Only a marker that
- * appears on the resolved side and not the catalog side is divergence — which is the standard
- * the rest of this function already works to.
- */
-export function resolvedIsUnrequestedRendition(
-  catalogTitle: string | undefined,
-  resolvedBlob: string,
-): boolean {
-  const resolved = normalizeMatchText(resolvedBlob);
-  if (!resolved.trim()) return false;
-  const catalog = normalizeMatchText(catalogTitle ?? '');
-  return RENDITION_PATTERNS.some((pattern) => pattern.test(resolved) && !pattern.test(catalog));
-}
-
-/*
- * How often this function is asked to verify a stream against nothing.
- *
- * When a resolver reports no metadata of its own, `envelopeFromResolved` fills the envelope from
- * the catalog, so every check below compares the catalog with itself, finds no disagreement, and
- * accepts. That is not verification, and an entirely unrelated recording passes it — which is what
- * a cover playing in place of the requested track looks like.
- *
- * Counting before changing behaviour is deliberate. Rejecting these outright would also reject the
- * correct streams from resolvers that simply do not report titles, and a silent refusal to play
- * reads as a broken app. The number tells us how much of the traffic this actually is; until it
- * exists, tightening or leaving it alone are both guesses.
- */
-let unverifiedMobileResolves = 0;
-let verifiedMobileResolves = 0;
-
-/** Reset between tests. */
-export function resetMobileResolveVerificationCounts(): void {
-  unverifiedMobileResolves = 0;
-  verifiedMobileResolves = 0;
-}
-
-export function getMobileResolveVerificationCounts(): {
-  verified: number;
-  unverified: number;
-} {
-  return { verified: verifiedMobileResolves, unverified: unverifiedMobileResolves };
-}
-
-/**
- * True when the resolved envelope carries no independent signal — every comparable field either
- * absent or identical to the catalog's, meaning it was inherited rather than reported.
- */
-export function mobileResolveHasNoIndependentMetadata(
-  catalog: MediaEnvelope,
-  resolved: MediaEnvelope,
-): boolean {
-  const sameOrEmpty = (a: string | undefined, b: string | undefined): boolean => {
-    const left = normalizeMatchText(a ?? '');
-    const right = normalizeMatchText(b ?? '');
-    return !right || left === right;
-  };
-  const durationSilent =
-    !resolved.durationSeconds || resolved.durationSeconds === catalog.durationSeconds;
-  return (
-    sameOrEmpty(catalog.title, resolved.title) &&
-    sameOrEmpty(catalog.artist, resolved.artist) &&
-    durationSilent
-  );
-}
-
-export function mobileResolveMatchesCatalog(
-  catalog: MediaEnvelope,
-  resolved: MediaEnvelope,
-): boolean {
-  if (mobileResolveHasNoIndependentMetadata(catalog, resolved)) {
-    unverifiedMobileResolves += 1;
-    // Tagged so it can be counted from logcat on a real device without a debugger attached.
-    console.warn(
-      `[MobileResolve] UNVERIFIED accepted — resolver reported no metadata; catalog="${catalog.title ?? ''}" total=${unverifiedMobileResolves}`,
-    );
-  } else {
-    verifiedMobileResolves += 1;
-  }
-  const catalogDur = catalog.durationSeconds ?? 0;
-  const resolvedDur = resolved.durationSeconds ?? 0;
-  if (catalogDur > 45 && resolvedDur > 0) {
-    const ratio = resolvedDur / catalogDur;
-    if (ratio < MOBILE_DURATION_MIN_RATIO || ratio > MOBILE_DURATION_MAX_RATIO) return false;
-  }
-
-  const catalogTitle = normalizeMatchText(catalog.title ?? '');
-  const resolvedTitle = normalizeMatchText(resolved.title ?? '');
-  const resolvedBlob = normalizeMatchText(
-    `${resolved.title ?? ''} ${resolved.artist ?? ''} ${resolved.album ?? ''}`,
-  );
-  /*
-   * Before containment, not after. Containment is what admits a rendition: the live cut carries
-   * the studio title inside it, so asking "does the catalog title appear here" answers yes for
-   * precisely the hits this rejects.
-   */
-  if (resolvedIsUnrequestedRendition(catalog.title, resolvedBlob)) return false;
-
-  if (catalogTitle && resolvedTitle) {
-    // Containment first: the catalog title sits inside the decorated one on a correct hit.
-    const titled =
-      resolvedBlob.includes(catalogTitle) ||
-      diceCoefficient(catalogTitle, resolvedTitle) >= MOBILE_TITLE_MIN_SIM;
-    if (!titled) return false;
-  }
-
-  /*
-   * Artist is a rejection signal only, and only when both sides are specific. A generic uploader
-   * says nothing about identity, and requiring a match would throw away the many correct streams
-   * that live on re-upload channels.
-   */
-  const catalogArtist = catalog.artist?.trim() ?? '';
-  const resolvedArtist = resolved.artist?.trim() ?? '';
-  if (catalogArtist && resolvedArtist && !isGenericStreamArtist(resolvedArtist)) {
-    const normalizedCatalogArtist = normalizeMatchText(catalogArtist);
-    const disagrees =
-      diceCoefficient(catalogArtist, resolvedArtist) < MOBILE_ARTIST_CONFLICT_SIM &&
-      !resolvedBlob.includes(normalizedCatalogArtist);
-    if (disagrees) return false;
-  }
-
-  return true;
-}
+/* Mobile / rendition identity gates live in catalogIdentityMatch.ts — shared with acquisition. */
 
 /** Reject tier/full-stream hits whose resolved metadata diverges from catalog identity. */
 export function resolvedStreamMatchesCatalog(
@@ -469,38 +298,12 @@ function isGenericStreamArtist(artist: string): boolean {
     n === 'youtube' ||
     n === 'archive org' ||
     n === 'archive' ||
-    n === 'unknown artist'
+    n === 'unknown artist' ||
+    n === 'unknown' ||
+    n === 'debrid' ||
+    n === 'direct' ||
+    n === 'proxy'
   );
-}
-
-function normalizeMatchText(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/^\d{1,2}[\s.\-_]+/i, '')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
-function diceCoefficient(a: string, b: string): number {
-  const aNorm = normalizeMatchText(a);
-  const bNorm = normalizeMatchText(b);
-  if (!aNorm || !bNorm) return 0;
-  if (aNorm === bNorm) return 1;
-  if (aNorm.length < 2 || bNorm.length < 2) {
-    return aNorm.includes(bNorm) || bNorm.includes(aNorm) ? 0.75 : 0;
-  }
-  const bigrams = (s: string) => {
-    const out = new Set<string>();
-    for (let i = 0; i < s.length - 1; i++) out.add(s.slice(i, i + 2));
-    return out;
-  };
-  const aGrams = bigrams(aNorm);
-  const bGrams = bigrams(bNorm);
-  let overlap = 0;
-  for (const g of aGrams) {
-    if (bGrams.has(g)) overlap++;
-  }
-  return (2 * overlap) / (aGrams.size + bGrams.size);
 }
 
 function durationMatchScore(candidateSeconds: number, expectedSeconds: number): number {

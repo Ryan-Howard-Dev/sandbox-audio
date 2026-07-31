@@ -338,6 +338,8 @@ export async function acquireTracksOnServer(
     albumArtist?: string;
     releaseYear?: string;
     jobId?: string;
+    /** In-place identity repair — do not skip playable locker rows; overwrite entry id. */
+    forceReplaceEntryId?: string;
   },
 ): Promise<AcquisitionResult> {
   const releaseAcquire = beginDownloadJobAcquire(options.jobId);
@@ -359,6 +361,7 @@ async function acquireTracksOnServerInner(
     albumArtist?: string;
     releaseYear?: string;
     jobId?: string;
+    forceReplaceEntryId?: string;
   },
 ): Promise<AcquisitionResult> {
   if (await shouldPauseDownloadsForBattery()) {
@@ -377,12 +380,16 @@ async function acquireTracksOnServerInner(
   let skipped = 0;
   let failed = 0;
   const errors: string[] = [];
+  const forceReplaceEntryId = options.forceReplaceEntryId?.trim() || undefined;
 
   const pending: CatalogTrack[] = [];
   for (let i = 0; i < tracks.length; i++) {
     const track = tracks[i];
     const albumName = options.albumName;
-    if (await lockerHasTrack(track.title, track.artist, albumName)) {
+    if (
+      !forceReplaceEntryId &&
+      (await lockerHasTrack(track.title, track.artist, albumName))
+    ) {
       skipped += 1;
       if (options.jobId) {
         patchTrackDownload(options.jobId, track.id, { status: 'skipped', percent: 100 });
@@ -424,6 +431,7 @@ async function acquireTracksOnServerInner(
         releaseYear: options.releaseYear,
         artworkUrl: options.album?.artworkUrl,
         jobId: options.jobId,
+        forceReplaceEntryId,
       });
     }
     const msg = await formatNoSourceError(pending[0].title, options.tier);

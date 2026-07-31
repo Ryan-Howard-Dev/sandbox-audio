@@ -26,13 +26,14 @@ import {
 import { findAlbumCover } from './albumCover';
 import { ensureDownloadedAlbumCover } from './lockerAlbumBackfill';
 import { fetchWithTimeout } from './fetchWithTimeout';
-import { downloadViaYtDlpMobile, waitForYtDlpInit } from './ytDlpMobile';
+import { downloadViaYtDlpMobile, searchYtDlpMobile, waitForYtDlpInit } from './ytDlpMobile';
 import type { CatalogTrack } from './searchCatalog';
 import { yieldToMain } from './yieldToMain';
 import {
   DOWNLOAD_BATTERY_PAUSE_MESSAGE,
   shouldPauseDownloadsForBattery,
 } from './downloadBatteryGate';
+import { verifyAcquisitionCandidate } from './acquisitionIdentity';
 
 export type MobileAcquisitionResult = {
   saved: number;
@@ -127,6 +128,27 @@ export function clearRecentResolveFailures(): void {
   recentResolveFailures.clear();
 }
 
+async function materializeMobileSource(
+  uri: string,
+  format: string,
+): Promise<MobileAudioSource> {
+  const trimmed = uri.trim();
+  if (isAndroid() && /^file:\/\//i.test(trimmed)) {
+    return { kind: 'file', uri: trimmed, mimeType: formatToMimeType(format) };
+  }
+  const blob = await fetchAudioBlobFromUri(trimmed);
+  return { kind: 'blob', blob };
+}
+
+/**
+ * Resolve audio for locker store — identity verified BEFORE bytes are written.
+ *
+ * downloadAudio alone returns uri/format with no title, so the previous path stamped catalog
+ * metadata onto whatever yt-dlp's first search hit was. Search first, run the same identity
+ * gates as play-time (`verifyAcquisitionCandidate` → catalogIdentityMatch), then download only
+ * an accepted watch URL. Rejected candidates surface reasons; silent accept is how wrong files
+ * entered the vault (Donda live cut, Vultures cover).
+ */
 async function resolveTrackAudioSource(
   track: CatalogTrack,
   albumName?: string,
@@ -137,30 +159,58 @@ async function resolveTrackAudioSource(
     throw new Error(`No mobile source for "${track.title}" (recently failed — not retrying)`);
   }
 
-  const env = trackEnvelope(track, albumName);
-  const queries = buildPlayQueries(env);
+  const catalog = trackEnvelope(track, albumName);
   const ready = await waitForYtDlpInit();
   if (!ready) throw new Error('yt-dlp mobile not ready');
 
-  let lastErr = 'no mobile source';
-  for (const query of queries) {
+  const rejectReasons: string[] = [];
+  const searchQueries = [
+    `${track.artist} ${track.title}`.trim(),
+    ...buildPlayQueries(catalog).slice(0, 2),
+  ].filter((q, i, arr) => q && arr.indexOf(q) === i);
+
+  for (const query of searchQueries) {
     await yieldToMain();
-    const hit = await downloadViaYtDlpMobile(query);
-    if (!hit?.uri?.trim()) continue;
-    const uri = hit.uri.trim();
-    if (isAndroid() && /^file:\/\//i.test(uri)) {
-      return { kind: 'file', uri, mimeType: formatToMimeType(hit.format) };
-    }
-    try {
-      const blob = await fetchAudioBlobFromUri(uri);
-      return { kind: 'blob', blob };
-    } catch (err) {
-      lastErr = err instanceof Error ? err.message : String(err);
-      console.warn('[mobileAcquisition] fetch failed', { query, err: lastErr });
+    const hits = await searchYtDlpMobile(query, 8);
+    for (const hit of hits) {
+      const verdict = verifyAcquisitionCandidate(catalog, {
+        title: hit.title,
+        artist: hit.artist,
+        durationSeconds: hit.durationSeconds,
+        url: hit.watchUrl,
+      });
+      if (verdict.ok === false) {
+        rejectReasons.push(`${hit.title}: ${verdict.reason}`);
+        console.warn('[mobileAcquisition] rejected candidate before store', {
+          catalog: track.title,
+          candidate: hit.title,
+          reason: verdict.reason,
+        });
+        continue;
+      }
+      const downloaded = await downloadViaYtDlpMobile(hit.watchUrl);
+      if (!downloaded?.uri?.trim()) {
+        rejectReasons.push(`${hit.title}: download returned no uri`);
+        continue;
+      }
+      try {
+        return await materializeMobileSource(downloaded.uri, downloaded.format);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        rejectReasons.push(`${hit.title}: ${msg}`);
+        console.warn('[mobileAcquisition] fetch failed after identity pass', {
+          query: hit.watchUrl,
+          err: msg,
+        });
+      }
     }
   }
+
   recentResolveFailures.set(failKey, Date.now());
-  throw new Error(`No mobile source for "${track.title}" — ${lastErr}`);
+  const detail =
+    rejectReasons[0] ??
+    'no searchable candidate with verifiable identity metadata';
+  throw new Error(`Identity check blocked store for "${track.title}" — ${detail}`);
 }
 
 async function lockerHasTrack(
@@ -211,6 +261,11 @@ export async function acquireTracksOnMobile(
     releaseYear?: string;
     artworkUrl?: string;
     jobId?: string;
+    /**
+     * Force in-place replace of an existing playable locker row (identity repair).
+     * Does not delete first — ADR 001; new bytes overwrite the same entry id.
+     */
+    forceReplaceEntryId?: string;
   },
 ): Promise<MobileAcquisitionResult> {
   let saved = 0;
@@ -224,6 +279,7 @@ export async function acquireTracksOnMobile(
 
   const albumName = options.albumName?.trim() || undefined;
   const total = tracks.length;
+  const forceReplaceEntryId = options.forceReplaceEntryId?.trim() || undefined;
 
   if (options.jobId) {
     patchDownloadJob(options.jobId, { status: 'resolving', totalTracks: total });
@@ -253,7 +309,7 @@ export async function acquireTracksOnMobile(
       patchTrackDownload(options.jobId, track.id, { status: 'resolving', percent: 5 });
     }
 
-    if (await lockerHasTrack(track.title, track.artist, albumName)) {
+    if (!forceReplaceEntryId && (await lockerHasTrack(track.title, track.artist, albumName))) {
       skipped += 1;
       if (options.jobId) {
         patchTrackDownload(options.jobId, track.id, { status: 'skipped', percent: 100 });
@@ -285,11 +341,9 @@ export async function acquireTracksOnMobile(
         trackNumber: track.trackNumber ?? (albumName ? i + 1 : undefined),
         discNumber: track.discNumber,
         skipHeavyAnalysis: true,
-        replaceEntryId: await resolveLockerReacquireTargetId(
-          track.title,
-          track.artist,
-          albumName,
-        ),
+        replaceEntryId:
+          forceReplaceEntryId ??
+          (await resolveLockerReacquireTargetId(track.title, track.artist, albumName)),
       };
 
       let entry;

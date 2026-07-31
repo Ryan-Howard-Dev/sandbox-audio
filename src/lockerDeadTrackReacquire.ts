@@ -1,25 +1,34 @@
 /**
  * Tidal-like self-heal — re-queue acquisition for hollow locker rows instead of duplicating.
+ * Also offers identity-repair reacquire for playable rows whose stored duration diverges from catalog.
  */
 
 import { isAirGapEnabled } from './airGapMode';
-import { scheduleCatalogTrackDownload } from './acquisitionPipeline';
+import {
+  acquireTracksOnServer,
+  scheduleCatalogTrackDownload,
+} from './acquisitionPipeline';
 import {
   enqueueDownloadJob,
   findTrackDownloadJob,
   initJobTracks,
   isDownloadJobActivelyRunning,
   loadDownloadTierPreference,
+  patchDownloadJob,
   type DownloadJob,
 } from './downloadQueue';
+import { scheduleDownloadJob } from './downloadQueueRunner';
 import {
   findLockerEntryForTrackIncludingHollow,
   findPlayableLockerEntryForTrack,
   lockerEntryHasRecoverableAudio,
 } from './lockerStorage';
 import type { CatalogTrack } from './searchCatalog';
+import type { LockerDurationIdentitySuspect } from './acquisitionIdentity';
 
 export type DeadLockerReacquireOutcome = 'queued' | 'already-active' | 'playable' | 'blocked';
+
+export type IdentityRepairReacquireOutcome = 'queued' | 'already-active' | 'blocked';
 
 function isActiveReacquireJob(job: DownloadJob | undefined): boolean {
   if (!job) return false;
@@ -78,4 +87,57 @@ export async function attemptDeadLockerReacquire(
 ): Promise<boolean> {
   const outcome = await queueDeadLockerTrackReacquire(title, artist, albumName);
   return outcome === 'queued' || outcome === 'already-active';
+}
+
+/**
+ * Offer re-acquisition for a locker row flagged by duration identity mismatch.
+ *
+ * Does NOT delete the existing playable row (ADR 001). Queues a force-replace download that
+ * overwrites the same entry id when new verified bytes arrive. Until then the old file stays
+ * playable — user-confirmed repair, never auto-delete.
+ */
+export function queueLockerIdentityRepairReacquire(
+  suspect: Pick<LockerDurationIdentitySuspect, 'entryId' | 'title' | 'artist' | 'albumName'>,
+): IdentityRepairReacquireOutcome {
+  if (isAirGapEnabled()) return 'blocked';
+
+  const existing = findTrackDownloadJob(suspect.artist, suspect.title);
+  if (isActiveReacquireJob(existing)) return 'already-active';
+
+  const track: CatalogTrack = {
+    kind: 'track',
+    id: suspect.entryId,
+    title: suspect.title,
+    artist: suspect.artist,
+    album: suspect.albumName,
+  };
+
+  const tier = loadDownloadTierPreference();
+  const job =
+    existing && existing.status !== 'done' && existing.status !== 'error'
+      ? existing
+      : enqueueDownloadJob({
+          label: `Repair: ${suspect.title}`,
+          artist: suspect.artist,
+          albumTitle: suspect.albumName,
+          mode: 'tracks',
+          tier,
+          totalTracks: 1,
+        });
+
+  initJobTracks(job.id, [{ id: track.id, title: track.title }]);
+  scheduleDownloadJob(job.id, async () => {
+    try {
+      await acquireTracksOnServer([track], {
+        tier,
+        mode: 'tracks',
+        albumName: suspect.albumName,
+        jobId: job.id,
+        forceReplaceEntryId: suspect.entryId,
+      });
+    } catch (err) {
+      patchDownloadJob(job.id, { status: 'error', error: String(err) });
+    }
+  });
+  return 'queued';
 }
