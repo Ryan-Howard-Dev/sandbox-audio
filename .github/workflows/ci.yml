@@ -248,6 +248,12 @@ jobs:
             # NOTE: android-emulator-runner runs each script line in a separate
             # `sh -c`, so `export` on its own line is lost before the build runs.
             # The variable must be set inline on the command that needs it.
+            #
+            # ffmpeg is needed even though this job never plays the locker fixture:
+            # SANDBOX_ANDROID_E2E=true makes the Android build generate it, and the
+            # generator exits 1 when ffmpeg is absent. Adding it to the playback job
+            # alone turned this job red, having been green on every previous run.
+            sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
             SANDBOX_ANDROID_E2E=true npm run build:android:apk
             chmod +x scripts/android-smoke-e2e.sh
             SKIP_BUILD=1 scripts/android-smoke-e2e.sh
