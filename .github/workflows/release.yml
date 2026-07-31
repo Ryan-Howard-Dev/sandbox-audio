@@ -69,6 +69,10 @@ jobs:
             # NOTE: android-emulator-runner runs each script line in a separate
             # `sh -c`, so `export` on its own line is lost before the build runs.
             # The variable must be set inline on the command that needs it.
+            #
+            # ffmpeg is required by the flag above: it makes the Android build generate the
+            # locker fixture, and that generator exits 1 when ffmpeg is absent.
+            sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
             SANDBOX_ANDROID_E2E=true npm run build:android:apk
             chmod +x scripts/android-smoke-e2e.sh
             SKIP_BUILD=1 scripts/android-smoke-e2e.sh
@@ -113,6 +117,10 @@ jobs:
             # NOTE: android-emulator-runner runs each script line in a separate
             # `sh -c`, so `export` on its own line is lost before the build runs.
             # The variable must be set inline on the command that needs it.
+            #
+            # ffmpeg is required by the flag above: it makes the Android build generate the
+            # locker fixture, and that generator exits 1 when ffmpeg is absent.
+            sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
             SANDBOX_ANDROID_E2E=true npm run build:android:apk
             chmod +x scripts/android-playback-e2e.sh
             SKIP_BUILD=1 scripts/android-playback-e2e.sh

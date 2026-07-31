@@ -37,6 +37,14 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: |
-            npm run build:android:apk
+            # This job builds the APK the smoke script then drives over deeplinks, so it needs
+            # the E2E bridge compiled in. Without SANDBOX_ANDROID_E2E=true the bridge is stripped
+            # and the very first assertion, skip-onboarding, can never answer — which is why the
+            # nightly failed at that exact step every run while the main CI passed.
+            #
+            # ffmpeg comes with the flag: setting it makes the Android build generate the locker
+            # fixture, and that generator exits 1 when ffmpeg is missing.
+            sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+            SANDBOX_ANDROID_E2E=true npm run build:android:apk
             chmod +x scripts/android-smoke-e2e.sh
             SKIP_BUILD=1 scripts/android-smoke-e2e.sh

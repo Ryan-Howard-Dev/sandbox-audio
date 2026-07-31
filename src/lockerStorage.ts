@@ -2083,6 +2083,100 @@ export async function getLockerArtBlob(entryId: string): Promise<Blob | null> {
 }
 
 /**
+ * Object URL minted for the track currently in the player.
+ *
+ * Deliberately one URL per playing track — never shared across an album. Sharing was tried and
+ * reverted (see resolveAlbumArtForRow): art-heal revokes the previous blob: URL before minting a
+ * replacement, which blanked every sibling still pointing at the shared URL. Playback keeps its
+ * own mint so revoking on track change cannot wipe library grid covers.
+ */
+let playbackArtObjectUrl: string | undefined;
+let playbackArtEntryId: string | undefined;
+
+/** Drop the playback-only cover object URL (does not touch library grid albumArt URLs). */
+export function revokePlaybackLockerArtwork(): void {
+  if (playbackArtObjectUrl?.startsWith('blob:')) {
+    try {
+      URL.revokeObjectURL(playbackArtObjectUrl);
+    } catch {
+      /* ignore */
+    }
+  }
+  playbackArtObjectUrl = undefined;
+  playbackArtEntryId = undefined;
+}
+
+/**
+ * Mint (or reuse) the single playback cover URL for this locker entry from track_blobs.
+ * Revokes the previous track's playback object URL when the entry id changes.
+ */
+export async function adoptPlaybackLockerArtwork(
+  entryId: string,
+): Promise<string | undefined> {
+  const id = entryId.trim().replace(/^local-/, '');
+  if (!id) return undefined;
+
+  if (
+    playbackArtEntryId === id &&
+    playbackArtObjectUrl &&
+    (await blobObjectUrlIsLive(playbackArtObjectUrl))
+  ) {
+    return playbackArtObjectUrl;
+  }
+
+  const entries = lockerCache ?? (await getLockerEntries());
+  const entry = entries.find((e) => e.id === id);
+
+  if (entry?.albumArt && isPersistentAlbumArt(entry.albumArt)) {
+    revokePlaybackLockerArtwork();
+    return entry.albumArt.trim();
+  }
+
+  const blob = await getLockerArtBlob(id);
+  if (blob && blob.size > 0) {
+    revokePlaybackLockerArtwork();
+    const url = URL.createObjectURL(blob);
+    playbackArtObjectUrl = url;
+    playbackArtEntryId = id;
+    return url;
+  }
+
+  // No blob to mint — fall back to a live library URL or group cover without claiming it as
+  // the playback-owned object URL (revoking those would blank the locker grid).
+  revokePlaybackLockerArtwork();
+  const currentArt = entry?.albumArt?.trim();
+  if (currentArt?.startsWith('blob:') && (await blobObjectUrlIsLive(currentArt))) {
+    return currentArt;
+  }
+  if (entry) {
+    const groupArt = resolveLockerEntryGroupArt(entry, entries);
+    if (groupArt) return groupArt;
+  }
+  if (currentArt && !currentArt.startsWith('blob:')) return currentArt;
+  return undefined;
+}
+
+/** Attach playback locker cover art onto an envelope when the vault holds this track. */
+export async function enrichEnvelopeWithPlaybackLockerArt(
+  env: MediaEnvelope,
+): Promise<MediaEnvelope> {
+  const id =
+    env.sourceId?.trim().replace(/^local-/, '') ||
+    (env.envelopeId?.startsWith('local-')
+      ? env.envelopeId.slice('local-'.length).trim()
+      : '');
+  if (!id) return env;
+
+  const entries = lockerCache ?? (await getLockerEntries());
+  if (!entries.some((e) => e.id === id)) return env;
+
+  const art = await adoptPlaybackLockerArtwork(id);
+  if (!art) return env;
+  if (env.artworkUrl?.trim() === art) return env;
+  return { ...env, artworkUrl: sanitizeCoverArtUrl(art) ?? art };
+}
+
+/**
  * Write one cover blob onto many entries in a SINGLE transaction.
  *
  * The per-entry path (updateLockerEntryMetadata) opens its own transaction each time, so
@@ -3017,8 +3111,10 @@ export async function resolveLockerEnvelopeForPlayback(
   const entries = await getLockerEntries();
 
   const tryEntry = async (entry: LockerEntry): Promise<MediaEnvelope | null> => {
+    // Playback-owned mint from track_blobs (revoked on the next track) — not the library
+    // grid URL, which must stay alive for album thumbs.
     const artUrl =
-      (await resolveLockerArtworkUrl(entry.id)) ?? entry.albumArt ?? hint.artworkUrl;
+      (await adoptPlaybackLockerArtwork(entry.id)) ?? entry.albumArt ?? hint.artworkUrl;
     const base: Omit<MediaEnvelope, 'url'> = {
       envelopeId: `local-${entry.id}`,
       title: entry.title,

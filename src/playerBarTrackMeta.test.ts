@@ -218,6 +218,39 @@ describe('resolveLockerEntryAlbumArt', () => {
     expect(resolveLockerEntryAlbumArt(envelope)).toBe('blob:cached-good');
     forgetKnownGoodAlbumArt(key);
   });
+
+  /*
+   * The bug this covers: a track resolved through a tier keeps the provider it was resolved
+   * under — the player prints 'HTTP' beneath the artist — even while its audio streams from
+   * content://…/locker/… and its cover sits in track_blobs. Gating on provider meant 326 covers
+   * stored on the device never reached the player or the lock screen. Membership is decided by
+   * the snapshot lookup, not the label.
+   */
+  it('returns locker art when the entry exists but the provider is not local-vault', () => {
+    const envelope = {
+      envelopeId: 'local-water-track',
+      provider: 'http',
+      sourceId: 'water-track',
+    } as never;
+    expect(resolveLockerEntryAlbumArt(envelope)).toBe('blob:album-cover');
+  });
+
+  it('still returns undefined when no locker entry matches, whatever the provider says', () => {
+    expect(
+      resolveLockerEntryAlbumArt({
+        envelopeId: 'local-not-in-locker',
+        provider: 'local-vault',
+        sourceId: 'not-in-locker',
+      } as never),
+    ).toBeUndefined();
+    expect(
+      resolveLockerEntryAlbumArt({
+        envelopeId: 'local-not-in-locker',
+        provider: 'http',
+        sourceId: 'not-in-locker',
+      } as never),
+    ).toBeUndefined();
+  });
 });
 
 describe('playbackArtStabilizeScope', () => {

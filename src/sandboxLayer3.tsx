@@ -132,11 +132,12 @@ import {
   lockerTitleMatches,
   refreshLockerEntryPlayUrl,
   removeLockerEntry,
-  resolveLockerArtworkUrl,
   resolveLockerEnvelopeForPlayback,
   resolveLockerEntryGroupArt,
   buildLockerGroupArtMap,
   resolveLockerEntryGroupArtFromMap,
+  adoptPlaybackLockerArtwork,
+  enrichEnvelopeWithPlaybackLockerArt,
   subscribeLockerCache,
   tracksForAlbumGroup,
   warmLockerCache,
@@ -148,6 +149,7 @@ import { LOCKER_USER_DELETE_CONFIRMED } from './lockerDeleteGuard';
 import {
   playbackArtStabilizeScope,
   resolveLockerEntryAlbumArt,
+  resolveLockerEntryId,
   resolvePlaybackCoverArt,
   stabilizePlaybackArtSrc,
 } from './playerBarTrackMeta';
@@ -3211,16 +3213,17 @@ export default function SandboxShell() {
   }, []);
   /** In-place queue seek — sync display seed atomically so player UI never flashes album view. */
   const adoptInPlaceQueueTrack = useCallback(
-    (track: MediaEnvelope, seekSeconds: number) => {
-      const lockerArt = resolveLockerEntryAlbumArt(track);
-      const displayArt = resolvePlaybackCoverArt(track.artworkUrl, track, lockerArt);
+    async (track: MediaEnvelope, seekSeconds: number) => {
+      const enriched = await enrichEnvelopeWithPlaybackLockerArt(track);
+      const lockerArt = resolveLockerEntryAlbumArt(enriched);
+      const displayArt = resolvePlaybackCoverArt(enriched.artworkUrl, enriched, lockerArt);
       const resolvedArt = displayArt?.trim() || '';
-      const enriched =
-        resolvedArt && resolvedArt !== track.artworkUrl?.trim()
-          ? { ...track, artworkUrl: resolvedArt }
-          : track;
-      applyPlaybackDisplaySeed(enriched, resolvedArt);
-      audio.adoptQueueTrack(enriched, seekSeconds);
+      const withArt =
+        resolvedArt && resolvedArt !== enriched.artworkUrl?.trim()
+          ? { ...enriched, artworkUrl: resolvedArt }
+          : enriched;
+      applyPlaybackDisplaySeed(withArt, resolvedArt);
+      audio.adoptQueueTrack(withArt, seekSeconds);
     },
     [audio, applyPlaybackDisplaySeed],
   );
@@ -3530,18 +3533,21 @@ export default function SandboxShell() {
         };
       };
 
-      const lockerSeedArt =
-        env.provider === 'local-vault' ? resolveLockerEntryAlbumArt(env) : undefined;
-      const seedArtwork = coalesceArtworkUrl(
+      const lockerSeedArt = resolveLockerEntryAlbumArt(env);
+      let seedArtwork = coalesceArtworkUrl(
         lockerSeedArt,
         env.artworkUrl,
         candidates?.find((s) => s.metadata?.artworkUrl)?.metadata?.artworkUrl,
         albumDrillAlbum?.artworkUrl,
       );
+      let seedEnvelope =
+        seedArtwork && !env.artworkUrl ? { ...env, artworkUrl: seedArtwork } : env;
+      // Carry a playback-owned cover from track_blobs onto the envelope. Library grid joins
+      // blobs when listing; the play path did not, so player bar + media session saw no art.
+      seedEnvelope = await enrichEnvelopeWithPlaybackLockerArt(seedEnvelope);
+      seedArtwork = coalesceArtworkUrl(seedEnvelope.artworkUrl, seedArtwork);
       const seedDisplayArt =
         proxiedArtworkUrl(seedArtwork) ?? seedArtwork ?? '';
-      const seedEnvelope =
-        seedArtwork && !env.artworkUrl ? { ...env, artworkUrl: seedArtwork } : env;
       applyPlaybackDisplaySeed(seedEnvelope, seedDisplayArt);
 
       if (isPodcastEnvelopeId(env.envelopeId)) {
@@ -3679,7 +3685,7 @@ export default function SandboxShell() {
         ) {
           syncThumbsFromFeedback(env.envelopeId);
           setQueueIndex(targetQueueIdx);
-          adoptInPlaceQueueTrack(seedEnvelope, inPlaceSeek);
+          await adoptInPlaceQueueTrack(seedEnvelope, inPlaceSeek);
           setMobilePlayerPending(false);
           return true;
         }
@@ -4257,12 +4263,11 @@ export default function SandboxShell() {
 
         if (
           !playable.artworkUrl &&
-          playable.provider === 'local-vault' &&
           playable.sourceId
         ) {
           const lockerArt =
             resolveLockerEntryAlbumArt(playable) ??
-            (await resolveLockerArtworkUrl(playable.sourceId));
+            (await adoptPlaybackLockerArtwork(playable.sourceId));
           if (lockerArt) playable = { ...playable, artworkUrl: lockerArt };
         }
 
@@ -6051,7 +6056,7 @@ export default function SandboxShell() {
         exoGaplessTransitionAtRef.current = Date.now();
         setQueueIndex(idx);
         syncThumbsFromFeedback(track.envelopeId);
-        adoptInPlaceQueueTrack(track, 0);
+        void adoptInPlaceQueueTrack(track, 0);
         // Do NOT force trackReachedPlayingRef true here — a native transition is not proof this
         // track is actually audible yet (an erroneous/corrupted transition would "prove" it
         // instantly, defeating trackPlaybackMatureForAdvance's minimum-play-time guard and
@@ -6745,7 +6750,7 @@ export default function SandboxShell() {
         if (currentUrl && inPlaceSeek != null && !(inPlaceSeek < 0.25 && next > 0)) {
           setQueueIndex(next);
           syncThumbsFromFeedback(track.envelopeId);
-          adoptInPlaceQueueTrack(track, inPlaceSeek);
+          void adoptInPlaceQueueTrack(track, inPlaceSeek);
           // See onExoTransition above — an in-place seek isn't proof of real playback either;
           // let the state-driven effect confirm it before trackPlaybackMatureForAdvance trusts it.
           void primeLockerNativeQueueFrom(q, next);
@@ -7244,7 +7249,7 @@ export default function SandboxShell() {
     if (currentUrl && inPlaceSeek != null) {
       setQueueIndex(prev);
       syncThumbsFromFeedback(track.envelopeId);
-      adoptInPlaceQueueTrack(track, inPlaceSeek);
+      void adoptInPlaceQueueTrack(track, inPlaceSeek);
       return;
     }
     setQueueIndex(prev);
@@ -7328,7 +7333,7 @@ export default function SandboxShell() {
       setQueueIndex(next);
       syncThumbsFromFeedback(track.envelopeId);
       lastSkipOutcomeRef.current = 'in-place';
-      adoptInPlaceQueueTrack(track, inPlaceSeek);
+      void adoptInPlaceQueueTrack(track, inPlaceSeek);
       return;
     }
     lastSkipOutcomeRef.current = 'advance';
@@ -7774,11 +7779,12 @@ export default function SandboxShell() {
     void (async () => {
       try {
         let raw = env.artworkUrl?.trim();
-        if (!raw && env.provider === 'local-vault') {
+        if (!raw) {
           raw = resolveLockerEntryAlbumArt(env)?.trim() ?? '';
         }
-        if (!raw && env.provider === 'local-vault' && env.sourceId) {
-          raw = (await resolveLockerArtworkUrl(env.sourceId)) ?? '';
+        if (!raw) {
+          const id = resolveLockerEntryId(env);
+          if (id) raw = (await adoptPlaybackLockerArtwork(id)) ?? '';
         }
         if (!raw) return;
         const next = proxiedArtworkUrl(raw) ?? raw;

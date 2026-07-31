@@ -255,10 +255,127 @@ const MOBILE_DURATION_MAX_RATIO = 1.4;
 const MOBILE_TITLE_MIN_SIM = 0.6;
 const MOBILE_ARTIST_CONFLICT_SIM = 0.35;
 
+/*
+ * Renditions that carry the original's title verbatim.
+ *
+ * Duration was supposed to catch these. It does not: a live cut of a three-minute song is usually
+ * three minutes, so the ratio gate abstains, and then containment actively waves it through —
+ * "Vultures (Live at Rolling Loud)" contains "Vultures", so the title gate reads it as the
+ * decorated-but-correct hit it was written to allow. Every check passes and the wrong recording
+ * plays.
+ *
+ * Separate from DERIVATIVE_MARKERS in searchCatalog.ts, which covers karaoke, tribute and
+ * instrumental renditions and is applied to search rows rather than to resolved streams.
+ */
+const RENDITION_MARKERS = [
+  'live',
+  'acoustic',
+  'remix',
+  'rework',
+  'demo',
+  'sped up',
+  'slowed',
+  'reverb',
+  'cover',
+  'remastered',
+  'unplugged',
+  'acapella',
+  'a cappella',
+  'freestyle',
+  'instrumental',
+] as const;
+
+/*
+ * Whole words only. Both sides reach here already normalised, so punctuation-bearing forms like
+ * "(live" can never match, and plain substring matching would find "live" inside "deliver" and
+ * "cover" inside "discover" — rejecting correct streams on a spelling coincidence.
+ */
+const RENDITION_PATTERNS = RENDITION_MARKERS.map(
+  (marker) => new RegExp(`(^|\\s)${marker.replace(/ /g, '\\s+')}(\\s|$)`),
+);
+
+/**
+ * True when the stream announces a rendition the catalog track never claimed to be.
+ *
+ * One-directional on purpose. Asking for a live album and receiving the live recording is
+ * correct, so a marker present on both sides is no evidence of anything. Only a marker that
+ * appears on the resolved side and not the catalog side is divergence — which is the standard
+ * the rest of this function already works to.
+ */
+export function resolvedIsUnrequestedRendition(
+  catalogTitle: string | undefined,
+  resolvedBlob: string,
+): boolean {
+  const resolved = normalizeMatchText(resolvedBlob);
+  if (!resolved.trim()) return false;
+  const catalog = normalizeMatchText(catalogTitle ?? '');
+  return RENDITION_PATTERNS.some((pattern) => pattern.test(resolved) && !pattern.test(catalog));
+}
+
+/*
+ * How often this function is asked to verify a stream against nothing.
+ *
+ * When a resolver reports no metadata of its own, `envelopeFromResolved` fills the envelope from
+ * the catalog, so every check below compares the catalog with itself, finds no disagreement, and
+ * accepts. That is not verification, and an entirely unrelated recording passes it — which is what
+ * a cover playing in place of the requested track looks like.
+ *
+ * Counting before changing behaviour is deliberate. Rejecting these outright would also reject the
+ * correct streams from resolvers that simply do not report titles, and a silent refusal to play
+ * reads as a broken app. The number tells us how much of the traffic this actually is; until it
+ * exists, tightening or leaving it alone are both guesses.
+ */
+let unverifiedMobileResolves = 0;
+let verifiedMobileResolves = 0;
+
+/** Reset between tests. */
+export function resetMobileResolveVerificationCounts(): void {
+  unverifiedMobileResolves = 0;
+  verifiedMobileResolves = 0;
+}
+
+export function getMobileResolveVerificationCounts(): {
+  verified: number;
+  unverified: number;
+} {
+  return { verified: verifiedMobileResolves, unverified: unverifiedMobileResolves };
+}
+
+/**
+ * True when the resolved envelope carries no independent signal — every comparable field either
+ * absent or identical to the catalog's, meaning it was inherited rather than reported.
+ */
+export function mobileResolveHasNoIndependentMetadata(
+  catalog: MediaEnvelope,
+  resolved: MediaEnvelope,
+): boolean {
+  const sameOrEmpty = (a: string | undefined, b: string | undefined): boolean => {
+    const left = normalizeMatchText(a ?? '');
+    const right = normalizeMatchText(b ?? '');
+    return !right || left === right;
+  };
+  const durationSilent =
+    !resolved.durationSeconds || resolved.durationSeconds === catalog.durationSeconds;
+  return (
+    sameOrEmpty(catalog.title, resolved.title) &&
+    sameOrEmpty(catalog.artist, resolved.artist) &&
+    durationSilent
+  );
+}
+
 export function mobileResolveMatchesCatalog(
   catalog: MediaEnvelope,
   resolved: MediaEnvelope,
 ): boolean {
+  if (mobileResolveHasNoIndependentMetadata(catalog, resolved)) {
+    unverifiedMobileResolves += 1;
+    // Tagged so it can be counted from logcat on a real device without a debugger attached.
+    console.warn(
+      `[MobileResolve] UNVERIFIED accepted — resolver reported no metadata; catalog="${catalog.title ?? ''}" total=${unverifiedMobileResolves}`,
+    );
+  } else {
+    verifiedMobileResolves += 1;
+  }
   const catalogDur = catalog.durationSeconds ?? 0;
   const resolvedDur = resolved.durationSeconds ?? 0;
   if (catalogDur > 45 && resolvedDur > 0) {
@@ -271,6 +388,13 @@ export function mobileResolveMatchesCatalog(
   const resolvedBlob = normalizeMatchText(
     `${resolved.title ?? ''} ${resolved.artist ?? ''} ${resolved.album ?? ''}`,
   );
+  /*
+   * Before containment, not after. Containment is what admits a rendition: the live cut carries
+   * the studio title inside it, so asking "does the catalog title appear here" answers yes for
+   * precisely the hits this rejects.
+   */
+  if (resolvedIsUnrequestedRendition(catalog.title, resolvedBlob)) return false;
+
   if (catalogTitle && resolvedTitle) {
     // Containment first: the catalog title sits inside the decorated one on a correct hit.
     const titled =

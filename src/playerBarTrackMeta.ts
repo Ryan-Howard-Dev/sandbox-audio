@@ -33,12 +33,12 @@ export function playbackArtStabilizeScope(
 ): string | undefined {
   const envId = envelope?.envelopeId?.trim();
   if (!envId) return undefined;
-  if (envelope?.provider === 'local-vault') {
-    const entryId = resolveLockerEntryId(envelope);
-    if (entryId) {
-      const snap = getLockerEntriesSnapshot();
-      const entry = snap?.find((e) => e.id === entryId);
-      const albumKey = entry ? lockerAlbumGroupKey(entry) : null;
+  const entryId = resolveLockerEntryId(envelope);
+  if (entryId) {
+    const snap = getLockerEntriesSnapshot();
+    const entry = snap?.find((e) => e.id === entryId);
+    if (entry) {
+      const albumKey = lockerAlbumGroupKey(entry);
       if (albumKey) return `locker-album:${albumKey}`;
     }
   }
@@ -210,9 +210,18 @@ export function resolvePlayerBarArtwork(
 export function resolveLockerEntryAlbumArt(
   envelope: MediaEnvelope | null | undefined,
 ): string | undefined {
-  if (envelope?.provider !== 'local-vault') {
-    return undefined;
-  }
+  /*
+   * Membership of the locker is decided by whether the entry is actually there, not by the
+   * provider label. A track resolved through a tier and then played from the vault keeps the
+   * provider it was resolved under — 'HTTP' is what the player prints under the artist — while
+   * its audio comes from content://…/locker/… and its art sits in track_blobs. Gating on
+   * provider === 'local-vault' rejected exactly those tracks, so 326 covers stored on the
+   * device never reached the player or the lock screen.
+   *
+   * The id is derived from sourceId/envelopeId, which needs no provider, and the snapshot
+   * lookup below is the real test: no matching entry still returns undefined, so this only
+   * adds art where the locker demonstrably holds it.
+   */
   const id = resolveLockerEntryId(envelope);
   if (!id) return undefined;
   const snap = getLockerEntriesSnapshot();
@@ -226,13 +235,22 @@ export function resolveLockerEntryAlbumArt(
  * Now playing + mini player cover — mirror library art resolution.
  * Locker playback prefers vault albumArt over stale parallel/seed URLs.
  */
+function envelopeHasLockerEntry(envelope: MediaEnvelope | null | undefined): boolean {
+  const id = resolveLockerEntryId(envelope);
+  if (!id) return false;
+  return Boolean(getLockerEntriesSnapshot()?.some((e) => e.id === id));
+}
+
 export function resolvePlaybackCoverArt(
   parallelArtworkUrl: string | undefined,
   envelope: MediaEnvelope | null | undefined,
   lockerAlbumArt?: string | undefined,
 ): string {
   const locker = lockerAlbumArt ?? resolveLockerEntryAlbumArt(envelope);
-  const isLocker = envelope?.provider === 'local-vault';
+  // Prefer vault art whenever the envelope maps to a locker row — provider may still say
+  // 'http' while audio+art live in the vault (see resolveLockerEntryAlbumArt).
+  const isLocker =
+    envelope?.provider === 'local-vault' || envelopeHasLockerEntry(envelope);
   const candidates = isLocker
     ? [locker, envelope?.artworkUrl, parallelArtworkUrl]
     : [parallelArtworkUrl, envelope?.artworkUrl, locker];
@@ -261,7 +279,8 @@ export function resolvePlaybackCoverArtFallback(
 ): string {
   const failedCanon = canonicalArtworkSrc(failedSrc);
   const locker = resolveLockerEntryAlbumArt(envelope);
-  const isLocker = envelope?.provider === 'local-vault';
+  const isLocker =
+    envelope?.provider === 'local-vault' || envelopeHasLockerEntry(envelope);
   const candidates = isLocker
     ? [locker, envelope?.artworkUrl, parallelArtworkUrl]
     : [parallelArtworkUrl, envelope?.artworkUrl, locker];
