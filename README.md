@@ -72,12 +72,16 @@ them unset and that feature is simply absent. Register your own application with
 rather than reusing anyone else's: values compiled into a client are readable by anyone holding the
 build, so a shared key is a key that gets rate-limited or banned for everybody.
 
+**Extraction is off unless you turn it on.** The app can resolve audio through yt-dlp–style
+extractors, including a native one on Android. It ships **disabled**: `VITE_ACQUISITION_DEFAULT_ON`
+is unset in [.env.example](./.env.example), no build enables it, and there is no published release
+at all. The resolver is still listed in Settings so you can see what it is before deciding — the
+build flag sets the starting position, and your own per-resolver choice overrides it either way
+(`src/mobileResolverRegistry.ts`). Turning it on is a deliberate act, twice over.
+
 **You are responsible for what you point it at.** This is a player and a locker. It does not supply
 music, and what is lawful to fetch, store or play depends on the source, the content and where you
-live — not on this software. Acquisition resolvers (on-device extraction and similar) ship
-**switched off**; enabling them is a deliberate choice, and the consequences of that choice are
-yours. Set `VITE_ACQUISITION_DEFAULT_ON=true` only for a personal build where you have already
-decided.
+live — not on this software. That judgement is yours to make, and so are the consequences.
 
 **Licensed under GPL-3.0.** See [LICENSE](./LICENSE).
 
