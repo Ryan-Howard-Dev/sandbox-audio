@@ -4635,9 +4635,17 @@ body > header.windows-titlebar {
   background: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.12);
 }
 
+.locker-edition-pill-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .locker-edition-pill-meta {
   opacity: 0.75;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 .locker-album-meta {
@@ -5027,11 +5035,32 @@ body > header.windows-titlebar {
   background: linear-gradient(135deg, var(--bg-hover) 0%, var(--bg-void) 100%);
 }
 
+/*
+ * A column so the children can be ordered, which is the only reason this is flex.
+ *
+ * The artist belongs at the foot of the album header, not wedged between the title and the
+ * track count. Doing it with `order` rather than moving the JSX keeps the change to two rules
+ * in one file: the markup in LocalView.tsx is ~100 lines of conditional branches (clickable
+ * artist, non-clickable artist, avatar, credits, featuring line) and relocating that by hand is
+ * a large edit to a 4,900-line component for a purely visual result.
+ */
 .locker-album-banner-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   flex: 1;
   min-width: 0;
   width: 100%;
   align-self: stretch;
+}
+
+/*
+ * Last in the header, ahead only of nothing. Everything else keeps source order because flex
+ * items default to order: 0.
+ */
+.locker-album-banner-info > .locker-album-banner-artist {
+  order: 99;
+  margin-top: 1rem;
 }
 
 .locker-album-banner-title {
@@ -5308,6 +5337,11 @@ body > header.windows-titlebar {
   font-variant-numeric: tabular-nums;
   color: var(--text-mid);
   text-align: right;
+}
+
+.locker-album-track-col-actions {
+  /* Header spacer matching the actions column width in the track grid. */
+  min-width: 0;
 }
 
 .locker-album-track-actions {
@@ -5615,6 +5649,10 @@ body > header.windows-titlebar {
   margin-bottom: 1rem;
 }
 
+.artist-top-tracks {
+  margin-bottom: 1.75rem;
+}
+
 .artist-discography-tabs {
   margin-top: 2rem;
   margin-bottom: 1rem;
@@ -5762,6 +5800,10 @@ body > header.windows-titlebar {
   margin: 1rem 0 0.5rem;
   padding-top: 0.75rem;
   border-top: 1px solid var(--border);
+}
+
+.locker-album-artist-credits {
+  margin: 1rem 0 0.25rem;
 }
 
 .search-results-artist-chips {
@@ -6385,6 +6427,11 @@ body > header.windows-titlebar {
   object-fit: cover;
 }
 
+.search-results-album-art--fallback {
+  position: absolute;
+  inset: 0;
+}
+
 .search-results-album-art {
   width: 4.5rem;
   height: 4.5rem;
@@ -6651,6 +6698,19 @@ body > header.windows-titlebar {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.search-results-album-col-index {
+  text-align: center;
+}
+
+.search-results-album-col-title {
+  min-width: 0;
+}
+
+.search-results-album-col-actions {
+  /* Header spacer matching the actions column. */
+  min-width: 0;
+}
+
 .search-results-row--album .track-list-title {
   font-family: var(--font-sans, system-ui, sans-serif);
   font-size: 0.9375rem;
@@ -6903,6 +6963,14 @@ body > header.windows-titlebar {
   color: var(--accent-stroke);
 }
 
+.search-results-action--acquire {
+  color: var(--text-mid);
+}
+
+.search-results-action--acquire:hover {
+  color: var(--accent-stroke);
+}
+
 .search-results-sources {
   width: 100%;
   padding: 0.5rem 0 0.75rem calc(1.75rem + 48px + 12px);
@@ -6947,6 +7015,16 @@ body > header.windows-titlebar {
 
 .artist-track-table {
   /* Immersive list — no container box */
+}
+
+.artist-track-table-body {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.artist-track-col-title {
+  min-width: 0;
 }
 
 .artist-track-table-head,
@@ -9245,6 +9323,13 @@ button.artist-track-title--tap:focus-visible {
   justify-content: center;
 }
 
+.locker-search-collection-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0;
+}
+
 .locker-search-editions {
   display: flex;
   flex-wrap: wrap;
@@ -10040,6 +10125,56 @@ button.artist-track-title--tap:focus-visible {
   color: var(--text);
 }
 
+.podcasts-section-title {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  margin: 0 0 0.75rem;
+}
+
+.podcasts-content {
+  min-width: 0;
+}
+
+.podcasts-downloaded-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.podcasts-mirror-banner {
+  /* Layout mostly from utility classes; keep as a named station hook. */
+}
+
+.podcasts-mirror-pull {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.625rem;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.podcasts-library-grid-section {
+  margin-bottom: 1.25rem;
+}
+
+.audiobooks-station-header {
+  /* Layout from utility classes; named station header hook. */
+}
+
+.audiobooks-library-section {
+  margin-bottom: 1.25rem;
+}
+
+.audiobook-related {
+  min-width: 0;
+}
+
 .podcasts-discover-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
@@ -10415,6 +10550,18 @@ button.artist-track-title--tap:focus-visible {
 }
 
 .explore-section {
+  margin-bottom: 1.75rem;
+}
+
+.explore-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.explore-video-entry {
   margin-bottom: 1.75rem;
 }
 
@@ -12822,6 +12969,12 @@ body:has(#root > .onboarding-root) {
   cursor: pointer;
 }
 
+.locker-inline-search-icon,
+.locker-header-search-icon {
+  flex-shrink: 0;
+  color: var(--text-dim);
+}
+
 .locker-inline-search-placeholder {
   font-size: 0.875rem;
   color: var(--text-dim);
@@ -12878,6 +13031,12 @@ body:has(#root > .onboarding-root) {
   font-size: 0.625rem;
   color: var(--text-dim);
   margin-bottom: 0.25rem;
+}
+
+.locker-sync-progress-count {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-mid);
 }
 
 .locker-sync-progress-track {
@@ -13002,6 +13161,14 @@ body:has(#root > .onboarding-root) {
   color: var(--text);
 }
 
+.locker-pinned-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  width: 100%;
+}
+
 .locker-pinned-artist {
   display: block;
   font-size: 0.6875rem;
@@ -13055,6 +13222,13 @@ body:has(#root > .onboarding-root) {
 
 .playlist-folder-chip-add {
   border-style: dashed;
+}
+
+.playlist-folder-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
 }
 
 .playlist-row-cover {
@@ -14081,6 +14255,15 @@ body:has(#root > .onboarding-root) {
   margin-bottom: 0.625rem;
 }
 
+.sonic-locker-station {
+  min-width: 0;
+}
+
+.sonic-locker-queue,
+.sonic-locker-why {
+  min-width: 0;
+}
+
 .taste-factor-bar-head,
 .sonic-locker-factor-head {
   display: flex;
@@ -14504,6 +14687,14 @@ body:has(#root > .onboarding-root) {
   overflow: hidden;
 }
 
+.locker-artist-carousel-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  width: 100%;
+}
+
 .locker-artist-carousel-sub,
 .locker-artist-carousel-count {
   display: block;
@@ -14512,6 +14703,15 @@ body:has(#root > .onboarding-root) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.locker-artist-top-tracks-hint {
+  margin: 0;
+}
+
+.locker-artist-track-source {
+  display: block;
+  margin-top: 0.1rem;
 }
 
 .locker-artist-credits {
@@ -14701,6 +14901,10 @@ body:has(#root > .onboarding-root) {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.locker-genre-mosaic--empty {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
 }
 
 .locker-genre-tile-meta {
@@ -16057,6 +16261,19 @@ body:has(#root > .onboarding-root) {
 
 .feed-mobile-section {
   margin-bottom: 1.5rem;
+}
+
+.feed-mobile-section-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.75rem;
+}
+
+.feed-mobile-expanded-item {
+  min-width: 0;
 }
 
 .feed-mobile-carousel-item {
@@ -19569,6 +19786,421 @@ input.shell-search:focus-visible {
     border-bottom-color: var(--accent-stroke);
     border-left-color: transparent;
   }
+}
+
+/* Player queue sheet — collapses now-playing into a transport bar + scrollable queue */
+.player-queue-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--bg-void) 94%, #2a1810 6%);
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0.2s ease;
+}
+
+.player-queue-sheet--open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.player-queue-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  min-height: 3.25rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  box-sizing: border-box;
+}
+
+.player-queue-bar-art {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.player-queue-bar-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.05rem;
+  min-width: 0;
+  text-align: left;
+}
+
+.player-queue-bar-title,
+.player-queue-bar-artist {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.player-queue-bar-title {
+  font-family: var(--font-ui, var(--font-mono));
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.player-queue-bar-artist {
+  font-family: var(--font-ui, var(--font-mono));
+  font-size: 0.625rem;
+  color: var(--text-mid);
+}
+
+.player-queue-bar-btn {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--control-ink);
+  opacity: 0.85;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.player-queue-bar-btn:hover,
+.player-queue-bar-btn:focus-visible {
+  opacity: 1;
+  outline: none;
+}
+
+.player-queue-bar-btn--play {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--accent-stroke);
+  opacity: 1;
+}
+
+.player-queue-source {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem 0.35rem;
+  box-sizing: border-box;
+}
+
+.player-queue-source-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+
+.player-queue-source-eyebrow {
+  display: block;
+  font-family: var(--font-ui, var(--font-mono));
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.player-queue-source-name {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui, var(--font-mono));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.player-queue-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0.4rem 0.65rem;
+  border-radius: 0.375rem;
+  border: 1px solid color-mix(in srgb, var(--accent-stroke) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent-stroke) 12%, transparent);
+  color: var(--accent-stroke);
+  font-family: var(--font-ui, var(--font-mono));
+  font-size: 0.6875rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.player-queue-save:hover:not(:disabled),
+.player-queue-save:focus-visible:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-stroke) 20%, transparent);
+  outline: none;
+}
+
+.player-queue-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.player-queue-empty {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 2rem 1rem;
+  font-family: var(--font-ui, var(--font-mono));
+  font-size: 0.8125rem;
+  color: var(--text-mid);
+  text-align: center;
+}
+
+.player-queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0.5rem 1rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.player-queue-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+  height: 3.25rem;
+  min-height: 3.25rem;
+  max-height: 3.25rem;
+  padding: 0 0.25rem 0 0.35rem;
+  border-radius: 0.375rem;
+  box-sizing: border-box;
+}
+
+.player-queue-row--current {
+  background: color-mix(in srgb, var(--accent-stroke) 12%, transparent);
+}
+
+.player-queue-row--dragging {
+  opacity: 0.45;
+}
+
+.player-queue-row-main {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.player-queue-row-main:disabled {
+  cursor: default;
+}
+
+.player-queue-art {
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.player-queue-eq {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.35rem;
+  background: color-mix(in srgb, #000 45%, transparent);
+  box-sizing: border-box;
+}
+
+.player-queue-eq i {
+  display: block;
+  width: 0.2rem;
+  height: 40%;
+  border-radius: 1px;
+  background: var(--accent-stroke);
+  animation: player-queue-eq-pulse 0.85s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.player-queue-eq i:nth-child(2) {
+  height: 70%;
+  animation-delay: 0.15s;
+}
+
+.player-queue-eq i:nth-child(3) {
+  height: 50%;
+  animation-delay: 0.3s;
+}
+
+.player-queue-eq--paused i {
+  animation: none;
+  height: 28%;
+}
+
+@keyframes player-queue-eq-pulse {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.player-queue-row-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.1rem;
+  min-width: 0;
+  text-align: left;
+}
+
+.player-queue-row-title,
+.player-queue-row-meta {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.player-queue-row-title {
+  font-family: var(--font-ui, var(--font-mono));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.player-queue-row--current .player-queue-row-title {
+  color: var(--accent-stroke);
+}
+
+.player-queue-row-meta {
+  font-family: var(--font-ui, var(--font-mono));
+  font-size: 0.6875rem;
+  color: var(--text-mid);
+}
+
+.player-queue-row-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.player-queue-row-remove:hover,
+.player-queue-row-remove:focus-visible {
+  color: var(--danger, hsl(0 84% 60%));
+  outline: none;
+}
+
+.player-queue-row-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.5rem;
+  color: var(--text-dim);
+  cursor: grab;
+}
+
+.player-queue-row-grip:active {
+  cursor: grabbing;
+}
+
+.player-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.player-chip-row--queue {
+  flex-shrink: 0;
+  padding: 0.25rem 0.75rem 0.5rem;
+}
+
+.player-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-panel, var(--bg-void)) 80%, transparent);
+  color: var(--text);
+  font-family: var(--font-ui, var(--font-mono));
+  font-size: 0.6875rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.player-chip:hover,
+.player-chip:focus-visible {
+  border-color: color-mix(in srgb, var(--accent-stroke) 50%, var(--border));
+  outline: none;
 }
 
 /* Queue drawer — fixed right overlay, no layout reflow */

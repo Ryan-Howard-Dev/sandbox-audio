@@ -241,6 +241,15 @@ export default function LockerGenreView({
     );
   }, [shelves, libraryQuery]);
 
+  // Stable cover list per shelf across parent re-renders (same vault art → same url strings).
+  const mosaicCoversByShelfKey = useMemo(() => {
+    const map = new Map<string, LockerGenreCover[]>();
+    for (const shelf of filteredShelves) {
+      map.set(shelf.key, coversFor(shelf.covers));
+    }
+    return map;
+  }, [filteredShelves, coversFor]);
+
   const activeShelf = useMemo(
     () => shelves.find((s) => s.key === activeGenreKey) ?? null,
     [shelves, activeGenreKey],
@@ -366,7 +375,7 @@ export default function LockerGenreView({
         <React.Fragment key={shelf.key}>
           <GenreTile
             shelf={shelf}
-            covers={coversFor(shelf.covers)}
+            covers={mosaicCoversByShelfKey.get(shelf.key) ?? coversFor(shelf.covers)}
             label={shelfLabel(shelf)}
             labels={{ albums: albumsLabel, tracks: tracksLabel }}
             onOpen={() => setActiveGenreKey(shelf.key)}

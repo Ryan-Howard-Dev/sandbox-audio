@@ -323,15 +323,63 @@ function storedAudioToBlob(value: unknown): Blob | null {
  * since createObjectURL over IDB-backed blobs is slow in Android WebView) and had to be reverted:
  * the art-heal paths below revoke an entry's previous blob: URL before minting a replacement, so
  * a shared URL meant healing one track blanked the cover for every other track on that album —
- * including the track currently playing. Any future attempt at this must make revocation
- * refcount-aware first.
+ * including the track currently playing. Any future attempt at album-wide sharing must make
+ * revocation refcount-aware first.
+ *
+ * Per-row memoization is different: the same entry id keeps one minted URL across vault re-reads
+ * so genre mosaics / library grids are not handed a fresh blob: address (and forced to re-decode)
+ * for unchanged art. Healing still revokes only that row's URL via {@link forgetMintedRowAlbumArtUrl}.
  */
-function resolveAlbumArtForRow(row: {
+const mintedRowAlbumArtUrlById = new Map<string, string>();
+
+function forgetMintedRowAlbumArtUrl(entryId: string | undefined, url?: string): void {
+  const id = entryId?.trim();
+  if (!id) {
+    if (!url) return;
+    for (const [key, cached] of mintedRowAlbumArtUrlById) {
+      if (cached === url) {
+        mintedRowAlbumArtUrlById.delete(key);
+        return;
+      }
+    }
+    return;
+  }
+  const cached = mintedRowAlbumArtUrlById.get(id);
+  if (!cached) return;
+  if (url && cached !== url) return;
+  mintedRowAlbumArtUrlById.delete(id);
+}
+
+function rememberMintedRowAlbumArtUrl(entryId: string, url: string): void {
+  const id = entryId.trim();
+  if (!id || !url.startsWith('blob:')) return;
+  mintedRowAlbumArtUrlById.set(id, url);
+}
+
+/** Test helper — drop the per-row art URL memo without revoking (URL spies own revoke). */
+export function clearMintedRowAlbumArtUrlsForTests(): void {
+  mintedRowAlbumArtUrlById.clear();
+}
+
+/**
+ * Mint (or reuse) the cover object URL for one locker row from its art blob.
+ * Exported for regression tests: unchanged art must not mint a second address.
+ */
+export function resolveAlbumArtForRow(row: {
+  id?: string;
   albumArt?: string;
   albumArtBlob?: Blob;
 }): string | undefined {
   const blob = storedArtToBlob(row.albumArtBlob);
   if (blob) {
+    const id = row.id?.trim() ?? '';
+    if (id) {
+      const existing = mintedRowAlbumArtUrlById.get(id);
+      if (existing) return existing;
+      const url = URL.createObjectURL(blob);
+      rememberMintedRowAlbumArtUrl(id, url);
+      return url;
+    }
     return URL.createObjectURL(blob);
   }
   if (isLastFmBrandingCoverUrl(row.albumArt)) return undefined;
@@ -1959,7 +2007,7 @@ export async function resolveLockerArtworkUrl(entryId: string): Promise<string |
   }
   const blob = await getLockerArtBlob(id);
   if (blob && blob.size > 0) {
-    return URL.createObjectURL(blob);
+    return resolveAlbumArtForRow({ id, albumArtBlob: blob });
   }
   const art = entry?.albumArt?.trim();
   if (art && !art.startsWith('blob:')) return art;
@@ -2780,7 +2828,7 @@ function rowToEntry(t: {
   if (!url && !hasBlob && !nativeCached) return null;
   const albumArt = isPersistentAlbumArt(t.albumArt)
     ? t.albumArt!.trim()
-    : resolveAlbumArtForRow({ albumArt: t.albumArt, albumArtBlob: t.albumArtBlob });
+    : resolveAlbumArtForRow({ id: t.id, albumArt: t.albumArt, albumArtBlob: t.albumArtBlob });
   return {
     id: t.id,
     title: formatDisplayTrackTitle(t.title ?? ''),
@@ -2859,13 +2907,24 @@ const lockerListeners = new Set<() => void>();
 /** Defer album-art revocation so <img> nodes can swap src before onError fires. */
 const ALBUM_ART_REVOKE_DEFER_MS = 600;
 
-function scheduleRevokeAlbumArtUrl(url: string): void {
+function scheduleRevokeAlbumArtUrl(url: string, entryId?: string): void {
   if (!url.startsWith('blob:')) return;
+  forgetMintedRowAlbumArtUrl(entryId, url);
   if (typeof window === 'undefined') {
     URL.revokeObjectURL(url);
     return;
   }
   window.setTimeout(() => URL.revokeObjectURL(url), ALBUM_ART_REVOKE_DEFER_MS);
+}
+
+function revokeAlbumArtUrlNow(url: string, entryId?: string): void {
+  if (!url.startsWith('blob:')) return;
+  forgetMintedRowAlbumArtUrl(entryId, url);
+  try {
+    URL.revokeObjectURL(url);
+  } catch {
+    /* ignore */
+  }
 }
 
 function revokeLockerEntryUrls(
@@ -2875,8 +2934,8 @@ function revokeLockerEntryUrls(
   for (const e of entries) {
     if (e.url.startsWith('blob:')) URL.revokeObjectURL(e.url);
     if (e.albumArt?.startsWith('blob:')) {
-      if (options?.deferAlbumArt) scheduleRevokeAlbumArtUrl(e.albumArt);
-      else URL.revokeObjectURL(e.albumArt);
+      if (options?.deferAlbumArt) scheduleRevokeAlbumArtUrl(e.albumArt, e.id);
+      else revokeAlbumArtUrlNow(e.albumArt, e.id);
     }
   }
 }
@@ -2888,8 +2947,8 @@ function notifyLockerCache(): void {
 function revokeEntryBlobUrls(entry: LockerEntry, options?: { deferAlbumArt?: boolean }): void {
   if (entry.url.startsWith('blob:')) URL.revokeObjectURL(entry.url);
   if (entry.albumArt?.startsWith('blob:')) {
-    if (options?.deferAlbumArt) scheduleRevokeAlbumArtUrl(entry.albumArt);
-    else URL.revokeObjectURL(entry.albumArt);
+    if (options?.deferAlbumArt) scheduleRevokeAlbumArtUrl(entry.albumArt, entry.id);
+    else revokeAlbumArtUrlNow(entry.albumArt, entry.id);
   }
 }
 
@@ -2920,14 +2979,14 @@ function mergeLockerEntries(prev: LockerEntry[] | null, fresh: LockerEntry[]): L
     let albumArt: string | undefined;
     if (freshArt?.startsWith('blob:') && oldArt?.startsWith('blob:')) {
       albumArt = oldArt;
-      scheduleRevokeAlbumArtUrl(freshArt);
+      if (freshArt !== oldArt) scheduleRevokeAlbumArtUrl(freshArt, entry.id);
     } else {
       albumArt = freshArt ?? oldArt;
       if (freshArt && freshArt !== albumArt && freshArt.startsWith('blob:')) {
-        scheduleRevokeAlbumArtUrl(freshArt);
+        scheduleRevokeAlbumArtUrl(freshArt, entry.id);
       }
       if (oldArt && oldArt !== albumArt && oldArt.startsWith('blob:')) {
-        scheduleRevokeAlbumArtUrl(oldArt);
+        scheduleRevokeAlbumArtUrl(oldArt, entry.id);
       }
     }
 
@@ -2959,11 +3018,9 @@ function dropCachedAlbumArt(entryId: string): void {
   if (idx < 0) return;
   const oldArt = lockerCache[idx].albumArt;
   if (oldArt?.startsWith('blob:')) {
-    try {
-      URL.revokeObjectURL(oldArt);
-    } catch {
-      /* ignore */
-    }
+    revokeAlbumArtUrlNow(oldArt, entryId);
+  } else {
+    forgetMintedRowAlbumArtUrl(entryId);
   }
   const next = [...lockerCache];
   next[idx] = { ...next[idx], albumArt: undefined };
@@ -2972,7 +3029,23 @@ function dropCachedAlbumArt(entryId: string): void {
 
 function setLockerCache(entries: LockerEntry[], replace = true): LockerEntry[] {
   if (replace && lockerCache) {
-    revokeLockerEntryUrls(lockerCache, { deferAlbumArt: true });
+    // Only revoke URLs that no longer appear on the replacement snapshot. Soft refreshes
+    // and playability re-stamps reuse the same blob: strings; revoking those blanked every
+    // mosaic/grid cover and forced heal paths to mint a second address for the same art.
+    const keepArt = new Set<string>();
+    const keepPlay = new Set<string>();
+    for (const e of entries) {
+      if (e.albumArt?.startsWith('blob:')) keepArt.add(e.albumArt);
+      if (e.url.startsWith('blob:')) keepPlay.add(e.url);
+    }
+    for (const e of lockerCache) {
+      if (e.url.startsWith('blob:') && !keepPlay.has(e.url)) {
+        URL.revokeObjectURL(e.url);
+      }
+      if (e.albumArt?.startsWith('blob:') && !keepArt.has(e.albumArt)) {
+        scheduleRevokeAlbumArtUrl(e.albumArt, e.id);
+      }
+    }
   }
   lockerCache = entries;
   notifyLockerCache();
@@ -3017,13 +3090,12 @@ export async function refreshLockerEntryAlbumArt(entryId: string): Promise<strin
     const artBlob = await readEntryArtBlob(entryId);
     if (artBlob && artBlob.size > 0) {
       if (currentArt?.startsWith('blob:')) {
-        try {
-          URL.revokeObjectURL(currentArt);
-        } catch {
-          /* ignore */
-        }
+        revokeAlbumArtUrlNow(currentArt, entryId);
+      } else {
+        forgetMintedRowAlbumArtUrl(entryId);
       }
       const albumArt = URL.createObjectURL(artBlob);
+      rememberMintedRowAlbumArtUrl(entryId, albumArt);
       const next = [...list];
       next[idx] = { ...entry, albumArt };
       lockerCache = next;
@@ -5165,6 +5237,15 @@ export async function updateLockerEntryMetadata(
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+  const artBlobReplaced =
+    ('albumArtBlob' in patch && isStoredArtBlob(patch.albumArtBlob)) ||
+    ('albumArt' in patch && patch.albumArt === '') ||
+    ('albumArt' in patch &&
+      Boolean(patch.albumArt?.trim()) &&
+      isPersistentAlbumArt(patch.albumArt));
+  // Drop the memo so the next rowToEntry mint can pick up a replaced blob. Do not revoke here —
+  // soft merge / setLockerCache decide which prior blob: strings are still live.
+  if (artBlobReplaced) forgetMintedRowAlbumArtUrl(id);
   if (!options?.skipCacheRefresh) {
     await refreshLockerCache();
   }
