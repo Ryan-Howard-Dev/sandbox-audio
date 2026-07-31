@@ -68,6 +68,8 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation "androidx.media:media:1.7.0"
+    // Storage Access Framework tree traversal for the granted library folder (LibraryFolderPlugin).
+    implementation "androidx.documentfile:documentfile:1.0.1"
     implementation "androidx.media3:media3-exoplayer:1.5.1"
     implementation "androidx.media3:media3-common:1.5.1"
     implementation "androidx.mediarouter:mediarouter:1.7.0"
