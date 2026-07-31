@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/icon.svg" width="104" alt="Sandbox Audio">
+<img src="./public/icon-desktop.svg" width="104" alt="Sandbox Audio">
 
 # Sandbox Audio
 
@@ -55,7 +55,7 @@ that the software you rely on should run on hardware you control.
 |---------|-----------|--------|
 | **Sandbox OS** | A Debian-based operating system built around *stations* — media, documents, marketplace — instead of a desktop of loose applications. | In development |
 | **Sandbox Audio** | This repository. The media station: music, podcasts, audiobooks, ebooks. | Beta, builds on device |
-| **Sandbox Wrestling** | A wrestling booking simulator in Godot 4.5, with its own simulation engine. | In development |
+| **Sandbox Builder** | The stations UI and compile toolchain (Conduit), with its own UI server and optional desktop shell. Application source is private; [operator docs are public](https://ryan-howard-dev.github.io/sandbox-builder-docs/). | In development |
 
 The **Sandbox Server** (`tier34`) is the shared household backend: locker sync, search proxy, and
 playback-state mirroring between your own devices over your own network. Today it ships inside this

@@ -1,13 +1,13 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Sandbox Music</string>
-    <string name="title_activity_main">Sandbox Music</string>
+    <string name="app_name">Sandbox Audio</string>
+    <string name="title_activity_main">Sandbox Audio</string>
     <string name="package_name">rd.sheepskin.sandboxmusic</string>
     <string name="custom_url_scheme">rd.sheepskin.sandboxmusic</string>
     <string name="playback_notification_channel">Playback</string>
     <string name="playback_notification_channel_desc">Shows now playing controls while audio runs in the background.</string>
     <string name="media_playback_service_description">Keeps music playing with lock screen and notification controls.</string>
-    <string name="android_auto_browse_service_label">Sandbox Music</string>
+    <string name="android_auto_browse_service_label">Sandbox Audio</string>
     <string name="wake_alarm_notification_channel">Wake alarm</string>
     <string name="wake_alarm_notification_channel_desc">Alerts when your Sandbox wake alarm fires.</string>
     <string name="wake_alarm_notification_title">Sandbox wake alarm</string>

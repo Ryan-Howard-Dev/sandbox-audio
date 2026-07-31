@@ -2,7 +2,7 @@ const isProdBuild = process.env.NODE_ENV === 'production';
 
 const config = {
   appId: 'rd.sheepskin.sandboxmusic',
-  appName: 'Sandbox Music',
+  appName: 'Sandbox Audio',
   webDir: 'dist',
   bundledWebRuntime: false,
   // Native HTTP bypasses browser CORS for dynamic stream URLs resolved on-device.
