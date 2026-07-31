@@ -206,3 +206,17 @@ export async function deleteDocument(id: string): Promise<void> {
   });
   db.close();
 }
+
+/**
+ * Title for a pasted document.
+ *
+ * Pasted text almost always leads with its own title — a heading, a subject line, the first
+ * sentence — so the first non-empty line is the best guess available without asking the user to
+ * name it. Capped so a paste with no line breaks does not become an eighty-character shelf row,
+ * and falls back rather than refusing the paste when there is no usable line at all.
+ */
+export function pastedDocumentName(text: string, fallback: string): string {
+  const firstLine = text.split('\n').find((line) => line.trim().length > 0)?.trim() ?? '';
+  if (firstLine.length === 0) return fallback;
+  return firstLine.length > 80 ? `${firstLine.slice(0, 79).trimEnd()}…` : firstLine;
+}

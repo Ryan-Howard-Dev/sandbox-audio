@@ -1933,6 +1933,10 @@
     "filterSource": "Source",
     "moreInSeries": "More in {series}",
     "moreByAuthor": "More by {author}",
-    "seriesBookNumber": "Book {number}"
+    "seriesBookNumber": "Book {number}",
+    "pasteDocument": "Paste text",
+    "pastePlaceholder": "Paste the text you want read aloud…",
+    "pasteSave": "Add to documents",
+    "pastedDocumentFallbackName": "Pasted text"
   }
 }
