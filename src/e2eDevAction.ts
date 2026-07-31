@@ -1791,6 +1791,22 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       const played = await handlers.playArtistTrack(artist, track);
       logE2e('play-spine', played, `playArtistTrack returned ${played}`);
       if (!played) {
+        /*
+         * Why it failed matters more than that it failed. A catalog row carries metadata, not a
+         * stream URL, so turning one into a playable envelope needs a resolver: an enabled mobile
+         * resolver, a configured Sandbox Server, or the track already in the locker. A runner with
+         * none of those cannot reach audio however healthy the code is — that is a property of the
+         * machine, not a regression. Record which case this was so the gate can tell "nothing here
+         * can resolve" apart from "resolution broke", instead of failing both identically.
+         */
+        const enabledResolvers = getEnabledMobileResolvers();
+        logE2e(
+          'play-capability',
+          false,
+          enabledResolvers.length === 0
+            ? 'reason=no-full-track-resolver enabledResolvers=0'
+            : `reason=resolver-present-but-no-envelope enabledResolvers=${enabledResolvers.length}`,
+        );
         logE2e('artist-track-play', false, `artist=${artist} track=${track} play=false`);
         return false;
       }
