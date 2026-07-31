@@ -267,3 +267,38 @@ export function durationDivergesFromCatalog(
   const ratio = storedDur / catalogDur;
   return ratio < MOBILE_DURATION_MIN_RATIO || ratio > MOBILE_DURATION_MAX_RATIO;
 }
+
+/*
+ * A separate, much tighter band for finding files already in the locker.
+ *
+ * The gate above and this check answer different questions, and share thresholds only by
+ * accident of implementation. The gate decides whether to *refuse a download*, so a false
+ * positive is a track that silently will not play — it has to be permissive, and 0.7–1.4 is
+ * right there. This check only *surfaces a row for the user to confirm*, so a false positive
+ * costs a glance at a list.
+ *
+ * Sharing the loose band made the repair blind to the case it exists for. Measured on a real
+ * locker: a wrong recording stored as VULTURES ran 276s against a catalog 216s — a ratio of
+ * 1.28, comfortably inside 0.7–1.4, so nothing flagged it. Songs cluster between three and five
+ * minutes, so most wrong files land inside a ±40% window; at ±15% they do not.
+ */
+export const REPAIR_DURATION_MIN_RATIO = 0.85;
+export const REPAIR_DURATION_MAX_RATIO = 1.15;
+
+/**
+ * True when a stored row's duration is suspicious enough to show the user.
+ *
+ * Deliberately more suspicious than the download gate. Never used to reject anything
+ * automatically — callers offer re-acquisition and the user decides. ADR 001 keeps deletion
+ * user-confirmed.
+ */
+export function durationSuspectForRepair(
+  catalogDurationSeconds: number,
+  storedDurationSeconds: number,
+): boolean {
+  const catalogDur = catalogDurationSeconds ?? 0;
+  const storedDur = storedDurationSeconds ?? 0;
+  if (catalogDur <= 45 || storedDur <= 0) return false;
+  const ratio = storedDur / catalogDur;
+  return ratio < REPAIR_DURATION_MIN_RATIO || ratio > REPAIR_DURATION_MAX_RATIO;
+}

@@ -215,7 +215,9 @@ export function rebuildTasteProfile(): TasteProfileV1 {
       let weight = meaningfulListenScore(event);
       // Playing a track you deliberately downloaded is a stronger preference signal than a
       // one-off online stream — nudge downloaded plays up.
-      if (event.source === 'download') weight *= DOWNLOAD_LISTEN_MULTIPLIER;
+      if (event.source === 'download' || event.source === 'locker') {
+        weight *= DOWNLOAD_LISTEN_MULTIPLIER;
+      }
       addToMap(trackAffinity, trackId, weight);
       addToMap(artistAffinity, aKey, weight);
       // Listening to a track as part of its album is album-affinity evidence; a single-tap play

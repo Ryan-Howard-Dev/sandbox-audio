@@ -1,18 +1,34 @@
 import { prefsGetItem, prefsSetItem } from './prefsStorage';
 import type { MediaEnvelope } from './sandboxLayer1';
+import {
+  appendPlayEventRecord,
+  buildPlayEventDedupeKey,
+  captureTzOffsetMinutes,
+  collectPlayEventsPaged,
+  ensurePlayEventsIdb,
+  isPlayEventsIdbActive,
+  mapLegacySource,
+  mapV2ToV3,
+  newPlayEventId,
+  playEventKindFromEnvelopeId,
+  PLAY_EVENTS_LEGACY_KEY,
+  queryPlayEventsPage,
+  type PlayEventOrigin,
+  type PlayEventRecord,
+  type PlayEventSource,
+} from './playEventsIdb';
 
 const PLAY_HISTORY_KEY = 'sandbox_play_history';
 const PLAY_SESSIONS_KEY = 'sandbox_play_sessions';
-const PLAY_EVENTS_KEY = 'sandbox_play_events';
 const LISTENING_SESSIONS_KEY = 'sandbox_listening_sessions';
 const ANALYTICS_SCHEMA_KEY = 'sandbox_analytics_schema';
 const LAST_QUEUE_KEY = 'sandbox_last_queue';
 
-export const ANALYTICS_SCHEMA_VERSION = 2;
+/** v3 = append-only IndexedDB play-event log (+ prior session→event migration). */
+export const ANALYTICS_SCHEMA_VERSION = 3;
 
 const MAX_HISTORY = 64;
 const MAX_SESSIONS = 8000;
-const MAX_EVENTS = 12000;
 const MAX_LISTENING_SESSIONS = 2000;
 const MIN_SESSION_SECONDS = 5;
 const SESSION_IDLE_MS = 30 * 60 * 1000;
@@ -27,13 +43,17 @@ const playHistoryListeners = new Set<() => void>();
 
 function notifyPlayHistoryChange(): void {
   playHistoryListeners.forEach((fn) => fn());
-  window.dispatchEvent(new Event(PLAY_HISTORY_CHANGE_EVENT));
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new Event(PLAY_HISTORY_CHANGE_EVENT));
+  }
 }
 
 export function subscribePlayHistory(listener: () => void): () => void {
   playHistoryListeners.add(listener);
   return () => playHistoryListeners.delete(listener);
 }
+
+export type { PlayEventOrigin, PlayEventSource };
 
 /** Granular play event with completion analytics. */
 export type PlayEvent = {
@@ -49,10 +69,20 @@ export type PlayEvent = {
   repeat: boolean;
   timestamp: number;
   sessionId: string;
-  /** Where the audio came from — a downloaded track is a stronger taste signal than a stream. */
-  source?: 'download' | 'online';
+  /**
+   * Acquisition / surface source for the listen.
+   * Legacy `download`/`online` still accepted when reading older rows; new writes use v3 values.
+   */
+  source?: PlayEventSource | 'download' | 'online';
   /** How the user was listening — used to weight album vs single vs radio affinity. */
   context?: 'album' | 'single' | 'radio' | 'playlist';
+  /** Present on v3 rows (IndexedDB). */
+  id?: string;
+  dedupe_key?: string;
+  origin?: PlayEventOrigin;
+  /** Local UTC offset (minutes) at capture — required on new writes. */
+  tz_offset_minutes?: number;
+  kind?: 'music' | 'podcast' | 'audiobook';
 };
 
 /** Continuous listening session (device-local). */
@@ -107,7 +137,71 @@ export type RecordPlayEventOptions = {
   listenedMs?: number;
   /** How the user was listening (album drill, single tap, radio, playlist). */
   context?: PlayEvent['context'];
+  origin?: PlayEventOrigin;
+  source?: PlayEventSource;
 };
+
+/** Sync mirror for IDB mode — updated on append; hydrated via paged cursors (never getAll). */
+let idbEventsMirror: PlayEvent[] | null = null;
+let idbHydratePromise: Promise<void> | null = null;
+let legacySessionsMigrationDone = false;
+let idbEnsurePromise: Promise<boolean> | null = null;
+
+function recordToPlayEvent(row: PlayEventRecord): PlayEvent {
+  return {
+    id: row.id,
+    trackId: row.trackId,
+    envelopeId: row.envelopeId,
+    artist: row.artist,
+    album: row.album,
+    title: row.title,
+    durationMs: row.durationMs,
+    listenedMs: row.listenedMs,
+    completedPct: row.completedPct,
+    skipped: row.skipped,
+    repeat: row.repeat,
+    timestamp: row.timestamp,
+    sessionId: row.sessionId,
+    source: row.source,
+    context: row.context,
+    dedupe_key: row.dedupe_key,
+    origin: row.origin,
+    tz_offset_minutes: row.tz_offset_minutes,
+    kind: row.kind,
+  };
+}
+
+function playEventToRecord(event: PlayEvent): PlayEventRecord {
+  const envelopeId = event.envelopeId;
+  const timestamp = event.timestamp;
+  const sessionId = event.sessionId;
+  const listenedMs = event.listenedMs;
+  const dedupe_key =
+    event.dedupe_key ??
+    buildPlayEventDedupeKey({ timestamp, envelopeId, sessionId, listenedMs });
+  return {
+    id: event.id ?? newPlayEventId(timestamp),
+    trackId: event.trackId,
+    envelopeId,
+    artist: event.artist,
+    album: event.album,
+    title: event.title,
+    durationMs: event.durationMs,
+    listenedMs,
+    completedPct: event.completedPct,
+    skipped: event.skipped,
+    repeat: event.repeat,
+    timestamp,
+    sessionId,
+    source: mapLegacySource(event.source),
+    context: event.context,
+    dedupe_key,
+    origin: event.origin ?? 'auto',
+    tz_offset_minutes:
+      event.tz_offset_minutes ?? captureTzOffsetMinutes(timestamp),
+    kind: event.kind ?? playEventKindFromEnvelopeId(envelopeId),
+  };
+}
 
 function readHistory(): StoredPlayHit[] {
   const raw = prefsGetItem(PLAY_HISTORY_KEY);
@@ -140,8 +234,8 @@ function writeSchemaVersion(version: number): void {
   prefsSetItem(ANALYTICS_SCHEMA_KEY, JSON.stringify({ version }));
 }
 
-function readEventsRaw(): PlayEvent[] {
-  const raw = prefsGetItem(PLAY_EVENTS_KEY);
+function readEventsRawLegacy(): PlayEvent[] {
+  const raw = prefsGetItem(PLAY_EVENTS_LEGACY_KEY);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as PlayEvent[];
@@ -151,8 +245,9 @@ function readEventsRaw(): PlayEvent[] {
   }
 }
 
-function writeEvents(events: PlayEvent[]): void {
-  prefsSetItem(PLAY_EVENTS_KEY, JSON.stringify(events.slice(0, MAX_EVENTS)));
+/** Legacy-only write — used when IDB migration aborted / unavailable. Uncapped IDB has no MAX. */
+function writeEventsLegacy(events: PlayEvent[]): void {
+  prefsSetItem(PLAY_EVENTS_LEGACY_KEY, JSON.stringify(events));
   notifyPlayHistoryChange();
 }
 
@@ -247,9 +342,11 @@ function legacySessionToEvent(session: PlaySession, sessionId: string): PlayEven
     session.completedPct ?? computeCompletedPct(listenedMs, durationMs);
   const skipped =
     session.skipped ?? computeSkipped(listenedMs, durationMs, session.completed);
+  const timestamp = session.playedAt;
+  const envelopeId = session.envelopeId;
   return {
     trackId: session.trackId ?? session.envelopeId,
-    envelopeId: session.envelopeId,
+    envelopeId,
     artist: session.artist,
     album: session.album,
     title: session.title,
@@ -258,42 +355,139 @@ function legacySessionToEvent(session: PlaySession, sessionId: string): PlayEven
     completedPct,
     skipped,
     repeat: session.repeat ?? false,
-    timestamp: session.playedAt,
+    timestamp,
     sessionId: session.sessionId ?? sessionId,
+    source: 'tier34',
+    origin: 'imported',
+    dedupe_key: buildPlayEventDedupeKey({
+      timestamp,
+      envelopeId,
+      sessionId: session.sessionId ?? sessionId,
+      listenedMs,
+    }),
+    tz_offset_minutes: captureTzOffsetMinutes(timestamp),
+    kind: playEventKindFromEnvelopeId(envelopeId),
   };
 }
 
-let migrationDone = false;
-
 function migrateLegacySessionsIfNeeded(): void {
-  if (migrationDone) return;
-  migrationDone = true;
+  if (legacySessionsMigrationDone) return;
+  legacySessionsMigrationDone = true;
 
   const version = readSchemaVersion();
-  if (version >= ANALYTICS_SCHEMA_VERSION) return;
+  // Still run session→events prefs migration when below v2; v3 IDB migration is separate.
+  if (version >= 2) return;
 
-  const existingEvents = readEventsRaw();
+  const existingEvents = readEventsRawLegacy();
   if (existingEvents.length > 0) {
-    writeSchemaVersion(ANALYTICS_SCHEMA_VERSION);
+    writeSchemaVersion(Math.max(version, 2));
     return;
   }
 
   const legacy = readSessions();
   if (legacy.length === 0) {
-    writeSchemaVersion(ANALYTICS_SCHEMA_VERSION);
+    writeSchemaVersion(Math.max(version, 2));
     return;
   }
 
   const events = legacy.map((s, i) =>
     legacySessionToEvent(s, `legacy-migrated-${Math.floor(s.playedAt / SESSION_IDLE_MS)}-${i}`),
   );
-  writeEvents(events);
-  writeSchemaVersion(ANALYTICS_SCHEMA_VERSION);
+  writeEventsLegacy(events);
+  writeSchemaVersion(2);
+}
+
+function kickIdbEnsure(): void {
+  if (idbEnsurePromise) return;
+  idbEnsurePromise = ensurePlayEventsIdb()
+    .then(async (ok) => {
+      if (ok && isPlayEventsIdbActive()) {
+        await hydrateIdbMirror();
+        writeSchemaVersion(ANALYTICS_SCHEMA_VERSION);
+      }
+      return ok;
+    })
+    .catch((err) => {
+      console.warn('[Sandbox] play events IDB ensure failed:', err);
+      return false;
+    });
+}
+
+async function hydrateIdbMirror(): Promise<void> {
+  if (idbHydratePromise) return idbHydratePromise;
+  idbHydratePromise = (async () => {
+    const rows = await collectPlayEventsPaged();
+    idbEventsMirror = rows.map(recordToPlayEvent);
+  })();
+  return idbHydratePromise;
+}
+
+/** Await IDB migration + mirror hydrate (tests / boot). */
+export async function readyPlayHistoryIdb(): Promise<boolean> {
+  migrateLegacySessionsIfNeeded();
+  kickIdbEnsure();
+  const ok = (await idbEnsurePromise) === true;
+  if (ok) await hydrateIdbMirror();
+  return ok && isPlayEventsIdbActive();
+}
+
+/** Test seam. */
+export function resetPlayHistoryRuntimeForTests(): void {
+  idbEventsMirror = null;
+  idbHydratePromise = null;
+  legacySessionsMigrationDone = false;
+  idbEnsurePromise = null;
 }
 
 export function getAllPlayEvents(): PlayEvent[] {
   migrateLegacySessionsIfNeeded();
-  return readEventsRaw();
+  kickIdbEnsure();
+  if (isPlayEventsIdbActive()) {
+    return idbEventsMirror ?? [];
+  }
+  return readEventsRawLegacy();
+}
+
+/**
+ * Bounded newest-first page from IDB (or legacy prefs slice). Prefer this over getAllPlayEvents
+ * when the store may be large.
+ */
+export async function getPlayEventsPage(options?: {
+  limit?: number;
+  beforeTimestamp?: number;
+  sinceTimestamp?: number;
+  envelopeId?: string;
+  kind?: PlayEvent['kind'];
+}): Promise<PlayEvent[]> {
+  migrateLegacySessionsIfNeeded();
+  await readyPlayHistoryIdb();
+  if (isPlayEventsIdbActive()) {
+    const page = await queryPlayEventsPage({
+      limit: options?.limit,
+      beforeTimestamp: options?.beforeTimestamp,
+      sinceTimestamp: options?.sinceTimestamp,
+      envelopeId: options?.envelopeId,
+      kind: options?.kind,
+    });
+    return page.map(recordToPlayEvent);
+  }
+  let events = readEventsRawLegacy();
+  if (options?.envelopeId) {
+    events = events.filter((e) => e.envelopeId === options.envelopeId);
+  }
+  if (options?.kind) {
+    events = events.filter(
+      (e) => (e.kind ?? playEventKindFromEnvelopeId(e.envelopeId)) === options.kind,
+    );
+  }
+  if (options?.sinceTimestamp != null) {
+    events = events.filter((e) => e.timestamp >= options.sinceTimestamp!);
+  }
+  if (options?.beforeTimestamp != null) {
+    events = events.filter((e) => e.timestamp < options.beforeTimestamp!);
+  }
+  events = [...events].sort((a, b) => b.timestamp - a.timestamp);
+  return events.slice(0, options?.limit ?? 200);
 }
 
 export function getAllListeningSessions(): ListeningSession[] {
@@ -303,7 +497,7 @@ export function getAllListeningSessions(): ListeningSession[] {
 
 export function getAllPlaySessions(): PlaySession[] {
   migrateLegacySessionsIfNeeded();
-  const events = readEventsRaw();
+  const events = getAllPlayEvents();
   if (events.length > 0) {
     return events.map(playEventToSession);
   }
@@ -410,13 +604,19 @@ function lightArtworkUrl(url: string | undefined): string | undefined {
 }
 
 function isRepeatInSession(sessionId: string, envelopeId: string): boolean {
+  if (isPlayEventsIdbActive() && idbEventsMirror) {
+    return idbEventsMirror.some(
+      (e) => e.sessionId === sessionId && e.envelopeId === envelopeId,
+    );
+  }
   return getAllPlayEvents().some(
     (e) => e.sessionId === sessionId && e.envelopeId === envelopeId,
   );
 }
 
 export function recordPlayEvent(options: RecordPlayEventOptions): PlayEvent | null {
-  getAllPlayEvents();
+  migrateLegacySessionsIfNeeded();
+  kickIdbEnsure();
   const { envelope, listenedSeconds, completed = false, skipped } = options;
   if (!envelope.envelopeId?.trim()) return null;
 
@@ -435,12 +635,21 @@ export function recordPlayEvent(options: RecordPlayEventOptions): PlayEvent | nu
   const sessionId = resolveActiveListeningSessionId(now);
   const repeat = isRepeatInSession(sessionId, envelope.envelopeId);
 
-  // A track played from the offline vault was deliberately downloaded — treat it as a
-  // stronger taste signal than a one-off online stream.
-  const source: PlayEvent['source'] =
-    envelope.provider === 'local-vault' ? 'download' : 'online';
+  const source: PlayEventSource =
+    options.source ??
+    (envelope.provider === 'local-vault' ? 'locker' : 'tier34');
+  const origin: PlayEventOrigin = options.origin ?? 'auto';
+  const tz_offset_minutes = captureTzOffsetMinutes(now);
+  const kind = playEventKindFromEnvelopeId(envelope.envelopeId);
+  const dedupe_key = buildPlayEventDedupeKey({
+    timestamp: now,
+    envelopeId: envelope.envelopeId,
+    sessionId,
+    listenedMs,
+  });
 
   const event: PlayEvent = {
+    id: newPlayEventId(now),
     trackId: envelope.envelopeId,
     envelopeId: envelope.envelopeId,
     title: envelope.title,
@@ -455,12 +664,30 @@ export function recordPlayEvent(options: RecordPlayEventOptions): PlayEvent | nu
     sessionId,
     source,
     context: options.context,
+    dedupe_key,
+    origin,
+    tz_offset_minutes,
+    kind,
   };
 
-  const events = readEventsRaw();
-  events.unshift(event);
-  writeEvents(events);
-  writeSchemaVersion(ANALYTICS_SCHEMA_VERSION);
+  if (isPlayEventsIdbActive()) {
+    if (!idbEventsMirror) idbEventsMirror = [];
+    idbEventsMirror.unshift(event);
+    void appendPlayEventRecord(playEventToRecord(event)).then((result) => {
+      if (result.quotaExceeded) {
+        console.warn(
+          '[Sandbox] play event IDB append QuotaExceededError — event kept in memory mirror only',
+        );
+      }
+    });
+    writeSchemaVersion(ANALYTICS_SCHEMA_VERSION);
+    notifyPlayHistoryChange();
+  } else {
+    const events = readEventsRawLegacy();
+    events.unshift(event);
+    writeEventsLegacy(events);
+    writeSchemaVersion(Math.max(readSchemaVersion(), 2));
+  }
 
   const legacySession = playEventToSession(event);
   const sessions = readSessions();
@@ -561,3 +788,6 @@ export function loadLastQueue(): MediaEnvelope[] {
     return [];
   }
 }
+
+/** Re-export mapper for tests / tooling. */
+export { mapV2ToV3 };

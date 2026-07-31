@@ -13,6 +13,7 @@
 
 import {
   durationDivergesFromCatalog,
+  durationSuspectForRepair,
   mobileResolveCatalogMismatchReason,
   mobileResolveHasNoIndependentMetadata,
   type IdentityMeta,
@@ -111,7 +112,7 @@ export function findLockerDurationIdentitySuspects(
       byExact.get(catalogLookupKey(entry.title, entry.artist, entry.albumName)) ??
       byTitleArtist.get(catalogLookupKey(entry.title, entry.artist));
     if (!hint) continue;
-    if (!durationDivergesFromCatalog(hint.durationSeconds, entry.durationSeconds)) continue;
+    if (!durationSuspectForRepair(hint.durationSeconds, entry.durationSeconds)) continue;
     out.push({
       entryId: entry.id,
       title: entry.title,
