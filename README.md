@@ -19,10 +19,24 @@
 ---
 
 **Sandbox Audio** is a self-hosted player built on three pillars — **music**, **podcasts** and
-**audiobooks** — which share one playback engine, one queue and one library. Ebooks and documents
-were added on top of that foundation and can be read aloud. It runs as a **web application**, as
-**desktop software** for Windows and Linux, and on **Android**, including Android TV, and it
-continues to work when the network does not.
+**audiobooks** — which share one playback engine, one queue and one library. It runs as a **web
+application**, as **desktop software** for Windows and Linux, and on **Android**, including Android
+TV, and it continues to work when the network does not.
+
+The audiobooks pillar is the broadest of the three, and covers reading as well as listening. It
+handles spoken-word recordings, your ebook collection and your own documents, and it will narrate
+any of them aloud: EPUB, PDF, DOCX, HTML, Markdown and plain text are extracted and spoken through
+the device's own speech engine, so a book or a paper you hold only as a file becomes something you
+can listen to on a commute. It reads the chapter marks embedded in M4B files, groups recordings
+split across many files back into single books, imports a Calibre library from its folder tree
+without touching its database, and recognises series so the next volume is offered when you finish
+one. Public-domain catalogues — LibriVox, Project Gutenberg, the Internet Archive — are searchable
+from inside it.
+
+That combination is the unusual part. Players that handle music and podcasts well are common;
+players that treat audiobooks as a first-class format are rarer; players that will also read your
+own documents aloud, from one library, on your own hardware, with a server you run yourself, are
+rarer still.
 
 > **Beta software.** Expect rough edges in playback, mobile layout and search. It is not
 > recommended as a daily driver without backups of your library.
@@ -60,7 +74,7 @@ that the software you rely on should run on hardware you control.
 | Project | What it is | Status |
 |---------|-----------|--------|
 | **Sandbox OS** | A Debian-based operating system built around *stations* rather than a desktop of separate programs. | In development |
-| **Sandbox Audio** | This repository. Music, podcasts and audiobooks, with ebooks alongside them. | Beta, builds on device |
+| **Sandbox Audio** | This repository. Music, podcasts, and an audiobooks pillar that also reads your ebooks and documents aloud. | Beta, builds on device |
 | **Sandbox Builder** | The stations UI and compile toolchain (Conduit), with its own UI server and optional desktop shell. Application source is private; [operator docs are public](https://ryan-howard-dev.github.io/sandbox-builder-docs/). | In development |
 
 ### The Sandbox Server
