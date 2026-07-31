@@ -8,6 +8,16 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const env = { ...process.env, SANDBOX_BUILD_TARGET: 'android' };
 const shell = process.platform === 'win32';
 
+if (env.SANDBOX_ANDROID_E2E === 'true') {
+  const fixture = spawnSync('node', ['scripts/generate-android-e2e-fixture.mjs'], {
+    cwd: root,
+    stdio: 'inherit',
+    shell,
+    env,
+  });
+  if (fixture.status !== 0) process.exit(fixture.status ?? 1);
+}
+
 const lint = spawnSync('npm', ['run', 'lint'], { cwd: root, stdio: 'inherit', shell, env });
 if (lint.status !== 0) process.exit(lint.status ?? 1);
 

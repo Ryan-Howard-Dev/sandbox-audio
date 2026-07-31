@@ -293,6 +293,7 @@ jobs:
             # NOTE: android-emulator-runner runs each script line in a separate
             # `sh -c`, so `export` on its own line is lost before the build runs.
             # The variable must be set inline on the command that needs it.
+            sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
             SANDBOX_ANDROID_E2E=true npm run build:android:apk
             chmod +x scripts/android-playback-e2e.sh
             SKIP_BUILD=1 scripts/android-playback-e2e.sh

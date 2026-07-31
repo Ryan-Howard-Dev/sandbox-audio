@@ -72,6 +72,9 @@ src-tauri/resources/node/
 # PWA dev artifacts
 dev-dist/
 
+# Android E2E locker fixture (generated at build time when SANDBOX_ANDROID_E2E=true)
+public/e2e-fixtures/
+
 # Tier 3/4 locker blob storage
 tier34-server/storage/
 

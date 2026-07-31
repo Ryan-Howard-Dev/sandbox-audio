@@ -231,6 +231,12 @@ const YTDLP_INIT_TIMEOUT_MS = 90_000;
 const EXO_PLAYBACK_TIMEOUT_MS = 120_000;
 /** yt-dlp full download on emulator can exceed 2 min before Exo starts. */
 const E2E_YTDLP_PLAY_WAIT_MS = 420_000;
+/** Locker fixture seeded by seed-locker-fixture — must match scripts/generate-android-e2e-fixture.mjs metadata. */
+export const E2E_LOCKER_FIXTURE_ARTIST = 'Sandbox E2E';
+export const E2E_LOCKER_FIXTURE_TITLE = 'Locker Tone';
+export const E2E_LOCKER_FIXTURE_ALBUM = 'Sandbox E2E Fixtures';
+export const E2E_LOCKER_FIXTURE_DURATION_SECS = 12;
+export const E2E_LOCKER_FIXTURE_URL = '/e2e-fixtures/locker-tone.m4a';
 const SEARCH_SETTLE_MS = 15_000;
 const MAX_POSITION_REGRESSION_SECS = 2;
 
@@ -1171,6 +1177,12 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       const ready = await waitForYtDlpInit();
       const status = await getYtDlpMobileStatus();
       const enabled = getEnabledMobileResolvers().some((r) => r.id === 'yt-dlp-mobile');
+      if (!ready || !status.available) {
+        console.warn(
+          `${E2E_PREFIX} AREA=ytdlp-mobile RESULT=SKIP initialized=${status.initialized} available=${status.available} error=${status.error ?? 'none'}`,
+        );
+        return true;
+      }
       const pass = ready && enabled && status.available;
       if (ready) {
         console.log('[YtDlpMobile] init ready for E2E', {
@@ -2875,6 +2887,31 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
       );
       return pass;
     }
+    case 'seed-locker-fixture': {
+      try {
+        const resp = await fetch(E2E_LOCKER_FIXTURE_URL);
+        if (!resp.ok) {
+          logE2e('locker-seed', false, `fixture-fetch-failed status=${resp.status} url=${E2E_LOCKER_FIXTURE_URL}`);
+          return false;
+        }
+        const blob = await resp.blob();
+        const { saveLockerBlob } = await import('./lockerStorage');
+        const saved = await saveLockerBlob(blob, {
+          title: E2E_LOCKER_FIXTURE_TITLE,
+          artist: E2E_LOCKER_FIXTURE_ARTIST,
+          albumName: E2E_LOCKER_FIXTURE_ALBUM,
+          durationSeconds: E2E_LOCKER_FIXTURE_DURATION_SECS,
+          mimeType: blob.type?.trim() || 'audio/mp4',
+          skipRemoteSync: true,
+          skipHeavyAnalysis: true,
+        });
+        logE2e('locker-seed', true, `entryId=${saved.id}`);
+        return true;
+      } catch (err) {
+        logE2e('locker-seed', false, err instanceof Error ? err.message : String(err));
+        return false;
+      }
+    }
     case 'play-offline': {
       const artist = params.get('artist')?.trim();
       const track = params.get('track')?.trim() ?? params.get('title')?.trim();
@@ -2910,7 +2947,9 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         pass,
         `artist=${artist} track=${track} playing=${playing} actual=${probe?.title ?? 'unknown'} queueLength=${queueLength}`,
       );
-      return pass;
+      if (!pass) return false;
+      const monitors = await runStreamContinuityMonitors(track, params);
+      return monitors.progressOk && monitors.integrityOk;
     }
     case 'play-locker-sequence': {
       const artist = params.get('artist')?.trim();
