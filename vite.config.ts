@@ -71,13 +71,31 @@ export default defineConfig(() => {
                 (entry) =>
                   !/\/(?:zh|es|pt|ar|ru|de|fr|ja|ko|hi|id|tr|it|nl|pl|vi|th|bn)-[A-Za-z0-9_-]+\.js$/.test(
                     entry.url,
-                  ),
+                  ) &&
+                  // pdfExtract is pdfjs-dist, the single largest chunk in the build at ~537 kB.
+                  // It is only reached when someone opens a PDF, so precaching it charged every
+                  // install for a feature most users never touch — and it is what pushed the
+                  // precache over its 3.5 MiB budget. Cached on first use below instead, so
+                  // offline PDF reading still works once the feature has been opened once.
+                  !/\/pdfExtract-[A-Za-z0-9_-]+\.js$/.test(entry.url),
               ),
               warnings: [],
             }),
           ],
           navigateFallback: 'index.html',
           runtimeCaching: [
+            {
+              // CacheFirst, not StaleWhileRevalidate: the filename is content-hashed, so a given
+              // URL never changes contents and revalidating it only costs a request. A new build
+              // produces a new hash and misses the cache on its own.
+              urlPattern: /\/pdfExtract-[A-Za-z0-9_-]+\.js$/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'pdf-extract-cache',
+                expiration: {maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 30},
+                cacheableResponse: {statuses: [0, 200]},
+              },
+            },
             {
               urlPattern: /\/(?:zh|es|pt|ar|ru|de|fr|ja|ko|hi|id|tr|it|nl|pl|vi|th|bn)-[A-Za-z0-9_-]+\.js$/i,
               handler: 'StaleWhileRevalidate',
