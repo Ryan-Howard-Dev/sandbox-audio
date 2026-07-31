@@ -34,15 +34,29 @@ interface LibraryFolderPlugin {
   releaseFolder(): Promise<{ granted: false }>;
 }
 
+/*
+ * registerPlugin, not Capacitor.Plugins.
+ *
+ * Plugins is the legacy accessor and is not reliably populated on the imported module in Capacitor
+ * 8 -- isPluginAvailable can report true from window.Capacitor while the imported module exposes
+ * nothing, which presents as this feature silently not existing. registerPlugin is the documented
+ * path and returns a proxy bound to the native plugin by name.
+ */
+let cached: LibraryFolderPlugin | null | undefined;
+
 async function plugin(): Promise<LibraryFolderPlugin | null> {
+  if (cached !== undefined) return cached;
   try {
-    const { Capacitor } = await import('@capacitor/core');
-    if (!Capacitor?.isNativePlatform?.()) return null;
-    if (!Capacitor.isPluginAvailable?.('LibraryFolder')) return null;
-    return (Capacitor as unknown as { Plugins: Record<string, LibraryFolderPlugin> }).Plugins
-      .LibraryFolder;
+    const { Capacitor, registerPlugin } = await import('@capacitor/core');
+    if (!Capacitor?.isNativePlatform?.()) {
+      cached = null;
+      return cached;
+    }
+    cached = registerPlugin<LibraryFolderPlugin>('LibraryFolder');
+    return cached;
   } catch {
-    return null;
+    cached = null;
+    return cached;
   }
 }
 

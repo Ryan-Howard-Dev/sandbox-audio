@@ -23,6 +23,7 @@ import SandboxSwitch from '../components/SandboxSwitch';
 import TasteRecipePanel from '../components/TasteRecipePanel';
 import NavPinTabsSettings from '../components/settings/NavPinTabsSettings';
 import StorageReclaimCard from '../components/settings/StorageReclaimCard';
+import LibraryFolderCard from '../components/settings/LibraryFolderCard';
 import SettingsGroup from '../components/settings/SettingsGroup';
 import SettingsMobileRoot, {
   type SettingsCategory,
@@ -4958,6 +4959,8 @@ export default function SettingsView({
               </div>
 
               <StorageReclaimCard cardStyle={cardStyle} />
+
+              <LibraryFolderCard cardStyle={cardStyle} />
 
               {isTauri() && deviceFingerprint ? (
                 <div className="settings-anchor-section p-5 rounded-xl border space-y-3" style={cardStyle}>
