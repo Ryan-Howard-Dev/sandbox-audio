@@ -11,6 +11,7 @@ export const SETTINGS_SEARCH_ANCHORS = {
   playbackMini: 'anchor-playback-mini',
   playbackResolution: 'anchor-playback-resolution',
   playbackListening: 'anchor-playback-listening',
+  vaultLibraryFolder: 'anchor-vault-library-folder',
   vaultCapacity: 'anchor-vault-capacity',
   vaultSandboxServer: 'anchor-vault-sandbox-server',
   vaultStreamCache: 'anchor-vault-stream-cache',

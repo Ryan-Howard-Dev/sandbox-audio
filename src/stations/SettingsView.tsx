@@ -4958,9 +4958,11 @@ export default function SettingsView({
                 </p>
               </div>
 
-              <StorageReclaimCard cardStyle={cardStyle} />
+              <div data-settings-anchor={SETTINGS_SEARCH_ANCHORS.vaultLibraryFolder}>
+                <LibraryFolderCard cardStyle={cardStyle} />
+              </div>
 
-              <LibraryFolderCard cardStyle={cardStyle} />
+              <StorageReclaimCard cardStyle={cardStyle} />
 
               {isTauri() && deviceFingerprint ? (
                 <div className="settings-anchor-section p-5 rounded-xl border space-y-3" style={cardStyle}>

@@ -68,6 +68,17 @@ export function buildSettingsSearchIndex(t: Translate): SettingsSearchItem[] {
       subtitle: t('settings.categories.vaultDesc'),
       keywords: ['storage', 'locker', 'sync', 'cache'],
     }),
+    /*
+     * Searchable in its own right, not only reachable by drilling into Vault. It is the one
+     * permission the whole app depends on, and it was unfindable until someone knew where to look.
+     */
+    item('vault', 'library-folder', t('settings.libraryFolder.title', { defaultValue: 'Library folder' }), {
+      subtitle: t('settings.libraryFolder.subtitle', {
+        defaultValue: 'Choose one folder for your music, podcasts, audiobooks, books and documents.',
+      }),
+      keywords: ['folder', 'library', 'books', 'documents', 'audiobooks', 'music', 'storage', 'permission', 'saf'],
+      anchorId: SETTINGS_SEARCH_ANCHORS.vaultLibraryFolder,
+    }),
     item('architect', 'cat-architect', cats.architect, {
       subtitle: t('settings.categories.architectDesc'),
       keywords: ['theme', 'color', 'font', 'language'],
