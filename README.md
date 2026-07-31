@@ -4,10 +4,10 @@
 
 # Sandbox Audio
 
-**Your music, your podcasts, your audiobooks — on hardware you own.**
+**Music, podcasts and audiobooks — on hardware you own.**
 
 [![License](https://img.shields.io/badge/License-GPL--3.0-C2410C?style=for-the-badge&labelColor=07080c)](./LICENSE)
-[![Local first](https://img.shields.io/badge/Local–first-no%20account%20required-C2410C?style=for-the-badge&labelColor=07080c)](#why-this-exists)
+[![Local first](https://img.shields.io/badge/Local–first-your%20library%2C%20your%20hardware-C2410C?style=for-the-badge&labelColor=07080c)](#why-this-exists)
 [![Telemetry](https://img.shields.io/badge/Telemetry-none-6E758C?style=for-the-badge&labelColor=07080c)](#why-this-exists)
 
 [![Platforms](https://img.shields.io/badge/Web·PWA-1C1C1E?style=flat-square&labelColor=07080c)](./BUILDING.md)
@@ -18,33 +18,39 @@
 
 ---
 
-**Sandbox Audio** is a self-hosted player for **music, podcasts, audiobooks and ebooks**, built on a
-local locker rather than someone else's catalog. It runs as **web/PWA**, **Tauri desktop** (Windows
-+ Linux) and **Android** (phone and TV), and it works with the network off.
+**Sandbox Audio** is a self-hosted player built on three pillars — **music**, **podcasts** and
+**audiobooks** — which share one playback engine, one queue and one library. Ebooks and documents
+were added on top of that foundation and can be read aloud. It runs as a **web application**, as
+**desktop software** for Windows and Linux, and on **Android**, including Android TV, and it
+continues to work when the network does not.
 
-Play your own files offline, stream from a home **Sandbox Server** on your LAN, subscribe to
-podcasts, read or listen to your own books, and browse catalog metadata — with no account, no
-subscription, and nothing reporting home.
-
-> **Beta software.** Expect rough edges in playback, mobile layout, and search. Not recommended as a daily driver without backups of your locker data.
+> **Beta software.** Expect rough edges in playback, mobile layout and search. It is not
+> recommended as a daily driver without backups of your library.
 
 ## Why this exists
 
-Streaming taught a generation that a library is something you rent. When the subscription lapses,
-the shelf empties; when a licence expires, the record disappears from a collection someone thought
-was theirs. The same pattern now reaches podcasts and audiobooks — media that used to be a file you
-kept.
+Streaming taught a generation to treat a library as something rented. When a subscription lapses
+the shelf empties, and when a licence expires a recording disappears from a collection its owner
+believed was theirs. The same arrangement has now reached podcasts and audiobooks, media that until
+recently arrived as a file you kept. Behind it sits a second cost that is rarely stated: the
+service is paid for by what it learns about the person using it, and a listening history is an
+unusually revealing thing to surrender.
 
-Sandbox Audio is built on the opposite assumption. The locker is on your device. The server, if you
-run one, is on your LAN and belongs to your household. Removing the vendor from the picture is
-supposed to leave you with a working player, not a dead one:
+Sandbox Audio is built on the opposite assumption.
 
-- **No account.** There is no sign-up, no identity, and no server of ours to sign in to.
-- **No telemetry.** No analytics, no crash reporting, no phone-home. Nothing is collected because
-  nothing is sent.
-- **No lock-in.** Your library is files on disk. The format is not ours and leaving costs nothing.
-- **Offline is the default, not a mode.** Playback resolves from the local locker first.
-- **GPL-3.0.** The thing you depend on cannot be closed against you later.
+- **Your library is a set of files you hold.** They are stored on your own device, in ordinary
+  formats, and nothing about them depends on this software continuing to exist. Leaving costs you
+  nothing.
+- **Your identity belongs to you.** An account is supported and is used across the Sandbox
+  applications, so that settings, library and listening history follow you between devices. It is
+  held on your own hardware and shared with nobody. There is no account on a server belonging to
+  the author, because there is no such server.
+- **Nothing is collected.** There is no analytics, no crash reporting and no telemetry of any kind.
+  Nothing is gathered because nothing is sent.
+- **Working offline is the ordinary case, not a mode.** Playback is resolved from the local library
+  first, and an absent connection changes nothing about it.
+- **The licence protects you, not the author.** GPL-3.0 means the software you have come to depend
+  upon cannot later be closed against you.
 
 ## Part of Sandbox
 
@@ -53,15 +59,50 @@ that the software you rely on should run on hardware you control.
 
 | Project | What it is | Status |
 |---------|-----------|--------|
-| **Sandbox OS** | A Debian-based operating system built around *stations* — media, documents, marketplace — instead of a desktop of loose applications. | In development |
-| **Sandbox Audio** | This repository. The media station: music, podcasts, audiobooks, ebooks. | Beta, builds on device |
+| **Sandbox OS** | A Debian-based operating system built around *stations* rather than a desktop of separate programs. | In development |
+| **Sandbox Audio** | This repository. Music, podcasts and audiobooks, with ebooks alongside them. | Beta, builds on device |
 | **Sandbox Builder** | The stations UI and compile toolchain (Conduit), with its own UI server and optional desktop shell. Application source is private; [operator docs are public](https://ryan-howard-dev.github.io/sandbox-builder-docs/). | In development |
 
-The **Sandbox Server** (`tier34`) is the shared household backend: locker sync, search proxy, and
-playback-state mirroring between your own devices over your own network. Today it ships inside this
-repository and is documented in [TIER34.md](./TIER34.md); extraction into a standalone package is
-planned but **not started** — the trigger is a second station depending on it, and only Audio does
-today.
+### The Sandbox Server
+
+The **Sandbox Server** (`tier34`) is a small server you run yourself, on a spare machine, a home
+server or a single-board computer. It is optional: with no server at all each application works
+entirely on its own, and only transfer between devices is lost. It performs three jobs.
+
+- **It keeps your library consistent across your devices.** Files added on one device become
+  available on the others, transferred directly between machines on your own network. Nothing is
+  uploaded to an outside service along the way.
+- **It searches your collection**, so a large library stays usable from a phone without that phone
+  holding an index of everything in it.
+- **It allows one device to take over from another.** A recording begun on a phone can be resumed
+  on a desktop or a television at the point it had reached.
+
+It is documented in [TIER34.md](./TIER34.md), and every capability it does and does not yet have is
+recorded in [the capability matrix](https://github.com/Ryan-Howard-Dev/sandbox-os/blob/main/docs/TIER34-FOUNDER-BRIEF.md).
+Today it ships inside this repository. Extracting it into a package of its own is planned but
+**not started**: the trigger is a second application depending on it, and only Audio does today.
+
+## In development — the media diary
+
+A single record of everything you have listened to and read, held across all three pillars and the
+ebooks alongside them, rather than four separate histories that never meet.
+
+- **One event log.** Every play is recorded once, appended and never rewritten, whether it came
+  from a track, an episode or a chapter. The same record answers "what did I finish last month"
+  across every kind of media at once.
+- **One shelf model.** Each work carries a state — intended, started, finished, abandoned, being
+  revisited — so a part-read book and a part-heard series behave the same way.
+- **Lists you arrange yourself**, for the backlog you mean to get to rather than the queue you are
+  playing now.
+- **An Insights station**, drawing on that record to show how listening actually falls across the
+  week and across formats.
+- **Synchronisation between your own devices** through the Sandbox Server, as an option rather than
+  a requirement.
+- **Export where you ask for it.** Last.fm and ListenBrainz can be mirrored to if you want that;
+  neither is required, and in air-gapped mode no event leaves the device at all.
+
+Comparable services keep this history on their own servers, where it is retained and analysed. Here
+it stays on your hardware. The design is settled; implementation has not begun.
 
 ## Before you run it
 
