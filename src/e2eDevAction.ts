@@ -65,6 +65,8 @@ import { LIKED_PLAYLIST_ID, LIKED_PLAYLIST_NAME } from './likedPlaylist';
 import { getTrackTasteFeedback } from './tasteFeedback';
 import {
   findLockerEntryForTrack,
+  findLockerEntryForTrackIncludingHollow,
+  findPlayableLockerEntryForTrack,
   getLockerEntries,
   getLockerEntriesSnapshot,
   lockerEntryHasRecoverableAudio,
@@ -74,6 +76,7 @@ import {
   resolveLockerEnvelopeForPlayback,
   warmLockerNativePlaybackCache,
 } from './lockerStorage';
+import { ensureLockerPlayable } from './play/ensureLockerPlayable';
 import { applyThemePreset } from './engineTheme';
 import { getThemePreset } from './themePresets';
 import {
@@ -723,6 +726,132 @@ async function waitForDownloadJobDone(
 
 function titlesMatch(a: string, b: string): boolean {
   return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+/** Compact URL scheme for E2E markers (never dump full blob: tokens into logcat). */
+function e2eUrlScheme(url?: string | null): string {
+  const trimmed = url?.trim() ?? '';
+  if (!trimmed) return 'empty';
+  if (trimmed.startsWith('blob:')) return 'blob';
+  if (/^content:\/\//i.test(trimmed)) return 'content';
+  if (/^https?:\/\//i.test(trimmed)) return 'http';
+  if (/^file:\/\//i.test(trimmed)) return 'file';
+  return 'other';
+}
+
+function e2eUrlDetail(url?: string | null): string {
+  const trimmed = url?.trim() ?? '';
+  const scheme = e2eUrlScheme(trimmed);
+  if (scheme === 'content' || scheme === 'http' || scheme === 'file') {
+    return trimmed.length > 160 ? `${trimmed.slice(0, 160)}…` : trimmed;
+  }
+  return scheme;
+}
+
+/**
+ * Instrument wait for Exo / probe playing — emits state-change and position heartbeats so a
+ * hung first play is visible in logcat before the final play-offline PASS/FAIL.
+ */
+async function waitForPlayingStateWithMarkers(
+  areaPrefix: string,
+  timeoutMs = 120_000,
+): Promise<{ playing: boolean; lastState: string; maxPos: number }> {
+  const deadline = Date.now() + timeoutMs;
+  let resumeNudges = 0;
+  let lastPos = 0;
+  let maxPos = 0;
+  let lastLoggedState = '';
+  let heartbeatAt = 0;
+  while (Date.now() < deadline) {
+    const probe = handlers.getPlaybackProbe?.();
+    const status = await getNativeExoPlaybackStatus();
+    const dur = Math.max(probe?.durationSecs ?? 0, status.durationSecs ?? 0);
+    const pos = Math.max(probe?.positionSecs ?? 0, status.positionSecs ?? 0);
+    maxPos = Math.max(maxPos, pos);
+    const state = status.state ?? probe?.nativeState ?? probe?.state ?? 'unknown';
+    if (state !== lastLoggedState) {
+      logE2e(
+        `${areaPrefix}-exo-state`,
+        true,
+        `state=${state} pos=${pos.toFixed(2)} dur=${dur.toFixed(1)} queue=${status.queueLength ?? 0} url=${e2eUrlDetail(status.currentUrl)}`,
+      );
+      lastLoggedState = state;
+    }
+    const now = Date.now();
+    if (now - heartbeatAt >= 8_000) {
+      heartbeatAt = now;
+      logE2e(
+        `${areaPrefix}-position`,
+        pos > 0.05 || maxPos > 0.05,
+        `pos=${pos.toFixed(2)} max=${maxPos.toFixed(2)} state=${state} dur=${dur.toFixed(1)}`,
+      );
+    }
+    const audible = isNativeExoAudible(status, lastPos);
+    const uiPlaying =
+      probe &&
+      (probe.state === 'Playing' ||
+        probe.state === 'Ready' ||
+        probe.nativeState === 'playing');
+    if ((audible || uiPlaying) && (dur > 0 || pos > 0.15 || (status.queueLength ?? 0) >= 1)) {
+      if (
+        resumeNudges < 6 &&
+        (status.state === 'paused' || status.state === 'idle' || status.state === 'loading') &&
+        dur > 0
+      ) {
+        resumeNudges += 1;
+        try {
+          await nativeExoResume();
+        } catch {
+          /* optional */
+        }
+        await sleep(500);
+        lastPos = pos;
+        continue;
+      }
+      if (status.state === 'playing' || (audible && pos > lastPos + 0.15)) {
+        logE2e(
+          `${areaPrefix}-exo-state`,
+          true,
+          `state=${status.state ?? state} playing=true pos=${pos.toFixed(2)} max=${maxPos.toFixed(2)}`,
+        );
+        return { playing: true, lastState: status.state ?? state, maxPos };
+      }
+      if (dur >= 45 && pos > 0.4 && pos > lastPos + 0.05) {
+        logE2e(
+          `${areaPrefix}-exo-state`,
+          true,
+          `state=${status.state ?? state} playing=true via=position-advance pos=${pos.toFixed(2)}`,
+        );
+        return { playing: true, lastState: status.state ?? state, maxPos };
+      }
+    }
+    lastPos = pos;
+    const playback = await waitForExoPlaying(3000);
+    if (playback.ok) {
+      logE2e(
+        `${areaPrefix}-exo-state`,
+        true,
+        `state=${playback.state ?? 'playing'} playing=true via=waitForExoPlaying pos=${(playback.positionSecs ?? pos).toFixed(2)}`,
+      );
+      return {
+        playing: true,
+        lastState: playback.state ?? 'playing',
+        maxPos: Math.max(maxPos, playback.positionSecs ?? 0),
+      };
+    }
+    await sleep(500);
+  }
+  logE2e(
+    `${areaPrefix}-exo-state`,
+    false,
+    `timeout lastState=${lastLoggedState || 'none'} maxPos=${maxPos.toFixed(2)}`,
+  );
+  logE2e(
+    `${areaPrefix}-position`,
+    maxPos > 0.05,
+    `pos=${maxPos.toFixed(2)} max=${maxPos.toFixed(2)} state=${lastLoggedState || 'none'} timedOut=true`,
+  );
+  return { playing: false, lastState: lastLoggedState || 'none', maxPos };
 }
 
 /** Truncated-stream heal restarts Exo near 0 while the same title keeps playing. */
@@ -2905,7 +3034,14 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
           skipRemoteSync: true,
           skipHeavyAnalysis: true,
         });
-        logE2e('locker-seed', true, `entryId=${saved.id}`);
+        const snapshot = getLockerEntriesSnapshot() ?? (await getLockerEntries());
+        const cached = snapshot.find((e) => e.id === saved.id);
+        const playable = cached ? await lockerEntryIsPlayable(cached.id) : false;
+        logE2e(
+          'locker-seed',
+          true,
+          `entryId=${saved.id} title=${saved.title} artist=${saved.artist} album=${saved.albumName ?? 'none'} mime=${blob.type || 'audio/mp4'} size=${blob.size} urlScheme=${e2eUrlScheme(cached?.url ?? saved.url)} offlineReady=${cached?.offlineReady === true} playable=${playable}`,
+        );
         return true;
       } catch (err) {
         logE2e('locker-seed', false, err instanceof Error ? err.message : String(err));
@@ -2920,27 +3056,131 @@ export async function handleE2eAction(action: string, params: URLSearchParams): 
         logE2e('play-offline', false, 'missing artist/track or handler');
         return false;
       }
+
+      /*
+       * Diagnostic markers BEFORE playLockerTrack — CI previously showed seed PASS then silence
+       * until the wait timed out. These answer lookup → envelope → playUrl URI in order.
+       */
+      logE2e(
+        'play-offline-start',
+        true,
+        `artist=${artist} track=${track} album=${album ?? 'none'} progressSeconds=${params.get('progressSeconds') ?? '0'}`,
+      );
+
+      const snapshot = getLockerEntriesSnapshot() ?? (await getLockerEntries());
+      let lookupKey = 'none';
+      let entry =
+        (album?.trim()
+          ? findLockerEntryForTrack(track, artist, album, snapshot)
+          : undefined) ?? null;
+      if (entry) lookupKey = album?.trim() ? 'findLockerEntryForTrack+album' : 'findLockerEntryForTrack';
+      if (!entry) {
+        entry = await findPlayableLockerEntryForTrack(track, artist, album, snapshot);
+        if (entry) lookupKey = 'findPlayableLockerEntryForTrack';
+      }
+      if (!entry) {
+        entry =
+          findLockerEntryForTrackIncludingHollow(track, artist, album, snapshot) ?? null;
+        if (entry) lookupKey = 'findLockerEntryForTrackIncludingHollow';
+      }
+      logE2e(
+        'play-offline-lookup',
+        Boolean(entry),
+        entry
+          ? `key=${lookupKey} entryId=${entry.id} title=${entry.title} artist=${entry.artist} album=${entry.albumName ?? 'none'} offlineReady=${entry.offlineReady === true} urlScheme=${e2eUrlScheme(entry.url)} snapshot=${snapshot.length}`
+          : `key=none artist=${artist} track=${track} album=${album ?? 'none'} snapshot=${snapshot.length}`,
+      );
+
+      let playUri = '';
+      let envelopeId = '';
+      let provider = '';
+      if (entry) {
+        const seed = {
+          envelopeId: `local-${entry.id}`,
+          title: track,
+          artist,
+          album: album ?? entry.albumName,
+          durationSeconds: entry.durationSeconds ?? 0,
+          provider: 'local-vault' as const,
+          transport: 'element-src' as const,
+          sourceId: entry.id,
+          url: entry.url ?? '',
+        };
+        const locker = await ensureLockerPlayable(seed);
+        if (locker.kind === 'playable' && locker.envelope.url?.trim()) {
+          playUri = locker.envelope.url.trim();
+          envelopeId = locker.envelope.envelopeId ?? seed.envelopeId;
+          provider = locker.envelope.provider ?? 'local-vault';
+          logE2e(
+            'play-offline-envelope',
+            true,
+            `kind=playable envelopeId=${envelopeId} provider=${provider} url=${e2eUrlDetail(playUri)} urlScheme=${e2eUrlScheme(playUri)}`,
+          );
+        } else {
+          const resolved = await resolveLockerEnvelopeForPlayback(seed);
+          playUri = resolved?.url?.trim() ?? '';
+          envelopeId = resolved?.envelopeId ?? seed.envelopeId;
+          provider = resolved?.provider ?? 'local-vault';
+          logE2e(
+            'play-offline-envelope',
+            Boolean(playUri),
+            `kind=${locker.kind} envelopeId=${envelopeId || 'none'} provider=${provider} url=${e2eUrlDetail(playUri)} urlScheme=${e2eUrlScheme(playUri)}`,
+          );
+        }
+      } else {
+        logE2e('play-offline-envelope', false, 'skipped no-entry');
+      }
+
+      logE2e(
+        'play-offline-playurl',
+        Boolean(playUri),
+        playUri
+          ? `intendedUri=${e2eUrlDetail(playUri)} scheme=${e2eUrlScheme(playUri)} envelopeId=${envelopeId || 'none'}`
+          : 'intendedUri=none (playLockerTrack may still resolve)',
+      );
+
+      logE2e('play-offline-invoke', true, 'calling playLockerTrack');
       const played = await handlers.playLockerTrack(artist, track, album);
+      logE2e('play-offline-invoke', played, `playLockerTrack returned ${played}`);
       if (!played) {
+        const afterStatus = await getNativeExoPlaybackStatus();
+        logE2e(
+          'play-offline-playurl',
+          false,
+          `afterFail currentUrl=${e2eUrlDetail(afterStatus.currentUrl)} state=${afterStatus.state ?? 'unknown'}`,
+        );
         logE2e('play-offline', false, `artist=${artist} track=${track} play=false`);
         return false;
       }
-      const playing = await waitForPlayingState();
+
+      const afterPlay = await getNativeExoPlaybackStatus();
+      logE2e(
+        'play-offline-playurl',
+        Boolean(afterPlay.currentUrl?.trim() || playUri),
+        `afterPlay currentUrl=${e2eUrlDetail(afterPlay.currentUrl)} state=${afterPlay.state ?? 'unknown'} intendedScheme=${e2eUrlScheme(playUri)}`,
+      );
+
+      const wait = await waitForPlayingStateWithMarkers('play-offline', 120_000);
+      const playing = wait.playing;
       const probe = handlers.getPlaybackProbe?.();
       const titleOk = probe ? titlesMatch(probe.title, track) : false;
-      let queueLength = 0;
-      if (album) {
-        const queueDeadline = Date.now() + 120_000;
-        while (Date.now() < queueDeadline) {
-          const status = await getNativeExoPlaybackStatus();
-          queueLength = status.queueLength ?? 0;
-          if (queueLength >= 2) break;
-          await sleep(1000);
-        }
-      } else {
-        const status = await getNativeExoPlaybackStatus();
-        queueLength = status.queueLength ?? 0;
-      }
+      /*
+       * Sample queue length once for the log line. Do NOT block on queueLength>=2 when album
+       * is set — the locker fixture is a single track, and that wait raced the gate's 120s
+       * wait_logcat so play-offline RESULT never arrived in CI (seed PASS, then silence).
+       */
+      const status = await getNativeExoPlaybackStatus();
+      const queueLength = status.queueLength ?? 0;
+      logE2e(
+        'play-offline-queue-wait',
+        true,
+        `sampled queueLength=${queueLength} album=${album ?? 'none'} (non-blocking)`,
+      );
+      logE2e(
+        'play-offline-position',
+        wait.maxPos > 0.05,
+        `maxPos=${wait.maxPos.toFixed(2)} playing=${playing} titleOk=${titleOk} lastState=${wait.lastState}`,
+      );
       const pass = playing && titleOk;
       logE2e(
         'play-offline',
