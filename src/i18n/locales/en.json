@@ -267,7 +267,8 @@
     "fromHome": "Playing from home",
     "fromArtistMix": "Playing from {artist} mix",
     "fromTrackRadio": "Playing from radio · {title}",
-    "fromDiscoveryMix": "Made for you · {title}"
+    "fromDiscoveryMix": "Made for you · {title}",
+    "discoveryStation": "Discovery Station"
   },
   "player": {
     "openNowPlaying": "Open now playing",
@@ -305,7 +306,12 @@
     "cancelResolve": "Cancel",
     "dismissStuck": "Cancel and clear stuck playback",
     "resolveTimedOut": "Stream resolve timed out — player cleared",
+    "skipResolveGaveUp": "Couldn't load the next track — still playing \"{title}\"",
+    "skipResolveGaveUpUnknown": "Couldn't load the next track — kept the one still playing",
     "lockerAudioMissing": "Offline audio is missing or corrupted on this device — open the track menu and download to Locker again",
+    "lockerAudioReacquiring": "Re-downloading \"{title}\"…",
+    "podcastMissingAudio": "No audio URL for this episode — open the show and pull to refresh the feed",
+    "podcastPlaybackFailed": "Podcast playback failed — open the show and pull to refresh the feed",
     "fidelity": {
       "losslessDefault": "Lossless · 24/44.1",
       "losslessFormat": "Lossless · {format}"
@@ -1523,6 +1529,7 @@
     "loadInDj": "Load in DJ",
     "loadInDjAria": "Load {title} in DJ",
     "menu": {
+      "trackOptionsAria": "Options for {title}",
       "sectionPlay": "Play",
       "sectionLibrary": "Library",
       "sectionEdit": "Edit",

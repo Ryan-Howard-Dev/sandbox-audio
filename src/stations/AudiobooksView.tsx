@@ -14,7 +14,7 @@ import {
   type DeviceMusicScanProgress,
 } from '../deviceMusicScan';
 import { filterAudiobookScanHits } from '../lockerUploadFilter';
-import { audiobookHitToEnvelope } from '../audiobookPlayback';
+import { AUDIOBOOK_ENVELOPE_PREFIX, audiobookHitToEnvelope } from '../audiobookPlayback';
 import {
   applyAudiobookEnrichment,
   audiobookOrigin,
@@ -45,6 +45,8 @@ export interface AudiobooksViewProps {
   ) => void;
   onPrimePlay?: (envelope: MediaEnvelope) => void;
   activeEnvelopeId?: string | null;
+  /** Playhead of whatever is playing, so an open book can highlight the chapter you are in. */
+  playheadSeconds?: number;
   onError?: (message: string) => void;
   onSuccess?: (message: string) => void;
   onOpenAcquireSettings?: () => void;
@@ -63,6 +65,7 @@ export default function AudiobooksView({
   onPlayAlbum,
   onPrimePlay,
   activeEnvelopeId,
+  playheadSeconds,
   onError,
   onSuccess,
   onOpenAcquireSettings,
@@ -401,6 +404,14 @@ export default function AudiobooksView({
           {selected.tracks.length === 1 && selected.tracks[0] ? (
             <EmbeddedChapterList
               entryId={selected.tracks[0].id}
+              positionSeconds={
+                // Only when this very file is the one playing — the highlight is a claim about the
+                // playhead, and any other book's clock would put it on an arbitrary chapter.
+                activeEnvelopeId ===
+                `${AUDIOBOOK_ENVELOPE_PREFIX}${selected.tracks[0].id}`
+                  ? playheadSeconds
+                  : undefined
+              }
               onSeek={(startSeconds) => {
                 const hit = selected.tracks[0];
                 if (!hit) return;

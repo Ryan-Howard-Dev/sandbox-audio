@@ -55,6 +55,8 @@ export interface HomeViewProps {
   onRepeatCycle?: () => void;
   fidelityLabel?: string;
   resolveElapsedSeconds?: number;
+  /** A different track is resolving behind the audible one — see HomeHeroPlayer. */
+  resolvingNextTrack?: boolean;
   onCancelResolve?: () => void;
   idleDiscovery?: {
     recentItems: HomeIdleRecentItem[];
@@ -103,6 +105,7 @@ export default function HomeView({
   onRepeatCycle,
   fidelityLabel,
   resolveElapsedSeconds = 0,
+  resolvingNextTrack = false,
   onCancelResolve,
   idleDiscovery,
   stemSliders,
@@ -197,6 +200,7 @@ export default function HomeView({
         onRepeatCycle={onRepeatCycle}
         fidelityLabel={fidelityLabel}
         resolveElapsedSeconds={resolveElapsedSeconds}
+        resolvingNextTrack={resolvingNextTrack}
         onCancelResolve={onCancelResolve}
       />
       {!trueIdle && stemSliders && !showMobileShell ? (

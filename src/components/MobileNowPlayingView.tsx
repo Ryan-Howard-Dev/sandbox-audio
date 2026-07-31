@@ -106,6 +106,8 @@ export interface MobileNowPlayingViewProps {
   showMobileShell?: boolean;
   onCancelResolve?: () => void;
   audioState?: AudioFsmState;
+  /** A different track is resolving behind the audible one — see HomeHeroPlayer. */
+  resolvingNextTrack?: boolean;
   stemSliders?: import('./StemSlidersPanel').StemSlidersPanelProps;
   isPodcast?: boolean;
   podcastPlaybackSpeed?: number;
@@ -180,6 +182,7 @@ export default function MobileNowPlayingView({
   showMobileShell = true,
   onCancelResolve,
   audioState = 'Idle',
+  resolvingNextTrack = false,
   stemSliders,
   isPodcast = false,
   podcastPlaybackSpeed = 1,
@@ -513,6 +516,7 @@ export default function MobileNowPlayingView({
             repeatMode={repeatMode}
             fidelityLabel={qualityLabel}
             resolveElapsedSeconds={resolveElapsedSeconds}
+            resolvingNextTrack={resolvingNextTrack}
             onCancelResolve={onCancelResolve}
             moreMenu={{
               sleepTimerOpen,

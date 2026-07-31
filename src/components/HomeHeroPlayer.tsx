@@ -264,6 +264,13 @@ export interface HomeHeroPlayerProps {
   /** Centered under progress bar (Tidal-style now playing). */
   fidelityLabel?: string;
   resolveElapsedSeconds?: number;
+  /**
+   * A different track is resolving behind the one being shown, because the shown one is still the
+   * audible one. The banner is then the only receipt the user has for their skip, so it has to
+   * survive the expanded layout's usual suppression — a screen that looks unchanged reads as a
+   * dropped tap.
+   */
+  resolvingNextTrack?: boolean;
   onCancelResolve?: () => void;
   /** Idle home: tapping the vinyl opens universal search (its signature gesture). */
   onIdleSearch?: () => void;
@@ -311,6 +318,7 @@ export default function HomeHeroPlayer({
   onRepeatCycle,
   fidelityLabel,
   resolveElapsedSeconds = 0,
+  resolvingNextTrack = false,
   onCancelResolve,
   onIdleSearch,
   inlineVinylSettings = true,
@@ -379,7 +387,7 @@ export default function HomeHeroPlayer({
   );
   const resolvedVinylSize = vinylSize ?? (compact ? 'compact' : 'home');
   const hideResolveBanner =
-    expanded ||
+    (expanded && !resolvingNextTrack) ||
     Boolean(envelope?.envelopeId && isPodcastEnvelopeId(envelope.envelopeId));
 
   useEffect(() => {
@@ -578,10 +586,12 @@ export default function HomeHeroPlayer({
         <p className="home-idle-welcome">{t('home.welcomeTagline')}</p>
       ) : (
         <div className="home-featured-meta">
-          {!hideResolveBanner && state === 'Resolving' ? (
+          {!hideResolveBanner && (state === 'Resolving' || resolvingNextTrack) ? (
             <div className="home-connecting-banner-slot home-connecting-banner-slot--visible">
               <ResolvingPlaybackBanner
-                state={state}
+                // The FSM can read Idle for a beat mid-handoff while the next stream is still being
+                // fetched. The banner is the receipt for the skip, so it must not blink out there.
+                state={resolvingNextTrack && state !== 'Connecting' ? 'Resolving' : state}
                 elapsedSeconds={resolveElapsedSeconds}
                 onCancel={onCancelResolve}
                 compact={compact}
