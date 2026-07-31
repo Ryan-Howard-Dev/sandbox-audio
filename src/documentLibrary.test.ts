@@ -3,6 +3,8 @@ import {
   documentDisplayName,
   documentSummary,
   newDocumentId,
+  shouldPersistReadingPosition,
+  type ReadingPosition,
   type SavedDocument,
 } from './documentLibrary';
 
@@ -25,6 +27,53 @@ describe('documentSummary', () => {
     expect('text' in summary).toBe(false);
     expect(summary.name).toBe('paper.md');
     expect(summary.chunkCount).toBe(4);
+  });
+});
+
+describe('documentSummary reading position', () => {
+  /* A shelf shows "resume at chapter 4" without loading the book, so the position rides on the card. */
+  it('keeps the position on the card while dropping the text', () => {
+    const summary = documentSummary(
+      doc({ position: { chapterIndex: 3, chunkIndex: 12, updatedAt: 5 } }),
+    );
+    expect(summary.position?.chapterIndex).toBe(3);
+    expect('text' in summary).toBe(false);
+  });
+});
+
+describe('shouldPersistReadingPosition', () => {
+  const at = (chapterIndex: number, chunkIndex: number, updatedAt: number): ReadingPosition => ({
+    chapterIndex,
+    chunkIndex,
+    updatedAt,
+  });
+
+  it('writes the first position it is given', () => {
+    expect(shouldPersistReadingPosition(null, at(0, 0, 1_000))).toBe(true);
+  });
+
+  /*
+   * Every write re-puts the whole record, text included. Writing on each chunk change rewrites a
+   * book-sized object hundreds of times per chapter.
+   */
+  it('ignores a chunk-by-chunk crawl', () => {
+    expect(shouldPersistReadingPosition(at(0, 4, 1_000), at(0, 5, 2_000))).toBe(false);
+  });
+
+  it('always writes a chapter change, which is what a listener would notice losing', () => {
+    expect(shouldPersistReadingPosition(at(0, 40, 1_000), at(1, 0, 1_100))).toBe(true);
+  });
+
+  it('writes once enough time has passed', () => {
+    expect(shouldPersistReadingPosition(at(0, 4, 1_000), at(0, 5, 30_000))).toBe(true);
+  });
+
+  it('writes on a jump too large for a tick to explain', () => {
+    expect(shouldPersistReadingPosition(at(0, 4, 1_000), at(0, 60, 1_500))).toBe(true);
+  });
+
+  it('refuses a nonsense position rather than storing one', () => {
+    expect(shouldPersistReadingPosition(at(0, 4, 1_000), at(0, -1, 90_000))).toBe(false);
   });
 });
 

@@ -103,3 +103,6 @@ _readonly_locker_check/
 # Stray QA dumps / duplicate manifest at repo root (real manifest: android/app/src/main/)
 .nav-playlists.xml
 /AndroidManifest.xml
+
+# Build-output baseline used for bundle-size comparison; not source.
+dist-baseline/

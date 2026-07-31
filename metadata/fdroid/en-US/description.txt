@@ -1,4 +1,4 @@
-Sovereign Music Console is an offline-first music locker, catalog explorer, and DJ console shell.
+Sandbox Audio is an offline-first music locker, catalog explorer, and DJ console shell.
 
 Import local audio, browse charts, manage playlists, and optionally connect a Tier 3/4 backend for extended search and playback features.
 

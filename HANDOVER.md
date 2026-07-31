@@ -105,7 +105,7 @@ on device.
 
 ```bash
 npx tsc --noEmit                       # clean
-npx vitest run                         # 225 files / 1548 tests
+npx vitest run                         # 233 files / 1700 tests, 0 failures (2026-07-31)
 SANDBOX_ANDROID_E2E=true npm run build:android:apk
 adb install -r android/app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
 ```

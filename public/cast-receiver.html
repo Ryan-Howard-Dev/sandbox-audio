@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sovereign Cinema Cast</title>
+    <title>Sandbox Cinema Cast</title>
     <style>
       :root {
         --bg: #07080c;
@@ -107,7 +107,7 @@
     <div class="wrap">
       <header>
         <p class="eyebrow">Cinema Cast</p>
-        <h1 id="title">Sovereign Music Console</h1>
+        <h1 id="title">Sandbox Audio</h1>
         <p class="artist" id="artist">Ready to cast</p>
       </header>
       <div class="main">
@@ -130,7 +130,7 @@
       const ctx = canvas.getContext('2d');
 
       let state = {
-        title: 'Sovereign Music Console',
+        title: 'Sandbox Audio',
         artist: 'Ready to cast',
         albumArt: '',
         isPlaying: false,
@@ -165,7 +165,7 @@
       }
 
       function render() {
-        titleEl.textContent = state.title || 'Sovereign Music Console';
+        titleEl.textContent = state.title || 'Sandbox Audio';
         artistEl.textContent = state.artist || 'Ready to cast';
         if (state.albumArt) {
           artEl.src = state.albumArt;

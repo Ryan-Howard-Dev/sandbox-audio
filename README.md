@@ -1,10 +1,67 @@
-# Sandbox Music
+<div align="center">
 
-**Sandbox Music** (`sovereign-music-console`) is a self-hosted **music and podcast player** with a local locker, catalog explorer, and optional Sandbox Server backend. It ships as **web/PWA**, **Tauri desktop** (Windows + Linux), and **Android** (Capacitor).
+<img src="./assets/icon.svg" width="104" alt="Sandbox Audio">
 
-Play your own files offline, stream from a home **Sandbox Server**, subscribe to podcasts, and browse catalog metadata — without a commercial streaming subscription.
+# Sandbox Audio
+
+**Your music, your podcasts, your audiobooks — on hardware you own.**
+
+[![License](https://img.shields.io/badge/License-GPL--3.0-C2410C?style=for-the-badge&labelColor=07080c)](./LICENSE)
+[![Local first](https://img.shields.io/badge/Local–first-no%20account%20required-C2410C?style=for-the-badge&labelColor=07080c)](#why-this-exists)
+[![Telemetry](https://img.shields.io/badge/Telemetry-none-6E758C?style=for-the-badge&labelColor=07080c)](#why-this-exists)
+
+[![Platforms](https://img.shields.io/badge/Web·PWA-1C1C1E?style=flat-square&labelColor=07080c)](./BUILDING.md)
+[![Desktop](https://img.shields.io/badge/Tauri%20desktop-Windows%20·%20Linux-1C1C1E?style=flat-square&labelColor=07080c)](./BUILDING.md)
+[![Android](https://img.shields.io/badge/Android-phone%20·%20TV-1C1C1E?style=flat-square&labelColor=07080c)](./BUILDING.md)
+
+</div>
+
+---
+
+**Sandbox Audio** is a self-hosted player for **music, podcasts, audiobooks and ebooks**, built on a
+local locker rather than someone else's catalog. It runs as **web/PWA**, **Tauri desktop** (Windows
++ Linux) and **Android** (phone and TV), and it works with the network off.
+
+Play your own files offline, stream from a home **Sandbox Server** on your LAN, subscribe to
+podcasts, read or listen to your own books, and browse catalog metadata — with no account, no
+subscription, and nothing reporting home.
 
 > **Beta software.** Expect rough edges in playback, mobile layout, and search. Not recommended as a daily driver without backups of your locker data.
+
+## Why this exists
+
+Streaming taught a generation that a library is something you rent. When the subscription lapses,
+the shelf empties; when a licence expires, the record disappears from a collection someone thought
+was theirs. The same pattern now reaches podcasts and audiobooks — media that used to be a file you
+kept.
+
+Sandbox Audio is built on the opposite assumption. The locker is on your device. The server, if you
+run one, is on your LAN and belongs to your household. Removing the vendor from the picture is
+supposed to leave you with a working player, not a dead one:
+
+- **No account.** There is no sign-up, no identity, and no server of ours to sign in to.
+- **No telemetry.** No analytics, no crash reporting, no phone-home. Nothing is collected because
+  nothing is sent.
+- **No lock-in.** Your library is files on disk. The format is not ours and leaving costs nothing.
+- **Offline is the default, not a mode.** Playback resolves from the local locker first.
+- **GPL-3.0.** The thing you depend on cannot be closed against you later.
+
+## Part of Sandbox
+
+Sandbox Audio is one of three applications sharing a household server and a common principle —
+that the software you rely on should run on hardware you control.
+
+| Project | What it is | Status |
+|---------|-----------|--------|
+| **Sandbox OS** | A Debian-based operating system built around *stations* — media, documents, marketplace — instead of a desktop of loose applications. | In development |
+| **Sandbox Audio** | This repository. The media station: music, podcasts, audiobooks, ebooks. | Beta, builds on device |
+| **Sandbox Wrestling** | A wrestling booking simulator in Godot 4.5, with its own simulation engine. | In development |
+
+The **Sandbox Server** (`tier34`) is the shared household backend: locker sync, search proxy, and
+playback-state mirroring between your own devices over your own network. Today it ships inside this
+repository and is documented in [TIER34.md](./TIER34.md); extraction into a standalone package is
+planned but **not started** — the trigger is a second station depending on it, and only Audio does
+today.
 
 ## Before you run it
 
@@ -24,7 +81,7 @@ decided.
 
 **Licensed under GPL-3.0.** See [LICENSE](./LICENSE).
 
-**Supported platforms (audit-verified):** Web/PWA, Tauri desktop (Windows + Linux), Android (Capacitor). iOS and macOS desktop are not in current CI or release artifacts per existing README scope.
+**Build targets (audit-verified):** Web/PWA, Tauri desktop (Windows + Linux), Android (Capacitor). These builds are configured and run on device — they are **not published releases**. There is no tagged release, no GitHub release artifact, and no F-Droid or Play Store listing; `fastlane/` holds listing text only. Build it yourself per [BUILDING.md](./BUILDING.md). iOS and macOS desktop are not build targets at all.
 
 Catalog discovery uses an **iTunes metadata proxy plus your local locker** — not a Spotify-scale streaming catalog.
 
@@ -171,6 +228,10 @@ pools, a Go control plane this project does not have).
 
 ## License
 
-This project is licensed under the [GNU General Public License v3.0](./LICENSE) — Copyright (C) 2026 Sandbox Music contributors.
+This project is licensed under the [GNU General Public License v3.0](./LICENSE) — Copyright (C) 2026 Sandbox Audio contributors.
+
+GPL-3.0 is a deliberate choice, not a default. It means anyone who receives this software receives
+the source with it, and any derivative stays open on the same terms. A tool people are asked to
+trust with their library should not be closeable against them later.
 
 See also [CHANGELOG.md](./CHANGELOG.md) and [CODEBASE_HEALTH.md](./CODEBASE_HEALTH.md).
