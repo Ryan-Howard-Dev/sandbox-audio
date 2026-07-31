@@ -33,6 +33,11 @@ import {
 import { formatTime } from '../../stations/theme';
 import ImportEmptyState from './ImportEmptyState';
 import { useTranslation } from '../../i18n';
+import {
+  beginNarrationSession,
+  endNarrationSession,
+  syncNarrationSession,
+} from '../../narrationMediaSession';
 
 /**
  * Formats the extractor can actually read, kept in one place so the picker and the extractor
@@ -93,6 +98,7 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
   useEffect(() => {
     return () => {
       readerRef.current?.stop();
+      void endNarrationSession();
       nativePortRef.current?.dispose();
       nativePortRef.current = null;
     };
@@ -115,7 +121,12 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
       startIndex,
       voiceId: voiceId || undefined,
       onChunkChange: (index) => setChunkIndex(index),
-      onStateChange: (s) => setState(s),
+      onStateChange: (s) => {
+        setState(s);
+        // Mirror onto the app's existing media session so a document behaves like playback:
+        // lock screen, headphone pause, and survival with the screen off.
+        void syncNarrationSession(s);
+      },
     });
     return readerRef.current;
   }, [voiceId]);
@@ -223,6 +234,10 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
       // last month should benefit without being imported again.
       const parsed = documentToNarration(full.text);
       setOpenDoc(summary);
+      void beginNarrationSession({
+        title: documentDisplayName(summary.name),
+        documentId: summary.id,
+      });
       setChunks(parsed);
       setChunkIndex(0);
       (await buildReader(parsed, 0)).play();
