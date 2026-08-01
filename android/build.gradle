@@ -9,6 +9,9 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.13.0'
         classpath 'com.google.gms:google-services:4.4.4'
+        // Only so the vendored sherpa-onnx binding (Kotlin) compiles with the app. No
+        // existing source is Kotlin and none needs to be.
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
