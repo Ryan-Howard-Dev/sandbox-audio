@@ -418,7 +418,9 @@
       "toastLockerFailed": "Could not save to Locker",
       "descriptionMix": "Saved artist mix",
       "descriptionRadio": "Saved track radio"
-    }
+    },
+    "clearPlayer": "Stop and clear",
+    "clearPlayerSubtitle": "Stops everything and empties the player"
   },
   "home": {
     "searchPrompt": "SEARCH ABOVE TO START PLAYING",

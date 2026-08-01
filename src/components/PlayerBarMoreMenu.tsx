@@ -45,6 +45,8 @@ export interface PlayerBarMoreMenuProps {
   onSaveMixRadioToPlaylist?: () => void;
   resumeQueueCount?: number;
   onResumeQueue?: () => void;
+  /** Stop whatever is playing and empty the player. Absent where there is nothing to clear. */
+  onClearPlayer?: () => void;
   downloadEnabled?: boolean;
   onDownloadTrack?: () => void;
   /** Podcast episode — speed, boost, and auto-skip options in ⋮ menu */
@@ -94,6 +96,7 @@ export default function PlayerBarMoreMenu({
   onSaveMixRadioToPlaylist,
   resumeQueueCount = 0,
   onResumeQueue,
+  onClearPlayer,
   downloadEnabled = false,
   onDownloadTrack,
   isPodcast = false,
@@ -257,6 +260,27 @@ export default function PlayerBarMoreMenu({
             onClick: () => {
               onOpenChange(false);
               onResumeQueue();
+            },
+          } satisfies LockerMenuAction,
+        ]
+      : []),
+    /*
+     * Stop everything.
+     *
+     * Pause leaves the track loaded, the queue intact and the lock screen occupied, and
+     * there was no way to say "I am finished" short of force-closing the app. This is that
+     * way: it stops the audio, stops anything being read aloud, empties the queue and takes
+     * the notification down.
+     */
+    ...(onClearPlayer
+      ? [
+          {
+            id: 'clear-player',
+            label: t('player.clearPlayer'),
+            subtitle: t('player.clearPlayerSubtitle'),
+            onClick: () => {
+              onOpenChange(false);
+              onClearPlayer();
             },
           } satisfies LockerMenuAction,
         ]

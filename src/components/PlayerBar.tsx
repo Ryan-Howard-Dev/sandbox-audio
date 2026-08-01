@@ -98,6 +98,8 @@ export interface PlayerBarProps {
   onDismissStuck?: () => void;
   resumeQueueCount?: number;
   onResumeQueue?: () => void;
+  /** Stop everything and empty the player. Reaches the overflow menu the bar already owns. */
+  onClearPlayer?: () => void;
   downloadEnabled?: boolean;
   onDownloadTrack?: () => void;
   /** When true, bar is positioned by MobilePlayerShell (not viewport-fixed). */
@@ -195,6 +197,7 @@ export default function PlayerBar({
   onDismissStuck,
   resumeQueueCount = 0,
   onResumeQueue,
+  onClearPlayer,
   downloadEnabled = false,
   onDownloadTrack,
   embedded = false,
@@ -901,6 +904,7 @@ export default function PlayerBar({
                   onSaveMixRadioToPlaylist={onSaveMixRadioToPlaylist}
                   resumeQueueCount={resumeQueueCount}
                   onResumeQueue={onResumeQueue}
+                  onClearPlayer={onClearPlayer}
                   downloadEnabled={downloadEnabled}
                   onDownloadTrack={onDownloadTrack}
                   {...moreMenuPodcastProps}
@@ -1173,6 +1177,7 @@ export default function PlayerBar({
                 onSaveMixRadioToPlaylist={onSaveMixRadioToPlaylist}
                 resumeQueueCount={resumeQueueCount}
                 onResumeQueue={onResumeQueue}
+                  onClearPlayer={onClearPlayer}
                 downloadEnabled={downloadEnabled}
                 onDownloadTrack={onDownloadTrack}
                 {...moreMenuPodcastProps}

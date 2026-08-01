@@ -8950,6 +8950,30 @@ export default function SandboxShell() {
    */
   const narrationForPlayer = audibleEnvelopeId ? null : narrationPlayback;
 
+  /**
+   * Stop everything and empty the player.
+   *
+   * Pause leaves the track loaded, the queue intact and the lock screen occupied, so there was
+   * no way to say "I am finished" short of force-closing the app. Everything that can be making
+   * sound is stopped here rather than only the one the screen happens to be showing: audio and
+   * narration are separate engines, and stopping one while the other keeps talking is the bug
+   * this is meant to prevent.
+   */
+  const handleClearPlayer = useCallback(async () => {
+    const reading = getNarrationPlayback();
+    if (reading) {
+      reading.controls.stop();
+      clearNarrationPlayback(reading.sourceId);
+    }
+    // Releases the foreground notification, which otherwise outlives the thing that raised it.
+    await endNarrationSession();
+    await prepareCleanPlaybackStop(() => audio.stop());
+    setPlayQueue([]);
+    setQueueIndex(0);
+    setMobileNowPlayingOpen(false);
+    setQueueDrawerOpen(false);
+    setLyricsDrawerOpen(false);
+  }, [audio]);
   const nowPlayingPillar = resolveMediaPillar({
     envelopeId: audio.envelope?.envelopeId,
     narrating: narrationForPlayer !== null,
@@ -10200,6 +10224,7 @@ export default function SandboxShell() {
                   onDismissStuck: handleDismissStuckPlayback,
                   resumeQueueCount: showResumeQueuePrompt ? resumeQueueCandidate.length : 0,
                   onResumeQueue: showResumeQueuePrompt ? handleResumeLastQueue : undefined,
+                  onClearPlayer: () => void handleClearPlayer(),
                   downloadEnabled: playerDownloadEnabled,
                   onDownloadTrack: downloadCurrentTrack,
                   resolvePending:
@@ -10364,6 +10389,7 @@ export default function SandboxShell() {
                   onEnterCarMode: handleEnterCarMode,
                   resumeQueueCount: showResumeQueuePrompt ? resumeQueueCandidate.length : 0,
                   onResumeQueue: showResumeQueuePrompt ? handleResumeLastQueue : undefined,
+                  onClearPlayer: () => void handleClearPlayer(),
                   downloadEnabled: playerDownloadEnabled,
                   onDownloadTrack: downloadCurrentTrack,
                   showMobileShell,

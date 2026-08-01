@@ -103,6 +103,7 @@ export interface MobileNowPlayingViewProps {
   onGoToAlbum?: (artist: string, album: string) => void;
   resumeQueueCount?: number;
   onResumeQueue?: () => void;
+  onClearPlayer?: () => void;
   downloadEnabled?: boolean;
   onDownloadTrack?: () => void;
   showMobileShell?: boolean;
@@ -188,6 +189,7 @@ export default function MobileNowPlayingView({
   onGoToAlbum,
   resumeQueueCount = 0,
   onResumeQueue,
+  onClearPlayer,
   downloadEnabled = false,
   onDownloadTrack,
   showMobileShell = true,
@@ -569,6 +571,7 @@ export default function MobileNowPlayingView({
               onSaveMixRadioToPlaylist,
               resumeQueueCount,
               onResumeQueue,
+              onClearPlayer,
               downloadEnabled,
               onDownloadTrack,
               isPodcast,
