@@ -11,6 +11,10 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -205,8 +209,13 @@ public class PiperTtsPlugin extends Plugin {
         Object vits = vitsClass.getDeclaredConstructor().newInstance();
         set(vits, "setModel", String.class, VOICE_DIR + "/" + MODEL_FILE);
         set(vits, "setTokens", String.class, VOICE_DIR + "/tokens.txt");
-        // espeak-ng's phoneme data. Without it the model loads and pronounces nothing.
-        set(vits, "setDataDir", String.class, VOICE_DIR + "/espeak-ng-data");
+        /*
+         * espeak-ng reads its phoneme data with ordinary file IO rather than through Android's
+         * AssetManager, so unlike the model and tokens it cannot be read from inside the APK.
+         * It is unpacked once to private storage and read from there. Pruning the other 112
+         * languages first is what keeps this to about a megabyte rather than eighteen.
+         */
+        set(vits, "setDataDir", String.class, ensureEspeakData().getAbsolutePath());
 
         Object model = modelConfigClass.getDeclaredConstructor().newInstance();
         set(model, "setVits", vitsClass, vits);
@@ -224,6 +233,53 @@ public class PiperTtsPlugin extends Plugin {
             .newInstance(getContext().getAssets(), config);
     }
 
+    /**
+     * Unpack espeak-ng-data to private storage, once.
+     *
+     * Guarded by the directory already existing rather than by a flag, so an install that was
+     * interrupted half way simply unpacks again rather than starting with a partial copy and
+     * failing to pronounce anything.
+     */
+    private File ensureEspeakData() throws Exception {
+        File target = new File(getContext().getFilesDir(), "espeak-ng-data");
+        if (target.isDirectory() && target.list() != null && target.list().length > 0) {
+            return target;
+        }
+        copyAssetDir(VOICE_DIR + "/espeak-ng-data", target);
+        Log.i(TAG, "unpacked espeak-ng-data to " + target.getAbsolutePath());
+        return target;
+    }
+
+    private void copyAssetDir(String assetPath, File target) throws Exception {
+        AssetManager assets = getContext().getAssets();
+        String[] entries = assets.list(assetPath);
+        if (entries == null || entries.length == 0) {
+            // A leaf: assets.list returns empty for files, so this is one.
+            copyAssetFile(assetPath, target);
+            return;
+        }
+        if (!target.exists() && !target.mkdirs()) {
+            throw new Exception("could not create " + target.getAbsolutePath());
+        }
+        for (String entry : entries) {
+            copyAssetDir(assetPath + "/" + entry, new File(target, entry));
+        }
+    }
+
+    private void copyAssetFile(String assetPath, File target) throws Exception {
+        File parent = target.getParentFile();
+        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+            throw new Exception("could not create " + parent.getAbsolutePath());
+        }
+        try (InputStream in = getContext().getAssets().open(assetPath);
+             OutputStream out = new FileOutputStream(target)) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
+            }
+        }
+    }
     private static void set(Object target, String setter, Class<?> type, Object value)
         throws Exception {
         Method method = target.getClass().getMethod(setter, type);

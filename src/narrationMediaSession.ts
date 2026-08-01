@@ -44,11 +44,23 @@ interface BackgroundMediaLike {
   }): Promise<void>;
 }
 
-async function backgroundMedia(): Promise<BackgroundMediaLike | null> {
+/**
+ * The media session plugin, wrapped rather than returned bare.
+ *
+ * A Capacitor plugin is a proxy that forwards every property access to native, including `then`.
+ * Returning one from an async function therefore makes JavaScript treat it as a thenable and try
+ * to await it, which calls a native method named `then` that does not exist. The promise rejects
+ * with "BackgroundMedia.then() is not implemented on android", and because the callers only
+ * ever fire and forget, the failure is silent: no media session, and narration that refuses to
+ * start with no error anywhere on screen.
+ *
+ * One property of indirection stops the proxy ever being the resolution value.
+ */
+async function backgroundMedia(): Promise<{ api: BackgroundMediaLike } | null> {
   try {
     const mod = await import('./backgroundMedia');
     const bm = (mod as unknown as { BackgroundMedia?: BackgroundMediaLike }).BackgroundMedia;
-    return bm ?? null;
+    return bm ? { api: bm } : null;
   } catch {
     return null;
   }
@@ -64,7 +76,7 @@ let currentDocumentId: string | null = null;
 
 /** Announce the book to the system and take the foreground, so narration survives the screen off. */
 export async function beginNarrationSession(track: NarrationSessionTrack): Promise<void> {
-  const bm = await backgroundMedia();
+  const bm = (await backgroundMedia())?.api;
   if (!bm) return;
   revision += 1;
   currentDocumentId = track.documentId;
@@ -96,7 +108,7 @@ export async function syncNarrationSession(
   state: NarrationReaderState,
   position?: { positionMs: number; durationMs?: number },
 ): Promise<void> {
-  const bm = await backgroundMedia();
+  const bm = (await backgroundMedia())?.api;
   if (!bm) return;
   revision += 1;
   try {
@@ -123,7 +135,7 @@ export async function syncNarrationSession(
 
 /** Give the foreground back — on unmount, or when the user stops reading. */
 export async function endNarrationSession(): Promise<void> {
-  const bm = await backgroundMedia();
+  const bm = (await backgroundMedia())?.api;
   if (!bm || !foregroundHeld) return;
   revision += 1;
   try {
