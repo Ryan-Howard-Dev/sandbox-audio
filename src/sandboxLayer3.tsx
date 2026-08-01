@@ -52,6 +52,9 @@ import OnboardingWizard from './components/OnboardingWizard';
 import ServerSetup from './components/ServerSetup';
 import PodcastChapterSheet from './components/podcasts/PodcastChapterSheet';
 import MobileDockWithShell from './mobile/MobileDockWithShell';
+import { useNarrationPlayback } from './hooks/useNarrationPlayback';
+import { controlsForPillar, resolveMediaPillar } from './mediaPillar';
+import { subscribeNarrationPlayerOpen } from './narrationPlayback';
 import PlayerBar from './components/PlayerBar';
 import {
   hasMobilePlaybackShell,
@@ -984,6 +987,13 @@ export default function SandboxShell() {
     () => isLikelyPageReload() || isColdPlaybackStart(),
   );
   const [mobileNowPlayingOpen, setMobileNowPlayingOpen] = useState(false);
+  /*
+   * A book or document being read aloud drives the ordinary player rather than a second one. It
+   * has no envelope, no queue and no seekable duration, so only the fields it can honestly fill
+   * are overridden below; the rest of the player is left alone.
+   */
+  const narrationPlayback = useNarrationPlayback();
+  useEffect(() => subscribeNarrationPlayerOpen(() => setMobileNowPlayingOpen(true)), []);
   const mobileNowPlayingOpenRef = useRef(mobileNowPlayingOpen);
   mobileNowPlayingOpenRef.current = mobileNowPlayingOpen;
   const [podcastChaptersOpen, setPodcastChaptersOpen] = useState(false);
@@ -8838,12 +8848,31 @@ export default function SandboxShell() {
     !isTV &&
     !(showMobileShell && station === 'home') &&
     (hasActivePlayback ||
+      narrationPlayback !== null ||
       (showMobileShell && mobilePlayerPending) ||
       queueDrawerOpen ||
       (!showMobileShell && (lyricsDrawerOpen || sleepTimerPanelOpen)));
 
+  /*
+   * Narration counts as playback for the player chrome only.
+   *
+   * hasActivePlayback is derived from the audio state machine and is threaded through queueing,
+   * scrobbling and resume, none of which a spoken document should touch. This narrower flag says
+   * one thing: something is playing, so the player should be on screen.
+   */
+  const playbackChromeActive = hasActivePlayback || narrationPlayback !== null;
+  /*
+   * What is playing decides which controls exist, rather than the player offering everything and
+   * each medium quietly ignoring what does not apply to it. Shuffling a novel is not an unused
+   * button, it is a destroyed book.
+   */
+  const nowPlayingPillar = resolveMediaPillar({
+    envelopeId: audio.envelope?.envelopeId,
+    narrating: narrationPlayback !== null,
+  });
+  const nowPlayingControls = controlsForPillar(nowPlayingPillar);
   const mobilePlaybackShellActive = showMobileShell
-    ? hasMobilePlaybackShell(hasActivePlayback, mobilePlayerPending)
+    ? hasMobilePlaybackShell(playbackChromeActive, mobilePlayerPending)
     : false;
   const mobileUsesPlayerPadding = showMobileShell
     ? mobileShellUsesPlayerPadding(
@@ -10025,8 +10054,18 @@ export default function SandboxShell() {
             onNavigateHome: openHomePlayer,
             playerBar: {
                   audio,
-                  artworkUrl: displayArt,
-                  heldNowPlaying: playerBarHeldNowPlaying,
+                  artworkUrl: narrationPlayback?.artworkUrl ?? displayArt,
+                  // heldNowPlaying is the override PlayerBar already honours for title, artist and
+                  // position, so narration needs no new path through the bar.
+                  heldNowPlaying: narrationPlayback
+                    ? {
+                        title: narrationPlayback.title,
+                        artist: narrationPlayback.author?.trim() || 'Read aloud',
+                        envelope: null,
+                        positionSeconds: narrationPlayback.elapsedSeconds,
+                        durationSeconds: Math.max(1, narrationPlayback.totalSeconds),
+                      }
+                    : playerBarHeldNowPlaying,
                   shuffleOn,
                   repeatMode,
                   thumbUp,
@@ -10037,8 +10076,8 @@ export default function SandboxShell() {
                   onRepeatCycle: cycleRepeat,
                   onSkipBack: skipBack,
                   onSkipForward: skipForward,
-                  onThumbUp: handleThumbUp,
-                  onThumbDown: handleThumbDown,
+                  onThumbUp: nowPlayingControls.thumbs ? handleThumbUp : undefined,
+                  onThumbDown: nowPlayingControls.thumbs ? handleThumbDown : undefined,
                   queueOpen: queueDrawerOpen,
                   queueCount: playQueue.length,
                   onToggleQueue: () => {
@@ -10114,24 +10153,65 @@ export default function SandboxShell() {
                   onClose: () => setMobileNowPlayingOpen(false),
                   profileName,
                   onOpenProfile: openSettings,
-                  title: homeTitle,
-                  artist: homeArtist,
-                  album: homeAlbum,
-                  albumArt: displayArt,
-                  envelope: npEnvelope,
+                  narration: narrationPlayback,
+                  /*
+                   * Controls the player may show for what is actually playing. Passing undefined
+                   * is how every one of these is hidden already, so forbidding a control is the
+                   * same act as not having a handler for it.
+                   */
+                  pillarControls: nowPlayingControls,
+                  title: narrationPlayback ? narrationPlayback.title : homeTitle,
+                  artist: narrationPlayback
+                    ? narrationPlayback.author?.trim() || 'Read aloud'
+                    : homeArtist,
+                  album: narrationPlayback ? undefined : homeAlbum,
+                  albumArt: narrationPlayback?.artworkUrl ?? displayArt,
+                  envelope: narrationPlayback ? null : npEnvelope,
                   onGoToArtist: (name) => void handleOpenArtistByName(name),
                   onGoToAlbum: handleOpenAlbumByName,
-                  currentTimeSeconds: npCurrentTimeSeconds,
-                  durationSeconds: npDurationSeconds,
-                  isPlaying: npIsPlaying,
+                  /*
+                   * Position in passages, not seconds. The engine decides how long a passage takes
+                   * as it speaks it, so a clock here would be invented; the progress bar still
+                   * moves, and it moves for a reason the reader can see.
+                   */
+                  currentTimeSeconds: narrationPlayback
+                    ? narrationPlayback.elapsedSeconds
+                    : npCurrentTimeSeconds,
+                  durationSeconds: narrationPlayback
+                    ? Math.max(1, narrationPlayback.totalSeconds)
+                    : npDurationSeconds,
+                  isPlaying: narrationPlayback
+                    ? narrationPlayback.state === 'speaking'
+                    : npIsPlaying,
                   isBusy: npIsBusy,
                   shuffleOn,
                   repeatMode,
-                  onShuffleToggle: () => setShuffleOn((s) => !s),
-                  onRepeatCycle: cycleRepeat,
-                  onSkipBack: skipBack,
-                  onSkipForward: skipForward,
-                  onTogglePlay: togglePlay,
+                  onShuffleToggle: nowPlayingControls.shuffle
+                    ? () => setShuffleOn((s) => !s)
+                    : undefined,
+                  onRepeatCycle: nowPlayingControls.repeat ? cycleRepeat : undefined,
+                  // Skip moves a passage at a time while reading, which is the only unit narration has.
+                  onSkipBack: narrationPlayback
+                    ? () =>
+                        narrationPlayback.controls.seekToChunk(
+                          Math.max(0, narrationPlayback.chunkIndex - 1),
+                        )
+                    : skipBack,
+                  onSkipForward: narrationPlayback
+                    ? () =>
+                        narrationPlayback.controls.seekToChunk(
+                          Math.min(
+                            narrationPlayback.chunkCount - 1,
+                            narrationPlayback.chunkIndex + 1,
+                          ),
+                        )
+                    : skipForward,
+                  onTogglePlay: narrationPlayback
+                    ? () => {
+                        if (narrationPlayback.state === 'speaking') narrationPlayback.controls.pause();
+                        else narrationPlayback.controls.play();
+                      }
+                    : togglePlay,
                   onSeek: (seconds) => {
                     if (serverStemMix.stemMixActive) {
                       serverStemMix.seekStemPlayback(seconds);
@@ -10229,8 +10309,8 @@ export default function SandboxShell() {
                   podcastSkipAdHint,
                   thumbUp,
                   thumbDown,
-                  onThumbUp: handleThumbUp,
-                  onThumbDown: handleThumbDown,
+                  onThumbUp: nowPlayingControls.thumbs ? handleThumbUp : undefined,
+                  onThumbDown: nowPlayingControls.thumbs ? handleThumbDown : undefined,
             },
           }}
         />

@@ -517,6 +517,17 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
         }
         if (durationMs > 0) {
             metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, durationMs);
+        } else {
+            /*
+             * -1 means "length unknown", and the system UI responds by dropping its seek bar
+             * rather than drawing a dead one. Generated speech has no duration until it has been
+             * spoken, so there is nothing honest to put here.
+             *
+             * Written explicitly rather than left absent: metadata carries over, so omitting the
+             * key leaves the previous track's length attached to a document, and the lock screen
+             * shows a scrubber counting towards a number that means nothing.
+             */
+            metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, -1L);
         }
         if (artworkUrl != null && !artworkUrl.isEmpty() && isNativeLoadableArtUri(artworkUrl)) {
             metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, artworkUrl);

@@ -22805,6 +22805,356 @@ input.shell-search:focus-visible {
   white-space: nowrap;
 }
 
+/*
+ * A document opened to be read.
+ *
+ * The whole text, in order, so the reader can see where they are and what is coming. Each passage
+ * is the unit the engine actually speaks, which is why they are separately tappable.
+ */
+/* Stands in for a cover when something spoken has none. Not a record, and not a blank square. */
+/* Structural position, where there is no timeline to scrub. */
+.home-structural-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.home-structural-progress-track {
+  width: 100%;
+  height: 2px;
+  background: color-mix(in srgb, var(--text-dim) 30%, transparent);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.home-structural-progress-fill {
+  height: 100%;
+  background: var(--accent-burnt);
+  transition: width 240ms ease;
+}
+
+.home-structural-progress-label {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.64rem;
+  color: var(--text-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-structural-progress-fill { transition: none; }
+}
+
+.home-hero-spoken-poster {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--bg) 70%, transparent);
+  box-shadow: 0 14px 36px rgb(0 0 0 / 45%);
+}
+
+.document-reader-chapter {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-burnt);
+  margin-top: 0.3rem;
+}
+
+/* Chapter list, opened from the header rather than living permanently above the text. */
+.document-reader-chapters {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  max-height: 40vh;
+  overflow-y: auto;
+  border: 1px solid color-mix(in srgb, var(--text-dim) 25%, transparent);
+  border-radius: 6px;
+}
+
+.document-reader-chapter-link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  background: none;
+  border: 0;
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.document-reader-chapter-link:active {
+  background: color-mix(in srgb, var(--accent-burnt) 14%, transparent);
+}
+
+/*
+ * One page, scrollable only as far as the page goes. The fixed height is the point: it is what
+ * makes a page a page rather than a section of an endless column.
+ */
+.document-reader-pager {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.25rem calc(0.5rem + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+}
+
+.document-reader-pager-label {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.64rem;
+  color: var(--text-dim);
+}
+
+.document-reader-body {
+  margin-top: 1rem;
+  padding-bottom: 1rem;
+  list-style: none;
+  max-height: 58vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.document-reader-passage {
+  border-left: 2px solid transparent;
+  padding-left: 0.75rem;
+  margin-bottom: 0.35rem;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+/* The passage being spoken, marked down the edge rather than by moving anything. */
+.document-reader-passage--active {
+  border-left-color: var(--accent-burnt);
+  background: color-mix(in srgb, var(--accent-burnt) 6%, transparent);
+  border-radius: 0 4px 4px 0;
+}
+
+.document-reader-heading {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-burnt);
+  margin: 1.25rem 0 0.5rem;
+}
+
+/* A whole passage is the tap target, so it must not look or behave like a button. */
+.document-reader-seek {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0.25rem 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.document-reader-body .audiobook-readalong {
+  max-height: none;
+  overflow: visible;
+  margin-top: 0;
+}
+
+.document-reader-art-blank {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-burnt);
+  background: color-mix(in srgb, var(--accent-burnt) 12%, transparent);
+}
+
+/*
+ * The narration player.
+ *
+ * Full screen, above the dock, because a book being read is the foreground task -- not something
+ * peering out from under a mini bar for a track that is not even playing.
+ */
+.narration-player {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+.narration-player-close {
+  position: absolute;
+  top: calc(0.75rem + env(safe-area-inset-top));
+  left: 0.75rem;
+  padding: 0.5rem;
+  color: var(--text-dim);
+  background: transparent;
+  border: 0;
+}
+
+.narration-player-art {
+  width: min(52vw, 190px);
+  aspect-ratio: 2 / 3;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
+  flex-shrink: 0;
+}
+
+.narration-player-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.narration-player-art-blank {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-burnt);
+  background: color-mix(in srgb, var(--accent-burnt) 12%, transparent);
+}
+
+.narration-player-meta {
+  text-align: center;
+  max-width: 100%;
+}
+
+.narration-player-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  /* Two lines, then ellipsis: book titles are long and a five-line title is not a title. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.narration-player-author {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 0.15rem;
+}
+
+.narration-player-section {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent-burnt);
+  margin-top: 0.35rem;
+}
+
+.narration-player .audiobook-readalong {
+  width: 100%;
+  max-width: 34rem;
+  max-height: 32vh;
+  font-size: 0.95rem;
+}
+
+.narration-player-progress {
+  width: 100%;
+  max-width: 34rem;
+  height: 2px;
+  background: color-mix(in srgb, var(--text-dim) 30%, transparent);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.narration-player-progress-fill {
+  height: 100%;
+  background: var(--accent-burnt);
+  transition: width 240ms ease;
+}
+
+.narration-player-position {
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+}
+
+.narration-player-transport {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 0.25rem;
+}
+
+.narration-player-step {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.narration-player-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 0;
+  color: var(--bg);
+  background: var(--accent-burnt);
+}
+
+.narration-player-stop {
+  margin-top: 0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .narration-player-progress-fill {
+    transition: none;
+  }
+}
+
+/*
+ * The read-along passage. Capped in height because a 600-character chunk on a phone would push the
+ * transport controls off screen, and the controls matter more than the text does.
+ */
+.audiobook-readalong {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  /*
+   * Full text colour, not --text-dim. The passage is read while the voice speaks, so it is primary
+   * content; dimming the whole block left the spoken and unspoken halves nearly identical and the
+   * distinction the highlight depends on disappeared.
+   */
+  color: var(--text);
+  margin-top: 0.5rem;
+  max-height: 11rem;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+/* What has already been spoken recedes, so the eye lands on where the voice is. */
+.audiobook-readalong-said {
+  opacity: 0.4;
+}
+
+.audiobook-readalong-word {
+  background: transparent;
+  color: var(--text);
+  font-weight: 700;
+  border-radius: 2px;
+  box-shadow: inset 0 -0.35em 0 color-mix(in srgb, var(--accent-burnt) 28%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .audiobook-readalong {
+    scroll-behavior: auto;
+  }
+}
+
 .audiobook-doc-meta {
   font-family: 'IBM Plex Mono', var(--font-mono);
   font-size: 0.65rem;

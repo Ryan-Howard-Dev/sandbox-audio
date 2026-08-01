@@ -41,6 +41,8 @@ import PlayerQueueSheet from './PlayerQueueSheet';
 import StemSlidersPanel from './StemSlidersPanel';
 import MobileHomeVinylSettingsSheet from '../mobile/MobileHomeVinylSettingsSheet';
 import PodcastPlayerControls from './podcasts/PodcastPlayerControls';
+import type { NarrationPlaybackSnapshot } from '../narrationPlayback';
+import type { PillarControls } from '../mediaPillar';
 
 export interface MobileNowPlayingViewProps {
   open: boolean;
@@ -109,6 +111,15 @@ export interface MobileNowPlayingViewProps {
   /** A different track is resolving behind the audible one — see HomeHeroPlayer. */
   resolvingNextTrack?: boolean;
   stemSliders?: import('./StemSlidersPanel').StemSlidersPanelProps;
+  /**
+   * A book or document being read aloud, when that is what is playing.
+   *
+   * The player owns the transport and says what is being read. The text itself belongs in the
+   * document's own view, not scattered through this screen, so nothing here renders the passage.
+   */
+  narration?: NarrationPlaybackSnapshot | null;
+  /** Which controls this kind of content is allowed to show. See mediaPillar.ts. */
+  pillarControls?: PillarControls;
   isPodcast?: boolean;
   podcastPlaybackSpeed?: number;
   onCyclePodcastSpeed?: () => void;
@@ -184,6 +195,8 @@ export default function MobileNowPlayingView({
   audioState = 'Idle',
   resolvingNextTrack = false,
   stemSliders,
+  narration = null,
+  pillarControls,
   isPodcast = false,
   podcastPlaybackSpeed = 1,
   onCyclePodcastSpeed,
@@ -214,6 +227,13 @@ export default function MobileNowPlayingView({
    * has its own episode list. Everything else keeps the old drawer, so the queue button is never a
    * control that does nothing — the failure this replaces was a button that opened an empty view.
    */
+  /*
+   * Spoken audio is not a record. The vinyl, the genre glow and the artwork flip all describe a
+   * music track, and a document dressed as one reads as the wrong thing playing. Podcasts already
+   * opted out of them; narration wants exactly the same treatment, so they share a flag rather
+   * than growing a second set of guards beside the first.
+   */
+  const spokenWord = pillarControls ? !pillarControls.vinyl : isPodcast || narration !== null;
   const canShowQueueSheet = !isPodcast && !!queueSheet && queueSheet.playQueue.length > 0;
   const [heroDisplay, setHeroDisplay] = useState(loadHeroDisplayMode);
   const displayArt = resolvePlaybackCoverArt(albumArt, envelope);
@@ -400,13 +420,13 @@ export default function MobileNowPlayingView({
         className={`mobile-now-playing mobile-now-playing--sheet mobile-now-playing--unified home-view home-view--stack home-view--active home-view--track-glow home-view--hypnotic-lite home-view--expanded${
           sheetActive ? ' mobile-now-playing--sheet-open' : ''
         }${sheetDragging ? ' mobile-now-playing--sheet-dragging' : ''}${
-          !isPodcast && vinylSettingsOpen ? ' mobile-now-playing--vinyl-settings-open' : ''
-        }${!isPodcast && showShades ? ' home-view--shades' : ''}${
-          !isPodcast && genreBucket ? ` home-genre-${genreBucket}` : ''
-        }${!isPodcast && vinylClass ? ` ${vinylClass}` : ''}${
-          !isPodcast ? artUniverseClass : ''
-        }${isPodcast ? ' mobile-now-playing--podcast' : ''}`}
-        style={isPodcast ? undefined : trackGlowStyle}
+          !spokenWord && vinylSettingsOpen ? ' mobile-now-playing--vinyl-settings-open' : ''
+        }${!spokenWord && showShades ? ' home-view--shades' : ''}${
+          !spokenWord && genreBucket ? ` home-genre-${genreBucket}` : ''
+        }${!spokenWord && vinylClass ? ` ${vinylClass}` : ''}${
+          !spokenWord ? artUniverseClass : ''
+        }${spokenWord ? ' mobile-now-playing--podcast' : ''}`}
+        style={spokenWord ? undefined : trackGlowStyle}
         role="dialog"
         aria-modal="true"
         aria-label={t('nowPlaying.title')}
@@ -505,7 +525,23 @@ export default function MobileNowPlayingView({
             envelope={envelope}
             showMobileShell={showMobileShell}
             inlineVinylSettings={false}
-            flipOnArtworkTap={!isPodcast}
+            flipOnArtworkTap={!spokenWord}
+            coverArtOnly={spokenWord}
+            structuralProgress={
+              pillarControls && !pillarControls.seekBar && narration
+                ? {
+                    label: t('audiobooks.pageOf', {
+                      page: narration.chunkIndex + 1,
+                      total: narration.chunkCount,
+                      defaultValue: `Passage ${narration.chunkIndex + 1} of ${narration.chunkCount}`,
+                    }),
+                    percent:
+                      narration.chunkCount > 0
+                        ? ((narration.chunkIndex + 1) / narration.chunkCount) * 100
+                        : 0,
+                  }
+                : null
+            }
             heroDisplayMode={heroDisplay}
             onHeroDisplayModeChange={setHeroDisplay}
             onSkipBack={onSkipBack}

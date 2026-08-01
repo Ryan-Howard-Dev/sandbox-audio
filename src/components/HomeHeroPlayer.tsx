@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  BookOpen,
   ChevronDown,
   Pause,
   Play,
@@ -278,6 +279,15 @@ export interface HomeHeroPlayerProps {
   inlineVinylSettings?: boolean;
   /** Tap the artwork to flip album cover ↔ vinyl (expanded now-playing). */
   flipOnArtworkTap?: boolean;
+  /** Draw the cover rather than a record, for anything spoken rather than played. */
+  coverArtOnly?: boolean;
+  /**
+   * Shown in place of the seek bar where there is no timeline to scrub.
+   *
+   * Generated speech has no duration until it has been spoken, so a bar drawn from an estimate
+   * both lies and invites a scrub that cannot be honoured. A page count is the true position.
+   */
+  structuralProgress?: { label: string; percent: number } | null;
 }
 
 export default function HomeHeroPlayer({
@@ -323,6 +333,8 @@ export default function HomeHeroPlayer({
   onIdleSearch,
   inlineVinylSettings = true,
   flipOnArtworkTap = false,
+  coverArtOnly = false,
+  structuralProgress = null,
 }: HomeHeroPlayerProps) {
   const { t } = useTranslation();
   const [vinylSettingsOpen, setVinylSettingsOpen] = useState(false);
@@ -351,11 +363,22 @@ export default function HomeHeroPlayer({
   const hasArt = Boolean((displayArt || posterArtSrc)?.trim());
   const [heroDisplayLocal, setHeroDisplayLocal] = useState(loadHeroDisplayMode);
   const heroDisplay = heroDisplayModeProp ?? heroDisplayLocal;
-  const isPodcast = Boolean(
-    envelope?.envelopeId && isPodcastEnvelopeId(envelope.envelopeId),
-  );
+  /*
+   * coverArtOnly covers the case the envelope cannot: narration has no envelope at all, so the
+   * podcast test below can never fire for it, and a document would otherwise be drawn as a
+   * spinning record.
+   */
+  const isPodcast =
+    coverArtOnly ||
+    Boolean(envelope?.envelopeId && isPodcastEnvelopeId(envelope.envelopeId));
   const effectiveHeroDisplay = isPodcast ? 'album-cover' : heroDisplay;
   const showAlbumPoster = shouldShowAlbumPoster(effectiveHeroDisplay, hasArt, trueIdle);
+  /*
+   * A spoken document usually has no cover, and shouldShowAlbumPoster falls back to the vinyl when
+   * there is no art. For anything spoken that fallback is wrong: a document is not a record. This
+   * stands in its place, seeded from the title so two documents do not look identical.
+   */
+  const showSpokenPlaceholder = coverArtOnly && !showAlbumPoster;
   const showShades = isPodcast
     ? false
     : resolveHeroShowShades(effectiveHeroDisplay, hasArt, { idleHome: trueIdle });
@@ -531,7 +554,18 @@ export default function HomeHeroPlayer({
               data-testid="home-vinyl-search"
             />
           ) : null}
-          {showAlbumPoster ? (
+          {showSpokenPlaceholder ? (
+            <div className="home-hero-poster-wrap shrink-0">
+              <div
+                className="home-hero-spoken-poster"
+                style={{ background: seedGradient(gradientSeed) }}
+                data-testid="home-hero-spoken-poster"
+                aria-hidden
+              >
+                <BookOpen className="w-12 h-12" />
+              </div>
+            </div>
+          ) : showAlbumPoster ? (
             <div className="home-hero-poster-wrap shrink-0" style={trackGlowStyle}>
               <img
                 src={posterArtSrc}
@@ -623,7 +657,17 @@ export default function HomeHeroPlayer({
 
           {!compact && (
             <>
-              {tidalNowPlaying ? (
+              {structuralProgress ? (
+                <div className="home-progress-block home-structural-progress">
+                  <div className="home-structural-progress-track">
+                    <div
+                      className="home-structural-progress-fill"
+                      style={{ width: `${Math.max(0, Math.min(100, structuralProgress.percent))}%` }}
+                    />
+                  </div>
+                  <p className="home-structural-progress-label">{structuralProgress.label}</p>
+                </div>
+              ) : tidalNowPlaying ? (
                 <HomeProgressSlider
                   duration={duration}
                   durationSeconds={durationSeconds}
