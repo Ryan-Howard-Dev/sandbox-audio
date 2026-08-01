@@ -54,7 +54,12 @@ import PodcastChapterSheet from './components/podcasts/PodcastChapterSheet';
 import MobileDockWithShell from './mobile/MobileDockWithShell';
 import { useNarrationPlayback } from './hooks/useNarrationPlayback';
 import { controlsForPillar, resolveMediaPillar } from './mediaPillar';
-import { subscribeNarrationPlayerOpen } from './narrationPlayback';
+import {
+  clearNarrationPlayback,
+  getNarrationPlayback,
+  subscribeNarrationPlayerOpen,
+} from './narrationPlayback';
+import { endNarrationSession } from './narrationMediaSession';
 import PlayerBar from './components/PlayerBar';
 import {
   hasMobilePlaybackShell,
@@ -8866,9 +8871,47 @@ export default function SandboxShell() {
    * each medium quietly ignoring what does not apply to it. Shuffling a novel is not an unused
    * button, it is a destroyed book.
    */
+  /*
+   * Music starting ends the reading.
+   *
+   * Narration deliberately survives navigating away, so a book keeps being read while you browse.
+   * It must not survive something else starting to play: two things cannot make sound at once, and
+   * the session was still overriding the player, which left a track showing the book's cover.
+   *
+   * Keyed on the envelope id rather than a play/pause flag, so pausing a book to look at your
+   * library does not silently end it.
+   */
+  const audibleEnvelopeId = audio.envelope?.envelopeId ?? null;
+  useEffect(() => {
+    if (!audibleEnvelopeId) return;
+    const reading = getNarrationPlayback();
+    if (!reading) return;
+    reading.controls.stop();
+    clearNarrationPlayback(reading.sourceId);
+    /*
+     * Release the media session too, not just the store.
+     *
+     * beginNarrationSession wrote the book into the native session, and stopping the reader does
+     * not take it back out -- only 'finished' released it. So a track played afterwards kept the
+     * book's title and cover on the bar and the lock screen, because the audio layer reads that
+     * metadata back.
+     */
+    void endNarrationSession();
+  }, [audibleEnvelopeId]);
+
+  /*
+   * Narration may only drive the player while nothing else is loaded.
+   *
+   * Ownership used to follow the narration store alone, so a session that failed to clear kept the
+   * book's title on a music track and, worse, kept play/pause wired to the reader -- the buttons
+   * appeared to do nothing because they were controlling something that was no longer playing.
+   * A loaded envelope is the audio layer's own statement that it owns the output.
+   */
+  const narrationForPlayer = audibleEnvelopeId ? null : narrationPlayback;
+
   const nowPlayingPillar = resolveMediaPillar({
     envelopeId: audio.envelope?.envelopeId,
-    narrating: narrationPlayback !== null,
+    narrating: narrationForPlayer !== null,
   });
   const nowPlayingControls = controlsForPillar(nowPlayingPillar);
   const mobilePlaybackShellActive = showMobileShell
@@ -10054,16 +10097,16 @@ export default function SandboxShell() {
             onNavigateHome: openHomePlayer,
             playerBar: {
                   audio,
-                  artworkUrl: narrationPlayback?.artworkUrl ?? displayArt,
+                  artworkUrl: narrationForPlayer?.artworkUrl ?? displayArt,
                   // heldNowPlaying is the override PlayerBar already honours for title, artist and
                   // position, so narration needs no new path through the bar.
-                  heldNowPlaying: narrationPlayback
+                  heldNowPlaying: narrationForPlayer
                     ? {
-                        title: narrationPlayback.title,
-                        artist: narrationPlayback.author?.trim() || 'Read aloud',
+                        title: narrationForPlayer.title,
+                        artist: narrationForPlayer.author?.trim() || 'Read aloud',
                         envelope: null,
-                        positionSeconds: narrationPlayback.elapsedSeconds,
-                        durationSeconds: Math.max(1, narrationPlayback.totalSeconds),
+                        positionSeconds: narrationForPlayer.elapsedSeconds,
+                        durationSeconds: Math.max(1, narrationForPlayer.totalSeconds),
                       }
                     : playerBarHeldNowPlaying,
                   shuffleOn,
@@ -10153,20 +10196,20 @@ export default function SandboxShell() {
                   onClose: () => setMobileNowPlayingOpen(false),
                   profileName,
                   onOpenProfile: openSettings,
-                  narration: narrationPlayback,
+                  narration: narrationForPlayer,
                   /*
                    * Controls the player may show for what is actually playing. Passing undefined
                    * is how every one of these is hidden already, so forbidding a control is the
                    * same act as not having a handler for it.
                    */
                   pillarControls: nowPlayingControls,
-                  title: narrationPlayback ? narrationPlayback.title : homeTitle,
-                  artist: narrationPlayback
-                    ? narrationPlayback.author?.trim() || 'Read aloud'
+                  title: narrationForPlayer ? narrationForPlayer.title : homeTitle,
+                  artist: narrationForPlayer
+                    ? narrationForPlayer.author?.trim() || 'Read aloud'
                     : homeArtist,
-                  album: narrationPlayback ? undefined : homeAlbum,
-                  albumArt: narrationPlayback?.artworkUrl ?? displayArt,
-                  envelope: narrationPlayback ? null : npEnvelope,
+                  album: narrationForPlayer ? undefined : homeAlbum,
+                  albumArt: narrationForPlayer?.artworkUrl ?? displayArt,
+                  envelope: narrationForPlayer ? null : npEnvelope,
                   onGoToArtist: (name) => void handleOpenArtistByName(name),
                   onGoToAlbum: handleOpenAlbumByName,
                   /*
@@ -10174,14 +10217,14 @@ export default function SandboxShell() {
                    * as it speaks it, so a clock here would be invented; the progress bar still
                    * moves, and it moves for a reason the reader can see.
                    */
-                  currentTimeSeconds: narrationPlayback
-                    ? narrationPlayback.elapsedSeconds
+                  currentTimeSeconds: narrationForPlayer
+                    ? narrationForPlayer.elapsedSeconds
                     : npCurrentTimeSeconds,
-                  durationSeconds: narrationPlayback
-                    ? Math.max(1, narrationPlayback.totalSeconds)
+                  durationSeconds: narrationForPlayer
+                    ? Math.max(1, narrationForPlayer.totalSeconds)
                     : npDurationSeconds,
-                  isPlaying: narrationPlayback
-                    ? narrationPlayback.state === 'speaking'
+                  isPlaying: narrationForPlayer
+                    ? narrationForPlayer.state === 'speaking'
                     : npIsPlaying,
                   isBusy: npIsBusy,
                   shuffleOn,
@@ -10191,25 +10234,25 @@ export default function SandboxShell() {
                     : undefined,
                   onRepeatCycle: nowPlayingControls.repeat ? cycleRepeat : undefined,
                   // Skip moves a passage at a time while reading, which is the only unit narration has.
-                  onSkipBack: narrationPlayback
+                  onSkipBack: narrationForPlayer
                     ? () =>
-                        narrationPlayback.controls.seekToChunk(
-                          Math.max(0, narrationPlayback.chunkIndex - 1),
+                        narrationForPlayer.controls.seekToChunk(
+                          Math.max(0, narrationForPlayer.chunkIndex - 1),
                         )
                     : skipBack,
-                  onSkipForward: narrationPlayback
+                  onSkipForward: narrationForPlayer
                     ? () =>
-                        narrationPlayback.controls.seekToChunk(
+                        narrationForPlayer.controls.seekToChunk(
                           Math.min(
-                            narrationPlayback.chunkCount - 1,
-                            narrationPlayback.chunkIndex + 1,
+                            narrationForPlayer.chunkCount - 1,
+                            narrationForPlayer.chunkIndex + 1,
                           ),
                         )
                     : skipForward,
-                  onTogglePlay: narrationPlayback
+                  onTogglePlay: narrationForPlayer
                     ? () => {
-                        if (narrationPlayback.state === 'speaking') narrationPlayback.controls.pause();
-                        else narrationPlayback.controls.play();
+                        if (narrationForPlayer.state === 'speaking') narrationForPlayer.controls.pause();
+                        else narrationForPlayer.controls.play();
                       }
                     : togglePlay,
                   onSeek: (seconds) => {
