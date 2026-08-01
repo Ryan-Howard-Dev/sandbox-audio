@@ -3,7 +3,9 @@ import {
   forgetKnownGoodAlbumArt,
   getKnownGoodAlbumArt,
   pickLockerAlbumCover,
+  preferStableLockerCoverUrl,
   rememberKnownGoodAlbumArt,
+  rememberKnownGoodAlbumArtStable,
   resolveLockerAlbumArtSrc,
   resolveLockerTrackThumbArt,
   transferKnownGoodAlbumArt,
@@ -68,6 +70,42 @@ describe('albumArtCache', () => {
       { albumArt: 'blob:american-dream-3' },
     ];
     expect(pickLockerAlbumCover(tracks)).toBe('blob:american-dream-1');
+  });
+
+  it('pickLockerAlbumCover picks the same blob regardless of sibling order', () => {
+    const a = 'blob:zzz-last-in-order';
+    const b = 'blob:aaa-first-lexicographic';
+    expect(
+      pickLockerAlbumCover([{ albumArt: a }, { albumArt: b }]),
+    ).toBe(b);
+    expect(
+      pickLockerAlbumCover([{ albumArt: b }, { albumArt: a }]),
+    ).toBe(b);
+  });
+
+  it('preferStableLockerCoverUrl holds a live blob against a different remint', () => {
+    const live = new Set(['blob:kept']);
+    expect(preferStableLockerCoverUrl('blob:kept', 'blob:reminted', live)).toBe('blob:kept');
+    expect(preferStableLockerCoverUrl('blob:kept', 'https://cdn.example/cover.jpg', live)).toBe(
+      'https://cdn.example/cover.jpg',
+    );
+    expect(preferStableLockerCoverUrl('blob:dead', 'blob:fresh', new Set(['blob:fresh']))).toBe(
+      'blob:fresh',
+    );
+  });
+
+  it('rememberKnownGoodAlbumArtStable does not replace a still-live blob remint', () => {
+    const albumKey = 'Stable::Artist';
+    rememberKnownGoodAlbumArt(albumKey, 'blob:original');
+    rememberKnownGoodAlbumArtStable(
+      albumKey,
+      'blob:reminted',
+      [{ albumArt: 'blob:original' }, { albumArt: 'blob:reminted' }],
+    );
+    expect(getKnownGoodAlbumArt(albumKey)).toBe('blob:original');
+    rememberKnownGoodAlbumArtStable(albumKey, 'blob:only-new', [{ albumArt: 'blob:only-new' }]);
+    expect(getKnownGoodAlbumArt(albumKey)).toBe('blob:only-new');
+    forgetKnownGoodAlbumArt(albumKey);
   });
 
   it('resolveLockerAlbumArtSrc drops session cache when vault sibling consensus disagrees', () => {

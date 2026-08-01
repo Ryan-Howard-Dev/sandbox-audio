@@ -20,6 +20,7 @@ import { lockerEntryToEnvelope } from '../../smartPlaylistEngine';
 import { enrichLockerGenres, genreEnrichmentPending } from '../../genreEnrichment';
 import { sortLockerTracks } from '../../lockerTrackOrder';
 import { proxiedArtworkUrl } from '../../displaySanitize';
+import { preferStableLockerCoverUrl } from '../../albumArtCache';
 import { seedGradient } from '../../seedGradient';
 import { useTranslation } from '../../i18n';
 
@@ -56,8 +57,13 @@ function LockerCoverImg({
   const [failed, setFailed] = useState(false);
 
   const healedRef = React.useRef(false);
+  const heldSrcRef = React.useRef(url);
   useEffect(() => {
-    setSrc(url);
+    // Hold a live blob against a different per-row remint for the same cell. After a
+    // hard fail, heldSrcRef is cleared so the next candidate can replace it.
+    const next = preferStableLockerCoverUrl(heldSrcRef.current, url) ?? url;
+    heldSrcRef.current = next;
+    setSrc(next);
     setFailed(false);
     healedRef.current = false;
   }, [url]);
@@ -66,11 +72,13 @@ function LockerCoverImg({
     // Only re-resolve once, and only after the image actually fails to load — a
     // valid (same-process) blob: URL must not be discarded pre-emptively.
     if (healedRef.current) {
+      heldSrcRef.current = undefined;
       setFailed(true);
       return;
     }
     healedRef.current = true;
     if (!trackId) {
+      heldSrcRef.current = undefined;
       setFailed(true);
       return;
     }
@@ -80,10 +88,18 @@ function LockerCoverImg({
         // Only swap in a genuinely different URL. Re-setting the same dead blob:
         // string would not re-render, so onError never fires again and the tile is
         // stuck showing the browser's broken-image icon — fall to the gradient.
-        if (next && next !== src) setSrc(next);
-        else setFailed(true);
+        if (next && next !== src) {
+          heldSrcRef.current = next;
+          setSrc(next);
+        } else {
+          heldSrcRef.current = undefined;
+          setFailed(true);
+        }
       })
-      .catch(() => setFailed(true));
+      .catch(() => {
+        heldSrcRef.current = undefined;
+        setFailed(true);
+      });
   }, [trackId, src]);
 
   if (!src || failed) {
@@ -242,13 +258,32 @@ export default function LockerGenreView({
   }, [shelves, libraryQuery]);
 
   // Stable cover list per shelf across parent re-renders (same vault art → same url strings).
+  // Also hold a still-live blob: when coversFor/pick flips to a different per-row remint.
+  const prevMosaicRef = React.useRef(new Map<string, LockerGenreCover[]>());
   const mosaicCoversByShelfKey = useMemo(() => {
+    const liveUrls = new Set<string>();
+    for (const e of entries) {
+      const art = e.albumArt?.trim();
+      if (art?.startsWith('blob:')) liveUrls.add(art);
+    }
     const map = new Map<string, LockerGenreCover[]>();
     for (const shelf of filteredShelves) {
-      map.set(shelf.key, coversFor(shelf.covers));
+      const resolved = coversFor(shelf.covers);
+      const prevCovers = prevMosaicRef.current.get(shelf.key);
+      map.set(
+        shelf.key,
+        resolved.map((cover) => {
+          const prevUrl = prevCovers?.find((p) => p.trackId === cover.trackId)?.url;
+          return {
+            ...cover,
+            url: preferStableLockerCoverUrl(prevUrl, cover.url, liveUrls) ?? cover.url,
+          };
+        }),
+      );
     }
+    prevMosaicRef.current = map;
     return map;
-  }, [filteredShelves, coversFor]);
+  }, [filteredShelves, coversFor, entries]);
 
   const activeShelf = useMemo(
     () => shelves.find((s) => s.key === activeGenreKey) ?? null,

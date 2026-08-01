@@ -48,7 +48,7 @@ import { isAndroid } from './platformEnv';
 import { parseId3Position } from './lockerTrackOrder';
 import {
   pickLockerAlbumCover,
-  rememberKnownGoodAlbumArt,
+  rememberKnownGoodAlbumArtStable,
   resolveLockerTrackThumbArt,
 } from './albumArtCache';
 
@@ -1608,11 +1608,12 @@ export function inheritLockerAlbumArt(entries: LockerEntry[]): LockerEntry[] {
     else siblingsByKey.set(key, [entry]);
   }
 
-  // Seed the session known-good cache for every group first (unchanged ordering/behavior),
-  // then resolve one art per group so per-row resolution reads a fully-seeded cache.
+  // Seed the session known-good cache for every group first, then resolve one art per
+  // group so per-row resolution reads a fully-seeded cache. Do not replace a still-live
+  // blob: with a different per-row remint — that is what made genre mosaics blink.
   for (const [key, siblings] of siblingsByKey) {
     const art = pickLockerAlbumCover(siblings);
-    if (art) rememberKnownGoodAlbumArt(key, art);
+    if (art) rememberKnownGoodAlbumArtStable(key, art, siblings);
   }
   const artByKey = new Map<string, string | undefined>();
   for (const [key, siblings] of siblingsByKey) {
@@ -2979,7 +2980,12 @@ function mergeLockerEntries(prev: LockerEntry[] | null, fresh: LockerEntry[]): L
     let albumArt: string | undefined;
     if (freshArt?.startsWith('blob:') && oldArt?.startsWith('blob:')) {
       albumArt = oldArt;
-      if (freshArt !== oldArt) scheduleRevokeAlbumArtUrl(freshArt, entry.id);
+      if (freshArt !== oldArt) {
+        // Revoking the remint clears the per-row memo (it held freshArt). Re-anchor the
+        // memo on the URL we actually keep so the next vault read does not mint again.
+        scheduleRevokeAlbumArtUrl(freshArt, entry.id);
+        rememberMintedRowAlbumArtUrl(entry.id, oldArt);
+      }
     } else {
       albumArt = freshArt ?? oldArt;
       if (freshArt && freshArt !== albumArt && freshArt.startsWith('blob:')) {
@@ -2987,6 +2993,9 @@ function mergeLockerEntries(prev: LockerEntry[] | null, fresh: LockerEntry[]): L
       }
       if (oldArt && oldArt !== albumArt && oldArt.startsWith('blob:')) {
         scheduleRevokeAlbumArtUrl(oldArt, entry.id);
+      }
+      if (albumArt?.startsWith('blob:')) {
+        rememberMintedRowAlbumArtUrl(entry.id, albumArt);
       }
     }
 
