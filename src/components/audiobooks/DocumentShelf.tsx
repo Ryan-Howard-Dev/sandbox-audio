@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FileText, Loader2, Pause, Play, Plus, Square, Trash2 } from 'lucide-react';
+import { FileText, Link2, Loader2, Pause, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { documentToNarration, estimateNarrationSeconds } from '../../documentNarration';
 import {
   extractDocumentText,
@@ -9,6 +9,7 @@ import {
 import type { NarrationChunk } from '../../documentNarration';
 import { type ReadAlongRange } from './ReadAlongText';
 import DocumentReaderView from './DocumentReaderView';
+import { importWebPage, isImportableUrl, type WebPageFailure } from '../../webPageImport';
 import {
   clearNarrationPlayback,
   publishNarrationPlayback,
@@ -96,6 +97,8 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
   const [busy, setBusy] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
+  const [urlOpen, setUrlOpen] = useState(false);
+  const [urlText, setUrlText] = useState('');
   const { voices, voiceId, chooseVoice, speechAvailable } = useNarrationVoices();
 
   const refresh = useCallback(() => {
@@ -208,6 +211,59 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
    * The title is the first non-empty line, which is what a pasted document almost always leads
    * with. Where there isn't one, it falls back rather than refusing the paste.
    */
+  /**
+   * Add a page from the web.
+   *
+   * Each failure needs its own words. A page that renders in the browser rather than sending its
+   * text — most Google properties, including Gemini share links — is not a broken page and telling
+   * someone to try again would waste their time; the honest answer is to paste it instead.
+   */
+  const webFailureMessage = useCallback(
+    (reason: WebPageFailure): string => {
+      if (reason === 'not-http') return t('audiobooks.webBadUrl');
+      if (reason === 'needs-javascript') return t('audiobooks.webNeedsJs');
+      if (reason === 'not-html') return t('audiobooks.webNotHtml');
+      if (reason === 'too-little-text') return t('audiobooks.webTooLittle');
+      return t('audiobooks.webFetchFailed');
+    },
+    [t],
+  );
+
+  const onAddUrl = useCallback(
+    async (raw: string) => {
+      const url = raw.trim();
+      if (!url) return;
+      setBusy(true);
+      try {
+        const result = await importWebPage(url);
+        if (!result.text) {
+          onError?.(webFailureMessage(result.reason ?? 'fetch-failed'));
+          return;
+        }
+        const parsed = documentToNarration(result.text);
+        if (parsed.length === 0) {
+          onError?.(t('audiobooks.docEmpty'));
+          return;
+        }
+        const name = result.title?.trim() || url;
+        await saveDocument({
+          id: newDocumentId(name),
+          name,
+          addedAt: Date.now(),
+          text: result.text,
+          chunkCount: parsed.length,
+          estimatedSeconds: estimateNarrationSeconds(parsed),
+        });
+        setUrlOpen(false);
+        setUrlText('');
+        refresh();
+      } finally {
+        setBusy(false);
+      }
+    },
+    [onError, refresh, t, webFailureMessage],
+  );
+
   const onPaste = useCallback(
     async (raw: string) => {
       const text = raw.trim();
@@ -411,8 +467,56 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
             <Plus className="w-3.5 h-3.5" />
             {t('audiobooks.pasteDocument')}
           </button>
+          <button
+            type="button"
+            className="audiobook-doc-import touch-manipulation"
+            onClick={() => setUrlOpen((open) => !open)}
+            disabled={busy || speechAvailable === false}
+            aria-expanded={urlOpen}
+            aria-label={t('audiobooks.addFromWeb')}
+          >
+            <Link2 className="w-3.5 h-3.5" />
+            {t('audiobooks.addFromWeb')}
+          </button>
         </div>
       </div>
+
+      {urlOpen ? (
+        <div className="px-1 mb-3">
+          <input
+            type="url"
+            inputMode="url"
+            value={urlText}
+            onChange={(e) => setUrlText(e.target.value)}
+            placeholder={t('audiobooks.webUrlPlaceholder')}
+            className="audiobook-doc-url-input"
+            aria-label={t('audiobooks.addFromWeb')}
+          />
+          <p className="audiobook-doc-url-hint">{t('audiobooks.webHint')}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              type="button"
+              className="audiobook-doc-import touch-manipulation"
+              onClick={() => {
+                setUrlOpen(false);
+                setUrlText('');
+              }}
+              disabled={busy}
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              className="audiobook-doc-import touch-manipulation"
+              onClick={() => void onAddUrl(urlText)}
+              disabled={busy || !isImportableUrl(urlText)}
+            >
+              {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              {t('audiobooks.webFetch')}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {pasteOpen ? (
         <div className="px-1 mb-3">

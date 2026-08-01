@@ -23183,6 +23183,29 @@ input.shell-search:focus-visible {
   margin-top: 0.25rem;
 }
 
+/* URL box for adding a page from the web. Matches the paste box rather than inventing a look. */
+.audiobook-doc-url-input {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: color-mix(in srgb, var(--text-dim) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-dim) 25%, transparent);
+  border-radius: 6px;
+}
+
+.audiobook-doc-url-input:focus {
+  outline: none;
+  border-color: var(--accent-burnt);
+}
+
+.audiobook-doc-url-hint {
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin-top: 0.4rem;
+}
+
 .audiobook-doc-import {
   display: inline-flex;
   align-items: center;

@@ -1951,6 +1951,15 @@
     "readingOn": "reading p{page}",
     "bookKindleDrm": "This Kindle book is DRM-protected, so it cannot be opened here.",
     "bookKfxUnsupported": "KFX books only open in Amazon’s own reader. A DRM-free EPUB, MOBI or AZW3 works.",
-    "bookKindleUnreadable": "That MOBI or AZW3 could not be read. It may be damaged, or protected in a way the header did not declare."
+    "bookKindleUnreadable": "That MOBI or AZW3 could not be read. It may be damaged, or protected in a way the header did not declare.",
+    "addFromWeb": "Add from web",
+    "webUrlPlaceholder": "https://example.com/article",
+    "webFetch": "Fetch page",
+    "webHint": "Works on pages that send their text. Pages built in the browser, including Gemini and Google Docs links, need pasting instead.",
+    "webBadUrl": "That needs to be a web address starting with http or https.",
+    "webNeedsJs": "That page builds itself in the browser, so there is no text to fetch. Copy it and use Paste text instead.",
+    "webNotHtml": "That link is a file rather than a page. Download it and use Import.",
+    "webTooLittle": "There was almost no readable text on that page.",
+    "webFetchFailed": "That page could not be fetched."
   }
 }
