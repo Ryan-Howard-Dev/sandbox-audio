@@ -47,6 +47,7 @@ import {
   MAX_PINNED_PLAYLISTS,
   movePlaylistToFolder,
   pinPlaylistById,
+  playlistCoverForDisplay,
   playlistCoverUrl,
   refreshSmartPlaylists,
   removeTracksFromPlaylist,
@@ -850,11 +851,30 @@ export default function PlaylistsView({
     };
   }, [playlists, selectedFolderId, playlistQuery]);
 
+  /*
+   * Locker art for playlists whose tracks are all vault blobs.
+   *
+   * playlistCoverUrl refuses blob URLs, correctly, because a stored blob from a previous session
+   * is dead. The live envelope for the same track carries a URL minted this session, which is the
+   * one worth showing. Built once per locker change rather than per row: a playlists page renders
+   * many rows and each was otherwise a linear scan of the whole locker.
+   */
+  const lockerArtById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const envelope of lockerTracks ?? []) {
+      const art = envelope.artworkUrl?.trim();
+      if (art && envelope.envelopeId) map.set(envelope.envelopeId, art);
+    }
+    return map;
+  }, [lockerTracks]);
+
   const renderPlaylistRow = (pl: StoredPlaylist) => {
     const pending = isImportedShellWithoutTracks(pl);
     const isSmart = isSmartPlaylist(pl);
     const isImported = isImportedPlaylist(pl);
-    const cover = playlistCoverUrl(pl);
+    const cover = playlistCoverForDisplay(pl, (track) =>
+      track.id ? lockerArtById.get(track.id) : undefined,
+    );
     const name = displayPlaylistName(pl);
     const rowDownloadJob = findPlaylistDownloadJob(pl.id);
     const rowUnmatchedStubs = unmatchedImportStubs(pl).length;
@@ -1697,6 +1717,7 @@ export default function PlaylistsView({
         <>
           <PlaylistPinnedRow
             playlists={pinnedPlaylists}
+            lockerArtForTrack={(track) => (track.id ? lockerArtById.get(track.id) : undefined)}
             title="Pinned playlists"
             onOpen={(pl) => setOpenPlaylistId(pl.id)}
             onUnpin={(id) => {

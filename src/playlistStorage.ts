@@ -356,6 +356,31 @@ export function unpinPlaylistById(playlistId: string): void {
   );
 }
 
+/**
+ * A playlist's cover, including one made entirely of your own locker tracks.
+ *
+ * playlistCoverUrl below deliberately refuses blob: and data: URLs, because a playlist is stored
+ * and a blob minted in a previous session renders broken. That is right for storage and wrong for
+ * display: locker art *is* blob URLs, so a playlist of vault tracks matched nothing and drew a
+ * bare gradient however much art it actually had.
+ *
+ * The blob has to be minted where it is used, so the caller passes a resolver rather than this
+ * module reaching into the locker.
+ */
+export function playlistCoverForDisplay(
+  pl: StoredPlaylist,
+  resolveLockerArt?: (track: { artworkUrl?: string; id?: string }) => string | undefined,
+): string | undefined {
+  const stored = playlistCoverUrl(pl);
+  if (stored) return stored;
+  if (!resolveLockerArt) return undefined;
+  for (const track of pl.tracks ?? []) {
+    const resolved = resolveLockerArt(track)?.trim();
+    if (resolved) return resolved;
+  }
+  return undefined;
+}
+
 export function playlistCoverUrl(pl: StoredPlaylist): string | undefined {
   const explicit = pl.coverUrl?.trim() || pl.importCoverUrl?.trim();
   if (explicit) return explicit;

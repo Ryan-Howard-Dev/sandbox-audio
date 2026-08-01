@@ -1,7 +1,7 @@
 import React from 'react';
 import type { StoredPlaylist } from '../../playlistStorage';
 import { displayPlaylistName } from '../../importPlatforms';
-import { playlistCoverUrl } from '../../playlistStorage';
+import { playlistCoverForDisplay } from '../../playlistStorage';
 import { seedGradient } from '../../seedGradient';
 
 export interface PlaylistPinnedRowProps {
@@ -9,6 +9,13 @@ export interface PlaylistPinnedRowProps {
   onOpen: (playlist: StoredPlaylist) => void;
   onUnpin: (id: string) => void;
   title: string;
+  /**
+   * Live locker art for a track, where the caller has the locker to hand.
+   *
+   * A pinned playlist of vault tracks stores only dead blob URLs, so without this it draws a bare
+   * gradient however much art its tracks actually have.
+   */
+  lockerArtForTrack?: (track: { artworkUrl?: string; id?: string }) => string | undefined;
 }
 
 /** Up to six pinned playlists at top of library. */
@@ -17,6 +24,7 @@ export default function PlaylistPinnedRow({
   onOpen,
   onUnpin,
   title,
+  lockerArtForTrack,
 }: PlaylistPinnedRowProps) {
   if (playlists.length === 0) return null;
 
@@ -26,7 +34,7 @@ export default function PlaylistPinnedRow({
       <div className="locker-pinned-scroll">
         {playlists.map((pl) => {
           const name = displayPlaylistName(pl);
-          const cover = playlistCoverUrl(pl);
+          const cover = playlistCoverForDisplay(pl, lockerArtForTrack);
           return (
             <div key={pl.id} className="locker-pinned-card-wrap">
               <button
