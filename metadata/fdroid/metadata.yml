@@ -50,13 +50,19 @@ Builds:
     subdir: android
     gradle:
       - yes
+    # The NDK compiles sherpa-onnx from source. F-Droid rejects prebuilt binaries, so the
+    # engine is built here rather than downloaded as an AAR — which also keeps a hundred
+    # megabytes of unreviewable binaries out of the repository.
+    ndk: r27c
     prebuild:
       - cd ..
       - npm ci
       - npm run build:client
+      - node scripts/build-sherpa-onnx.mjs
       - npx cap sync android
     scandelete:
       - node_modules
+      - .sherpa-build
       - android/.gradle
       - dist
     build:

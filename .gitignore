@@ -109,3 +109,10 @@ _readonly_locker_check/
 
 # Build-output baseline used for bundle-size comparison; not source.
 dist-baseline/
+
+# Neural speech engine: compiled from pinned source by scripts/build-sherpa-onnx.mjs.
+# Outputs, not sources — a hundred megabytes of binaries nobody can review does not belong
+# in git, and F-Droid would reject them anyway.
+.sherpa-build/
+android/app/src/main/jniLibs/
+android/app/src/main/assets/piper/
