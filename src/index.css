@@ -6251,6 +6251,27 @@ body > header.windows-titlebar {
   letter-spacing: 0.06em;
 }
 
+/*
+ * Downloads where the shell has no header to hold it.
+ *
+ * Top right rather than bottom: the bottom of a phone screen already carries the player and the
+ * nav, and a third thing there is how a screen stops being usable one hand. Backed rather than
+ * transparent because it floats over content that could be any colour.
+ */
+.shell-downloads-floating {
+  position: fixed;
+  top: calc(0.5rem + env(safe-area-inset-top));
+  right: 0.6rem;
+  z-index: 45;
+}
+
+.shell-downloads-floating .shell-downloads-btn {
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--text-dim) 22%, transparent);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+}
+
 .shell-downloads-btn {
   position: relative;
   display: inline-flex;

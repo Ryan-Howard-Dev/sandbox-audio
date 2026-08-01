@@ -8450,6 +8450,33 @@ export default function SandboxShell() {
    * Music segment now starts flush at the top.
    */
   const showMobileShellHeader = showMobileShell && (mobileSearchOpen || station === 'search');
+  /*
+   * Downloads, reachable from anywhere.
+   *
+   * The button lived in the shell header, and on mobile that header only exists on the search
+   * station -- so a download started from search became unreachable the moment you navigated to
+   * your library to wait for it. Defined once here and rendered in the header where there is one,
+   * and floating where there is not.
+   */
+  const downloadsButton = (
+    <button
+      type="button"
+      className="shell-downloads-btn touch-manipulation"
+      onClick={() => setMobileDownloadSheetOpen(true)}
+      aria-label={
+        mobileDownloadBadge > 0
+          ? t('download.activity.openWithCount', { count: mobileDownloadBadge })
+          : t('download.activity.open')
+      }
+    >
+      <Download className="w-5 h-5" strokeWidth={2} />
+      {mobileDownloadBadge > 0 ? (
+        <span className="shell-downloads-btn-badge" aria-hidden>
+          {mobileDownloadBadge > 9 ? '9+' : mobileDownloadBadge}
+        </span>
+      ) : null}
+    </button>
+  );
   const showShellHeaderOffset = showTopSearch;
 
   const navActiveId: NavItemId = navItems.some((i) => i.id === station) ? station : 'home';
@@ -9144,6 +9171,17 @@ export default function SandboxShell() {
           style={musicUniverseStyle}
         />
       ) : null}
+      {/*
+        Where there is no header to hold it. Hidden behind the now playing overlay and while
+        searching, because both of those already own the top of the screen.
+      */}
+      {showMobileShell &&
+      !showMobileShellHeader &&
+      !mobileNowPlayingOpen &&
+      !mobileSearchOpen &&
+      !isCarMode ? (
+        <div className="shell-downloads-floating">{downloadsButton}</div>
+      ) : null}
       {!isTV && !isCarMode && (!showMobileShell || showMobileShellHeader) ? (
         showHomeIdleChrome && !showMobileShell ? (
           <div
@@ -9183,23 +9221,7 @@ export default function SandboxShell() {
                     <X className="w-5 h-5 text-gray-400" />
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    className="shell-downloads-btn touch-manipulation"
-                    onClick={() => setMobileDownloadSheetOpen(true)}
-                    aria-label={
-                      mobileDownloadBadge > 0
-                        ? t('download.activity.openWithCount', { count: mobileDownloadBadge })
-                        : t('download.activity.open')
-                    }
-                  >
-                    <Download className="w-5 h-5" strokeWidth={2} />
-                    {mobileDownloadBadge > 0 ? (
-                      <span className="shell-downloads-btn-badge" aria-hidden>
-                        {mobileDownloadBadge > 9 ? '9+' : mobileDownloadBadge}
-                      </span>
-                    ) : null}
-                  </button>
+                  downloadsButton
                 )}
               </div>
             ) : null}
