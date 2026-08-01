@@ -1948,6 +1948,9 @@
     "nextPage": "Next page",
     "previousPage": "Previous page",
     "readFromHere": "Read from here",
-    "readingOn": "reading p{page}"
+    "readingOn": "reading p{page}",
+    "bookKindleDrm": "This Kindle book is DRM-protected, so it cannot be opened here.",
+    "bookKfxUnsupported": "KFX books only open in Amazon’s own reader. A DRM-free EPUB, MOBI or AZW3 works.",
+    "bookKindleUnreadable": "MOBI and AZW3 are recognised but cannot be read aloud yet. An EPUB of the same book works."
   }
 }

@@ -4,6 +4,7 @@ import { documentToNarration, estimateNarrationSeconds } from '../../documentNar
 import type { NarrationChunk } from '../../documentNarration';
 import ReadAlongText, { type ReadAlongRange } from './ReadAlongText';
 import { chunkForOffset, offsetForChunk, resumeOffset } from '../../narrationPosition';
+import { readKindleFileInfo } from '../../mobiFormat';
 import {
   clearNarrationPlayback,
   publishNarrationPlayback,
@@ -78,7 +79,12 @@ const DIRECTORY_ATTRS = {
 const CALIBRE_FAILURE_RUN_LIMIT = 5;
 
 /** Everything that can stop one book being imported. */
-type BookImportFailure = 'too-large' | EpubImportFailure;
+type BookImportFailure =
+  | 'too-large'
+  | 'kindle-drm'
+  | 'kindle-unreadable'
+  | 'kfx-unsupported'
+  | EpubImportFailure;
 
 /**
  * Each failure gets its own message: DRM will never work, a corrupt archive might on re-download,
@@ -86,6 +92,11 @@ type BookImportFailure = 'too-large' | EpubImportFailure;
  */
 function bookFailureKey(reason: BookImportFailure): string {
   if (reason === 'too-large') return 'audiobooks.bookTooLarge';
+  // Kindle files fail for reasons of their own, and lumping them under "unreadable" tells a reader
+  // to re-download a file that will never open however many times they fetch it.
+  if (reason === 'kindle-drm') return 'audiobooks.bookKindleDrm';
+  if (reason === 'kfx-unsupported') return 'audiobooks.bookKfxUnsupported';
+  if (reason === 'kindle-unreadable') return 'audiobooks.bookKindleUnreadable';
   if (reason === 'encrypted') return 'audiobooks.bookEncrypted';
   if (reason === 'not-an-epub') return 'audiobooks.bookNotEpub';
   return 'audiobooks.bookUnreadable';
@@ -287,6 +298,21 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
       },
     ): Promise<BookImportFailure | null> => {
       if (file.size > MAX_BYTES) return 'too-large';
+      /*
+       * Kindle files are not EPUBs and must not be handed to the EPUB reader, which would report
+       * them as corrupt archives. Only the head is read: identifying the format and spotting DRM
+       * needs the headers, and a twenty megabyte book read whole into a WebView costs far more
+       * than twenty megabytes once it is a string and an array at the same time.
+       */
+      const head = await file.slice(0, 8192).arrayBuffer();
+      const kindle = readKindleFileInfo(head);
+      if (kindle.format === 'kfx') return 'kfx-unsupported';
+      if (kindle.format === 'mobi' || kindle.format === 'azw3') {
+        if (kindle.drm) return 'kindle-drm';
+        // Recognised, unprotected, and not yet readable: the text extractor is still to come. Said
+        // plainly rather than reported as a broken file.
+        return 'kindle-unreadable';
+      }
       try {
         const bytes = new Uint8Array(await file.arrayBuffer());
         const { book, reason } = importEpubBytes(bytes);
