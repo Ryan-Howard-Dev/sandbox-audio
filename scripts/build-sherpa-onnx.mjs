@@ -23,6 +23,8 @@
  * Skips its own work when the outputs are present, so it is cheap to leave in a chain.
  */
 import { spawnSync } from 'node:child_process';
+import { unzipSync } from 'fflate';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { createWriteStream, cpSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { copyFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -35,6 +37,21 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 /** Pinned. Moving these is a deliberate act with a changelog entry, not a build-time surprise. */
 const SHERPA_REPO = 'https://github.com/k2-fsa/sherpa-onnx.git';
 const SHERPA_TAG = 'v1.13.4';
+
+/**
+ * ONNX Runtime, which sherpa's build script fetches prebuilt rather than compiling.
+ *
+ * Worth being clear about, because it qualifies the claim that this builds from source: sherpa
+ * itself does, its heaviest dependency does not. Fetched here rather than by their script so the
+ * version is pinned in one place with everything else, and so the build does not need wget,
+ * which Windows has no copy of.
+ *
+ * Their script honours SHERPA_ONNXRUNTIME_LIB_DIR, so a runtime built from source can be
+ * supplied instead when that matters — which it will, for an F-Droid listing.
+ */
+const ONNXRUNTIME_VERSION = '1.27.0';
+const ONNXRUNTIME_URL =
+  `https://github.com/csukuangfj/onnxruntime-libs/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-android-${ONNXRUNTIME_VERSION}.zip`;
 
 /**
  * A low, unhurried British voice, which is what long-form reading wants.
@@ -59,12 +76,20 @@ const kotlinDir = join(
   root, 'android', 'app', 'src', 'main', 'java', 'com', 'k2fsa', 'sherpa', 'onnx',
 );
 
-function run(cmd, args, cwd) {
+function run(cmd, args, cwd, env) {
   console.log(`[piper] ${cmd} ${args.join(' ')}`);
-  const result = spawnSync(cmd, args, {
+  /*
+   * Windows needs a shell for git and npm, which are batch files rather than executables. But a
+   * shell splits an absolute path on its spaces, and the only bash on a Windows machine lives in
+   * `C:\Program Files\Git`. Quoting the command keeps both cases working.
+   */
+  const useShell = process.platform === 'win32';
+  const command = useShell && cmd.includes(' ') ? `"${cmd}"` : cmd;
+  const result = spawnSync(command, args, {
     cwd: cwd ?? root,
     stdio: 'inherit',
-    shell: process.platform === 'win32',
+    shell: useShell,
+    env: env ? { ...process.env, ...env } : process.env,
   });
   if ((result.status ?? 1) !== 0) {
     console.error(`[piper] failed: ${cmd} ${args.join(' ')}`);
@@ -102,6 +127,81 @@ function ndkPath() {
   return versions.length > 0 ? join(ndkRoot, versions[versions.length - 1]) : null;
 }
 
+/**
+ * A shell that can run sherpa's build script.
+ *
+ * The script is bash, and Windows has none on PATH. Git ships one and git is already required
+ * to clone the source, so it is always present wherever this can run at all. Falls back to plain
+ * sh everywhere else, which is Linux and macOS, including F-Droid's builders.
+ */
+function shellPath() {
+  if (process.platform !== 'win32') return 'sh';
+  const candidates = [
+    join(process.env.ProgramFiles ?? 'C:/Program Files', 'Git', 'bin', 'bash.exe'),
+    join(process.env.ProgramFiles ?? 'C:/Program Files', 'Git', 'usr', 'bin', 'bash.exe'),
+  ];
+  const found = candidates.find((candidate) => existsSync(candidate));
+  if (found) return found;
+  console.error('[piper] no bash found. Install Git for Windows, or build under WSL.');
+  process.exit(1);
+}
+/** A Windows path in the form bash understands: C:\\x becomes /c/x. */
+function posixPath(p) {
+  if (process.platform !== 'win32') return p;
+  const withSlashes = p.split('\\').join('/');
+  const drive = withSlashes.match(/^([A-Za-z]):/);
+  return drive
+    ? `/${drive[1].toLowerCase()}${withSlashes.slice(2)}`
+    : withSlashes;
+}
+
+/**
+ * Put ONNX Runtime where sherpa's script expects it, so it skips its own download.
+ *
+ * Extracted with fflate, already a dependency here, rather than shelling out to unzip, which
+ * Windows does not have either.
+ */
+async function ensureOnnxRuntime() {
+  const buildDir = join(workDir, `build-android-${ABI}`, ONNXRUNTIME_VERSION);
+  const marker = join(buildDir, 'jni', ABI, 'libonnxruntime.so');
+  if (existsSync(marker)) {
+    console.log('[piper] onnxruntime already in place');
+    return;
+  }
+  const archive = join(workDir, `onnxruntime-android-${ONNXRUNTIME_VERSION}.zip`);
+  await download(ONNXRUNTIME_URL, archive);
+  console.log('[piper] extracting onnxruntime');
+  const files = unzipSync(new Uint8Array(readFileSync(archive)));
+  for (const [name, bytes] of Object.entries(files)) {
+    if (name.endsWith('/') || bytes.length === 0) continue;
+    const dest = join(buildDir, name);
+    mkdirSync(dirname(dest), { recursive: true });
+    writeFileSync(dest, bytes);
+  }
+  if (!existsSync(marker)) {
+    console.error(`[piper] onnxruntime extracted but ${marker} is missing`);
+    process.exit(1);
+  }
+  console.log('[piper] onnxruntime ready');
+}
+/**
+ * A `make` that is really ninja.
+ *
+ * Their script ends with `make -j4` and `make install/strip`. Windows has no make, and CMake
+ * generated Ninja files because the Visual Studio generator cannot cross-compile for Android.
+ * Ninja takes the same arguments and CMake gives it the same install/strip target, so a two
+ * line shim on PATH bridges the two without patching their script, which would have to be
+ * re-patched at every version bump.
+ */
+function makeShimDir() {
+  const binDir = join(workDir, 'shim-bin');
+  mkdirSync(binDir, { recursive: true });
+  const shim = join(binDir, 'make');
+  if (!existsSync(shim)) {
+    writeFileSync(shim, '#!/bin/sh\nexec ninja "$@"\n', { mode: 0o755 });
+  }
+  return binDir;
+}
 function haveEngine() {
   return existsSync(join(jniLibsDir, 'libsherpa-onnx-jni.so'));
 }
@@ -113,7 +213,7 @@ function haveVoice() {
   );
 }
 
-function buildEngine() {
+async function buildEngine() {
   const ndk = ndkPath();
   if (!ndk) {
     console.error('[piper] no NDK found. Set ANDROID_NDK_HOME, or install one via the SDK manager.');
@@ -121,12 +221,36 @@ function buildEngine() {
   }
   console.log(`[piper] using NDK at ${ndk}`);
 
-  if (!existsSync(workDir)) {
+  /*
+   * Test for the checkout, not the directory. main() creates workDir to hold the downloaded
+   * archive, so an existsSync on the directory is always true by the time this runs and the
+   * clone silently never happened.
+   */
+  if (!existsSync(join(workDir, '.git'))) {
     // Shallow, single tag: the full history is about a gigabyte and none of it is needed here.
     run('git', ['clone', '--depth', '1', '--branch', SHERPA_TAG, SHERPA_REPO, workDir]);
   }
 
-  run('sh', ['./build-android-arm64-v8a.sh'], workDir);
+  /*
+   * Their script reads ANDROID_NDK, not the ANDROID_NDK_HOME that F-Droid and Android Studio
+   * set, and it tests the path with a shell [ -d ] so a Windows path with backslashes fails
+   * even when the directory is plainly there. Both spellings are supplied, POSIX-formed.
+   */
+  await ensureOnnxRuntime();
+
+  run(shellPath(), ['./build-android-arm64-v8a.sh'], workDir, {
+    ANDROID_NDK: posixPath(ndk),
+    ANDROID_NDK_HOME: posixPath(ndk),
+    /*
+     * CMake picks Visual Studio by default on Windows, which cannot cross-compile for Android
+     * and fails while probing for MSBuild targets. Ninja is what the Android toolchain expects
+     * and what every other platform would have chosen anyway; the SDK's own cmake package ships
+     * a copy, so nothing extra needs installing.
+     */
+    CMAKE_GENERATOR: 'Ninja',
+    // The shim first, so their `make` calls reach ninja.
+    PATH: `${posixPath(makeShimDir())}:${process.env.PATH ?? ''}`,
+  });
 
   const outDir = join(workDir, `build-android-${ABI}`, 'install', 'lib');
   if (!existsSync(outDir)) {
@@ -175,7 +299,7 @@ async function main() {
     return;
   }
   mkdirSync(workDir, { recursive: true });
-  if (!haveEngine()) buildEngine();
+  if (!haveEngine()) await buildEngine();
   if (!haveVoice()) await fetchVoice();
   console.log('[piper] done');
 }
