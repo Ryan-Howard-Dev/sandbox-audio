@@ -9,6 +9,7 @@ import {
 import type { NarrationChunk } from '../../documentNarration';
 import { type ReadAlongRange } from './ReadAlongText';
 import DocumentReaderView from './DocumentReaderView';
+import { createNarrationEngine, type NarrationEngine } from '../../narrationEngine';
 import { importWebPage, isImportableUrl, type WebPageFailure } from '../../webPageImport';
 import {
   clearNarrationPlayback,
@@ -84,7 +85,8 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const readerRef = useRef<NarrationReader | null>(null);
-  const nativePortRef = useRef<ReturnType<typeof createNativeTextToSpeechPort> | null>(null);
+  /** The chosen engine, held so its plugin listeners can be detached when it is replaced. */
+  const enginePortRef = useRef<NarrationEngine | null>(null);
 
   const [docs, setDocs] = useState<DocumentSummary[]>([]);
   const [openDoc, setOpenDoc] = useState<DocumentSummary | null>(null);
@@ -113,24 +115,23 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
       readerRef.current?.stop();
       void endNarrationSession();
       clearNarrationPlayback();
-      nativePortRef.current?.dispose();
-      nativePortRef.current = null;
+      enginePortRef.current?.dispose?.();
+      enginePortRef.current = null;
     };
   }, []);
 
   const buildReader = useCallback(async (next: NarrationChunk[], startIndex: number) => {
     readerRef.current?.stop();
-    let port: NarrationSpeechPort;
-    if (await isNativeTextToSpeechAvailable()) {
-      nativePortRef.current?.dispose();
-      nativePortRef.current = createNativeTextToSpeechPort();
-      port = nativePortRef.current;
-    } else {
-      port = createWebSpeechPort(
-        window.speechSynthesis,
-        (text) => new SpeechSynthesisUtterance(text),
-      );
-    }
+    /*
+     * Whichever voice is actually available, best first. Piper is the neural one and the
+     * reason any of this exists; the platform engine and web speech are what a device without
+     * it falls back to.
+     */
+    enginePortRef.current?.dispose?.();
+    const engine = await createNarrationEngine();
+    enginePortRef.current = engine;
+    const port: NarrationSpeechPort | null = engine?.port ?? null;
+    if (!port) throw new Error(t('audiobooks.docSpeechUnavailable'));
     readerRef.current = createNarrationReader(next, port, {
       startIndex,
       voiceId: voiceId || undefined,

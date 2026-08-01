@@ -6,6 +6,7 @@ import ReadAlongText, { type ReadAlongRange } from './ReadAlongText';
 import { chunkForOffset, offsetForChunk, resumeOffset } from '../../narrationPosition';
 import { readKindleFileInfo } from '../../mobiFormat';
 import { importKindleFile, readKindleCover } from '../../kindleImport';
+import { createNarrationEngine, type NarrationEngine } from '../../narrationEngine';
 import type { ParsedEpub } from '../../epubParse';
 import {
   clearNarrationPlayback,
@@ -138,7 +139,8 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const readerRef = useRef<NarrationReader | null>(null);
-  const nativePortRef = useRef<ReturnType<typeof createNativeTextToSpeechPort> | null>(null);
+  /** The chosen engine, held so its plugin listeners can be detached when it is replaced. */
+  const enginePortRef = useRef<NarrationEngine | null>(null);
 
   const [books, setBooks] = useState<DocumentSummary[]>([]);
   const [openBook, setOpenBook] = useState<DocumentSummary | null>(null);
@@ -202,8 +204,8 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
     return () => {
       readerRef.current?.stop();
       clearNarrationPlayback();
-      nativePortRef.current?.dispose();
-      nativePortRef.current = null;
+      enginePortRef.current?.dispose?.();
+      enginePortRef.current = null;
     };
   }, []);
 
@@ -242,19 +244,12 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
   const buildReader = useCallback(
     async (next: NarrationChunk[], startIndex: number) => {
       readerRef.current?.stop();
-      let port: NarrationSpeechPort;
-      if (await isNativeTextToSpeechAvailable()) {
-        nativePortRef.current?.dispose();
-        nativePortRef.current = createNativeTextToSpeechPort();
-        port = nativePortRef.current;
-      } else if (isNarrationSpeechAvailable()) {
-        port = createWebSpeechPort(
-          window.speechSynthesis,
-          (text) => new SpeechSynthesisUtterance(text),
-        );
-      } else {
-        return null;
-      }
+      // Best available voice, neural first. See narrationEngine.ts for the order and why.
+      enginePortRef.current?.dispose?.();
+      const engine = await createNarrationEngine();
+      enginePortRef.current = engine;
+      if (!engine) return null;
+      const port: NarrationSpeechPort = engine.port;
       readerRef.current = createNarrationReader(next, port, {
         startIndex,
         voiceId: voiceId || undefined,
