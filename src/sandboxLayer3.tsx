@@ -54,6 +54,7 @@ import PodcastChapterSheet from './components/podcasts/PodcastChapterSheet';
 import MobileDockWithShell from './mobile/MobileDockWithShell';
 import { useNarrationPlayback } from './hooks/useNarrationPlayback';
 import { controlsForPillar, resolveMediaPillar } from './mediaPillar';
+import { resumeAtSeconds } from './resumeRewind';
 import {
   clearNarrationPlayback,
   getNarrationPlayback,
@@ -324,6 +325,7 @@ import {
   updateSubscriptionMeta,
   PODCASTS_CHANGE_EVENT,
   getEpisodeResumePosition,
+  getEpisodeResumeSavedAt,
   saveEpisodeResumePosition,
   markEpisodeCompleted,
   maybeAutoCompleteEpisode,
@@ -5777,7 +5779,15 @@ export default function SandboxShell() {
     if (podcastResumeAppliedRef.current === env.envelopeId) return;
     const episodeId = parsePodcastEpisodeId(env.envelopeId);
     if (!episodeId) return;
-    const pos = getEpisodeResumePosition(episodeId);
+    const saved = getEpisodeResumePosition(episodeId);
+    /*
+     * Resume a little before where you stopped, not exactly on it.
+     *
+     * An exact resume drops you mid-sentence, which after three days away means rewinding by
+     * hand before you can follow anything. The amount is small on purpose: enough to recover
+     * the sentence, not enough to make you listen again to a minute you already heard.
+     */
+    const pos = resumeAtSeconds(saved, getEpisodeResumeSavedAt(episodeId), 'podcast');
     if (pos > 3) audio.seek(pos);
     podcastResumeAppliedRef.current = env.envelopeId;
   }, [audio, audio.state, audio.envelope?.envelopeId]);

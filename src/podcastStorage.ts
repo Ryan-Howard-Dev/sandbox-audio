@@ -304,16 +304,56 @@ function writeResumeMap(map: Record<string, number>): void {
   resumeCache = map;
 }
 
+/** When each position was written. Kept apart from the positions themselves; see below. */
+const RESUME_AT_KEY = 'sandbox_podcast_resume_at_v1';
 export function getEpisodeResumePosition(episodeId: string): number {
   return readResumeMap()[episodeId] ?? 0;
+}
+
+/**
+ * When a position was last written, for deciding how far to rewind on resume.
+ *
+ * Separate from the position itself so the stored map keeps its shape: it is a plain
+ * episode-to-seconds record that predates this, and widening every entry would mean migrating
+ * everyone's saved places to add a field most of them will never be read for.
+ *
+ * Undefined for anything saved before this existed. That is the honest answer and the callers
+ * treat it as "resume exactly", rather than guessing an age and rewinding every old position
+ * on the first launch after an update.
+ */
+export function getEpisodeResumeSavedAt(episodeId: string): number | undefined {
+  const raw = prefsGetItem(RESUME_AT_KEY);
+  if (!raw) return undefined;
+  try {
+    const map = JSON.parse(raw) as Record<string, number>;
+    const at = map?.[episodeId];
+    return typeof at === 'number' && Number.isFinite(at) ? at : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeResumeSavedAt(episodeId: string, at: number | null): void {
+  let map: Record<string, number> = {};
+  try {
+    const raw = prefsGetItem(RESUME_AT_KEY);
+    if (raw) map = (JSON.parse(raw) as Record<string, number>) ?? {};
+  } catch {
+    map = {};
+  }
+  if (at === null) delete map[episodeId];
+  else map[episodeId] = at;
+  prefsSetItem(RESUME_AT_KEY, JSON.stringify(map));
 }
 
 export function saveEpisodeResumePosition(episodeId: string, seconds: number): void {
   const map = readResumeMap();
   if (seconds < 3) {
     delete map[episodeId];
+    writeResumeSavedAt(episodeId, null);
   } else {
     map[episodeId] = Math.max(0, seconds);
+    writeResumeSavedAt(episodeId, Date.now());
   }
   writeResumeMap(map);
 }
