@@ -1875,11 +1875,6 @@ export default function SettingsView({
           className={`settings-content${isMobileLayout ? ' settings-content--mobile-detail' : ''}`}
         >
           {/* Station shells — panels fill category-by-category. Legacy tabs remain for search/deep links until moved. */}
-          {activeTab === 'music' && (
-            <div className="space-y-6">
-              <p className="ui-hint ui-hint--desc">{t('settings.categories.musicDesc')}</p>
-            </div>
-          )}
           {activeTab === 'podcasts' && (
             <div className="space-y-6">
               <p className="ui-hint ui-hint--desc">{t('settings.categories.podcastsDesc')}</p>
@@ -1901,7 +1896,7 @@ export default function SettingsView({
             </div>
           )}
 
-          {activeTab === 'fidelity' && (
+          {activeTab === 'music' && (
             <div className="space-y-6">
               <div className="settings-anchor-section">
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.fidelityQuality} />
@@ -6174,7 +6169,7 @@ export default function SettingsView({
             </div>
           )}
 
-          {activeTab === 'vinyl' && (
+          {activeTab === 'music' && (
             <VinylSettingsPanel
               vinylVisuals={vinylVisuals}
               onPatchVinylVisual={patchVinylVisual}
