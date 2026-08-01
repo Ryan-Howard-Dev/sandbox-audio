@@ -527,6 +527,10 @@
       "about": "About & Help",
       "aboutDesc": "App info, guides, and getting started"
     },
+    "libraryFolder": {
+      "title": "Library folder",
+      "subtitle": "Choose one folder for your music, podcasts, audiobooks, books and documents."
+    },
     "tabs": {
       "fidelity": "Audio Fidelity",
       "playback": "Playback Engine",

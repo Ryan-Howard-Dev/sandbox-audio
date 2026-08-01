@@ -507,7 +507,6 @@ export default function LockerArtistHub({
                             onOpenMenuKeyChange={onOpenMenuKeyChange}
                             actions={buildTrackMenu(track)}
                             ariaLabel={t('locker.menu.trackOptionsAria', {
-                              defaultValue: `Options for ${displayLockerTrackTitle(track.title)}`,
                               title: displayLockerTrackTitle(track.title),
                             })}
                             sheetTitle={displayLockerTrackTitle(track.title)}
@@ -601,7 +600,6 @@ export default function LockerArtistHub({
                             onOpenMenuKeyChange={onOpenMenuKeyChange}
                             actions={buildTrackMenu(primaryTrack)}
                             ariaLabel={t('locker.menu.trackOptionsAria', {
-                              defaultValue: `Options for ${displayLockerTrackTitle(primaryTrack.title)}`,
                               title: displayLockerTrackTitle(primaryTrack.title),
                             })}
                             sheetTitle={displayLockerTrackTitle(primaryTrack.title)}

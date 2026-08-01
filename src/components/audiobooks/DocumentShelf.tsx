@@ -225,7 +225,7 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
         }
         const name = pastedDocumentName(
           text,
-          t('audiobooks.pastedDocumentFallbackName', { defaultValue: 'Pasted text' }),
+          t('audiobooks.pastedDocumentFallbackName'),
         );
         await saveDocument({
           id: newDocumentId(name),
@@ -406,10 +406,10 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
             onClick={() => setPasteOpen((open) => !open)}
             disabled={busy || speechAvailable === false}
             aria-expanded={pasteOpen}
-            aria-label={t('audiobooks.pasteDocument', { defaultValue: 'Paste text' })}
+            aria-label={t('audiobooks.pasteDocument')}
           >
             <Plus className="w-3.5 h-3.5" />
-            {t('audiobooks.pasteDocument', { defaultValue: 'Paste text' })}
+            {t('audiobooks.pasteDocument')}
           </button>
         </div>
       </div>
@@ -422,10 +422,8 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
             rows={6}
             autoFocus
             className="w-full rounded-lg bg-black/40 border border-white/10 p-3 text-sm text-white/90 font-sans resize-y"
-            placeholder={t('audiobooks.pastePlaceholder', {
-              defaultValue: 'Paste the text you want read aloud…',
-            })}
-            aria-label={t('audiobooks.pasteDocument', { defaultValue: 'Paste text' })}
+            placeholder={t('audiobooks.pastePlaceholder')}
+            aria-label={t('audiobooks.pasteDocument')}
           />
           <div className="flex items-center justify-end gap-2 mt-2">
             <button
@@ -437,7 +435,7 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
               }}
               disabled={busy}
             >
-              {t('common.cancel', { defaultValue: 'Cancel' })}
+              {t('common.cancel')}
             </button>
             <button
               type="button"
@@ -450,7 +448,7 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
               ) : (
                 <FileText className="w-3.5 h-3.5" />
               )}
-              {t('audiobooks.pasteSave', { defaultValue: 'Add to documents' })}
+              {t('audiobooks.pasteSave')}
             </button>
           </div>
         </div>

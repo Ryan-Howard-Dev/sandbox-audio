@@ -533,7 +533,6 @@ export default function MobileNowPlayingView({
                     label: t('audiobooks.pageOf', {
                       page: narration.chunkIndex + 1,
                       total: narration.chunkCount,
-                      defaultValue: `Passage ${narration.chunkIndex + 1} of ${narration.chunkCount}`,
                     }),
                     percent:
                       narration.chunkCount > 0

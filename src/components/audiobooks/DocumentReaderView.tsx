@@ -96,7 +96,7 @@ export default function DocumentReaderView({
         onClick={onBack}
       >
         <ArrowLeft className="w-4 h-4" aria-hidden />
-        {t('audiobooks.backToDocuments', { defaultValue: 'Documents' })}
+        {t('audiobooks.backToDocuments')}
       </button>
 
       <header className="podcasts-show-detail-head">
@@ -118,7 +118,6 @@ export default function DocumentReaderView({
             {t('audiobooks.pageOf', {
               page: pageIndex + 1,
               total: pages.length,
-              defaultValue: `Page ${pageIndex + 1} of ${pages.length}`,
             })}
             {remainingSeconds > 0
               ? ` · ${formatTime(remainingSeconds)} ${t('audiobooks.docLeft')}`
@@ -152,7 +151,7 @@ export default function DocumentReaderView({
                 className="mobile-np-icon-btn touch-manipulation"
                 onClick={() => setChapterListOpen((open) => !open)}
                 aria-expanded={chapterListOpen}
-                aria-label={t('audiobooks.chapters', { defaultValue: 'Chapters' })}
+                aria-label={t('audiobooks.chapters')}
               >
                 <List className="w-4 h-4" />
               </button>
@@ -198,9 +197,7 @@ export default function DocumentReaderView({
                   type="button"
                   className="document-reader-seek touch-manipulation"
                   onClick={() => onSeekToChunk(index)}
-                  aria-label={t('audiobooks.readFromHere', {
-                    defaultValue: 'Read from here',
-                  })}
+                  aria-label={t('audiobooks.readFromHere')}
                 >
                   {active ? (
                     <ReadAlongText text={chunk.text} range={range} />
@@ -224,7 +221,7 @@ export default function DocumentReaderView({
           className="mobile-np-icon-btn touch-manipulation"
           onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
           disabled={pageIndex === 0}
-          aria-label={t('audiobooks.previousPage', { defaultValue: 'Previous page' })}
+          aria-label={t('audiobooks.previousPage')}
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -232,7 +229,6 @@ export default function DocumentReaderView({
           {pageIndex + 1} / {pages.length}
           {pageIndex !== spokenPage ? ` · ${t('audiobooks.readingOn', {
             page: spokenPage + 1,
-            defaultValue: `reading p${spokenPage + 1}`,
           })}` : ''}
         </span>
         <button
@@ -240,7 +236,7 @@ export default function DocumentReaderView({
           className="mobile-np-icon-btn touch-manipulation"
           onClick={() => setPageIndex((i) => Math.min(pages.length - 1, i + 1))}
           disabled={pageIndex >= pages.length - 1}
-          aria-label={t('audiobooks.nextPage', { defaultValue: 'Next page' })}
+          aria-label={t('audiobooks.nextPage')}
         >
           <ChevronRight className="w-5 h-5" />
         </button>
