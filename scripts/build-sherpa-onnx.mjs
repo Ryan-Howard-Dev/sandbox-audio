@@ -25,7 +25,15 @@
 import { spawnSync } from 'node:child_process';
 import { unzipSync } from 'fflate';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { createWriteStream, cpSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import {
+  createWriteStream,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
 import { copyFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -67,6 +75,19 @@ const VOICE_URL = `https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-m
  * quadruples the build time and the APK for architectures nobody reading a book is holding.
  */
 const ABI = 'arm64-v8a';
+
+/**
+ * Languages whose pronunciation data is kept.
+ *
+ * espeak-ng ships a dictionary for all 113 languages it can speak, and the voice uses exactly
+ * one of them. The Russian dictionary alone is 8.3 MB in an English-only app. Pruning the rest
+ * takes espeak-ng-data from 18 MB to under 2 MB.
+ *
+ * Adding a voice in another language means adding its code here. Everything else in the
+ * directory — phondata, phontab, intonations, lang and voices — is structural and stays
+ * whatever languages are kept.
+ */
+const KEEP_DICTS = ['en'];
 
 const workDir = join(root, '.sherpa-build');
 const jniLibsDir = join(root, 'android', 'app', 'src', 'main', 'jniLibs', ABI);
@@ -290,9 +311,33 @@ async function fetchVoice() {
     console.error(`[piper] archive extracted but ${assetsDir} has no voice in it`);
     process.exit(1);
   }
+  pruneLanguageData();
   console.log('[piper] installed voice');
 }
 
+/**
+ * Delete the pronunciation data for languages this build cannot speak.
+ *
+ * Only *_dict files are language data. Removing anything else here breaks synthesis for every
+ * language including the one being kept, so the filter is deliberately narrow.
+ */
+function pruneLanguageData() {
+  const dataDir = join(assetsDir, 'espeak-ng-data');
+  if (!existsSync(dataDir)) return;
+  let removed = 0;
+  let freedBytes = 0;
+  for (const file of readdirSync(dataDir)) {
+    if (!file.endsWith('_dict')) continue;
+    const language = file.slice(0, -'_dict'.length);
+    if (KEEP_DICTS.includes(language)) continue;
+    const path = join(dataDir, file);
+    freedBytes += statSync(path).size;
+    rmSync(path);
+    removed += 1;
+  }
+  const freedMb = (freedBytes / 1024 / 1024).toFixed(1);
+  console.log(`[piper] pruned ${removed} language dictionaries, freeing ${freedMb} MB`);
+}
 async function main() {
   if (haveEngine() && haveVoice()) {
     console.log('[piper] engine and voice already present — nothing to do');
