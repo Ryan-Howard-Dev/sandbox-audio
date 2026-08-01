@@ -59,6 +59,7 @@
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "fflate": "^0.8.3",
+    "foliate-js": "^1.0.1",
     "ip": "^2.0.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",

@@ -5,6 +5,8 @@ import type { NarrationChunk } from '../../documentNarration';
 import ReadAlongText, { type ReadAlongRange } from './ReadAlongText';
 import { chunkForOffset, offsetForChunk, resumeOffset } from '../../narrationPosition';
 import { readKindleFileInfo } from '../../mobiFormat';
+import { importKindleFile, readKindleCover } from '../../kindleImport';
+import type { ParsedEpub } from '../../epubParse';
 import {
   clearNarrationPlayback,
   publishNarrationPlayback,
@@ -288,6 +290,58 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
    * described identically. Returns the reason rather than reporting it: a library import counts
    * failures and speaks once at the end, where forty toasts would be unusable.
    */
+  /**
+   * Write a parsed book to the shelf, whatever format it arrived in.
+   *
+   * By this point an EPUB and a Kindle book are the same thing: a title, an author and chapters.
+   * The saving, the blurb lookup and the Calibre fallbacks belong in one place rather than being
+   * written twice and drifting apart.
+   */
+  const saveImportedBook = useCallback(
+    async (
+      book: ParsedEpub,
+      file: File,
+      cover: string | undefined,
+      options?: { calibre?: CalibreBookCandidate; lookUpDescription?: boolean },
+    ): Promise<null> => {
+      const text = book.chapters.map((c) => c.text).join('\n\n');
+      /*
+       * The book's own metadata wins over the folder it came from. Calibre's folder names are
+       * accurate but truncated, and its filenames are truncated harder, so the file itself is the
+       * only place a full title is guaranteed intact.
+       */
+      const title = book.title || options?.calibre?.title || file.name;
+      const author = book.author || options?.calibre?.author;
+
+      /*
+       * Off for a library import: four thousand books would be four thousand network lookups for a
+       * folder the listener picked once, and Calibre users have already curated their metadata.
+       */
+      let description = book.description;
+      if (!description && options?.lookUpDescription && title) {
+        description = (await fetchAudiobookDescription(title, author)) ?? '';
+      }
+
+      await saveDocument({
+        kind: 'book',
+        id: newDocumentId(title),
+        name: title,
+        author,
+        description,
+        language: book.language,
+        coverUrl: cover,
+        calibreId: options?.calibre?.calibreId,
+        addedAt: Date.now(),
+        text,
+        chapters: book.chapters.map((c) => ({ title: c.title, text: c.text })),
+        chunkCount: book.chapters.length,
+        estimatedSeconds: estimateNarrationSeconds(documentToNarration(text)),
+      });
+      return null;
+    },
+    [],
+  );
+
   const importBookFile = useCallback(
     async (
       file: File,
@@ -308,10 +362,12 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
       const kindle = readKindleFileInfo(head);
       if (kindle.format === 'kfx') return 'kfx-unsupported';
       if (kindle.format === 'mobi' || kindle.format === 'azw3') {
-        if (kindle.drm) return 'kindle-drm';
-        // Recognised, unprotected, and not yet readable: the text extractor is still to come. Said
-        // plainly rather than reported as a broken file.
-        return 'kindle-unreadable';
+        const imported = await importKindleFile(file);
+        if (!imported.book) return imported.reason ?? 'kindle-unreadable';
+        const cover =
+          (await readKindleCover(file)) ??
+          (options?.coverFile ? await readFileAsDataUrl(options.coverFile) : undefined);
+        return await saveImportedBook(imported.book, file, cover, options);
       }
       try {
         const bytes = new Uint8Array(await file.arrayBuffer());
@@ -323,44 +379,7 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
         // Calibre's own cover only when the archive has none — it is a fallback, not an override.
         if (!cover && options?.coverFile) cover = await readFileAsDataUrl(options.coverFile);
 
-        const text = book.chapters.map((c) => c.text).join('\n\n');
-        /*
-         * The EPUB's metadata wins over the folder it came from. Calibre's folder names are
-         * accurate but truncated, and its own filenames are truncated harder, so the archive is the
-         * only place a full title is guaranteed intact.
-         */
-        const title = book.title || options?.calibre?.title || file.name;
-        const author = book.author || options?.calibre?.author;
-
-        /*
-         * The book's own description if it has one, else look it up. An EPUB usually carries
-         * title and author but rarely a blurb, and a shelf card with nothing to say is the
-         * complaint that started this.
-         *
-         * Off for a library import: four thousand books would be four thousand network lookups for
-         * a folder the listener picked once, and Calibre users have already curated their metadata.
-         */
-        let description = book.description;
-        if (!description && options?.lookUpDescription && title) {
-          description = (await fetchAudiobookDescription(title, author)) ?? '';
-        }
-
-        await saveDocument({
-          kind: 'book',
-          id: newDocumentId(title),
-          name: title,
-          author,
-          description,
-          language: book.language,
-          coverUrl: cover,
-          calibreId: options?.calibre?.calibreId,
-          addedAt: Date.now(),
-          text,
-          chapters: book.chapters.map((c) => ({ title: c.title, text: c.text })),
-          chunkCount: book.chapters.length,
-          estimatedSeconds: estimateNarrationSeconds(documentToNarration(text)),
-        });
-        return null;
+        return await saveImportedBook(book, file, cover, options);
       } catch {
         return 'unreadable';
       }
