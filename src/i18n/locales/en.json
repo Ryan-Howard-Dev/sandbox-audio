@@ -1937,6 +1937,13 @@
     "pasteDocument": "Paste text",
     "pastePlaceholder": "Paste the text you want read aloud…",
     "pasteSave": "Add to documents",
-    "pastedDocumentFallbackName": "Pasted text"
+    "pastedDocumentFallbackName": "Pasted text",
+    "pageOf": "Page {page} of {total}",
+    "backToDocuments": "Documents",
+    "chapters": "Chapters",
+    "nextPage": "Next page",
+    "previousPage": "Previous page",
+    "readFromHere": "Read from here",
+    "readingOn": "reading p{page}"
   }
 }

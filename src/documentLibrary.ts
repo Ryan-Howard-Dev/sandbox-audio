@@ -36,7 +36,20 @@ export interface SavedBookChapter {
  */
 export interface ReadingPosition {
   chapterIndex: number;
+  /**
+   * Kept for entries written before offsets existed, and as a fallback when charOffset is absent.
+   *
+   * Not authoritative: documents are re-chunked on open so that improved chunking rules reach old
+   * imports, which means the same index can point at different text after an update.
+   */
   chunkIndex: number;
+  /**
+   * Character offset into the chapter text — the position that survives re-chunking.
+   *
+   * Optional because entries saved before this existed have no offset to read; those fall back to
+   * chunkIndex, which is wrong only if the chunker has changed since they were saved.
+   */
+  charOffset?: number;
   updatedAt: number;
 }
 

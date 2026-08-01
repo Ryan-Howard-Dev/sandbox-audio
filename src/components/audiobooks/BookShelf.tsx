@@ -2,6 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BookOpen, FolderOpen, Loader2, Pause, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { documentToNarration, estimateNarrationSeconds } from '../../documentNarration';
 import type { NarrationChunk } from '../../documentNarration';
+import ReadAlongText, { type ReadAlongRange } from './ReadAlongText';
+import { chunkForOffset, offsetForChunk, resumeOffset } from '../../narrationPosition';
+import {
+  clearNarrationPlayback,
+  publishNarrationPlayback,
+  requestNarrationPlayerOpen,
+} from '../../narrationPlayback';
 import {
   createNarrationReader,
   createWebSpeechPort,
@@ -124,7 +131,13 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
   const [openBook, setOpenBook] = useState<DocumentSummary | null>(null);
   const [chapterIndex, setChapterIndex] = useState(0);
   const [chunks, setChunks] = useState<NarrationChunk[]>([]);
+  // rememberPosition runs from a speech callback, so it needs the chunks without a dependency.
+  const chunksRef = useRef<NarrationChunk[]>([]);
+  chunksRef.current = chunks;
   const [chunkIndex, setChunkIndex] = useState(0);
+  // Where the voice is inside the current chunk, when the engine reports it.
+  const [range, setRange] = useState<ReadAlongRange | null>(null);
+  const chunkIndexRef = useRef(0);
   const [state, setState] = useState<NarrationReaderState>('idle');
   const [busy, setBusy] = useState(false);
   const { voices, voiceId, chooseVoice, speechAvailable } = useNarrationVoices();
@@ -175,6 +188,7 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
   useEffect(() => {
     return () => {
       readerRef.current?.stop();
+      clearNarrationPlayback();
       nativePortRef.current?.dispose();
       nativePortRef.current = null;
     };
@@ -186,6 +200,8 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
     const next: ReadingPosition = {
       chapterIndex: chapterIndexRef.current,
       chunkIndex: chunk,
+      // The offset is the position that means something; the index is kept for older readers.
+      charOffset: offsetForChunk(chunksRef.current, chunk),
       updatedAt: Date.now(),
     };
     if (!shouldPersistReadingPosition(positionRef.current, next)) return;
@@ -230,11 +246,22 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
         startIndex,
         voiceId: voiceId || undefined,
         onChunkChange: (index) => {
+          chunkIndexRef.current = index;
           setChunkIndex(index);
           rememberPosition(index);
+          // A stale word left marked on a new passage reads as the wrong word entirely.
+          setRange(null);
+        },
+        onRange: (index, start, end) => {
+          // Ranges are asynchronous; one arriving after the reader has moved on belongs to the
+          // passage we have left, not the one on screen. Read through a ref rather than a state
+          // updater, which must stay pure.
+          if (index !== chunkIndexRef.current) return;
+          setRange({ start, end });
         },
         onStateChange: (s) => {
           setState(s);
+          if (s !== 'speaking') setRange(null);
           if (s === 'finished') advanceChapter();
         },
       });
@@ -402,7 +429,12 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
   }, [closePlan, importBookFile, onError, onSuccess, plan, refresh, t]);
 
   const playChapter = useCallback(
-    async (summary: DocumentSummary, index: number, startChunk = 0) => {
+    async (
+      summary: DocumentSummary,
+      index: number,
+      startChunk = 0,
+      resume?: { charOffset?: number },
+    ) => {
       const full = await getDocument(summary.id);
       const chapter = full?.chapters?.[index];
       if (!chapter) {
@@ -410,7 +442,12 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
         return;
       }
       const parsed = documentToNarration(chapter.text);
-      const start = Math.min(Math.max(0, startChunk), Math.max(0, parsed.length - 1));
+      // The offset wins where there is one, because it is the position that survived re-chunking.
+      const resolved =
+        resume?.charOffset !== undefined
+          ? chunkForOffset(parsed, resume.charOffset)
+          : startChunk;
+      const start = Math.min(Math.max(0, resolved), Math.max(0, parsed.length - 1));
       openBookRef.current = summary;
       chapterIndexRef.current = index;
       positionRef.current = full.position ?? null;
@@ -441,7 +478,17 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
       const at = book.position;
       // A stored chapter can outlive the book it belonged to if the same title was re-imported.
       const chapter = Math.min(Math.max(0, at?.chapterIndex ?? 0), Math.max(0, chapters - 1));
-      return playChapter(book, chapter, at?.chunkIndex ?? 0);
+      /*
+       * Hand playChapter the offset rather than a chunk index. It parses the chapter anyway, and
+       * the index is only correct if the chunker has not changed since the position was saved --
+       * which it is re-run on every open precisely so that it can.
+       */
+      return playChapter(book, chapter, at?.chunkIndex ?? 0, {
+        charOffset:
+          at?.charOffset !== undefined
+            ? resumeOffset(at.charOffset, at.updatedAt)
+            : undefined,
+      });
     },
     [playChapter],
   );
@@ -459,6 +506,43 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
     },
     [openBook, refresh],
   );
+
+  /**
+   * Hand the player everything it needs to paint this book.
+   *
+   * Chapter title rather than section: a book's passage sits under a chapter, and that is the line
+   * a reader recognises when the player is all they can see.
+   */
+  useEffect(() => {
+    if (!openBook || chunks.length === 0) {
+      clearNarrationPlayback(openBook?.id);
+      return;
+    }
+    publishNarrationPlayback({
+      title: openBook.name,
+      author: openBook.author,
+      artworkUrl: openBook.coverUrl,
+      sourceId: openBook.id,
+      kind: 'book',
+      passage: chunks[chunkIndex]?.text ?? '',
+      section: openBook.chapterTitles?.[chapterIndex],
+      range,
+      state,
+      chunkIndex,
+      chunkCount: chunks.length,
+      elapsedSeconds: estimateNarrationSeconds(chunks.slice(0, chunkIndex)),
+      totalSeconds: estimateNarrationSeconds(chunks),
+      controls: {
+        play: () => {
+          if (state === 'paused') readerRef.current?.resume();
+          else void buildReader(chunks, chunkIndexRef.current).then((r) => r?.play());
+        },
+        pause: () => readerRef.current?.pause(),
+        stop: () => readerRef.current?.stop(),
+        seekToChunk: (index) => readerRef.current?.seekToChunk(index),
+      },
+    });
+  }, [openBook, chunks, chunkIndex, chapterIndex, range, state, buildReader]);
 
   const remaining = estimateNarrationSeconds(chunks.slice(chunkIndex));
   const openChapters = openBook?.chapterTitles ?? [];
@@ -702,6 +786,9 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
           <p className="audiobook-doc-section">
             {openChapters[chapterIndex] ?? `${chapterIndex + 1}`}
           </p>
+          {chunks[chunkIndex] ? (
+            <ReadAlongText text={chunks[chunkIndex]!.text} range={range} />
+          ) : null}
           <p className="audiobook-doc-meta">
             {t('audiobooks.docPosition', { index: chunkIndex + 1, total: chunks.length })}
             {remaining > 0 ? ` · ${formatTime(remaining)} ${t('audiobooks.docLeft')}` : ''}
@@ -721,6 +808,8 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
                 type="button"
                 className="mobile-np-icon-btn touch-manipulation"
                 onClick={() => {
+                  // Pressing play raises the player, the same as tapping a track does.
+                  requestNarrationPlayerOpen();
                   if (state === 'paused') readerRef.current?.resume();
                   // Resumes at the current chunk, not the top of the chapter — stopping and
                   // starting again should not re-read twenty minutes you already heard.

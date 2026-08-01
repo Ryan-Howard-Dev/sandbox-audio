@@ -7,6 +7,13 @@ import {
   SUPPORTED_DOCUMENT_ACCEPT,
 } from '../../documentExtract';
 import type { NarrationChunk } from '../../documentNarration';
+import { type ReadAlongRange } from './ReadAlongText';
+import DocumentReaderView from './DocumentReaderView';
+import {
+  clearNarrationPlayback,
+  publishNarrationPlayback,
+  requestNarrationPlayerOpen,
+} from '../../narrationPlayback';
 import {
   createNarrationReader,
   createWebSpeechPort,
@@ -82,6 +89,9 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
   const [openDoc, setOpenDoc] = useState<DocumentSummary | null>(null);
   const [chunks, setChunks] = useState<NarrationChunk[]>([]);
   const [chunkIndex, setChunkIndex] = useState(0);
+  // Where the voice is inside the current chunk, when the engine reports it.
+  const [range, setRange] = useState<ReadAlongRange | null>(null);
+  const chunkIndexRef = useRef(0);
   const [state, setState] = useState<NarrationReaderState>('idle');
   const [busy, setBusy] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -99,6 +109,7 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
     return () => {
       readerRef.current?.stop();
       void endNarrationSession();
+      clearNarrationPlayback();
       nativePortRef.current?.dispose();
       nativePortRef.current = null;
     };
@@ -120,9 +131,22 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
     readerRef.current = createNarrationReader(next, port, {
       startIndex,
       voiceId: voiceId || undefined,
-      onChunkChange: (index) => setChunkIndex(index),
+      onChunkChange: (index) => {
+        chunkIndexRef.current = index;
+        setChunkIndex(index);
+        // A stale word left marked on a new passage reads as the wrong word entirely.
+        setRange(null);
+      },
+      onRange: (index, start, end) => {
+        // Ranges are asynchronous; one arriving after the reader has moved on belongs to the
+        // passage we have left, not the one on screen. Read through a ref rather than a state
+        // updater, which must stay pure.
+        if (index !== chunkIndexRef.current) return;
+        setRange({ start, end });
+      },
       onStateChange: (s) => {
         setState(s);
+        if (s !== 'speaking') setRange(null);
         // Mirror onto the app's existing media session so a document behaves like playback:
         // lock screen, headphone pause, and survival with the screen off.
         void syncNarrationSession(s);
@@ -240,6 +264,9 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
       });
       setChunks(parsed);
       setChunkIndex(0);
+      // Opening a document starts it reading, so the player belongs on screen here too. Raising it
+      // only from the transport button meant the ordinary path never showed a player at all.
+      requestNarrationPlayerOpen();
       (await buildReader(parsed, 0)).play();
     },
     [buildReader, onError, t],
@@ -260,7 +287,76 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
 
   // Its own tab now, so it always renders: an empty tab that hides itself is a dead end.
 
+  /**
+   * Hand the player everything it needs to paint this document.
+   *
+   * One effect rather than a publish call at each site, so the player can never be shown a session
+   * that has drifted from the shelf's own state — every field it reads changes here together.
+   */
+  useEffect(() => {
+    if (!openDoc || chunks.length === 0) {
+      clearNarrationPlayback(openDoc?.id);
+      return;
+    }
+    publishNarrationPlayback({
+      title: documentDisplayName(openDoc.name),
+      sourceId: openDoc.id,
+      kind: 'document',
+      passage: chunks[chunkIndex]?.text ?? '',
+      section: chunks[chunkIndex]?.section,
+      range,
+      state,
+      chunkIndex,
+      chunkCount: chunks.length,
+      elapsedSeconds: estimateNarrationSeconds(chunks.slice(0, chunkIndex)),
+      totalSeconds: estimateNarrationSeconds(chunks),
+      controls: {
+        // Resuming re-issues play from the current chunk, because the platform engine has no
+        // pause — the same compromise the shelf's own transport makes.
+        play: () => {
+          if (state === 'paused') readerRef.current?.resume();
+          else void buildReader(chunks, chunkIndexRef.current).then((r) => r.play());
+        },
+        pause: () => readerRef.current?.pause(),
+        stop: () => readerRef.current?.stop(),
+        seekToChunk: (index) => readerRef.current?.seekToChunk(index),
+      },
+    });
+  }, [openDoc, chunks, chunkIndex, range, state, buildReader]);
+
   const remaining = estimateNarrationSeconds(chunks.slice(chunkIndex));
+
+  /*
+   * An open document replaces the list, the same as selecting an album or an audiobook does. The
+   * text is the point of opening it, and it cannot be read in a strip at the bottom of a shelf.
+   */
+  if (openDoc && chunks.length > 0) {
+    return (
+      <DocumentReaderView
+        title={documentDisplayName(openDoc.name)}
+        chunks={chunks}
+        chunkIndex={chunkIndex}
+        range={range}
+        state={state}
+        remainingSeconds={remaining}
+        onBack={() => {
+          readerRef.current?.stop();
+          void endNarrationSession();
+          clearNarrationPlayback(openDoc.id);
+          setOpenDoc(null);
+          setChunks([]);
+        }}
+        onPlay={() => {
+          requestNarrationPlayerOpen();
+          if (state === 'paused') readerRef.current?.resume();
+          else void buildReader(chunks, chunkIndexRef.current).then((r) => r.play());
+        }}
+        onPause={() => readerRef.current?.pause()}
+        onStop={() => readerRef.current?.stop()}
+        onSeekToChunk={(index) => readerRef.current?.seekToChunk(index)}
+      />
+    );
+  }
 
   return (
     <section className="podcasts-library-grid-section audiobooks-library-section">
@@ -429,50 +525,6 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
         </ul>
       )}
 
-      {openDoc && chunks.length > 0 ? (
-        <div className="audiobook-doc-now mt-3">
-          <p className="audiobook-doc-name">{documentDisplayName(openDoc.name)}</p>
-          {chunks[chunkIndex]?.section ? (
-            <p className="audiobook-doc-section">{chunks[chunkIndex]!.section}</p>
-          ) : null}
-          <p className="audiobook-doc-meta">
-            {t('audiobooks.docPosition', { index: chunkIndex + 1, total: chunks.length })}
-            {remaining > 0 ? ` · ${formatTime(remaining)} ${t('audiobooks.docLeft')}` : ''}
-          </p>
-          <div className="flex items-center gap-2 mt-2">
-            {state === 'speaking' ? (
-              <button
-                type="button"
-                className="mobile-np-icon-btn touch-manipulation"
-                onClick={() => readerRef.current?.pause()}
-                aria-label={t('player.pause')}
-              >
-                <Pause className="w-5 h-5" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="mobile-np-icon-btn touch-manipulation"
-                onClick={() => {
-                  if (state === 'paused') readerRef.current?.resume();
-                  else void buildReader(chunks, chunkIndex).then((r) => r.play());
-                }}
-                aria-label={t('player.play')}
-              >
-                <Play className="w-5 h-5" />
-              </button>
-            )}
-            <button
-              type="button"
-              className="mobile-np-icon-btn touch-manipulation"
-              onClick={() => readerRef.current?.stop()}
-              aria-label={t('audiobooks.docStop')}
-            >
-              <Square className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      ) : null}
     </section>
   );
 }
