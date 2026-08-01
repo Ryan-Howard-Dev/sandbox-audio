@@ -61,6 +61,7 @@ import {
   catalogSatisfiesTrackQuery,
 } from '../searchCatalog';
 import { fetchCatalogSupplementalArtistCredits } from '../albumCredits';
+import { fetchMusicDescription } from '../musicDescription';
 import { isAirGapEnabled } from '../airGapMode';
 import type { UnifiedPlaylistResult, UnifiedSearchResult, UnifiedSearchSection } from '../unifiedSearch';
 import {
@@ -892,6 +893,25 @@ export default function SearchResultsView({
     return parsed.length > 0 ? parsed : [albumContext.artist];
   }, [isAlbumView, albumContext]);
 
+  /*
+   * The same blurb the locker shows for its own albums. An album opened from search had no
+   * description at all, so the two views described the same record differently depending on where
+   * you came in from. Cached and keyed by album, and dropped if the user navigates away before it
+   * lands, so a slow lookup cannot paint onto the next album they opened.
+   */
+  const [albumBlurb, setAlbumBlurb] = useState<string | null>(null);
+  useEffect(() => {
+    setAlbumBlurb(null);
+    if (!isAlbumView || !albumContext) return;
+    let cancelled = false;
+    void fetchMusicDescription('album', albumContext.title, albumContext.artist).then((text) => {
+      if (!cancelled) setAlbumBlurb(text);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAlbumView, albumContext?.title, albumContext?.artist]);
+
   const albumArtIdentity = isAlbumView
     ? `${albumContext?.id ?? ''}|${albumContext?.artworkUrl ?? ''}`
     : '';
@@ -1682,11 +1702,8 @@ export default function SearchResultsView({
             </div>
           </div>
         ) : null}
-        {isAlbumView && albumArtistCredits.length > 0 ? (
-          <AlbumArtistCreditsSection
-            artistCredits={albumArtistCredits}
-            onGoToArtist={onGoToArtistByName}
-          />
+        {isAlbumView && albumBlurb ? (
+          <p className="locker-album-blurb">{albumBlurb}</p>
         ) : null}
         {isAlbumView && isMobileShell && albumPlayEnvelopes.length > 0 ? (
           <div className="locker-album-banner-actions">
@@ -1848,6 +1865,18 @@ export default function SearchResultsView({
           </ul>
         </section>
       )}
+
+      {/*
+        Everyone who played on the record, after the record. These were in the header, between the
+        album and its own play buttons, which pushed the track list off screen on a phone. Credits
+        are something you look up once you already know what you are looking at.
+      */}
+      {isAlbumView && albumArtistCredits.length > 0 ? (
+        <AlbumArtistCreditsSection
+          artistCredits={albumArtistCredits}
+          onGoToArtist={onGoToArtistByName}
+        />
+      ) : null}
 
       {loading && hits.length === 0 && podcastHits.length === 0 && podcastCatalogHits.length === 0 && !unified?.tracks.length && (
         <div className="flex items-center gap-2 font-mono text-xs text-accent py-8">
