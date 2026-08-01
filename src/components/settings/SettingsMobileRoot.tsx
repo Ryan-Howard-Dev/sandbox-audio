@@ -2,7 +2,16 @@ import React from 'react';
 import SettingsGroup from './SettingsGroup';
 import SettingsRow from './SettingsRow';
 
-export type SettingsCategoryId =
+/** Station categories (target IA). */
+export type SettingsStationCategoryId =
+  | 'music'
+  | 'podcasts'
+  | 'audiobooks'
+  | 'documents'
+  | 'everything';
+
+/** Legacy subsystem tabs — kept until SettingsView migrates category-by-category. */
+export type SettingsLegacyCategoryId =
   | 'fidelity'
   | 'playback'
   | 'vault'
@@ -13,6 +22,8 @@ export type SettingsCategoryId =
   | 'diagnostics'
   | 'security'
   | 'about';
+
+export type SettingsCategoryId = SettingsStationCategoryId | SettingsLegacyCategoryId;
 
 export interface SettingsCategory {
   id: SettingsCategoryId;

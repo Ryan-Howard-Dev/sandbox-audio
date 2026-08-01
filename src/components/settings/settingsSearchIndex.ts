@@ -17,6 +17,13 @@ type Translate = (key: string, params?: Record<string, string | number>) => stri
 
 function categoryLabels(t: Translate): Record<SettingsCategoryId, string> {
   return {
+    // Station IA (shells — panels migrate onto these)
+    music: t('settings.categories.music'),
+    podcasts: t('settings.categories.podcasts'),
+    audiobooks: t('settings.categories.audiobooks'),
+    documents: t('settings.categories.documents'),
+    everything: t('settings.categories.everything'),
+    // Legacy subsystem tabs
     fidelity: t('settings.categories.fidelity'),
     playback: t('settings.categories.playback'),
     vault: t('settings.categories.vault'),

@@ -9,10 +9,10 @@
     "playlists": "Playlists",
     "podcasts": "Podcasts",
     "podcastsShort": "Pods",
-    "podcastsEnablePrompt": "Enable Podcasts in Settings → Add-ons to open Pods",
+    "podcastsEnablePrompt": "Enable Podcasts in Settings → Podcasts to open Pods",
     "audiobooks": "Audiobooks",
     "audiobooksShort": "Audiobooks",
-    "audiobooksEnablePrompt": "Enable Audiobooks in Settings → Add-ons",
+    "audiobooksEnablePrompt": "Enable Audiobooks in Settings → Audiobooks",
     "discoverShort": "Discover",
     "settingsShort": "Settings",
     "djConsole": "DJ Console",
@@ -505,9 +505,24 @@
       "cacheStats": "Cache stats",
       "healthCheck": "Health check",
       "privacy": "Privacy",
-      "help": "Help & guides"
+      "help": "Help & guides",
+      "stationOn": "On",
+      "stationOff": "Off",
+      "podcastSeek": "{seconds}s skip",
+      "documentsLink": "Library folder"
     },
     "categories": {
+      "music": "Music",
+      "musicDesc": "Quality, playback, vinyl, and music stations",
+      "podcasts": "Podcasts",
+      "podcastsDesc": "Station, skip interval, and Wi‑Fi auto-save",
+      "audiobooks": "Audiobooks",
+      "audiobooksDesc": "Station and acquire plugins",
+      "documents": "Documents",
+      "documentsDesc": "Files shelf — library folder lives under Everything",
+      "documentsEmpty": "No Documents-specific settings yet. Your Documents shelf uses the shared library folder.",
+      "everything": "Everything",
+      "everythingDesc": "Storage, server, appearance, playback chrome, security, and help",
       "fidelity": "Audio quality",
       "fidelityDesc": "Streaming quality and cast output",
       "playback": "Playback",
@@ -529,11 +544,31 @@
       "about": "About & Help",
       "aboutDesc": "App info, guides, and getting started"
     },
+    "everything": {
+      "filesStorage": "Files & storage",
+      "serverAcquisition": "Server & acquisition",
+      "appearance": "Appearance & language",
+      "playbackChrome": "Playback chrome",
+      "security": "Privacy & security",
+      "diagnostics": "Diagnostics & telemetry",
+      "about": "About & help"
+    },
+    "crossLinks": {
+      "musicToEverything": "Library folder, stream cache, Connect, sleep timer, and acquisition keys live under Everything.",
+      "podcastsShared": "Shared playback DSP is under Music. Sleep timer, car mode, and mini-player are under Everything → Playback chrome. Podcast Index credentials are under Everything → Server & acquisition.",
+      "audiobooksAcquire": "Acquisition keys and Real-Debrid live under Everything → Server & acquisition.",
+      "openLibraryFolder": "Open library folder in Everything"
+    },
     "libraryFolder": {
       "title": "Library folder",
       "subtitle": "Choose one folder for your music, podcasts, audiobooks, books and documents."
     },
     "tabs": {
+      "music": "Music",
+      "podcasts": "Podcasts",
+      "audiobooks": "Audiobooks",
+      "documents": "Documents",
+      "everything": "Everything",
       "fidelity": "Audio Fidelity",
       "playback": "Playback Engine",
       "vault": "Device Capacity",
@@ -552,15 +587,15 @@
       "tagline": "Local-first music console — locker, playback, and optional home-server integrations.",
       "gettingStartedTitle": "Getting started",
       "gettingStartedLocker": "Add music in Locker — upload tracks or folders from your device.",
-      "gettingStartedServer": "Optional Sandbox Server (Settings → Add-ons) unlocks downloads, locker search, and feed releases.",
-      "gettingStartedConnect": "Multi-device playback and Connect role (host/remote) live in Settings → Playback.",
-      "gettingStartedCar": "Car Mode is in Settings → Playback — large controls for in-vehicle use on Android.",
+      "gettingStartedServer": "Optional Sandbox Server (Settings → Everything) unlocks downloads, locker search, and feed releases.",
+      "gettingStartedConnect": "Multi-device playback and Connect role (host/remote) live in Settings → Everything → Playback chrome.",
+      "gettingStartedCar": "Car Mode is in Settings → Everything → Playback chrome — large controls for in-vehicle use on Android.",
       "addonGuideTitle": "Building an add-on manifest",
       "addonGuideHint": "Host a JSON file over HTTPS. Sandbox reads name, version, and search level (1–4).",
-      "openAddonsPanel": "Open Add-ons panel",
+      "openAddonsPanel": "Open acquisition panel",
       "connectTitle": "Multi-device & Connect role",
-      "connectHint": "Enable multi-device playback in Playback settings, then pick host, remote, or auto role and set your Sandbox Server URL.",
-      "openPlaybackPanel": "Open Playback settings"
+      "connectHint": "Enable multi-device playback in Everything → Playback chrome, then pick host, remote, or auto role and set your Sandbox Server URL.",
+      "openPlaybackPanel": "Open Playback chrome"
     },
     "fidelity": {
       "title": "AUDIO FIDELITY DECODER RESOLUTION",

@@ -20,7 +20,7 @@ export interface SettingsDesktopNavProps {
 
 const ADVANCED_NESTED_IDS = new Set<SettingsTabId>(['telemetry', 'diagnostics']);
 
-/** Grouped sidebar — General / Connected / Security + collapsible Signal Bench (Spotify tablet pattern). */
+/** Grouped sidebar — General / Connected / Security + collapsible Signal Bench while legacy tabs remain. */
 export default function SettingsDesktopNav({
   categories,
   activeTab,

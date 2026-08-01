@@ -15,6 +15,10 @@ export type SettingsStatusSnapshot = {
   tier34Ok: boolean | null;
   networkSync: boolean;
   proAudio: boolean;
+  /** Optional until SettingsView wires station snapshot fields. */
+  podcastsEnabled?: boolean;
+  audiobooksEnabled?: boolean;
+  podcastSeekInterval?: number;
 };
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -42,6 +46,37 @@ export function settingsCategoryStatusValue(
   t: Translate,
 ): string | undefined {
   switch (categoryId) {
+    // --- Station IA (target) ---
+    case 'music': {
+      const parts: string[] = [fidelityShortLabel(snap.fidelity, t)];
+      if (snap.gapless) parts.push(t('settings.status.gaplessOn'));
+      if (snap.crossfade) parts.push(t('settings.status.crossfadeOn'));
+      if (snap.proAudio) parts.push(t('settings.status.proAudioOn'));
+      return parts.join(' · ');
+    }
+    case 'podcasts': {
+      if (!snap.podcastsEnabled) return t('settings.status.stationOff');
+      return t('settings.status.podcastSeek', {
+        seconds: snap.podcastSeekInterval ?? 30,
+      });
+    }
+    case 'audiobooks':
+      return snap.audiobooksEnabled
+        ? t('settings.status.stationOn')
+        : t('settings.status.stationOff');
+    case 'documents':
+      return t('settings.status.documentsLink');
+    case 'everything': {
+      const parts: string[] = [];
+      if (snap.lockerSyncEnabled) parts.push(t('settings.status.syncOn'));
+      else parts.push(capacityShortLabel(snap.capacity, t));
+      if (snap.tier34Ok === true) parts.push(t('settings.status.serverOnline'));
+      else if (snap.tier34Ok === false) parts.push(t('settings.status.serverOffline'));
+      if (snap.networkSync) parts.push(t('settings.status.connectOn'));
+      return parts.join(' · ');
+    }
+
+    // --- Legacy subsystem tabs (until SettingsView migrates) ---
     case 'fidelity':
       return fidelityShortLabel(snap.fidelity, t);
     case 'playback': {
