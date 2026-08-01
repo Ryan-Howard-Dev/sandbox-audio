@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { MediaEnvelope } from '../sandboxLayer1';
+import { pickLockerAlbumCover } from '../albumArtCache';
 import type { LockerVm } from './LocalView';
 import LocalView from './LocalView';
 import PlaylistsView from './PlaylistsView';
@@ -309,10 +310,15 @@ export default function CollectionView({
       if (!collection) return undefined;
       const edition = preferredEdition(collection);
       const album = editionToAlbumGroup(collection, edition);
-      for (const track of album.tracks) {
-        if (track.albumArt) return track.albumArt;
-      }
-      return undefined;
+      /*
+       * The same resolver the shelves use, not the first track that happens to carry art.
+       *
+       * Taking album.tracks[0].albumArt made the pin's cover depend on array order: per-row blob
+       * URLs mean one album carries many distinct blob: strings, so a re-order or a re-mint handed
+       * the pin a different one and the cover changed under it. pickLockerAlbumCover prefers a
+       * durable URL and picks deterministically among blobs.
+       */
+      return pickLockerAlbumCover(album.tracks);
     },
     [collections, preferredEdition],
   );

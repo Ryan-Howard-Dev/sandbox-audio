@@ -1724,7 +1724,16 @@ export default function SandboxShell() {
       webSupplementTracksRef.current = [];
       setPodcastSearchHits([]);
       setPodcastCatalogHits([]);
-      if (podcastsEnabled && trimmed.length >= 2) {
+      /*
+       * Opening an album is not a search, even though it reuses this function.
+       *
+       * The album view renders result.albumTracks and nothing else, so the podcast lookup, the
+       * YouTube supplement and the web-catalog supplement below cannot contribute anything to it.
+       * They were still all firing, and on a phone they compete for the same network the album
+       * tracks are arriving on, which is why an album took so long to appear.
+       */
+      const drillingIntoAlbum = options?.albumDrill === true;
+      if (podcastsEnabled && trimmed.length >= 2 && !drillingIntoAlbum) {
         void searchPodcastsUnified(trimmed).then(({ localHits, catalogHits }) => {
           setPodcastSearchHits(localHits);
           setPodcastCatalogHits(catalogHits);
@@ -1758,8 +1767,12 @@ export default function SandboxShell() {
       finishMobileSearchNavigation();
       setNavOpen(false);
       const runGen = ++searchRunGenerationRef.current;
-      const supplementQuery = needsWebTrackSupplement(trimmed);
-      const loadingGuardMs = supplementQuery ? WEB_LEAK_SEARCH_MAX_WAIT_MS : 45_000;
+      const supplementQuery = !drillingIntoAlbum && needsWebTrackSupplement(trimmed);
+      const loadingGuardMs = supplementQuery
+        ? WEB_LEAK_SEARCH_MAX_WAIT_MS
+        : drillingIntoAlbum
+          ? 12_000
+          : 45_000;
       const loadingGuard = window.setTimeout(() => {
         if (searchRunGenerationRef.current !== runGen) return;
         setSearchLoading(false);
@@ -1795,6 +1808,7 @@ export default function SandboxShell() {
       // priority first (the resolve for a tapped track must not be starved by discovery calls).
       window.setTimeout(() => {
         if (searchRunGenerationRef.current !== runGen) return;
+        if (drillingIntoAlbum) return;
         void searchYouTubeTracks(trimmed, 12)
           .then((ytTracks) => {
             if (searchRunGenerationRef.current !== runGen) return;
