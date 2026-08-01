@@ -46,6 +46,24 @@ public class NativeTextToSpeechPlugin extends Plugin {
             @Override
             public void onStart(String utteranceId) {}
 
+            /*
+             * Character offsets into the exact string handed to speak(), fired per word as the
+             * engine reaches it. This is what makes read-along real rather than estimated: no
+             * timing model, no words-per-minute guess that drifts over a chapter -- the engine
+             * says which characters it is voicing right now.
+             *
+             * API 26+. Engines are not obliged to implement it, so the JS side must treat these
+             * events as an enhancement and never wait on one.
+             */
+            @Override
+            public void onRangeStart(String utteranceId, int start, int end, int frame) {
+                JSObject data = new JSObject();
+                data.put("utteranceId", utteranceId == null ? "" : utteranceId);
+                data.put("start", start);
+                data.put("end", end);
+                notifyListeners("ttsRange", data);
+            }
+
             @Override
             public void onDone(String utteranceId) {
                 notifyUtterance("ttsDone", utteranceId);

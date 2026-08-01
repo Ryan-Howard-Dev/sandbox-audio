@@ -17,7 +17,20 @@ import type { NarrationChunk } from './documentNarration';
 export interface NarrationSpeechPort {
   speak(
     text: string,
-    options: { rate: number; voiceId?: string; onEnd: () => void; onError: () => void },
+    options: {
+      rate: number;
+      voiceId?: string;
+      onEnd: () => void;
+      onError: () => void;
+      /*
+       * Character offsets into the exact string passed to speak(), as the engine voices each word.
+       *
+       * Optional on purpose. Engines are not obliged to report ranges, and the web fallback has no
+       * equivalent, so a reader must never wait on one -- it highlights when told and reads on
+       * regardless when not.
+       */
+      onRange?: (start: number, end: number) => void;
+    },
   ): void;
   cancel(): void;
   pause(): void;
@@ -34,6 +47,13 @@ export interface NarrationReaderOptions {
   startIndex?: number;
   onChunkChange?: (index: number, chunk: NarrationChunk) => void;
   onStateChange?: (state: NarrationReaderState) => void;
+  /**
+   * The word being spoken, as character offsets into the current chunk's text.
+   *
+   * Carries the chunk index because ranges arrive asynchronously: a range from the chunk we have
+   * just left would otherwise highlight the wrong word in the new one.
+   */
+  onRange?: (index: number, start: number, end: number) => void;
 }
 
 export interface NarrationReader {
@@ -78,9 +98,14 @@ export function createNarrationReader(
     }
     setState('speaking');
     options.onChunkChange?.(index, chunk);
+    const spokenIndex = index;
     port.speak(chunk.text, {
       rate,
       voiceId,
+      // Bound to the index at the time of speaking, not the live one, for the reason above.
+      onRange: options.onRange
+        ? (start, end) => options.onRange?.(spokenIndex, start, end)
+        : undefined,
       onEnd: () => {
         // A cancel during speech also fires onEnd on some engines. Only advance while we still
         // believe we are speaking, or stopping would silently restart the document.

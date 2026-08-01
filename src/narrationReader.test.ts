@@ -13,14 +13,18 @@ function chunk(text: string, section = 'Intro', isHeading = false): NarrationChu
 /** Records calls and lets a test decide when an utterance ends, as a real engine would. */
 function fakePort() {
   const spoken: string[] = [];
-  let pending: { onEnd: () => void; onError: () => void } | null = null;
+  let pending: {
+    onEnd: () => void;
+    onError: () => void;
+    onRange?: (start: number, end: number) => void;
+  } | null = null;
   let cancels = 0;
   let pauses = 0;
   let resumes = 0;
   const port: NarrationSpeechPort = {
-    speak(text, { onEnd, onError }) {
+    speak(text, { onEnd, onError, onRange }) {
       spoken.push(text);
-      pending = { onEnd, onError };
+      pending = { onEnd, onError, onRange };
     },
     cancel() {
       cancels += 1;
@@ -37,6 +41,11 @@ function fakePort() {
     spoken,
     finishCurrent: () => pending?.onEnd(),
     failCurrent: () => pending?.onError(),
+    /** Stand in for the engine reporting a spoken word. */
+    reportRange: (start: number, end: number) => pending?.onRange?.(start, end),
+    hasRangeHandler: () => pending?.onRange !== undefined,
+    /** The handler for the utterance in flight, kept so a test can fire it after moving on. */
+    captureRangeHandler: () => pending?.onRange,
     counts: () => ({ cancels, pauses, resumes }),
   };
 }
@@ -176,5 +185,42 @@ describe('createNarrationReader', () => {
     reader.play();
     expect(reader.getState()).toBe('finished');
     expect(f.spoken).toEqual([]);
+  });
+
+  it('reports spoken word ranges against the chunk being spoken', () => {
+    const f = fakePort();
+    const onRange = vi.fn();
+    const reader = createNarrationReader(chunks, f.port, { onRange });
+    reader.play();
+    f.reportRange(0, 3);
+    expect(onRange).toHaveBeenCalledWith(0, 0, 3);
+
+    f.finishCurrent();
+    f.reportRange(1, 4);
+    // The index travels with the range, so a late one cannot mark a word in the wrong chunk.
+    expect(onRange).toHaveBeenLastCalledWith(1, 1, 4);
+  });
+
+  it('carries the index the chunk had when it was spoken, not the current one', () => {
+    const f = fakePort();
+    const seen: number[] = [];
+    const reader = createNarrationReader(chunks, f.port, {
+      onRange: (index) => seen.push(index),
+    });
+    reader.play();
+    // Hold chunk 0's handler, then move on before firing it — exactly what a slow engine event
+    // does. It must still report 0, so the UI can tell it is stale and drop it.
+    const stale = f.captureRangeHandler();
+    f.finishCurrent();
+    stale?.(0, 2);
+    f.reportRange(0, 3);
+    expect(seen).toEqual([0, 1]);
+  });
+
+  it('does not give the engine a range handler when nothing is listening', () => {
+    const f = fakePort();
+    const reader = createNarrationReader(chunks, f.port);
+    reader.play();
+    expect(f.hasRangeHandler()).toBe(false);
   });
 });

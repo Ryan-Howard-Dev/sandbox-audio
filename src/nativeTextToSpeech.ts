@@ -29,8 +29,9 @@ export interface NativeTextToSpeechPlugin {
   getVoices(): Promise<{ voices: NativeVoice[] }>;
   stop(): Promise<void>;
   addListener(
-    eventName: 'ttsDone' | 'ttsError',
-    listenerFunc: (event: { utteranceId: string }) => void,
+    eventName: 'ttsDone' | 'ttsError' | 'ttsRange',
+    // start/end only arrive on ttsRange, and only from engines that implement onRangeStart.
+    listenerFunc: (event: { utteranceId: string; start?: number; end?: number }) => void,
   ): Promise<PluginListenerHandle>;
 }
 
@@ -52,6 +53,7 @@ export function createNativeTextToSpeechPort(): NarrationSpeechPort & { dispose:
   let currentId = '';
   let onEndCurrent: (() => void) | null = null;
   let onErrorCurrent: (() => void) | null = null;
+  let onRangeCurrent: ((start: number, end: number) => void) | null = null;
   const handles: PluginListenerHandle[] = [];
 
   const settle = (utteranceId: string, kind: 'end' | 'error') => {
@@ -63,6 +65,7 @@ export function createNativeTextToSpeechPort(): NarrationSpeechPort & { dispose:
     currentId = '';
     onEndCurrent = null;
     onErrorCurrent = null;
+    onRangeCurrent = null;
     if (kind === 'end') end?.();
     else error?.();
   };
@@ -73,13 +76,23 @@ export function createNativeTextToSpeechPort(): NarrationSpeechPort & { dispose:
   void NativeTextToSpeech.addListener('ttsError', (e) => settle(e.utteranceId, 'error')).then((h) =>
     handles.push(h),
   );
+  /*
+   * Same id guard as settle(): a cancelled chunk can still deliver ranges, and highlighting a word
+   * from text the reader has already moved past is worse than not highlighting at all.
+   */
+  void NativeTextToSpeech.addListener('ttsRange', (e) => {
+    if (!e.utteranceId || e.utteranceId !== currentId) return;
+    if (typeof e.start !== 'number' || typeof e.end !== 'number') return;
+    onRangeCurrent?.(e.start, e.end);
+  }).then((h) => handles.push(h));
 
   return {
-    speak(text, { rate, voiceId, onEnd, onError }) {
+    speak(text, { rate, voiceId, onEnd, onError, onRange }) {
       counter += 1;
       currentId = `sandbox-tts-${counter}`;
       onEndCurrent = onEnd;
       onErrorCurrent = onError;
+      onRangeCurrent = onRange ?? null;
       void NativeTextToSpeech.speak({ text, utteranceId: currentId, rate, voiceId }).catch(() => {
         settle(currentId, 'error');
       });
@@ -88,6 +101,7 @@ export function createNativeTextToSpeechPort(): NarrationSpeechPort & { dispose:
       currentId = '';
       onEndCurrent = null;
       onErrorCurrent = null;
+      onRangeCurrent = null;
       void NativeTextToSpeech.stop().catch(() => undefined);
     },
     /*
