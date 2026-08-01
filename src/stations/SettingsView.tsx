@@ -18,6 +18,10 @@ import {
   ChevronLeft,
   Disc3,
   Info,
+  Mic2,
+  BookOpen,
+  FileText,
+  Layers,
 } from 'lucide-react';
 import SandboxSwitch from '../components/SandboxSwitch';
 import TasteRecipePanel from '../components/TasteRecipePanel';
@@ -29,6 +33,7 @@ import SettingsMobileRoot, {
   type SettingsCategory,
   type SettingsCategoryId,
 } from '../components/settings/SettingsMobileRoot';
+import { type SettingsTab } from '../components/settings/normalizeSettingsTab';
 import SettingsProfileHeader from '../components/settings/SettingsProfileHeader';
 import SettingsQuickAccess from '../components/settings/SettingsQuickAccess';
 import SettingsDesktopNav from '../components/settings/SettingsDesktopNav';
@@ -521,17 +526,7 @@ function themeToneDisplayLabel(tone: string, translate: (key: string) => string)
   return key ? translate(key) : tone;
 }
 
-export type SettingsTab =
-  | 'fidelity'
-  | 'playback'
-  | 'vault'
-  | 'architect'
-  | 'vinyl'
-  | 'addons'
-  | 'telemetry'
-  | 'diagnostics'
-  | 'security'
-  | 'about';
+export type { SettingsTab } from '../components/settings/normalizeSettingsTab';
 
 const ADDON_MANIFEST_EXAMPLE = `{
   "name": "My Search Provider",
@@ -709,7 +704,7 @@ export interface SettingsViewProps {
   onSonicLockerChange?: (enabled: boolean) => void;
   onOpenListening?: () => void;
   initialTab?: SettingsTab;
-  onMobileDrillChange?: (tab: SettingsTab | null) => void;
+  onMobileDrillChange?: (tab: SettingsCategoryId | null) => void;
   settingsDrillBackRef?: React.MutableRefObject<(() => boolean) | null>;
   downloadTierPreference?: DownloadTierPreference;
   onDownloadTierChange?: (tier: DownloadTierPreference) => void;
@@ -732,9 +727,12 @@ export default function SettingsView({
   onDownloadTierChange,
 }: SettingsViewProps) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab ?? 'fidelity');
+  // During migration, accept legacy tab ids from deep links; nav uses station shells.
+  const [activeTab, setActiveTab] = useState<SettingsCategoryId>(
+    () => (initialTab as SettingsCategoryId | undefined) ?? 'music',
+  );
   const isMobileLayout = useNarrowViewport(767);
-  const [mobileDrill, setMobileDrill] = useState<SettingsTab | null>(null);
+  const [mobileDrill, setMobileDrill] = useState<SettingsCategoryId | null>(null);
   const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
   const settingsSearchInputRef = useRef<HTMLInputElement>(null);
   const [pendingSettingsAnchor, setPendingSettingsAnchor] = useState<string | null>(null);
@@ -943,7 +941,7 @@ export default function SettingsView({
 
   useEffect(() => {
     if (!initialTab) return;
-    setActiveTab(initialTab);
+    setActiveTab(initialTab as SettingsCategoryId);
   }, [initialTab]);
 
   useEffect(() => {
@@ -1542,89 +1540,49 @@ export default function SettingsView({
   const usagePct = capacityUsagePercent(lockerUsageBytes, capacity);
   const streamCacheUsagePct = streamCacheUsagePercent(streamCacheUsageBytes);
 
-  const subTabs: Array<{ id: SettingsTab; label: string; icon: React.ElementType }> = [
-    { id: 'fidelity', label: t('settings.tabs.fidelity'), icon: Sliders },
-    { id: 'playback', label: t('settings.tabs.playback'), icon: Music },
-    { id: 'vault', label: t('settings.tabs.vault'), icon: Database },
-    { id: 'architect', label: t('settings.tabs.architect'), icon: Palette },
-    { id: 'vinyl', label: t('settings.tabs.vinyl'), icon: Disc3 },
-    { id: 'addons', label: t('settings.tabs.addons'), icon: Puzzle },
-    { id: 'telemetry', label: t('settings.tabs.telemetry'), icon: Activity },
-    { id: 'diagnostics', label: t('settings.tabs.diagnostics'), icon: ClipboardCheck },
-    { id: 'security', label: t('settings.tabs.security'), icon: Shield },
-    { id: 'about', label: t('settings.tabs.about'), icon: Info },
+  const subTabs: Array<{ id: SettingsCategoryId; label: string; icon: React.ElementType }> = [
+    { id: 'music', label: t('settings.tabs.music'), icon: Music },
+    { id: 'podcasts', label: t('settings.tabs.podcasts'), icon: Mic2 },
+    { id: 'audiobooks', label: t('settings.tabs.audiobooks'), icon: BookOpen },
+    { id: 'documents', label: t('settings.tabs.documents'), icon: FileText },
+    { id: 'everything', label: t('settings.tabs.everything'), icon: Layers },
   ];
 
   const mobileCategories: SettingsCategory[] = [
     {
-      id: 'fidelity',
-      label: t('settings.categories.fidelity'),
-      subtitle: t('settings.categories.fidelityDesc'),
-      icon: Sliders,
-      group: 'general',
-    },
-    {
-      id: 'playback',
-      label: t('settings.categories.playback'),
-      subtitle: t('settings.categories.playbackDesc'),
+      id: 'music',
+      label: t('settings.categories.music'),
+      subtitle: t('settings.categories.musicDesc'),
       icon: Music,
       group: 'general',
     },
     {
-      id: 'vault',
-      label: t('settings.categories.vault'),
-      subtitle: t('settings.categories.vaultDesc'),
-      icon: Database,
+      id: 'podcasts',
+      label: t('settings.categories.podcasts'),
+      subtitle: t('settings.categories.podcastsDesc'),
+      icon: Mic2,
       group: 'general',
     },
     {
-      id: 'architect',
-      label: t('settings.categories.architect'),
-      subtitle: t('settings.categories.architectDesc'),
-      icon: Palette,
+      id: 'audiobooks',
+      label: t('settings.categories.audiobooks'),
+      subtitle: t('settings.categories.audiobooksDesc'),
+      icon: BookOpen,
       group: 'general',
     },
     {
-      id: 'vinyl',
-      label: t('settings.categories.vinyl'),
-      subtitle: t('settings.categories.vinylDesc'),
-      icon: Disc3,
+      id: 'documents',
+      label: t('settings.categories.documents'),
+      subtitle: t('settings.categories.documentsDesc'),
+      icon: FileText,
       group: 'general',
     },
     {
-      id: 'addons',
-      label: t('settings.categories.addons'),
-      subtitle: t('settings.categories.addonsDesc'),
-      icon: Puzzle,
+      id: 'everything',
+      label: t('settings.categories.everything'),
+      subtitle: t('settings.categories.everythingDesc'),
+      icon: Layers,
       group: 'system',
-    },
-    {
-      id: 'telemetry',
-      label: t('settings.categories.telemetry'),
-      subtitle: t('settings.categories.telemetryDesc'),
-      icon: Activity,
-      group: 'advanced',
-    },
-    {
-      id: 'diagnostics',
-      label: t('settings.categories.diagnostics'),
-      subtitle: t('settings.categories.diagnosticsDesc'),
-      icon: ClipboardCheck,
-      group: 'advanced',
-    },
-    {
-      id: 'security',
-      label: t('settings.categories.security'),
-      subtitle: t('settings.categories.securityDesc'),
-      icon: Shield,
-      group: 'advanced',
-    },
-    {
-      id: 'about',
-      label: t('settings.categories.about'),
-      subtitle: t('settings.categories.aboutDesc'),
-      icon: Info,
-      group: 'general',
     },
   ];
 
@@ -1645,6 +1603,9 @@ export default function SettingsView({
     tier34Ok,
     networkSync,
     proAudio: audiophileEnabled,
+    podcastsEnabled,
+    audiobooksEnabled,
+    podcastSeekInterval,
   }), [
     fidelity,
     gapless,
@@ -1658,6 +1619,9 @@ export default function SettingsView({
     tier34Ok,
     networkSync,
     audiophileEnabled,
+    podcastsEnabled,
+    audiobooksEnabled,
+    podcastSeekInterval,
   ]);
 
   const categoryStatusFor = useCallback(
@@ -1668,44 +1632,36 @@ export default function SettingsView({
   const quickAccessNavItems = useMemo(
     () => [
       {
-        id: 'fidelity',
+        id: 'music',
         label: t('settings.quickAccess.audio'),
-        value: categoryStatusFor('fidelity') ?? t('settings.status.fidelityStandard'),
-        onOpen: () => openMobileCategory('fidelity'),
+        value: categoryStatusFor('music') ?? t('settings.status.fidelityStandard'),
+        onOpen: () => openMobileCategory('music'),
       },
       {
-        id: 'vault',
+        id: 'everything-storage',
         label: t('settings.quickAccess.storage'),
-        value:
-          categoryStatusFor('vault') ?? formatCapacityLabel(capacity),
-        onOpen: () => openMobileCategory('vault'),
+        value: categoryStatusFor('everything') ?? formatCapacityLabel(capacity),
+        onOpen: () => openMobileCategory('everything'),
       },
       {
-        id: 'architect',
+        id: 'everything-theme',
         label: t('settings.quickAccess.theme'),
-        value: categoryStatusFor('architect') ?? themeToneDisplayLabel(themeTone, t),
-        onOpen: () => openMobileCategory('architect'),
+        value: themeToneDisplayLabel(themeTone, t),
+        onOpen: () => openMobileCategory('everything'),
       },
       {
-        id: 'diagnostics',
+        id: 'everything-server',
         label: t('settings.quickAccess.server'),
         value:
-          categoryStatusFor('diagnostics') ??
-          (tier34Ok === true
+          tier34Ok === true
             ? t('settings.status.serverOnline')
             : tier34Ok === false
               ? t('settings.status.serverOffline')
-              : t('settings.status.healthCheck')),
-        onOpen: () => openMobileCategory('diagnostics'),
+              : t('settings.status.healthCheck'),
+        onOpen: () => openMobileCategory('everything'),
       },
     ],
-    [
-      t,
-      categoryStatusFor,
-      capacity,
-      themeTone,
-      tier34Ok,
-    ],
+    [t, categoryStatusFor, capacity, themeTone, tier34Ok],
   );
 
   const mobileDrillLabel =
@@ -1918,6 +1874,33 @@ export default function SettingsView({
         <div
           className={`settings-content${isMobileLayout ? ' settings-content--mobile-detail' : ''}`}
         >
+          {/* Station shells — panels fill category-by-category. Legacy tabs remain for search/deep links until moved. */}
+          {activeTab === 'music' && (
+            <div className="space-y-6">
+              <p className="ui-hint ui-hint--desc">{t('settings.categories.musicDesc')}</p>
+            </div>
+          )}
+          {activeTab === 'podcasts' && (
+            <div className="space-y-6">
+              <p className="ui-hint ui-hint--desc">{t('settings.categories.podcastsDesc')}</p>
+            </div>
+          )}
+          {activeTab === 'audiobooks' && (
+            <div className="space-y-6">
+              <p className="ui-hint ui-hint--desc">{t('settings.categories.audiobooksDesc')}</p>
+            </div>
+          )}
+          {activeTab === 'documents' && (
+            <div className="space-y-6">
+              <p className="ui-hint ui-hint--desc">{t('settings.categories.documentsEmpty')}</p>
+            </div>
+          )}
+          {activeTab === 'everything' && (
+            <div className="space-y-6">
+              <p className="ui-hint ui-hint--desc">{t('settings.categories.everythingDesc')}</p>
+            </div>
+          )}
+
           {activeTab === 'fidelity' && (
             <div className="space-y-6">
               <div className="settings-anchor-section">
