@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useDismissableOverlay } from '../../hooks/useDismissableOverlay';
 import { formatEpisodeDate } from '../../podcastFormat';
+import { useTranslation } from '../../i18n';
 
 export interface PodcastShowNotesSheetProps {
   open: boolean;
@@ -22,6 +23,7 @@ export default function PodcastShowNotesSheet({
   publishedAt,
 }: PodcastShowNotesSheetProps) {
   useDismissableOverlay(open, onClose);
+  const { t } = useTranslation();
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -30,14 +32,14 @@ export default function PodcastShowNotesSheet({
       <button
         type="button"
         className="mobile-track-sheet-backdrop"
-        aria-label="Close show notes"
+        aria-label={t('podcasts.closeShowNotes')}
         onClick={onClose}
       />
       <div
         className="mobile-track-sheet-panel podcasts-show-notes-panel"
         role="dialog"
         aria-modal="true"
-        aria-label="Show notes"
+        aria-label={t('podcasts.showNotes')}
         onClick={(e) => e.stopPropagation()}
       >
         <header className="mobile-track-sheet-header">
@@ -52,7 +54,7 @@ export default function PodcastShowNotesSheet({
             type="button"
             className="mobile-track-sheet-close touch-manipulation"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             <X className="w-5 h-5" strokeWidth={2} />
           </button>

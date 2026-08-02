@@ -1670,7 +1670,7 @@ export default function PlaylistsView({
             setPlaylistSearchOpen((open) => !open);
             if (playlistSearchOpen) setPlaylistQuery('');
           }}
-          aria-label="Search playlists"
+          aria-label={t('playlists.searchAria')}
           aria-expanded={playlistSearchOpen}
         >
           <Search className="w-4 h-4" />
@@ -1691,7 +1691,7 @@ export default function PlaylistsView({
           value={playlistQuery}
           onChange={(e) => setPlaylistQuery(e.target.value)}
           placeholder="Search playlists"
-          aria-label="Search playlists"
+          aria-label={t('playlists.searchAria')}
           autoFocus
         />
       ) : null}
@@ -1802,7 +1802,7 @@ export default function PlaylistsView({
                     onClick={runSmartRefresh}
                     disabled={smartRefreshBusy}
                     className="p-1 rounded-sm border border-slate-700/50 text-[var(--text-dim)] hover:text-accent hover:border-accent/50 disabled:opacity-40 touch-manipulation transition-colors"
-                    aria-label="Refresh smart playlists"
+                    aria-label={t('playlists.refreshSmartAria')}
                     title="Refresh smart playlists"
                   >
                     <RefreshCw className={`w-3 h-3 ${smartRefreshBusy ? 'animate-spin' : ''}`} />
@@ -1843,7 +1843,7 @@ export default function PlaylistsView({
           <button
             type="button"
             className="absolute inset-0 bg-black/60 backdrop-blur-md"
-            aria-label="Close"
+            aria-label={t('common.close')}
             onClick={closeConsole}
           />
           <div
@@ -2140,7 +2140,7 @@ export default function PlaylistsView({
                         type="button"
                         onClick={() => removeSmartRule(rule.id)}
                         className="p-2 text-[var(--text-dim)] hover:text-red-400 touch-manipulation"
-                        aria-label="Remove rule"
+                        aria-label={t('playlists.removeRuleAria')}
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -2567,7 +2567,7 @@ export default function PlaylistsView({
                         <button
                           type="button"
                           className="absolute -bottom-1 -right-1 p-1 rounded-full bg-[var(--bg-card)] border border-[var(--border)] text-accent touch-manipulation"
-                          aria-label="Change cover"
+                          aria-label={t('playlists.changeCoverAria')}
                           onClick={() => coverInputRef.current?.click()}
                         >
                           <ImagePlus className="w-3 h-3" />

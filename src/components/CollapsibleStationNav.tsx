@@ -48,12 +48,13 @@ export function StationMenuButton({
   active?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
       onClick={onClick}
       className={`station-dock-btn station-dock-btn--menu touch-manipulation ${active ? 'station-dock-btn--active' : ''} ${className}`}
-      aria-label="Stations"
+      aria-label={t('nav.stations')}
       aria-expanded={active}
     >
       <span className="station-dock-menu-bars" aria-hidden>
@@ -189,7 +190,7 @@ export default function CollapsibleStationNav<T extends string>({
     >
       <div className="station-dock-edge-trigger" aria-hidden />
 
-      <nav className="station-dock" aria-label="Stations">
+      <nav className="station-dock" aria-label={t('nav.stations')}>
         <StationMenuButton active={open} onClick={handleMenuToggle} />
 
         {primaryDockItems.map((item) => (
@@ -220,7 +221,7 @@ export default function CollapsibleStationNav<T extends string>({
           <button
             type="button"
             className="station-dock-backdrop"
-            aria-label="Close stations"
+            aria-label={t('nav.closeStations')}
             onClick={close}
           />
 
@@ -228,7 +229,7 @@ export default function CollapsibleStationNav<T extends string>({
             className="station-dock-expanded"
             role="dialog"
             aria-modal="true"
-            aria-label="All stations"
+            aria-label={t('nav.allStations')}
           >
             <nav className="station-dock-expanded-nav music-scrollbar">
               {showResumeQueue ? (

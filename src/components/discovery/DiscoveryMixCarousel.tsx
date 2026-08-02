@@ -13,6 +13,7 @@ import type { MediaEnvelope } from '../../sandboxLayer1';
 import { seedGradient } from '../../seedGradient';
 import type { DiscoveryMix } from '../../discoveryMixes';
 import { proxiedArtworkUrl } from '../../displaySanitize';
+import { useTranslation } from '../../i18n';
 
 function mixArtworkUrls(mix: DiscoveryMix): string[] {
   const urls: string[] = [];
@@ -221,12 +222,13 @@ export function DiscoveryMixFullPanel({
   onShare?: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   /*
    * Album-page layout, not a compact panel: full-bleed hero, big title + description, a pinned
    * Play / Shuffle pair, a secondary icon row, then ordinary track rows. Matches how albums and
    * playlists already open elsewhere in the app so a mix does not feel like a different species.
    */
-  const heroArt = mix.tracks.find((t) => t.artworkUrl?.trim())?.artworkUrl?.trim();
+  const heroArt = mix.tracks.find((track) => track.artworkUrl?.trim())?.artworkUrl?.trim();
 
   return (
     <div className="mfy-full-panel">
@@ -244,7 +246,7 @@ export function DiscoveryMixFullPanel({
           type="button"
           className="mfy-full-back touch-manipulation"
           onClick={onClose}
-          aria-label="Back"
+          aria-label={t('common.back')}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>

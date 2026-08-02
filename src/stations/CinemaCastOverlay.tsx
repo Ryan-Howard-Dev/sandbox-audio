@@ -8,10 +8,12 @@ import {
   type CinemaCastPayload,
 } from '../cinemaCast';
 import CinemaCastContent from './CinemaCastContent';
+import { useTranslation } from '../i18n';
 
 export default function CinemaCastOverlay() {
   const rootRef = useRef<HTMLDivElement>(null);
   const [payload, setPayload] = useState<CinemaCastPayload>(getLastCinemaCastPayload);
+  const { t } = useTranslation();
 
   useEffect(() => subscribeCinemaCast(setPayload), []);
 
@@ -34,13 +36,13 @@ export default function CinemaCastOverlay() {
       className="fixed inset-0 bg-[var(--bg-void)]"
       style={{ zIndex: 'var(--z-overlay)' }}
       role="dialog"
-      aria-label="Cinema Cast projection"
+      aria-label={t('player.cinemaCastAria')}
     >
       <button
         type="button"
         onClick={() => stopCinemaCast()}
         className="absolute top-4 right-4 z-10 p-2 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)]/80 text-[var(--text-mid)] hover:text-[var(--text)] touch-manipulation"
-        aria-label="Stop cast"
+        aria-label={t('player.stopCast')}
       >
         <X size={18} />
       </button>

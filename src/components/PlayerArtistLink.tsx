@@ -200,7 +200,7 @@ export default function PlayerArtistLink({
               <button
                 type="button"
                 className="sandbox-menu-backdrop player-artist-menu-backdrop"
-                aria-label="Close menu"
+                aria-label={t('common.closeMenu')}
                 onClick={() => setOpen(false)}
               />
               {menu}

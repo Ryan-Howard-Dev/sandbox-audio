@@ -2,6 +2,7 @@ import React from 'react';
 import { Play, Shuffle } from 'lucide-react';
 import PlaylistMoreMenu from '../PlaylistMoreMenu';
 import type { PlaylistMoreMenuProps } from '../PlaylistMoreMenu';
+import { useTranslation } from '../../i18n';
 
 export interface PlaylistRowActionsProps extends Omit<PlaylistMoreMenuProps, 'open' | 'onOpenChange'> {
   menuOpen: boolean;
@@ -20,6 +21,7 @@ export default function PlaylistRowActions({
   downloadLabel,
   ...menuProps
 }: PlaylistRowActionsProps) {
+  const { t } = useTranslation();
   const hasTracks = playlist.tracks.length > 0;
 
   return (
@@ -29,7 +31,7 @@ export default function PlaylistRowActions({
           <button
             type="button"
             className="playlist-row-action-btn touch-manipulation"
-            aria-label="Play playlist"
+            aria-label={t('playlists.playAria')}
             disabled={!hasTracks}
             onClick={(e) => {
               e.stopPropagation();
@@ -41,7 +43,7 @@ export default function PlaylistRowActions({
           <button
             type="button"
             className="playlist-row-action-btn touch-manipulation"
-            aria-label="Shuffle playlist"
+            aria-label={t('playlists.shuffleAria')}
             disabled={!hasTracks}
             onClick={(e) => {
               e.stopPropagation();

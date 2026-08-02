@@ -234,8 +234,7 @@ export default function CollectionView({
       );
     }
     if (onOpenDownloads) {
-      // Downloads land in the Locker, so this is where users look for them — the floating
-      // button is kept for the stations that have no overflow menu of their own.
+      // Downloads land in the Locker for music — each station owns its own entry point.
       items.push({
         id: 'downloads',
         label:

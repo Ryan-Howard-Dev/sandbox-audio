@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useDismissableOverlay } from '../hooks/useDismissableOverlay';
 import type { LockerMenuAction } from '../components/LockerMoreMenu';
+import { useTranslation } from '../i18n';
 
 export interface MobileTrackActionSheetProps {
   open: boolean;
@@ -22,6 +23,7 @@ export default function MobileTrackActionSheet({
   ariaLabel = 'Track options',
 }: MobileTrackActionSheetProps) {
   useDismissableOverlay(open, onClose);
+  const { t } = useTranslation();
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -30,7 +32,7 @@ export default function MobileTrackActionSheet({
       <button
         type="button"
         className="mobile-track-sheet-backdrop"
-        aria-label="Close track menu"
+        aria-label={t('shell.trackMenuClose')}
         onClick={onClose}
       />
       <div
@@ -51,7 +53,7 @@ export default function MobileTrackActionSheet({
             type="button"
             className="mobile-track-sheet-close touch-manipulation"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             <X className="w-5 h-5" strokeWidth={2} />
           </button>

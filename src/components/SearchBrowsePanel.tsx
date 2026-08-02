@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ExploreGroup } from '../exploreCatalog';
+import { useTranslation } from '../i18n';
 import {
   EXPLORE_GENRES,
   SEARCH_BROWSE_MOODS,
@@ -53,6 +54,7 @@ export default function SearchBrowsePanel({
   podcastsEnabled = false,
   videosEnabled = false,
 }: SearchBrowsePanelProps) {
+  const { t } = useTranslation();
   // Videos are a screen activity — offered only on desktop/tablet/TV, never on phone or car,
   // to keep the phone a listening-only device.
   const quickFilters = [
@@ -62,7 +64,7 @@ export default function SearchBrowsePanel({
   ];
 
   return (
-    <div className="search-browse-panel" role="region" aria-label="Browse music">
+    <div className="search-browse-panel" role="region" aria-label={t('shell.browseMusicAria')}>
       <BrowseSection title="Quick picks">
         <div className="search-browse-quick-row">
           {quickFilters.map((filter) => (

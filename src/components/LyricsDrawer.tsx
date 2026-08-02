@@ -4,6 +4,7 @@ import type { ResolvedLyrics } from '../resolveTrackLyrics';
 import { useDismissableOverlay } from '../hooks/useDismissableOverlay';
 import { useLyricsPlaybackClock } from '../hooks/useLyricsPlaybackClock';
 import { findActiveLineIndex } from '../lyricsSync';
+import { useTranslation } from '../i18n';
 
 export type LyricsViewMode = 'plain' | 'scroll';
 
@@ -50,6 +51,7 @@ export default function LyricsDrawer({
   isMobile = false,
 }: LyricsDrawerProps) {
   useDismissableOverlay(open, onClose);
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<LyricsViewMode>('scroll');
   const lineRefs = useRef<(HTMLLIElement | null)[]>([]);
   const lastScrolledIndexRef = useRef(-1);
@@ -109,14 +111,14 @@ export default function LyricsDrawer({
       <button
         type="button"
         className={`lyrics-drawer-backdrop ${offsetClass}`}
-        aria-label="Close lyrics"
+        aria-label={t('player.lyricsDrawer.close')}
         onClick={onClose}
       />
       <aside
         className={`lyrics-drawer-panel ${panelClass} ${offsetClass} lyrics-drawer-panel--open`}
         role="dialog"
         aria-modal="true"
-        aria-label="Track lyrics"
+        aria-label={t('player.lyricsDrawer.title')}
       >
         <header className="lyrics-drawer-header">
           {isMobile ? (
@@ -124,25 +126,27 @@ export default function LyricsDrawer({
               type="button"
               onClick={onClose}
               className="lyrics-drawer-back touch-manipulation"
-              aria-label="Back to player"
+              aria-label={t('player.lyricsDrawer.backToPlayer')}
             >
               <ChevronLeft className="w-5 h-5 shrink-0" strokeWidth={2} />
-              <span>Back</span>
+              <span>{t('player.lyricsDrawer.back')}</span>
             </button>
           ) : (
             <div className="flex items-center gap-2 min-w-0">
               <ScrollText className="w-4 h-4 shrink-0 text-accent" strokeWidth={2} />
-              <span className="lyrics-drawer-heading">Lyrics</span>
+              <span className="lyrics-drawer-heading">{t('player.lyricsDrawer.heading')}</span>
             </div>
           )}
           {isMobile ? (
-            <span className="lyrics-drawer-heading lyrics-drawer-heading--mobile">Lyrics</span>
+            <span className="lyrics-drawer-heading lyrics-drawer-heading--mobile">
+              {t('player.lyricsDrawer.heading')}
+            </span>
           ) : (
             <button
               type="button"
               onClick={onClose}
               className="lyrics-drawer-close touch-manipulation"
-              aria-label="Close lyrics drawer"
+              aria-label={t('player.lyricsDrawer.closeDrawer')}
             >
               <X className="w-4 h-4" strokeWidth={2} />
             </button>
@@ -165,7 +169,7 @@ export default function LyricsDrawer({
             aria-pressed={viewMode === 'plain'}
           >
             <AlignLeft className="w-3.5 h-3.5" strokeWidth={2} />
-            Plain
+            {t('player.lyricsDrawer.plain')}
           </button>
           <button
             type="button"
@@ -178,7 +182,7 @@ export default function LyricsDrawer({
             title={!canSync ? 'Synced lyrics not available for this track' : undefined}
           >
             <List className="w-3.5 h-3.5" strokeWidth={2} />
-            Scroll
+            {t('player.lyricsDrawer.scroll')}
           </button>
         </div>
 
@@ -248,7 +252,7 @@ export default function LyricsDrawer({
                   onClick={onRetry}
                 >
                   <RefreshCw className="w-3.5 h-3.5" strokeWidth={2} />
-                  Try again
+                  {t('player.lyricsDrawer.retry')}
                 </button>
               ) : null}
             </div>

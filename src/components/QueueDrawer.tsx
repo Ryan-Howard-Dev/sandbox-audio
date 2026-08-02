@@ -52,6 +52,7 @@ function SuggestedTrackRow({
   addLabel: string;
 }) {
   const [whyOpen, setWhyOpen] = useState(false);
+  const { t } = useTranslation();
   return (
     <>
       <div className="queue-drawer-row queue-drawer-row--suggested group">
@@ -74,10 +75,11 @@ function SuggestedTrackRow({
           <button
             type="button"
             className="queue-drawer-suggested-btn touch-manipulation"
-            aria-label="Why this song"
+            aria-label={t('player.whyThisSong')}
+            aria-expanded={whyOpen}
             onClick={() => setWhyOpen((v) => !v)}
           >
-            Why?
+            {t('player.whyThisSongShort')}
           </button>
           {onPlaySuggested ? (
             <button
@@ -157,6 +159,7 @@ function QueueRow({
   onGoToAlbum?: (artist: string, album: string) => void;
 }) {
   const [dragging, setDragging] = useState(false);
+  const { t } = useTranslation();
   const title = env.title;
   const artist = env.artist;
   const album = 'album' in env ? env.album : undefined;
@@ -220,7 +223,7 @@ function QueueRow({
           type="button"
           onClick={() => onRemove(index)}
           className="queue-drawer-remove touch-manipulation"
-          aria-label={`Remove ${title} from queue`}
+          aria-label={t('player.queueSheet.remove', { title })}
         >
           <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
         </button>
@@ -291,7 +294,7 @@ export default function QueueDrawer({
       <button
         type="button"
         className={`queue-drawer-backdrop ${offsetClass}${mobile ? ' queue-drawer-backdrop--mobile' : ''}`}
-        aria-label="Close queue"
+        aria-label={t('player.closeQueue')}
         onClick={onClose}
       />
       <aside
@@ -324,7 +327,7 @@ export default function QueueDrawer({
               type="button"
               onClick={onClose}
               className="queue-drawer-close touch-manipulation"
-              aria-label="Close queue drawer"
+              aria-label={t('player.closeQueueDrawer')}
             >
               <X className="w-4 h-4" strokeWidth={2} />
             </button>
@@ -445,7 +448,7 @@ export default function QueueDrawer({
                 onChange={(e) => setSaveName(e.target.value)}
                 placeholder={defaultSaveName}
                 className="queue-drawer-save-input focus-accent"
-                aria-label="Playlist name"
+                aria-label={t('player.playlistName')}
               />
               <button
                 type="button"

@@ -46,7 +46,10 @@
     "browseSettingsHint": "Playback, vault & addons",
     "browseClose": "Close",
     "insights": "Insights",
-    "serverLibrary": "Server Library"
+    "serverLibrary": "Server Library",
+    "stations": "Stations",
+    "closeStations": "Close stations",
+    "allStations": "All stations"
   },
   "shell": {
     "searchPlaceholder": {
@@ -80,7 +83,17 @@
     "castBrowserChromecastNote": "Chromecast needs Chrome or Edge. Firefox can open the app but cannot cast to Google Cast devices.",
     "tvCoverageBanner": "TV mode: Home, Discover, Locker, and Settings are remote-friendly. Search, Podcasts, and Insights use phone layouts — Locker, Playlists, and Feed are partial on a TV remote.",
     "tvCoverageBannerDismiss": "Dismiss TV coverage note",
-    "navBadge": "{label}, {count} new"
+    "navBadge": "{label}, {count} new",
+    "modalClose": "Close",
+    "loadingAria": "Loading",
+    "browseMusicAria": "Browse music",
+    "searchResultsAria": "Search results",
+    "trackMenuClose": "Close track menu",
+    "windowTitleBar": "Window title bar",
+    "windowMinimize": "Minimize",
+    "windowClose": "Close",
+    "copyError": "Copy error message",
+    "dismissDownloadErrors": "Dismiss download errors"
   },
   "download": {
     "activity": {
@@ -298,6 +311,8 @@
     "carModeTitle": "Car mode",
     "seek": "Seek",
     "castingTo": "CASTING TO {device}",
+    "cinemaCastAria": "Cinema Cast projection",
+    "stopCast": "Stop cast",
     "error": "error",
     "resolving": "Resolving stream…",
     "connecting": "Connecting…",
@@ -384,8 +399,32 @@
     "podcast": {
       "prevChapter": "Previous chapter",
       "nextChapter": "Next chapter",
-      "chapters": "Chapters"
+      "chapters": "Chapters",
+      "closeChapters": "Close chapters",
+      "skipAd": "Skip ad — {hint}",
+      "skipAdTitle": "Skip ad — cannot remove ads from the stream; seeks forward",
+      "controlsAria": "Podcast playback controls"
     },
+    "lyricsDrawer": {
+      "title": "Track lyrics",
+      "heading": "Lyrics",
+      "close": "Close lyrics",
+      "closeDrawer": "Close lyrics drawer",
+      "backToPlayer": "Back to player",
+      "back": "Back",
+      "plain": "Plain",
+      "scroll": "Scroll",
+      "retry": "Try again"
+    },
+    "whyThisSong": "Why this song",
+    "whyThisSongShort": "Why?",
+    "closeQueue": "Close queue",
+    "closeQueueDrawer": "Close queue drawer",
+    "playlistName": "Playlist name",
+    "vinylColour": "Vinyl & colour",
+    "playTrack": "Play",
+    "previous": "Previous",
+    "next": "Next",
     "trackSheet": {
       "stream": "Stream track",
       "cache": "Cache for offline",
@@ -1046,8 +1085,8 @@
       "reindexLockerSearch": "Reindex locker search",
       "reindexing": "Reindexing…",
       "experimentalTitle": "EXPERIMENTAL INTEGRATIONS",
-      "experimentalHint": "Reveal built-in dev-test addons (SoundCloud, WebTorrent, IPFS, Radio Browser, Audius) in Settings and search. Turning ON auto-enables them for Sandbox Server resolve testing.",
-      "experimentalHiddenHint": "Built-in dev-test addons are hidden. Enable Show Experimental Integrations under Settings → Addons to try SoundCloud, WebTorrent, IPFS, Radio Browser, and Audius via Sandbox Server. User manifest addons work without this toggle.",
+      "experimentalHint": "Reveal built-in stub addons that are not implemented. Off by default — user-installed manifest addons are always visible.",
+      "experimentalHiddenHint": "Built-in stub addons are hidden because they are not implemented. Enable Show Experimental Integrations under Settings → Addons to inspect them. User manifest addons work without this toggle.",
       "showAcquisitionKeys": "Show acquisition keys",
       "hideAcquisitionKeys": "Hide acquisition keys",
       "djConsoleTitle": "DJ CONSOLE",
@@ -1058,14 +1097,15 @@
       "stemSeparationHint": "Background Demucs on the server (DJ Console → Stems). Cached stems power the player Stem mix panel — not live separation during playback.",
       "stemSeparationUnavailable": "Demucs not installed — on the server host run: docker compose --profile stems up",
       "personalAddonPack": "PERSONAL ADDON PACK",
-      "personalAddonPackHint": "Pre-installed dev-test addons wired to Sandbox Server resolve. Toggle enable/disable — built-ins cannot be removed.",
+      "personalAddonPackHint": "Built-in stub addons that are not implemented. Toggle enable/disable for inspection only — built-ins cannot be removed.",
       "showExperimentalIntegrations": "SHOW EXPERIMENTAL INTEGRATIONS",
       "builtInBadge": "BUILT-IN",
-      "statusExperimental": "Experimental (Sandbox Server required)",
-      "statusExperimentalHint": "Resolve works when the Sandbox Server is configured and this addon is enabled.",
+      "notImplementedBadge": "Not implemented",
+      "statusExperimental": "Not implemented",
+      "statusExperimentalHint": "This built-in addon is a placeholder and is not wired for use.",
       "statusActive": "Active",
       "statusDisabled": "Disabled",
-      "devBadgeHint": "Dev-test addon — Sandbox Server resolve when server URL is configured."
+      "devBadgeHint": "Not implemented — placeholder for development only."
     },
     "security": {
       "title": "SECURITY",
@@ -1329,6 +1369,13 @@
   "discover": {
     "title": "Discover",
     "tabsAria": "Discover sections",
+    "notForMe": "Not for me",
+    "snooze30": "Snooze 30 days",
+    "lessLikeThis": "Less like this",
+    "whyThisSong": "Why this song",
+    "madeForYouAria": "Made for you",
+    "weeklyDiscoverAria": "Weekly Discover",
+    "browseAria": "Browse",
     "tabs": {
       "feed": "For you",
       "explore": "Browse",
@@ -1366,7 +1413,29 @@
       "browseCta": "Browse catalog"
     }
   },
+  "podcasts": {
+    "sectionsAria": "Podcast sections",
+    "searchShowsAria": "Search your shows",
+    "loadingLibraryAria": "Loading Library",
+    "downloadedEpisodesAria": "Downloaded episodes",
+    "downloadedEpisodesCountAria": "Downloaded episodes, {count}",
+    "newEpisodesAria": "New episodes",
+    "showNotes": "Show notes",
+    "closeShowNotes": "Close show notes",
+    "searchGlobalAria": "Search global podcasts",
+    "episodeFiltersAria": "Episode filters",
+    "autoSaveCountAria": "Episodes to auto-save",
+    "deletePlayedAfterAria": "Delete played episodes after",
+    "voiceBoostDefaultAria": "Voice Boost default for this show"
+  },
   "playlists": {
+    "playAria": "Play playlist",
+    "shuffleAria": "Shuffle playlist",
+    "searchAria": "Search playlists",
+    "refreshSmartAria": "Refresh smart playlists",
+    "removeRuleAria": "Remove rule",
+    "changeCoverAria": "Change cover",
+    "optionsAria": "Options for {name}",
     "weeklyMixes": {
       "title": "Your weekly genre mixes",
       "subtitle": "Fresh from your locker · new every week",
@@ -1429,6 +1498,17 @@
   },
   "locker": {
     "tabsAria": "Locker library sections",
+    "libraryViewAria": "Library view",
+    "clearSearch": "Clear search",
+    "searchAria": "Search locker",
+    "searchModeAria": "Search mode",
+    "searchSectionAria": "Locker search",
+    "playHitAria": "Play {title}",
+    "uploadCoverAria": "Upload album cover art",
+    "albumVersionsAria": "Album versions",
+    "albumEditionAria": "Album edition",
+    "downloadedStatusAria": "Downloaded",
+    "savedToLockerAria": "Saved to locker",
     "tabs": {
       "artists": "Artists",
       "albums": "Albums",
@@ -1766,7 +1846,9 @@
     "skip": "Skip",
     "done": "Done",
     "save": "Save",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "close": "Close",
+    "closeMenu": "Close menu"
   },
   "carMode": {
     "play": "Play",
@@ -1774,11 +1856,18 @@
     "nextTrack": "Next track",
     "previousTrack": "Previous track",
     "exit": "Exit car mode",
-    "suggestion": "Car mode suggestion"
+    "suggestion": "Car mode suggestion",
+    "controlsAria": "Playback controls",
+    "volumeAria": "Volume",
+    "albumArt": "{title} album art",
+    "albumArtFallback": "Album art"
   },
   "artist": {
     "discographyLoading": "Loading discography…",
     "discographyTabsAria": "Artist discography",
+    "topTracksAria": "Top tracks",
+    "savedToLockerAria": "Saved to locker",
+    "downloadingAria": "Downloading",
     "albumsTab": "Albums",
     "singlesTab": "Singles",
     "noSingles": "No singles found for this artist.",
@@ -1808,6 +1897,13 @@
     "sectionLocker": "Locker",
     "sectionMoreResults": "More results",
     "sectionTracksMixed": "Tracks",
+    "sectionsAria": "Search result sections",
+    "playAria": "Play",
+    "addToQueueAria": "Add to queue",
+    "sourceBreakdownAria": "Source breakdown",
+    "retryDownloadAria": "Retry track download",
+    "savedToLockerAria": "Saved to locker",
+    "trackLengthAria": "Track length",
     "catalogReadySearching": "Catalog ready · finding more tracks…",
     "notInCatalogLoading": "Not in catalog — more results loading…",
     "notInCatalogReady": "Not in catalog — more results below",

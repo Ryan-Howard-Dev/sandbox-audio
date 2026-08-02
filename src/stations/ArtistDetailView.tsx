@@ -130,9 +130,10 @@ function resolveTrackDownloadState(
 }
 
 function TrackDownloadIndicator({ state }: { state: TrackDownloadState }) {
+  const { t } = useTranslation();
   if (state.status === 'done' || state.status === 'skipped') {
     return (
-      <span className="track-download-status track-download-status--done" aria-label="Saved to locker">
+      <span className="track-download-status track-download-status--done" aria-label={t('artist.savedToLockerAria')}>
         <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
       </span>
     );
@@ -153,7 +154,7 @@ function TrackDownloadIndicator({ state }: { state: TrackDownloadState }) {
   if (state.status === 'pending') return null;
 
   return (
-    <span className="track-download-status track-download-status--active" aria-label="Downloading">
+    <span className="track-download-status track-download-status--active" aria-label={t('artist.downloadingAria')}>
       <Loader2 className="w-3 h-3 animate-spin" />
       <span className="track-download-percent">{state.percent}%</span>
     </span>
@@ -645,7 +646,7 @@ export default function ArtistDetailView({
       </section>
 
       <div className="artist-page-body">
-        <section className="artist-top-tracks" aria-label="Top tracks">
+        <section className="artist-top-tracks" aria-label={t('artist.topTracksAria')}>
           <h2 className="artist-section-title">Top Tracks</h2>
 
           {topLoading && (

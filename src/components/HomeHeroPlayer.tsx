@@ -699,6 +699,7 @@ export default function HomeHeroPlayer({
                       onClick={onShuffleToggle}
                       className={`home-hero-transport-btn touch-manipulation${shuffleOn ? ' home-hero-transport-btn--active' : ''}`}
                       aria-label={t('player.shuffle')}
+                      aria-pressed={shuffleOn}
                     >
                       <Shuffle className="w-4 h-4" strokeWidth={2} />
                     </button>
@@ -747,6 +748,7 @@ export default function HomeHeroPlayer({
                       onClick={onRepeatCycle}
                       className={`home-hero-transport-btn touch-manipulation relative${repeatMode !== 'none' ? ' home-hero-transport-btn--active' : ''}`}
                       aria-label={t('player.repeat')}
+                      aria-pressed={repeatMode !== 'none'}
                     >
                       <Repeat className="w-4 h-4" strokeWidth={2} />
                       {repeatMode === 'one' ? (

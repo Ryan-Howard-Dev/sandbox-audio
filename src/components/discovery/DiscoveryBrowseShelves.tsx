@@ -3,6 +3,7 @@ import type { MediaEnvelope } from '../../sandboxLayer1';
 import type { ExploreGroup } from '../../exploreCatalog';
 import { FEED_BROWSE_SHELVES } from '../../exploreHubShelves';
 import DiscoveryTrackShelf from './DiscoveryTrackShelf';
+import { useTranslation } from '../../i18n';
 
 export interface DiscoveryBrowseShelvesProps {
   onPlay: (env: MediaEnvelope) => void;
@@ -19,8 +20,9 @@ export default function DiscoveryBrowseShelves({
   onGoToExplore,
   mobile = false,
 }: DiscoveryBrowseShelvesProps) {
+  const { t } = useTranslation();
   return (
-    <section className={`feed-browse-hub${mobile ? ' feed-browse-hub--mobile' : ''}`} aria-label="Browse">
+    <section className={`feed-browse-hub${mobile ? ' feed-browse-hub--mobile' : ''}`} aria-label={t('discover.browseAria')}>
       <div className="feed-browse-hub-head">
         <div>
           <h2 className="feed-browse-hub-title">Browse</h2>

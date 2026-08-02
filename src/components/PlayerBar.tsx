@@ -970,8 +970,8 @@ export default function PlayerBar({
                   type="button"
                   onClick={onSkipPodcastAd}
                   className="player-bar-btn player-bar-btn--skip-ad"
-                  aria-label={`Skip ad — ${podcastSkipAdHint}`}
-                  title="Skip ad — cannot remove ads from the stream; seeks forward"
+                  aria-label={t('player.podcast.skipAd', { hint: podcastSkipAdHint })}
+                  title={t('player.podcast.skipAdTitle')}
                 >
                   <FastForward className="w-4 h-4" strokeWidth={2} />
                 </button>
@@ -994,6 +994,7 @@ export default function PlayerBar({
                 onClick={onShuffleToggle}
                 className={`player-bar-btn ${shuffleOn ? 'text-accent' : ''}`}
                 aria-label={t('player.shuffle')}
+                aria-pressed={shuffleOn}
               >
                 <Shuffle className="w-4 h-4" strokeWidth={2} />
               </button>
@@ -1002,6 +1003,7 @@ export default function PlayerBar({
                 onClick={onRepeatCycle}
                 className={`player-bar-btn relative ${repeatMode !== 'none' ? 'text-accent' : ''}`}
                 aria-label={t('player.repeat')}
+                aria-pressed={repeatMode !== 'none'}
               >
                 <Repeat className="w-4 h-4" strokeWidth={2} />
                 {repeatMode === 'one' && (
@@ -1077,6 +1079,7 @@ export default function PlayerBar({
               }}
               className="player-bar-volume-btn touch-manipulation"
               aria-label={showMuted ? t('player.unmute') : t('player.mute')}
+              aria-pressed={showMuted}
             >
               {showMuted ? (
                 <VolumeX className="w-4 h-4" strokeWidth={2} />

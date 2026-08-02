@@ -6,6 +6,7 @@ import { isAdTaggedChapter } from '../../podcastAdSkip';
 import type { PodcastChapter } from '../../podcastChapters';
 import { findActiveChapterIndex } from '../../podcastChapters';
 import { formatTime } from '../../stations/theme';
+import { useTranslation } from '../../i18n';
 
 export interface PodcastChapterSheetProps {
   open: boolean;
@@ -27,6 +28,7 @@ export default function PodcastChapterSheet({
   onSeek,
 }: PodcastChapterSheetProps) {
   useDismissableOverlay(open, onClose);
+  const { t } = useTranslation();
   const activeIdx = findActiveChapterIndex(chapters, currentTimeSeconds);
 
   if (!open || typeof document === 'undefined') return null;
@@ -36,14 +38,14 @@ export default function PodcastChapterSheet({
       <button
         type="button"
         className="mobile-track-sheet-backdrop"
-        aria-label="Close chapters"
+        aria-label={t('player.podcast.closeChapters')}
         onClick={onClose}
       />
       <div
         className="mobile-track-sheet-panel podcasts-show-notes-panel"
         role="dialog"
         aria-modal="true"
-        aria-label="Chapters"
+        aria-label={t('player.podcast.chapters')}
         onClick={(e) => e.stopPropagation()}
       >
         <header className="mobile-track-sheet-header">
@@ -55,7 +57,7 @@ export default function PodcastChapterSheet({
             type="button"
             className="mobile-track-sheet-close touch-manipulation"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             <X className="w-5 h-5" strokeWidth={2} />
           </button>

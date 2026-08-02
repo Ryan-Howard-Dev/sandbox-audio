@@ -376,7 +376,7 @@ export function saveSonicPeqPresetId(presetId: SonicPeqPresetId): void {
   window.dispatchEvent(new Event('sandbox-settings-change'));
 }
 
-/** Show built-in stub addons (SoundCloud, WebTorrent, IPFS) in Settings and search. Off by default. */
+/** Show built-in stub addons (via isStubAddon) in Settings and search. Off by default. */
 export function loadShowExperimentalIntegrations(): boolean {
   return loadBool(EXPERIMENTAL_INTEGRATIONS_KEY, false);
 }

@@ -22,6 +22,7 @@ import { episodeEnvelope } from '../../podcastSearch';
 import type { PodcastEpisode } from '../../podcastStorage';
 import { proxiedArtworkUrl } from '../../displaySanitize';
 import { seedGradient } from '../../seedGradient';
+import { useTranslation } from '../../i18n';
 import PodcastEpisodeRow from './PodcastEpisodeRow';
 
 export interface PodcastDiscoverPanelProps {
@@ -234,6 +235,7 @@ export default function PodcastDiscoverPanel({
   onError,
   activeEnvelopeId,
 }: PodcastDiscoverPanelProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [trending, setTrending] = useState<PodcastCatalogShow[]>([]);
@@ -383,7 +385,7 @@ export default function PodcastDiscoverPanel({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search podcasts, hosts, topics…"
           className="podcasts-discover-search-input"
-          aria-label="Search global podcasts"
+          aria-label={t('podcasts.searchGlobalAria')}
         />
         {/* No Search button: the keyboard's enter key already submits, and the button was
             eating the width that truncated the placeholder. The spinner stays — that is

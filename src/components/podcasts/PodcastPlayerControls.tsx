@@ -1,5 +1,6 @@
 import React from 'react';
 import { FastForward } from 'lucide-react';
+import { useTranslation } from '../../i18n';
 
 export interface PodcastPlayerControlsProps {
   onSkipAd?: () => void;
@@ -13,20 +14,21 @@ export default function PodcastPlayerControls({
   skipAdHint = '+90s',
   className = '',
 }: PodcastPlayerControlsProps) {
+  const { t } = useTranslation();
   if (!onSkipAd) return null;
 
   return (
     <div
       className={`podcasts-player-controls podcasts-player-controls--compact ${className}`.trim()}
       role="toolbar"
-      aria-label="Podcast playback controls"
+      aria-label={t('player.podcast.controlsAria')}
     >
       <button
         type="button"
         className="podcasts-skip-ad-btn podcasts-skip-ad-btn--solo touch-manipulation"
         onClick={onSkipAd}
-        aria-label={`Skip ad — ${skipAdHint}`}
-        title="Skip ad — jumps forward when chapter markers are missing (cannot remove ads from the stream)"
+        aria-label={t('player.podcast.skipAd', { hint: skipAdHint })}
+        title={t('player.podcast.skipAdTitle')}
       >
         <span className="podcasts-skip-ad-btn-icon" aria-hidden>
           <FastForward className="w-5 h-5" strokeWidth={2.25} />

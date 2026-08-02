@@ -30,6 +30,7 @@ import {
 import { seedGradient } from '../seedGradient';
 import { useImeFriendlyInput } from '../useImeFriendlyInput';
 import { imeSearchInputProps } from '../imeInputProps';
+import { useTranslation } from '../i18n';
 
 const SEARCH_DEBOUNCE_MS = 250;
 
@@ -57,6 +58,7 @@ export default function LockerSearchView({
   onOpenCollection,
   onClose,
 }: LockerSearchViewProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const lockerSearchField = useImeFriendlyInput(query, setQuery, inputRef);
@@ -182,7 +184,7 @@ export default function LockerSearchView({
       <button
         type="button"
         className="locker-search-play touch-manipulation"
-        aria-label={`Play ${hit.title}`}
+        aria-label={t('locker.playHitAria', { title: hit.title })}
         onClick={() => onPlay(hitToEnvelope(hit))}
       >
         <Play className="w-4 h-4 ml-0.5" />
@@ -321,7 +323,7 @@ export default function LockerSearchView({
           : processed.collections.length;
 
   return (
-    <section className="locker-search font-mono" aria-label="Locker search">
+    <section className="locker-search font-mono" aria-label={t('locker.searchSectionAria')}>
       <div className="locker-search-bar">
         <Search className="w-4 h-4 text-accent shrink-0" aria-hidden />
         <input
@@ -335,7 +337,7 @@ export default function LockerSearchView({
           onCompositionEnd={lockerSearchField.onCompositionEnd}
           placeholder="Search artist, album, track, genre, year, label…"
           className="locker-search-input focus-accent"
-          aria-label="Search locker"
+          aria-label={t('locker.searchAria')}
           enterKeyHint="search"
         />
         {query ? (
@@ -343,7 +345,7 @@ export default function LockerSearchView({
             type="button"
             className="locker-search-clear touch-manipulation"
             onClick={() => setQuery('')}
-            aria-label="Clear search"
+            aria-label={t('shell.clearSearch')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -364,7 +366,7 @@ export default function LockerSearchView({
         ) : null}
       </div>
 
-      <nav className="locker-search-modes" aria-label="Search mode">
+      <nav className="locker-search-modes" aria-label={t('locker.searchModeAria')}>
         {MODES.map((m) => (
           <button
             key={m.id}

@@ -610,6 +610,7 @@ function AlbumTrackTimeCell({
   onRetry?: () => void;
   lockerPlayable?: boolean;
 }) {
+  const { t } = useTranslation();
   if (
     state &&
     (state.status === 'downloading' ||
@@ -636,7 +637,7 @@ function AlbumTrackTimeCell({
     return (
       <span
         className="search-results-duration search-results-duration--done"
-        aria-label="Saved to locker"
+        aria-label={t('searchResults.savedToLockerAria')}
       >
         <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
       </span>
@@ -665,7 +666,7 @@ function AlbumTrackTimeCell({
               e.stopPropagation();
               onRetry();
             }}
-            aria-label="Retry track download"
+            aria-label={t('searchResults.retryDownloadAria')}
             title="Retry"
           >
             <RotateCcw className="w-3 h-3" />
@@ -676,7 +677,7 @@ function AlbumTrackTimeCell({
   }
 
   return (
-    <span className="search-results-duration" aria-label="Track length">
+    <span className="search-results-duration" aria-label={t('searchResults.trackLengthAria')}>
       {duration}
     </span>
   );
@@ -1730,7 +1731,7 @@ export default function SearchResultsView({
       {showUnifiedTabs && availableTabs.length > 1 ? (
         <nav
           className="flex flex-wrap gap-2 mb-6"
-          aria-label="Search result sections"
+          aria-label={t('searchResults.sectionsAria')}
         >
           {availableTabs.map((tab) => (
             <button
@@ -2113,7 +2114,7 @@ export default function SearchResultsView({
                         type="button"
                         onClick={() => onAddToQueue?.(hit.primaryEnvelope)}
                         className="search-results-action touch-manipulation"
-                        aria-label="Add to queue"
+                        aria-label={t('searchResults.addToQueueAria')}
                       >
                         <ListPlus className="w-4 h-4" />
                       </button>
@@ -2123,7 +2124,7 @@ export default function SearchResultsView({
                           data-testid={`search-play-${index}`}
                           onClick={() => onPlay(hit.primaryEnvelope, hit.sources)}
                           className="search-results-action search-results-action--play touch-manipulation"
-                          aria-label="Play"
+                          aria-label={t('searchResults.playAria')}
                         >
                           <Play className="w-4 h-4 ml-0.5" />
                         </button>
@@ -2132,7 +2133,7 @@ export default function SearchResultsView({
                         type="button"
                         onClick={() => toggleExpand(hit.identityId)}
                         className="search-results-action touch-manipulation"
-                        aria-label="Source breakdown"
+                        aria-label={t('searchResults.sourceBreakdownAria')}
                       >
                         {isOpen ? (
                           <ChevronUp className="w-4 h-4" />
@@ -2147,7 +2148,7 @@ export default function SearchResultsView({
                       data-testid={`search-play-${index}`}
                       onClick={() => onPlay(hit.primaryEnvelope, hit.sources)}
                       className="search-results-action search-results-action--play touch-manipulation"
-                      aria-label="Play"
+                      aria-label={t('searchResults.playAria')}
                     >
                       <Play className="w-4 h-4 ml-0.5" />
                     </button>
@@ -2172,7 +2173,7 @@ export default function SearchResultsView({
                     data-testid={`search-play-${index}`}
                     onClick={() => onPlay(hit.primaryEnvelope, hit.sources)}
                     className="search-results-action search-results-action--play touch-manipulation"
-                    aria-label="Play"
+                    aria-label={t('searchResults.playAria')}
                   >
                     <Play className="w-4 h-4 ml-0.5" />
                   </button>

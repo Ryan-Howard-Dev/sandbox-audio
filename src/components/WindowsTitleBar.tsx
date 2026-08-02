@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Minus, Square, X } from 'lucide-react';
 import { APP_WINDOW_TITLE } from '../buildId';
+import { useTranslation } from '../i18n';
 
 function showWindowsTitleBar(): boolean {
   return false;
 }
 
 export default function WindowsTitleBar() {
+  const { t } = useTranslation();
   const [maximized, setMaximized] = useState(false);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function WindowsTitleBar() {
   if (!showWindowsTitleBar() || typeof document === 'undefined') return null;
 
   return createPortal(
-    <header className="windows-titlebar" aria-label="Window title bar">
+    <header className="windows-titlebar" aria-label={t('shell.windowTitleBar')}>
       <div className="windows-titlebar-drag" data-tauri-drag-region>
         <span className="windows-titlebar-title">{APP_WINDOW_TITLE}</span>
       </div>
@@ -55,7 +57,7 @@ export default function WindowsTitleBar() {
         <button
           type="button"
           className="windows-titlebar-btn"
-          aria-label="Minimize"
+          aria-label={t('shell.windowMinimize')}
           onClick={() => withWindow((win) => win.minimize())}
         >
           <Minus className="windows-titlebar-icon" aria-hidden />
@@ -77,7 +79,7 @@ export default function WindowsTitleBar() {
         <button
           type="button"
           className="windows-titlebar-btn windows-titlebar-btn--close"
-          aria-label="Close"
+          aria-label={t('shell.windowClose')}
           onClick={() => withWindow((win) => win.close())}
         >
           <X className="windows-titlebar-icon" aria-hidden />

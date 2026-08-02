@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { useDismissableOverlay } from '../hooks/useDismissableOverlay';
+import { useTranslation } from '../i18n';
 
 export default function ModalOverlay({
   open,
@@ -26,6 +27,7 @@ export default function ModalOverlay({
   contentPadding?: boolean;
 }) {
   useDismissableOverlay(open, onClose);
+  const { t } = useTranslation();
 
   if (!open) return null;
 
@@ -46,7 +48,7 @@ export default function ModalOverlay({
       <button
         type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-md cursor-default"
-        aria-label="Close"
+        aria-label={t('shell.modalClose')}
         onClick={onClose}
       />
       <div

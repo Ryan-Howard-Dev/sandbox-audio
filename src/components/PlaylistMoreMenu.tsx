@@ -11,6 +11,7 @@ import {
 } from '../playlistStorage';
 import { resolvePlaylistImportContext } from '../importPlatforms';
 import type { PlaylistFolder } from '../playlistFolders';
+import { useTranslation } from '../i18n';
 
 export interface PlaylistMoreMenuProps {
   playlist: StoredPlaylist;
@@ -228,10 +229,12 @@ export function buildPlaylistMenuActions(props: PlaylistMoreMenuProps): LockerMe
 
 export default function PlaylistMoreMenu(props: PlaylistMoreMenuProps) {
   const { playlist, open, onOpenChange } = props;
+  const { t } = useTranslation();
   const mobileShell = useMobileShell();
   const narrow = useNarrowViewport(767);
   const useSheet = mobileShell || narrow;
   const actions = useMemo(() => buildPlaylistMenuActions(props), [props]);
+  const optionsLabel = t('playlists.optionsAria', { name: playlist.name });
 
   if (useSheet) {
     return (
@@ -243,7 +246,8 @@ export default function PlaylistMoreMenu(props: PlaylistMoreMenuProps) {
             onOpenChange(true);
           }}
           className="sandbox-menu-trigger touch-manipulation opacity-100"
-          aria-label={`Options for ${playlist.name}`}
+          aria-label={optionsLabel}
+          aria-expanded={open}
           aria-haspopup="dialog"
         >
           <MoreVertical className="w-4 h-4" strokeWidth={2} />
@@ -254,7 +258,7 @@ export default function PlaylistMoreMenu(props: PlaylistMoreMenuProps) {
           title={playlist.name}
           subtitle={`${playlist.tracks.length} tracks`}
           actions={actions}
-          ariaLabel={`Options for ${playlist.name}`}
+          ariaLabel={optionsLabel}
         />
       </>
     );
@@ -265,7 +269,7 @@ export default function PlaylistMoreMenu(props: PlaylistMoreMenuProps) {
       open={open}
       onOpenChange={onOpenChange}
       actions={actions}
-      ariaLabel={`Options for ${playlist.name}`}
+      ariaLabel={optionsLabel}
       alwaysVisible
       align="right"
       portaled

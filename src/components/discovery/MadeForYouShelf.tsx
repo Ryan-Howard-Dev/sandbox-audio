@@ -11,6 +11,7 @@ import {
 import type { FollowedFeedRelease } from '../../followedArtistFeed';
 import DiscoveryMixCarousel, { DiscoveryMixFullPanel } from './DiscoveryMixCarousel';
 import RecommendTrackControls from './RecommendTrackControls';
+import { useTranslation } from '../../i18n';
 
 export interface MadeForYouShelfProps {
   releases?: FollowedFeedRelease[];
@@ -43,6 +44,7 @@ export default function MadeForYouShelf({
   drillBackRef,
   variant = 'full',
 }: MadeForYouShelfProps) {
+  const { t } = useTranslation();
   const [bundle, setBundle] = useState<MadeForYouBundle | null>(null);
   const [loading, setLoading] = useState(true);
   const [weeklyLoading, setWeeklyLoading] = useState(false);
@@ -148,7 +150,7 @@ export default function MadeForYouShelf({
 
   return (
     <>
-      <section className={`mfy-shelf${mobile ? ' mfy-shelf--mobile' : ''}`} aria-label="Made for you">
+      <section className={`mfy-shelf${mobile ? ' mfy-shelf--mobile' : ''}`} aria-label={t('discover.madeForYouAria')}>
         <div className="mfy-shelf-head">
           <div>
             <h2 className="mfy-shelf-title">Made for you</h2>
@@ -172,7 +174,7 @@ export default function MadeForYouShelf({
         />
 
         {!compact ? (
-        <section className="mfy-carousel-section" aria-label="Weekly Discover">
+        <section className="mfy-carousel-section" aria-label={t('discover.weeklyDiscoverAria')}>
           <div className="mfy-carousel-head">
             <div>
               <h3 className="mfy-carousel-title">Weekly Discover</h3>

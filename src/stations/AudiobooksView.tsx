@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, BookOpen, FileText, Magnet, Play, Search, ShieldAlert, Smartphone } from 'lucide-react';
-import LockerMoreMenu from '../components/LockerMoreMenu';
+import LockerMoreMenu, { type LockerMenuAction } from '../components/LockerMoreMenu';
 import type { MediaEnvelope } from '../sandboxLayer1';
 import AudiobookDiscoverPanel from '../components/audiobooks/AudiobookDiscoverPanel';
 import { EmbeddedChapterList } from '../components/audiobooks/EmbeddedChapterList';
@@ -52,6 +52,10 @@ export interface AudiobooksViewProps {
   onOpenAcquireSettings?: () => void;
   /** Android hardware back — pop book detail drill-down. */
   drillBackRef?: React.MutableRefObject<(() => boolean) | null>;
+  /** Open the audiobook-scoped downloads activity sheet. */
+  onOpenDownloads?: () => void;
+  /** Queued/failed audiobook downloads — surfaced on the overflow menu entry. */
+  downloadAttentionCount?: number;
 }
 
 type Phase = 'idle' | 'permission' | 'scanning' | 'enriching' | 'ready' | 'error';
@@ -70,6 +74,8 @@ export default function AudiobooksView({
   onSuccess,
   onOpenAcquireSettings,
   drillBackRef,
+  onOpenDownloads,
+  downloadAttentionCount = 0,
 }: AudiobooksViewProps) {
   const { t } = useTranslation();
   // Pillar spine, matching Music (Library/Discover) and Podcasts (Library/Discover):
@@ -301,6 +307,95 @@ export default function AudiobooksView({
     }
   }, [runEnrichment, t]);
 
+  const libraryMenuActions = useMemo((): LockerMenuAction[] => {
+    const items: LockerMenuAction[] = [];
+    if (tab === 'device') {
+      items.push(
+        {
+          id: 'scan',
+          section: 'Library',
+          label:
+            phase === 'scanning'
+              ? t('audiobooks.scanning')
+              : phase === 'enriching'
+                ? t('audiobooks.enriching')
+                : t('audiobooks.scan'),
+          disabled: phase === 'scanning' || phase === 'enriching',
+          onClick: () => void runScan(),
+        },
+        {
+          id: 'origin-all',
+          section: 'Show',
+          label: `All (${books.length})`,
+          active: libraryOrigin === 'all',
+          onClick: () => setLibraryOrigin('all'),
+        },
+        {
+          id: 'origin-downloaded',
+          label: `Downloaded (${originCounts.downloaded})`,
+          active: libraryOrigin === 'downloaded',
+          onClick: () => setLibraryOrigin('downloaded'),
+        },
+        {
+          id: 'origin-uploaded',
+          label: `On device (${originCounts.uploaded})`,
+          active: libraryOrigin === 'uploaded',
+          onClick: () => setLibraryOrigin('uploaded'),
+        },
+        {
+          // Acquire is an action, not a way of browsing, so it does not belong beside
+          // Library and Discover as a peer tab. Music and Podcasts both get by with two.
+          id: 'acquire',
+          section: 'Get books',
+          label: t('audiobooks.tabAcquire'),
+          divider: true,
+          onClick: () => setTab('acquire'),
+        },
+        /*
+         * Importing is the other way to get a book in here, and until now the only sign of
+         * it was a two-word tab. Someone holding a .docx or an EPUB looks for the action,
+         * not for the shelf it lands on, so the action is listed where every other library
+         * action already is.
+         */
+        {
+          id: 'import-document',
+          section: 'Read aloud',
+          label: t('audiobooks.importDocumentAction'),
+          divider: true,
+          onClick: () => setTab('documents'),
+        },
+        {
+          id: 'import-book',
+          label: t('audiobooks.importBookAction'),
+          onClick: () => setTab('ebooks'),
+        },
+      );
+    }
+    if (onOpenDownloads) {
+      items.push({
+        id: 'downloads',
+        section: 'Downloads',
+        label:
+          downloadAttentionCount > 0
+            ? t('locker.headerMenu.downloadsWithCount', { count: downloadAttentionCount })
+            : t('locker.headerMenu.downloads'),
+        divider: items.length > 0,
+        onClick: onOpenDownloads,
+      });
+    }
+    return items;
+  }, [
+    tab,
+    phase,
+    t,
+    books.length,
+    libraryOrigin,
+    originCounts,
+    onOpenDownloads,
+    downloadAttentionCount,
+    runScan,
+  ]);
+
   useEffect(() => {
     if (autoStartedRef.current) return;
     if (!isDeviceMusicScanAvailable()) return;
@@ -512,90 +607,33 @@ export default function AudiobooksView({
         {/* Magnifier beside the ⋮, matching Music's Library. Filters books already scanned off
             the device, so it is instant and needs no submit — Discover keeps its own box
             because that one fires a remote query. */}
-        {tab === 'device' ? (
-          <button
-            type="button"
-            className={`audiobooks-library-search-btn touch-manipulation${librarySearchOpen ? ' is-active' : ''}`}
-            onClick={() => {
-              setLibrarySearchOpen((open) => !open);
-              if (librarySearchOpen) setLibraryQuery('');
-            }}
-            aria-label={t('audiobooks.searchPlaceholder')}
-            aria-expanded={librarySearchOpen}
-          >
-            <Search className="w-5 h-5" />
-          </button>
-        ) : null}
-        {tab === 'device' ? (
-          <LockerMoreMenu
-            open={libraryMenuOpen}
-            onOpenChange={setLibraryMenuOpen}
-            alwaysVisible
-            align="right"
-            portaled
-            ariaLabel={t('audiobooks.title')}
-            actions={[
-              {
-                id: 'scan',
-                section: 'Library',
-                label:
-                  phase === 'scanning'
-                    ? t('audiobooks.scanning')
-                    : phase === 'enriching'
-                      ? t('audiobooks.enriching')
-                      : t('audiobooks.scan'),
-                disabled: phase === 'scanning' || phase === 'enriching',
-                onClick: () => void runScan(),
-              },
-              {
-                id: 'origin-all',
-                section: 'Show',
-                label: `All (${books.length})`,
-                active: libraryOrigin === 'all',
-                onClick: () => setLibraryOrigin('all'),
-              },
-              {
-                id: 'origin-downloaded',
-                label: `Downloaded (${originCounts.downloaded})`,
-                active: libraryOrigin === 'downloaded',
-                onClick: () => setLibraryOrigin('downloaded'),
-              },
-              {
-                id: 'origin-uploaded',
-                label: `On device (${originCounts.uploaded})`,
-                active: libraryOrigin === 'uploaded',
-                onClick: () => setLibraryOrigin('uploaded'),
-              },
-              {
-                // Acquire is an action, not a way of browsing, so it does not belong beside
-                // Library and Discover as a peer tab. Music and Podcasts both get by with two.
-                id: 'acquire',
-                section: 'Get books',
-                label: t('audiobooks.tabAcquire'),
-                divider: true,
-                onClick: () => setTab('acquire'),
-              },
-              /*
-               * Importing is the other way to get a book in here, and until now the only sign of
-               * it was a two-word tab. Someone holding a .docx or an EPUB looks for the action,
-               * not for the shelf it lands on, so the action is listed where every other library
-               * action already is.
-               */
-              {
-                id: 'import-document',
-                section: 'Read aloud',
-                label: t('audiobooks.importDocumentAction'),
-                divider: true,
-                onClick: () => setTab('documents'),
-              },
-              {
-                id: 'import-book',
-                label: t('audiobooks.importBookAction'),
-                onClick: () => setTab('ebooks'),
-              },
-            ]}
-          />
-        ) : null}
+        <div className="flex items-center gap-2 shrink-0">
+          {tab === 'device' ? (
+            <button
+              type="button"
+              className={`audiobooks-library-search-btn touch-manipulation${librarySearchOpen ? ' is-active' : ''}`}
+              onClick={() => {
+                setLibrarySearchOpen((open) => !open);
+                if (librarySearchOpen) setLibraryQuery('');
+              }}
+              aria-label={t('audiobooks.searchPlaceholder')}
+              aria-expanded={librarySearchOpen}
+            >
+              <Search className="w-5 h-5" />
+            </button>
+          ) : null}
+          {libraryMenuActions.length > 0 ? (
+            <LockerMoreMenu
+              open={libraryMenuOpen}
+              onOpenChange={setLibraryMenuOpen}
+              alwaysVisible
+              align="right"
+              portaled
+              ariaLabel={t('audiobooks.title')}
+              actions={libraryMenuActions}
+            />
+          ) : null}
+        </div>
       </header>
 
       {tab === 'device' && librarySearchOpen ? (

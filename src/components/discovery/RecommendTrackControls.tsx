@@ -5,6 +5,7 @@ import { recordTasteFeedback } from '../../tasteFeedback';
 import { snoozeTrack } from '../../tasteSuppressions';
 import WhyPickedPanel from './WhyPickedPanel';
 import { LocalOfflineBadge } from './LocalOfflineBadge';
+import { useTranslation } from '../../i18n';
 
 export interface RecommendTrackControlsProps {
   envelope: MediaEnvelope;
@@ -18,6 +19,7 @@ export default function RecommendTrackControls({
   onAction,
   variant = 'compact',
 }: RecommendTrackControlsProps) {
+  const { t } = useTranslation();
   const [whyOpen, setWhyOpen] = useState(false);
 
   const handleNotForMe = (e: React.MouseEvent) => {
@@ -41,12 +43,13 @@ export default function RecommendTrackControls({
         <button
           type="button"
           className="recommend-why-toggle touch-manipulation"
+          aria-expanded={whyOpen}
           onClick={(e) => {
             e.stopPropagation();
             setWhyOpen((v) => !v);
           }}
         >
-          Why this song?
+          {t('discover.whyThisSong')}?
           <ChevronDown className={`w-3 h-3 transition-transform${whyOpen ? ' rotate-180' : ''}`} />
         </button>
         <button
@@ -55,7 +58,7 @@ export default function RecommendTrackControls({
           onClick={handleNotForMe}
         >
           <ThumbsDown className="w-3 h-3" />
-          Not for me
+          {t('discover.notForMe')}
         </button>
         {whyOpen ? (
           <div className="recommend-why-panel">
@@ -72,20 +75,21 @@ export default function RecommendTrackControls({
       <button
         type="button"
         className="feed-track-action-btn touch-manipulation"
-        aria-label="Why this song"
-        title="Why this song"
+        aria-label={t('discover.whyThisSong')}
+        title={t('discover.whyThisSong')}
+        aria-expanded={whyOpen}
         onClick={(e) => {
           e.stopPropagation();
           setWhyOpen((v) => !v);
         }}
       >
-        Why?
+        {t('player.whyThisSongShort')}
       </button>
       <button
         type="button"
         className="feed-track-action-btn touch-manipulation"
-        aria-label="Not for me"
-        title="Not for me"
+        aria-label={t('discover.notForMe')}
+        title={t('discover.notForMe')}
         onClick={handleNotForMe}
       >
         <ThumbsDown className="w-3.5 h-3.5" />

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { imeSearchInputProps } from '../../imeInputProps';
+import { useTranslation } from '../../i18n';
 
 export interface LockerHeaderSearchProps {
   value: string;
@@ -16,6 +17,7 @@ export default function LockerHeaderSearch({
   placeholder,
   ariaLabel,
 }: LockerHeaderSearchProps) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState(value);
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export default function LockerHeaderSearch({
             setDraft('');
             onChange('');
           }}
-          aria-label="Clear search"
+          aria-label={t('shell.clearSearch')}
         >
           <X className="w-4 h-4" strokeWidth={2} />
         </button>

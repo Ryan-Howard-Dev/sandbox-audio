@@ -59,6 +59,7 @@ import PodcastManualSubscribeSection from '../components/podcasts/PodcastManualS
 import PodcastLibraryShowGrid from '../components/podcasts/PodcastLibraryShowGrid';
 import PodcastLibraryShowDetail from '../components/podcasts/PodcastLibraryShowDetail';
 import PodcastEpisodeRow from '../components/podcasts/PodcastEpisodeRow';
+import { useTranslation } from '../i18n';
 
 function deferPodcastPrefSave(save: (value: boolean) => void, value: boolean): void {
   queueMicrotask(() => save(value));
@@ -78,6 +79,10 @@ export interface PodcastsViewProps {
   drillBackRef?: React.MutableRefObject<(() => boolean) | null>;
   /** Unseen new-episode count from followed shows (mobile bell). */
   episodeNotifCount?: number;
+  /** Open the podcast-scoped downloads activity sheet. */
+  onOpenDownloads?: () => void;
+  /** Queued/failed podcast downloads — surfaced on the overflow menu entry. */
+  downloadAttentionCount?: number;
 }
 
 export default function PodcastsView({
@@ -88,7 +93,10 @@ export default function PodcastsView({
   onQueueShowUnplayed,
   drillBackRef,
   episodeNotifCount = 0,
+  onOpenDownloads,
+  downloadAttentionCount = 0,
 }: PodcastsViewProps) {
+  const { t } = useTranslation();
   // Opens on the user's own shows (Library), like Music and Audiobooks — Discover is a
   // deliberate step out, not the landing page for a pillar you already own content in.
   /*
@@ -129,7 +137,7 @@ export default function PodcastsView({
   }, []);
 
   const pageMenuActions = useMemo((): LockerMenuAction[] => {
-    return [
+    const items: LockerMenuAction[] = [
       {
         id: 'podcast-episode-alerts',
         section: 'Notifications',
@@ -145,7 +153,20 @@ export default function PodcastsView({
         },
       },
     ];
-  }, [notifEnabled]);
+    if (onOpenDownloads) {
+      items.push({
+        id: 'downloads',
+        section: 'Downloads',
+        label:
+          downloadAttentionCount > 0
+            ? `Downloads (${downloadAttentionCount})`
+            : 'Downloads',
+        divider: true,
+        onClick: onOpenDownloads,
+      });
+    }
+    return items;
+  }, [notifEnabled, onOpenDownloads, downloadAttentionCount]);
 
   const selectTab = useCallback((next: 'discover' | 'library') => {
     startTabTransition(() => {
@@ -494,7 +515,7 @@ export default function PodcastsView({
       <div className="podcasts-station-toolbar">
         <div className="podcasts-tabs-row">
         {/* Library first, then Discover — same spine as Music and Audiobooks. */}
-        <nav className="podcasts-tabs" aria-label="Podcast sections">
+        <nav className="podcasts-tabs" aria-label={t('podcasts.sectionsAria')}>
           <button
             type="button"
             className={`podcasts-tab touch-manipulation${tab === 'library' && libraryView === 'shows' ? ' podcasts-tab--active' : ''}${tabPending && tab === 'library' ? ' podcasts-tab--pending' : ''}`}
@@ -518,7 +539,11 @@ export default function PodcastsView({
             className={`podcasts-tab podcasts-tab--downloaded touch-manipulation${tab === 'library' && libraryView === 'downloaded' ? ' podcasts-tab--active' : ''}`}
             onClick={goToDownloaded}
             aria-current={tab === 'library' && libraryView === 'downloaded' ? 'page' : undefined}
-            aria-label={`Downloaded episodes${offlineEpisodeCount > 0 ? `, ${offlineEpisodeCount}` : ''}`}
+            aria-label={
+              offlineEpisodeCount > 0
+                ? t('podcasts.downloadedEpisodesCountAria', { count: offlineEpisodeCount })
+                : t('podcasts.downloadedEpisodesAria')
+            }
           >
             <Download className="w-3.5 h-3.5 shrink-0" aria-hidden />
             {/* "Downloaded", not "Offline": this is a filter over the library (libraryView),
@@ -543,7 +568,7 @@ export default function PodcastsView({
               setLibrarySearchOpen((open) => !open);
               if (librarySearchOpen) setLibraryQuery('');
             }}
-            aria-label="Search your shows"
+            aria-label={t('podcasts.searchShowsAria')}
             aria-expanded={librarySearchOpen}
           >
             <Search className="w-4 h-4" />
@@ -557,7 +582,7 @@ export default function PodcastsView({
             value={libraryQuery}
             onChange={(e) => setLibraryQuery(e.target.value)}
             placeholder="Search your shows"
-            aria-label="Search your shows"
+            aria-label={t('podcasts.searchShowsAria')}
             autoFocus
           />
         ) : null}
@@ -584,7 +609,7 @@ export default function PodcastsView({
       ) : null}
 
       {tab === 'library' && !libraryMounted ? (
-        <div className="podcasts-library-loading" aria-busy="true" aria-label="Loading Library">
+        <div className="podcasts-library-loading" aria-busy="true" aria-label={t('podcasts.loadingLibraryAria')}>
           <Loader2 className="w-6 h-6 animate-spin text-accent mx-auto mt-8" />
         </div>
       ) : null}
@@ -619,7 +644,7 @@ export default function PodcastsView({
         </div>
       ) : null}
       {libraryView === 'downloaded' ? (
-        <section className="podcasts-downloaded pt-4" aria-label="Downloaded episodes">
+        <section className="podcasts-downloaded pt-4" aria-label={t('podcasts.downloadedEpisodesAria')}>
           <header className="podcasts-downloaded-header mb-4">
             <p className="font-mono text-[10px] uppercase tracking-widest text-accent inline-flex items-center gap-2">
               <Download className="w-3.5 h-3.5" aria-hidden />
@@ -717,7 +742,7 @@ export default function PodcastsView({
                   static even when episodes had arrived, since counts sat on tiles you had to
                   open. Episodes are what's perishable here. */}
               {newEpisodes.length > 0 ? (
-                <section className="podcasts-new-episodes" aria-label="New episodes">
+                <section className="podcasts-new-episodes" aria-label={t('podcasts.newEpisodesAria')}>
                   <h2 className="podcasts-section-title">New episodes</h2>
                   <ul className="podcasts-new-episodes-list">
                     {newEpisodes.map(({ episode, showTitle, showArtworkUrl }) => (

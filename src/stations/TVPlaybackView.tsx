@@ -18,6 +18,7 @@ import { useTrackUniverseStyle } from '../hooks/useTrackUniverseStyle';
 import { useVinylVisualStyle } from '../vinylVisualSettings';
 import VinylHero from '../components/VinylHero';
 import { formatTime } from './theme';
+import { useTranslation } from '../i18n';
 
 export interface TVPlaybackViewProps {
   title: string;
@@ -70,6 +71,7 @@ export default function TVPlaybackView({
   envelope = null,
 }: TVPlaybackViewProps) {
   void _onBack;
+  const { t } = useTranslation();
   const playBtnRef = useRef<HTMLButtonElement>(null);
   const duration = durationSeconds > 0 ? durationSeconds : 1;
   const progress = Math.min(100, (currentTimeSeconds / duration) * 100);
@@ -162,7 +164,7 @@ export default function TVPlaybackView({
                 onSeek(pct * duration);
               }}
               className="tv-playback-scrub w-full h-2 accent-[#C2410C] cursor-pointer"
-              aria-label="Seek"
+              aria-label={t('player.seek')}
             />
             <div className="flex justify-between font-mono text-sm text-[#6e758c]">
               <span>{formatTime(currentTimeSeconds)}</span>
@@ -177,11 +179,12 @@ export default function TVPlaybackView({
           type="button"
           onClick={onShuffleToggle}
           className={`${btnClass} ${shuffleOn ? 'text-[#C2410C] border-[#C2410C]/40' : ''}`}
-          aria-label="Shuffle"
+          aria-label={t('player.shuffle')}
+          aria-pressed={shuffleOn}
         >
           <Shuffle className="w-7 h-7" strokeWidth={2} />
         </button>
-        <button type="button" onClick={onSkipBack} className={btnClass} aria-label="Previous">
+        <button type="button" onClick={onSkipBack} className={btnClass} aria-label={t('player.previous')}>
           <SkipBack className="w-8 h-8" strokeWidth={2} />
         </button>
         <button
@@ -190,7 +193,7 @@ export default function TVPlaybackView({
           onClick={onTogglePlay}
           disabled={state === 'Idle'}
           className={`${btnClass} w-20 h-20 bg-[#C2410C] text-text-on-accent focus:ring-[#C2410C]/50`}
-          aria-label={isPlaying ? 'Pause' : 'Play'}
+          aria-label={isPlaying ? t('player.pause') : t('player.play')}
         >
           {isBusy ? (
             <Loader2 className="w-9 h-9 animate-spin" strokeWidth={2} />
@@ -200,14 +203,15 @@ export default function TVPlaybackView({
             <Play className="w-9 h-9 ml-1" strokeWidth={2} />
           )}
         </button>
-        <button type="button" onClick={onSkipForward} className={btnClass} aria-label="Next">
+        <button type="button" onClick={onSkipForward} className={btnClass} aria-label={t('player.next')}>
           <SkipForward className="w-8 h-8" strokeWidth={2} />
         </button>
         <button
           type="button"
           onClick={onRepeatCycle}
           className={`${btnClass} relative ${repeatMode !== 'none' ? 'text-[#C2410C] border-[#C2410C]/40' : ''}`}
-          aria-label="Repeat"
+          aria-label={t('player.repeat')}
+          aria-pressed={repeatMode !== 'none'}
         >
           <Repeat className="w-7 h-7" strokeWidth={2} />
           {repeatMode === 'one' ? (
@@ -218,7 +222,7 @@ export default function TVPlaybackView({
           type="button"
           onClick={onOpenQueue}
           className={`${btnClass} relative`}
-          aria-label="Queue"
+          aria-label={t('player.queue')}
         >
           <ListOrdered className="w-7 h-7" strokeWidth={2} />
           {queueCount > 0 ? (
@@ -231,7 +235,8 @@ export default function TVPlaybackView({
           type="button"
           onClick={onOpenCast}
           className={`${btnClass} ${castActive ? 'text-[#C2410C] border-[#C2410C]/40' : ''}`}
-          aria-label="Cast"
+          aria-label={t('player.menu.cast')}
+          aria-pressed={castActive}
         >
           <Cast className="w-7 h-7" strokeWidth={2} />
         </button>

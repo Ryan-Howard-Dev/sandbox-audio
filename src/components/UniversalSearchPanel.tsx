@@ -11,6 +11,7 @@ import {
   type UniversalSearchResults,
 } from '../universalSearch';
 import { loadSubscriptions } from '../podcastStorage';
+import { useTranslation } from '../i18n';
 
 export interface UniversalSearchPanelProps {
   query: string;
@@ -58,6 +59,7 @@ export default function UniversalSearchPanel({
   bookAuthorSeeds,
   bookOwnedTitles,
 }: UniversalSearchPanelProps) {
+  const { t } = useTranslation();
   const [results, setResults] = useState<UniversalSearchResults>(EMPTY);
   const [loading, setLoading] = useState(false);
   const [localTab, setLocalTab] = useState<UniversalFormat>('music');
@@ -255,7 +257,7 @@ export default function UniversalSearchPanel({
   if (tabsOnly) return tabBar;
   if (resultsOnly) return <section className="universal-search">{resultsBody}</section>;
   return (
-    <section className="universal-search" aria-label="Search results">
+    <section className="universal-search" aria-label={t('shell.searchResultsAria')}>
       {tabBar}
       {resultsBody}
     </section>

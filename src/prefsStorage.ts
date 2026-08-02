@@ -49,6 +49,7 @@ export const PERSISTED_PREF_KEYS = [
   'sandbox_car_mode_auto_offer',
   'sandbox_car_mode_offer_dismissed',
   'sandbox_air_gap_mode',
+  'sandbox_show_experimental_integrations',
   'sandbox_play_queue_state_v1',
   'sandbox_last_queue',
   'sandbox_vinyl_visual_settings_v1',

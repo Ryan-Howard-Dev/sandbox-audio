@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreVertical } from 'lucide-react';
+import { useTranslation } from '../i18n';
 
 export interface LockerMenuAction {
   id: string;
@@ -253,6 +254,7 @@ export default function LockerMoreMenu({
   panelClassName = '',
   maxHeightCapPx = 448,
 }: LockerMoreMenuProps) {
+  const { t } = useTranslation();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -372,7 +374,7 @@ export default function LockerMoreMenu({
               <button
                 type="button"
                 className="sandbox-menu-backdrop"
-                aria-label="Close menu"
+                aria-label={t('common.closeMenu')}
                 onClick={() => onOpenChange(false)}
               />
               {menuPanel}

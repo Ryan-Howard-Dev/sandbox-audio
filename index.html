@@ -26,7 +26,18 @@
         min-height: 100dvh;
       }
     </style>
-    <script defer src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+    <!--
+      Google's Cast sender SDK is deliberately not loaded here.
+
+      It used to be, ungated, so every launch on every platform fetched it from gstatic.com. It was
+      the slowest single resource in startup at 198ms measured on the OnePlus, and on Android it was
+      never even used: the native Cast plugin does that work. The F-Droid build has no Cast at all
+      and was still calling Google on every start, which is exactly what air-gap mode promises it
+      will not do.
+
+      castSender.ts injects it on demand the first time someone actually opens the cast picker in a
+      browser, and already handles it being absent. Nothing needs it before then.
+    -->
   </head>
   <body>
     <div id="root"></div>

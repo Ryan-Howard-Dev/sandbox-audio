@@ -5,6 +5,7 @@ import { recordTasteFeedback } from '../../tasteFeedback';
 import { lessLikeArtist, lessLikeTrack, snoozeTrack } from '../../tasteSuppressions';
 import WhyPickedPanel from './WhyPickedPanel';
 import { LocalOfflineBadge } from './LocalOfflineBadge';
+import { useTranslation } from '../../i18n';
 
 export interface FeedDiscoverTrackActionsProps {
   envelope: MediaEnvelope;
@@ -15,6 +16,7 @@ export default function FeedDiscoverTrackActions({
   envelope,
   onAction,
 }: FeedDiscoverTrackActionsProps) {
+  const { t } = useTranslation();
   const [whyOpen, setWhyOpen] = useState(false);
 
   const handleSnooze = (e: React.MouseEvent) => {
@@ -56,14 +58,14 @@ export default function FeedDiscoverTrackActions({
           setWhyOpen((v) => !v);
         }}
       >
-        Why this song?
+        {t('discover.whyThisSong')}?
         <ChevronDown className={`w-3 h-3 transition-transform${whyOpen ? ' rotate-180' : ''}`} />
       </button>
       <button
         type="button"
         className="feed-track-action-btn touch-manipulation"
-        aria-label="Not for me"
-        title="Not for me"
+        aria-label={t('discover.notForMe')}
+        title={t('discover.notForMe')}
         onClick={handleNotForMe}
       >
         <ThumbsDown className="w-3.5 h-3.5" />
@@ -71,8 +73,8 @@ export default function FeedDiscoverTrackActions({
       <button
         type="button"
         className="feed-track-action-btn touch-manipulation"
-        aria-label="Snooze 30 days"
-        title="Snooze 30 days"
+        aria-label={t('discover.snooze30')}
+        title={t('discover.snooze30')}
         onClick={handleSnooze}
       >
         <Clock className="w-3.5 h-3.5" />
@@ -80,8 +82,8 @@ export default function FeedDiscoverTrackActions({
       <button
         type="button"
         className="feed-track-action-btn touch-manipulation"
-        aria-label="Less like this"
-        title="Less like this"
+        aria-label={t('discover.lessLikeThis')}
+        title={t('discover.lessLikeThis')}
         onClick={handleLess}
       >
         <Ban className="w-3.5 h-3.5" />

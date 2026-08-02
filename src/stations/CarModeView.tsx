@@ -4,6 +4,7 @@ import type { AudioFsmState } from '../sandboxLayer1';
 import type { SyncStatePayload } from '../tier34/connectProtocol';
 import { proxiedArtworkUrl } from '../displaySanitize';
 import { seedGradient } from '../seedGradient';
+import { useTranslation } from '../i18n';
 
 export interface CarModeViewProps {
   title: string;
@@ -42,6 +43,7 @@ export default function CarModeView({
   onToggleMute,
   onExit,
 }: CarModeViewProps) {
+  const { t } = useTranslation();
   const playBtnRef = useRef<HTMLButtonElement>(null);
   const exitTapRef = useRef(0);
   const [exitArmed, setExitArmed] = useState(false);
@@ -100,7 +102,7 @@ export default function CarModeView({
   const volumePercent = Math.round(displayVolume * 100);
 
   return (
-    <div className="car-mode flex flex-col flex-1 min-h-0 w-full" role="application" aria-label="Car mode">
+    <div className="car-mode flex flex-col flex-1 min-h-0 w-full" role="application" aria-label={t('player.carModeTitle')}>
       <header className="car-mode-header">
         <p className="car-mode-kicker">Car Mode</p>
         {connectRemote ? (
@@ -117,7 +119,11 @@ export default function CarModeView({
               : gradient,
           }}
           role="img"
-          aria-label={displayTitle ? `${displayTitle} album art` : 'Album art'}
+          aria-label={
+            displayTitle
+              ? t('carMode.albumArt', { title: displayTitle })
+              : t('carMode.albumArtFallback')
+          }
         />
 
         <div className="car-mode-meta">
@@ -126,12 +132,12 @@ export default function CarModeView({
         </div>
       </div>
 
-      <div className="car-mode-controls" aria-label="Playback controls">
+      <div className="car-mode-controls" aria-label={t('carMode.controlsAria')}>
         <button
           type="button"
           onClick={onSkipBack}
           className="car-mode-btn car-mode-btn--secondary"
-          aria-label="Previous track"
+          aria-label={t('carMode.previousTrack')}
         >
           <SkipBack className="car-mode-icon" strokeWidth={2.25} />
         </button>
@@ -141,7 +147,7 @@ export default function CarModeView({
           onClick={onTogglePlay}
           disabled={!hasTrack}
           className="car-mode-btn car-mode-btn--primary"
-          aria-label={displayPlaying ? 'Pause' : 'Play'}
+          aria-label={displayPlaying ? t('carMode.pause') : t('carMode.play')}
         >
           {isBusy ? (
             <Loader2 className="car-mode-icon car-mode-icon--spin" strokeWidth={2.25} />
@@ -155,18 +161,19 @@ export default function CarModeView({
           type="button"
           onClick={onSkipForward}
           className="car-mode-btn car-mode-btn--secondary"
-          aria-label="Next track"
+          aria-label={t('carMode.nextTrack')}
         >
           <SkipForward className="car-mode-icon" strokeWidth={2.25} />
         </button>
       </div>
 
-      <div className="car-mode-volume" aria-label="Volume">
+      <div className="car-mode-volume" aria-label={t('carMode.volumeAria')}>
         <button
           type="button"
           onClick={onToggleMute}
           className="car-mode-btn car-mode-btn--secondary car-mode-btn--volume"
-          aria-label={showMuted ? 'Unmute' : 'Mute'}
+          aria-label={showMuted ? t('player.unmute') : t('player.mute')}
+          aria-pressed={showMuted}
         >
           {showMuted ? (
             <VolumeX className="car-mode-icon car-mode-icon--sm" strokeWidth={2.25} />
@@ -182,11 +189,11 @@ export default function CarModeView({
           value={volumePercent}
           onChange={(e) => onSetVolume(parseInt(e.target.value, 10) / 100)}
           className="car-mode-volume-slider touch-manipulation"
-          aria-label="Volume"
+          aria-label={t('player.volume')}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={volumePercent}
-          aria-valuetext={`${volumePercent} percent`}
+          aria-valuetext={t('player.volumePercent', { percent: volumePercent })}
         />
       </div>
 
@@ -195,7 +202,7 @@ export default function CarModeView({
           type="button"
           onClick={handleExitTap}
           className={`car-mode-exit touch-manipulation ${exitArmed ? 'car-mode-exit--armed' : ''}`}
-          aria-label="Exit car mode"
+          aria-label={t('carMode.exit')}
         >
           {exitArmed ? 'Tap again to exit Car Mode' : 'Exit Car Mode'}
         </button>

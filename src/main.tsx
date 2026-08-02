@@ -35,6 +35,7 @@ import { Capacitor } from '@capacitor/core';
 import { initE2eDeepLinks, isE2eBridgeEnabled } from './e2eDevAction';
 import { installE2eHandlerStubs } from './e2eHandlerBootstrap';
 import { safeBoot } from './bootTasks';
+import { markBoot } from './bootMarks';
 import { initBootInteractivityGate, runAfterBootInteractive } from './bootInteractivity';
 import './index.css';
 
@@ -52,6 +53,7 @@ function preloadSearchStationChunk(): void {
 
 const SandboxShell = lazy(() => sandboxShellImport ?? import('./sandboxLayer3.tsx'));
 
+markBoot('boot:module');
 installAirGapFetchGuard();
 
 if (typeof window !== 'undefined') {
@@ -100,6 +102,8 @@ if (!rootEl) {
       </AppErrorBoundary>
     </StrictMode>,
   );
+  // Handed to React. Not painted, and not usable — the two marks below are those.
+  markBoot('boot:render');
 }
 
 /** Heavy storage / network warm-up after the shell can paint. */
@@ -140,9 +144,12 @@ function runDeferredBootTasks(): void {
       ),
     );
   }
+
+  markBoot('boot:settled');
 }
 
 runAfterBootInteractive(() => {
+  markBoot('boot:interactive');
   if (Capacitor.isNativePlatform()) {
     const warmSearch = () => preloadSearchStationChunk();
     if (typeof requestIdleCallback !== 'undefined') {

@@ -2828,7 +2828,7 @@ export default function LocalView({
         type="file"
         accept={COVER_ACCEPT}
         className="locker-cover-file-input"
-        aria-label="Upload album cover art"
+        aria-label={t('locker.uploadCoverAria')}
         onChange={(e) => {
           const file = e.target.files?.[0];
           void handleCoverArtFile(file);
@@ -2895,7 +2895,7 @@ export default function LocalView({
             </div>
           </div>
 
-          <nav className="locker-tabs" aria-label="Library view">
+          <nav className="locker-tabs" aria-label={t('locker.viewModeAria')}>
             {(['albums', 'tracks'] as const).map((m) => (
               <button
                 key={m}
@@ -3216,7 +3216,7 @@ export default function LocalView({
                     page could say what it contained but never what it was. */}
                 {albumBlurb ? <p className="locker-album-blurb">{albumBlurb}</p> : null}
                 {selectedCollection && selectedCollection.editionCount > 1 ? (
-                  <div className="locker-edition-picker" role="group" aria-label="Album edition">
+                  <div className="locker-edition-picker" role="group" aria-label={t('searchResults.editionPickerAria')}>
                     {selectedCollection.editions.map((edition) => {
                       const active =
                         (activeEditionKey ?? preferredEdition(selectedCollection).key) ===
@@ -3359,7 +3359,7 @@ export default function LocalView({
                         {groupHasPlayable ? (
                           <Check
                             className="locker-album-track-downloaded shrink-0"
-                            aria-label="Downloaded"
+                            aria-label={t('locker.downloadedStatusAria')}
                           />
                         ) : null}
                       </span>
@@ -3735,7 +3735,7 @@ export default function LocalView({
                     <div
                       className="locker-edition-picker locker-edition-picker--grid"
                       role="group"
-                      aria-label="Album versions"
+                      aria-label={t('locker.albumVersionsAria')}
                       onClick={(e) => e.stopPropagation()}
                       onKeyDown={(e) => e.stopPropagation()}
                     >

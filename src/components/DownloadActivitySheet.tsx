@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertCircle, Copy, Loader2, RotateCcw, X, Clock, PauseCircle } from 'lucide-react';
 import { retryDownloadJob } from '../acquisitionPipeline';
@@ -9,15 +9,43 @@ import {
   formatDownloadJobDisplay,
   formatDownloadJobErrorDetail,
   getDownloadJobs,
+  isActiveDownloadJobStatus,
+  patchDownloadJob,
   removeDownloadJob,
   subscribeDownloadQueue,
   type DownloadJob,
 } from '../downloadQueue';
 import { useDismissableOverlay } from '../hooks/useDismissableOverlay';
 import { useTranslation } from '../i18n';
+import { playEventKind, type MediaKind } from '../listeningAnalytics';
 
-export function countDownloadSheetBadge(jobs: DownloadJob[]): number {
-  return jobs.filter(
+/**
+ * Classify a download job the same way listening analytics classifies plays:
+ * track / album ids that look like envelope ids go through playEventKind.
+ * Catalog music jobs without prefixed ids fall through to music.
+ */
+export function downloadJobMediaKind(job: DownloadJob): MediaKind {
+  const trackIds = Object.keys(job.tracks ?? {});
+  if (trackIds.length > 0) {
+    return playEventKind({ envelopeId: trackIds[0]! });
+  }
+  const albumId = job.albumId?.trim();
+  if (albumId) {
+    return playEventKind({ envelopeId: albumId });
+  }
+  return 'music';
+}
+
+export function filterDownloadJobsByKind(
+  jobs: DownloadJob[],
+  kind?: MediaKind,
+): DownloadJob[] {
+  if (!kind) return jobs;
+  return jobs.filter((j) => downloadJobMediaKind(j) === kind);
+}
+
+export function countDownloadSheetBadge(jobs: DownloadJob[], kind?: MediaKind): number {
+  return filterDownloadJobsByKind(jobs, kind).filter(
     (j) =>
       j.status === 'error' ||
       j.status === 'queued' ||
@@ -26,6 +54,25 @@ export function countDownloadSheetBadge(jobs: DownloadJob[]): number {
       j.status === 'downloading' ||
       j.status === 'metadata',
   ).length;
+}
+
+function clearDownloadJobsForKind(kind: MediaKind | undefined): void {
+  if (!kind) {
+    void cancelAllActiveDownloadJobs();
+    clearAllDownloadJobs();
+    return;
+  }
+  for (const job of getDownloadJobs()) {
+    if (downloadJobMediaKind(job) !== kind) continue;
+    if (isActiveDownloadJobStatus(job.status)) {
+      patchDownloadJob(job.id, {
+        status: 'error',
+        error: 'cancelled',
+        currentTrack: undefined,
+      });
+    }
+    removeDownloadJob(job.id);
+  }
 }
 
 function isActiveJob(job: DownloadJob): boolean {
@@ -63,12 +110,15 @@ export interface DownloadActivitySheetProps {
   open: boolean;
   onClose: () => void;
   onOpenJob?: (job: DownloadJob) => void;
+  /** Station scope — music / podcast / audiobook. Omit to show every job. */
+  kind?: MediaKind;
 }
 
 export default function DownloadActivitySheet({
   open,
   onClose,
   onOpenJob,
+  kind,
 }: DownloadActivitySheetProps) {
   const { t } = useTranslation();
   const [jobs, setJobs] = useState<DownloadJob[]>(() => getDownloadJobs());
@@ -78,6 +128,8 @@ export default function DownloadActivitySheet({
 
   useEffect(() => subscribeDownloadQueue(() => setJobs(getDownloadJobs())), []);
 
+  const scopedJobs = useMemo(() => filterDownloadJobsByKind(jobs, kind), [jobs, kind]);
+
   // Deliberately NO auto-scan on open. Opening the Downloads screen must be passive — it just
   // shows status. Previously it called scanAndQueueIncompleteAlbumDownloads(), which re-ran the
   // fuzzy catalog↔locker album diff and re-queued/retried the same "incomplete" albums every
@@ -85,9 +137,9 @@ export default function DownloadActivitySheet({
 
   if (!open || typeof document === 'undefined') return null;
 
-  const active = jobs.filter(isActiveJob);
-  const errors = jobs.filter((j) => j.status === 'error');
-  const done = jobs
+  const active = scopedJobs.filter(isActiveJob);
+  const errors = scopedJobs.filter((j) => j.status === 'error');
+  const done = scopedJobs
     .filter((j) => j.status === 'done')
     .slice()
     .sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0))
@@ -337,16 +389,15 @@ export default function DownloadActivitySheet({
           </div>
         )}
 
-        {jobs.length > 0 ? (
+        {scopedJobs.length > 0 ? (
           <footer className="download-activity-sheet-footer">
             <button
               type="button"
               className="download-activity-sheet-clear touch-manipulation"
               onClick={() => {
-                // Wipe EVERY job (active/queued/paused/error/done) and clear it from storage,
-                // so a stale/false backlog can't keep reappearing across reboots.
-                void cancelAllActiveDownloadJobs();
-                clearAllDownloadJobs();
+                // Wipe jobs in this station's scope (or every job when unscoped) so a stale
+                // backlog can't keep reappearing across reboots.
+                clearDownloadJobsForKind(kind);
               }}
             >
               {t('download.activity.clearAll')}

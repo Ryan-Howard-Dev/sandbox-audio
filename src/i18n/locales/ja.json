@@ -671,8 +671,8 @@
       "reindexLockerSearch": "Reindex locker search",
       "reindexing": "Reindexing…",
       "experimentalTitle": "EXPERIMENTAL INTEGRATIONS",
-      "experimentalHint": "Reveal built-in dev-test addons (SoundCloud, WebTorrent, IPFS, Radio Browser, Audius) in Settings and search. Turning ON auto-enables them for tier34 resolve testing.",
-      "experimentalHiddenHint": "Built-in dev-test addons are hidden. Enable Show Experimental Integrations under Settings → Addons to try SoundCloud, WebTorrent, IPFS, Radio Browser, and Audius via tier34. User manifest addons work without this toggle.",
+      "experimentalHint": "Reveal built-in stub addons that are not implemented. Off by default — user-installed manifest addons are always visible.",
+      "experimentalHiddenHint": "Built-in stub addons are hidden because they are not implemented. Enable Show Experimental Integrations under Settings → Addons to inspect them. User manifest addons work without this toggle.",
       "showAcquisitionKeys": "Show acquisition keys",
       "hideAcquisitionKeys": "Hide acquisition keys",
       "djConsoleTitle": "DJ CONSOLE",
@@ -686,11 +686,12 @@
       "personalAddonPackHint": "Pre-installed dev-test addons wired to tier34 resolve. Toggle enable/disable — built-ins cannot be removed.",
       "showExperimentalIntegrations": "SHOW EXPERIMENTAL INTEGRATIONS",
       "builtInBadge": "BUILT-IN",
-      "statusExperimental": "Experimental (tier34 required)",
-      "statusExperimentalHint": "Resolve works when the Sandbox Server is configured and this addon is enabled.",
+      "notImplementedBadge": "Not implemented",
+      "statusExperimental": "Not implemented",
+      "statusExperimentalHint": "This built-in addon is a placeholder and is not wired for use.",
       "statusActive": "Active",
       "statusDisabled": "Disabled",
-      "devBadgeHint": "Dev-test addon — tier34 resolve when server URL is configured."
+      "devBadgeHint": "Not implemented — placeholder for development only."
     },
     "security": {
       "title": "防御プロトコル",

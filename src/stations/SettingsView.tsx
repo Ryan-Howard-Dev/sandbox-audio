@@ -281,6 +281,7 @@ import {
   type SearchSortOrder,
 } from '../searchSettings';
 import {
+  BUILTIN_ADDON_IDS,
   ensureBuiltinAddons,
   getAddonStatus,
   installUserAddon,
@@ -4464,8 +4465,8 @@ export default function SettingsView({
                                 {t('settings.addons.builtInBadge')}
                               </span>
                               {isStubAddon(addon) ? (
-                                <span className="text-[9px] font-mono uppercase px-2 py-0.5 rounded border border-accent/50 text-accent bg-accent/5">
-                                  DEV
+                                <span className="text-[9px] font-mono uppercase px-2 py-0.5 rounded border border-amber-500/40 text-amber-500/90 bg-amber-500/5">
+                                  {t('settings.addons.notImplementedBadge')}
                                 </span>
                               ) : null}
                               <span
@@ -4485,7 +4486,7 @@ export default function SettingsView({
                             {addon.note ? (
                               <span className="ui-hint block mt-0.5">{addon.note}</span>
                             ) : null}
-                            {addon.id === 'builtin-soundcloud' && (
+                            {addon.id === BUILTIN_ADDON_IDS.soundcloud && (
                               <input
                                 type="text"
                                 value={addon.config?.client_id ?? ''}
@@ -4498,7 +4499,7 @@ export default function SettingsView({
                                 style={{ color: C.text }}
                               />
                             )}
-                            {addon.id === 'builtin-audius' && (
+                            {addon.id === BUILTIN_ADDON_IDS.audius && (
                               <div className="mt-2 space-y-2">
                                 <input
                                   type="text"

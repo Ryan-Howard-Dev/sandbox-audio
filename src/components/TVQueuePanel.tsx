@@ -5,6 +5,7 @@ import { proxiedArtworkUrl } from '../displaySanitize';
 import { seedGradient } from '../seedGradient';
 import PlayerArtistLink from './PlayerArtistLink';
 import { resolveQueueNowPlaying, resolveQueueUpNext } from '../playbackSession';
+import { useTranslation } from '../i18n';
 
 export interface TVQueuePanelProps {
   open: boolean;
@@ -31,6 +32,7 @@ export default function TVQueuePanel({
   onGoToArtist,
   onGoToAlbum,
 }: TVQueuePanelProps) {
+  const { t } = useTranslation();
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function TVQueuePanel({
         className="tv-queue-panel fixed top-0 right-0 bottom-0 w-[28rem] max-w-[90vw] z-[60] flex flex-col"
         role="dialog"
         aria-modal="true"
-        aria-label="Play queue"
+        aria-label={t('player.queueDrawer.title')}
       >
         <header className="flex items-center justify-between px-6 py-5 border-b border-[#1e2130]">
           <h2 className="font-display text-xl font-black uppercase tracking-wider text-text-heading">
@@ -86,7 +88,7 @@ export default function TVQueuePanel({
               type="button"
               onClick={onClose}
               className="tv-queue-action p-2 rounded-lg outline-none focus:border-[#C2410C] border border-transparent text-[#9aa3bc] focus:text-text-primary"
-              aria-label="Close queue"
+              aria-label={t('player.closeQueue')}
             >
               <X className="w-5 h-5" />
             </button>

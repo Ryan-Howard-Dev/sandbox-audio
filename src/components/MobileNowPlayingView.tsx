@@ -612,6 +612,7 @@ export default function MobileNowPlayingView({
                 className="mobile-np-icon-btn touch-manipulation"
                 onClick={canShowQueueSheet ? () => setQueueSheetOpen(true) : onOpenQueue}
                 aria-label={t('player.queue')}
+                aria-expanded={canShowQueueSheet ? queueSheetOpen : undefined}
               >
                 <ListMusic className="w-5 h-5" strokeWidth={2} />
               </button>
@@ -630,14 +631,16 @@ export default function MobileNowPlayingView({
                 type="button"
                 className="mobile-np-lyrics-pill touch-manipulation"
                 onClick={onOpenPodcastChapters}
+                aria-label={t('player.podcast.chapters')}
               >
-                Chapters
+                {t('player.podcast.chapters')}
               </button>
             ) : !isPodcast ? (
               <button
                 type="button"
                 className="mobile-np-lyrics-pill touch-manipulation"
                 onClick={onOpenLyrics}
+                aria-label={t('nowPlaying.lyrics')}
               >
                 {t('nowPlaying.lyrics')}
               </button>
@@ -647,8 +650,9 @@ export default function MobileNowPlayingView({
                 type="button"
                 className="mobile-np-icon-btn touch-manipulation"
                 onClick={() => setVinylSettingsOpen(true)}
-                aria-label="Vinyl & colour"
-                title="Vinyl & colour"
+                aria-label={t('player.vinylColour')}
+                title={t('player.vinylColour')}
+                aria-expanded={vinylSettingsOpen}
               >
                 <Palette className="w-5 h-5" strokeWidth={2} />
               </button>

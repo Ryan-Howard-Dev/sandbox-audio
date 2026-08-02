@@ -126,7 +126,7 @@ export default function LoadInDjMenu({
               <button
                 type="button"
                 className="sandbox-menu-backdrop"
-                aria-label="Close menu"
+                aria-label={t('common.closeMenu')}
                 onClick={() => onOpenChange(false)}
               />
               {menuPanel}

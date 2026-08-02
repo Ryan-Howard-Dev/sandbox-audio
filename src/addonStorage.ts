@@ -12,7 +12,8 @@
  * | Soulseek      | DEV-TEST | tier34 POST /api/addon/soulseek/resolve — slskd headless Soulseek network |
  *
  * Hidden from UI/search unless Settings → Addons → Show Experimental Integrations is ON.
- * Turning that toggle ON auto-enables all three built-ins for dev playback testing.
+ * When shown, labeled as not implemented. Turning that toggle ON auto-enables all
+ * built-in stubs (via isStubAddon) for inspection.
  */
 
 import { loadShowExperimentalIntegrations } from './sandboxSettings';
@@ -57,7 +58,7 @@ function builtinSoundCloud(): SandboxAddon {
     manifestUrl: '',
     builtIn: true,
     enabled: false,
-    note: 'Dev-test: tier34 SoundCloud resolve (client_id optional — yt-dlp fallback).',
+    note: 'Not implemented — stub placeholder (tier34 SoundCloud resolve scaffold).',
     config: { client_id: '' },
   };
 }
@@ -72,7 +73,7 @@ function builtinWebTorrent(): SandboxAddon {
     manifestUrl: '',
     builtIn: true,
     enabled: false,
-    note: 'Dev-test: tier34 magnet/RD or archive P2P streams.',
+    note: 'Not implemented — stub placeholder (tier34 magnet/RD scaffold).',
   };
 }
 
@@ -86,7 +87,7 @@ function builtinIpfs(): SandboxAddon {
     manifestUrl: '',
     builtIn: true,
     enabled: false,
-    note: 'Dev-test: tier34 archive content-addressable mesh sources.',
+    note: 'Not implemented — stub placeholder (tier34 archive mesh scaffold).',
   };
 }
 
@@ -100,7 +101,7 @@ function builtinRadioBrowser(): SandboxAddon {
     manifestUrl: '',
     builtIn: true,
     enabled: false,
-    note: 'Dev-test: tier34 Radio Browser live stations — search "jazz radio" etc.',
+    note: 'Not implemented — stub placeholder (tier34 Radio Browser scaffold).',
   };
 }
 
@@ -114,7 +115,7 @@ function builtinAudius(): SandboxAddon {
     manifestUrl: '',
     builtIn: true,
     enabled: false,
-    note: 'Dev-test: tier34 Audius resolve — optional API key / app name in Settings.',
+    note: 'Not implemented — stub placeholder (tier34 Audius scaffold).',
     config: { api_key: '', app_name: 'SandboxMusic' },
   };
 }
@@ -129,7 +130,7 @@ function builtinSoulseek(): SandboxAddon {
     manifestUrl: '',
     builtIn: true,
     enabled: false,
-    note: 'Dev-test: tier34 slskd Soulseek search — requires slskd on the server.',
+    note: 'Not implemented — stub placeholder (tier34 slskd scaffold).',
   };
 }
 

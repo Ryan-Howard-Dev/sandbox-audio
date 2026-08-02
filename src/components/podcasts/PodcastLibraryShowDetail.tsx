@@ -21,6 +21,7 @@ import { proxiedArtworkUrl } from '../../displaySanitize';
 import { seedGradient } from '../../seedGradient';
 import PodcastEpisodeRow from './PodcastEpisodeRow';
 import type { PodcastEpisodeFilter } from '../../stations/PodcastsView';
+import { useTranslation } from '../../i18n';
 
 export interface PodcastLibraryShowDetailProps {
   feed: PodcastSubscription;
@@ -78,6 +79,7 @@ export default function PodcastLibraryShowDetail({
   onToggleAutoDownload,
   onUpdateShowRules,
 }: PodcastLibraryShowDetailProps) {
+  const { t } = useTranslation();
   const [rulesOpen, setRulesOpen] = useState(false);
   const art = proxiedArtworkUrl(feed.artworkUrl);
   const description = feed.description ? stripHtmlText(feed.description) : '';
@@ -133,7 +135,7 @@ export default function PodcastLibraryShowDetail({
         </div>
       </header>
 
-      <div className="podcasts-show-detail-filters mb-4" role="group" aria-label="Episode filters">
+      <div className="podcasts-show-detail-filters mb-4" role="group" aria-label={t('podcasts.episodeFiltersAria')}>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
           <h3 className="podcasts-show-detail-episodes-label mb-0">
             Episodes
@@ -242,7 +244,7 @@ export default function PodcastLibraryShowDetail({
                     autoDownloadCount: parseInt(e.target.value, 10),
                   })
                 }
-                aria-label="Episodes to auto-save"
+                aria-label={t('podcasts.autoSaveCountAria')}
               >
                 {PODCAST_AUTO_SAVE_COUNTS.map((n) => (
                   <option key={n} value={n}>
@@ -272,7 +274,7 @@ export default function PodcastLibraryShowDetail({
                   deletePlayedAfterDays: parseInt(e.target.value, 10),
                 })
               }
-              aria-label="Delete played episodes after"
+              aria-label={t('podcasts.deletePlayedAfterAria')}
             >
               {PODCAST_DELETE_PLAYED_DAYS_OPTIONS.map((days) => (
                 <option key={days} value={days}>
@@ -295,7 +297,7 @@ export default function PodcastLibraryShowDetail({
                   voiceBoostDefault: v === 'inherit' ? null : v === 'on',
                 });
               }}
-              aria-label="Voice Boost default for this show"
+              aria-label={t('podcasts.voiceBoostDefaultAria')}
             >
               <option value="inherit">Voice Boost: Global</option>
               <option value="on">Voice Boost: On</option>

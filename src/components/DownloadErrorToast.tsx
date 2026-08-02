@@ -7,6 +7,7 @@ import {
   subscribeDownloadQueue,
   type DownloadJob,
 } from '../downloadQueue';
+import { useTranslation } from '../i18n';
 
 function copyErrorText(text: string): void {
   void navigator.clipboard?.writeText(text).catch(() => {
@@ -15,6 +16,7 @@ function copyErrorText(text: string): void {
 }
 
 export default function DownloadErrorToast({ hidden = false }: { hidden?: boolean }) {
+  const { t } = useTranslation();
   const [jobs, setJobs] = useState<DownloadJob[]>(() => getDownloadJobs());
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
@@ -53,7 +55,7 @@ export default function DownloadErrorToast({ hidden = false }: { hidden?: boolea
                   type="button"
                   className="download-error-toast-action"
                   onClick={() => copyErrorText(errorText)}
-                  aria-label="Copy error message"
+                  aria-label={t('shell.copyError')}
                   title="Copy error"
                 >
                   <Copy className="w-3.5 h-3.5" />
@@ -67,7 +69,7 @@ export default function DownloadErrorToast({ hidden = false }: { hidden?: boolea
         type="button"
         className="download-error-toast-dismiss"
         onClick={() => clearFinishedDownloadJobs()}
-        aria-label="Dismiss download errors"
+        aria-label={t('shell.dismissDownloadErrors')}
       >
         <X className="w-3.5 h-3.5" />
       </button>

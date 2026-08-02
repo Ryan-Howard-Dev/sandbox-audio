@@ -16,6 +16,7 @@ import { scheduleLockerSearchReindex } from '../lockerSearchSync';
 import ModalOverlay from '../stations/ModalOverlay';
 import { useDismissableOverlay } from '../hooks/useDismissableOverlay';
 import { C } from '../stations/theme';
+import { useTranslation } from '../i18n';
 
 export interface MetadataRepairPanelProps {
   /** Modal mode — renders overlay shell. Omit for inline section. */
@@ -47,6 +48,7 @@ export default function MetadataRepairPanel({
   onClose,
 }: MetadataRepairPanelProps) {
   useDismissableOverlay(modal && open, onClose ?? (() => undefined));
+  const { t } = useTranslation();
 
   const [airGap, setAirGap] = useState(isAirGapEnabled);
   const [trackCount, setTrackCount] = useState(0);
@@ -265,7 +267,7 @@ export default function MetadataRepairPanel({
             type="button"
             onClick={onClose}
             className="p-1 rounded text-[var(--text-mid)] hover:text-[var(--text)]"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             <X className="w-5 h-5" />
           </button>

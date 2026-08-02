@@ -35,7 +35,6 @@ import {
   Server,
   ListMusic,
   Menu,
-  Download,
 } from 'lucide-react';
 import CollapsibleStationNav from './components/CollapsibleStationNav';
 import { queueStemAnalyzeForLockerTrack } from './analyzeStemsAction';
@@ -636,6 +635,7 @@ import {
 import {
   formatMinutesHuman,
   getListeningStats,
+  type MediaKind,
 } from './listeningAnalytics';
 import {
   registerKeyboardShortcuts,
@@ -1028,6 +1028,11 @@ export default function SandboxShell() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileDownloadSheetOpen, setMobileDownloadSheetOpen] = useState(false);
+  const [mobileDownloadSheetKind, setMobileDownloadSheetKind] = useState<MediaKind>('music');
+  const openStationDownloads = useCallback((kind: MediaKind) => {
+    setMobileDownloadSheetKind(kind);
+    setMobileDownloadSheetOpen(true);
+  }, []);
   const [lockerRemoveConfirm, setLockerRemoveConfirm] = useState<{
     id: string;
     title: string;
@@ -1317,7 +1322,7 @@ export default function SandboxShell() {
 
   const mobileNavBadges = useMemo((): Partial<Record<MobileTabId, number>> | undefined => {
     const badges: Partial<Record<MobileTabId, number>> = {};
-    const downloadErrors = countDownloadSheetBadge(getDownloadJobs());
+    const downloadErrors = countDownloadSheetBadge(getDownloadJobs(), 'music');
     if (downloadErrors > 0) {
       badges.locker = downloadErrors;
     }
@@ -1339,7 +1344,9 @@ export default function SandboxShell() {
 
   useEffect(() => subscribeDownloadQueue(() => setDownloadQueueRevision((n) => n + 1)), []);
 
-  const mobileDownloadBadge = countDownloadSheetBadge(getDownloadJobs());
+  const mobileDownloadBadge = countDownloadSheetBadge(getDownloadJobs(), 'music');
+  const podcastDownloadBadge = countDownloadSheetBadge(getDownloadJobs(), 'podcast');
+  const audiobookDownloadBadge = countDownloadSheetBadge(getDownloadJobs(), 'audiobook');
 
   /** Dismiss search overlay immediately (X, backdrop, hardware back). */
   const closeMobileSearchOverlayNow = useCallback(() => {
@@ -8477,37 +8484,10 @@ export default function SandboxShell() {
    *
    * It used to render on 'locker' purely to host the downloads button, costing a 52px empty band
    * above the content. Discover never had it, so the segment tabs jumped 52px when you crossed
-   * between segments. The downloads button is a fixed-position FAB instead (see below), so every
-   * Music segment now starts flush at the top.
+   * between segments. Downloads live in each station's own overflow menu (filtered by media kind),
+   * so every Music segment starts flush at the top.
    */
   const showMobileShellHeader = showMobileShell && (mobileSearchOpen || station === 'search');
-  /*
-   * Downloads, reachable from anywhere.
-   *
-   * The button lived in the shell header, and on mobile that header only exists on the search
-   * station -- so a download started from search became unreachable the moment you navigated to
-   * your library to wait for it. Defined once here and rendered in the header where there is one,
-   * and floating where there is not.
-   */
-  const downloadsButton = (
-    <button
-      type="button"
-      className="shell-downloads-btn touch-manipulation"
-      onClick={() => setMobileDownloadSheetOpen(true)}
-      aria-label={
-        mobileDownloadBadge > 0
-          ? t('download.activity.openWithCount', { count: mobileDownloadBadge })
-          : t('download.activity.open')
-      }
-    >
-      <Download className="w-5 h-5" strokeWidth={2} />
-      {mobileDownloadBadge > 0 ? (
-        <span className="shell-downloads-btn-badge" aria-hidden>
-          {mobileDownloadBadge > 9 ? '9+' : mobileDownloadBadge}
-        </span>
-      ) : null}
-    </button>
-  );
   const showShellHeaderOffset = showTopSearch;
 
   const navActiveId: NavItemId = navItems.some((i) => i.id === station) ? station : 'home';
@@ -9179,6 +9159,7 @@ export default function SandboxShell() {
         open={showMobileShell && mobileDownloadSheetOpen}
         onClose={() => setMobileDownloadSheetOpen(false)}
         onOpenJob={handleOpenDownloadJob}
+        kind={mobileDownloadSheetKind}
       />
       <ConfirmDialog
         open={lockerRemoveConfirm !== null}
@@ -9226,17 +9207,6 @@ export default function SandboxShell() {
           style={musicUniverseStyle}
         />
       ) : null}
-      {/*
-        Where there is no header to hold it. Hidden behind the now playing overlay and while
-        searching, because both of those already own the top of the screen.
-      */}
-      {showMobileShell &&
-      !showMobileShellHeader &&
-      !mobileNowPlayingOpen &&
-      !mobileSearchOpen &&
-      !isCarMode ? (
-        <div className="shell-downloads-floating">{downloadsButton}</div>
-      ) : null}
       {!isTV && !isCarMode && (!showMobileShell || showMobileShellHeader) ? (
         showHomeIdleChrome && !showMobileShell ? (
           <div
@@ -9275,9 +9245,7 @@ export default function SandboxShell() {
                   >
                     <X className="w-5 h-5 text-gray-400" />
                   </button>
-                ) : (
-                  downloadsButton
-                )}
+                ) : null}
               </div>
             ) : null}
 
@@ -9881,7 +9849,7 @@ export default function SandboxShell() {
             sectionBar={musicSegmentBar}
             homeResetKey={lockerHomeResetKey}
             lockerDrillBackRef={lockerDrillBackRef}
-            onOpenDownloads={() => setMobileDownloadSheetOpen(true)}
+            onOpenDownloads={() => openStationDownloads('music')}
             downloadAttentionCount={mobileDownloadBadge}
             vm={{
               url: audio.url,
@@ -9932,6 +9900,8 @@ export default function SandboxShell() {
                 onQueueShowUnplayed={handleQueueShowUnplayed}
                 drillBackRef={podcastsDrillBackRef}
                 episodeNotifCount={podcastEpisodeBadge}
+                onOpenDownloads={() => openStationDownloads('podcast')}
+                downloadAttentionCount={podcastDownloadBadge}
               />,
             )}
           </div>
@@ -9957,6 +9927,8 @@ export default function SandboxShell() {
                   setStation('settings');
                 }}
                 drillBackRef={audiobooksDrillBackRef}
+                onOpenDownloads={() => openStationDownloads('audiobook')}
+                downloadAttentionCount={audiobookDownloadBadge}
               />,
               'audiobooks',
             )}
@@ -10117,7 +10089,7 @@ export default function SandboxShell() {
       />
 
       {showCarModeOffer ? (
-        <div className="car-mode-offer" role="dialog" aria-label="Car mode suggestion">
+        <div className="car-mode-offer" role="dialog" aria-label={t('carMode.suggestion')}>
           <p className="car-mode-offer-title">Driving?</p>
           <p className="ui-hint text-xs">
             Switch to Car Mode for large controls and locked navigation while you drive.
