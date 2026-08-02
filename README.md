@@ -236,6 +236,9 @@ APK: `android/app/build/outputs/apk/debug/app-debug.apk`. Configure LAN tier34 U
 
 ## Documentation index
 
+The most-asked-for pages are below. **[docs/README.md](./docs/README.md) indexes all of them**,
+grouped by what you are trying to do.
+
 | Topic | Location |
 |-------|----------|
 | Audit artifacts (Pass 1–3) | [docs/audit/](./docs/audit/) |
