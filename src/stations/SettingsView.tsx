@@ -2215,7 +2215,7 @@ export default function SettingsView({
             </div>
           )}
 
-          {activeTab === 'playback' && (
+          {activeTab === 'music' && (
             <div className="space-y-6">
               <div className="settings-anchor-section">
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.playbackMain} />
@@ -2380,19 +2380,6 @@ export default function SettingsView({
                     set: (v: boolean) => {
                       setCrossfade(v);
                       saveCrossfadeEnabled(v);
-                    },
-                  },
-                  {
-                    label: t('settings.playback.multiDeviceLabel'),
-                    desc: t('settings.playback.multiDeviceDesc'),
-                    checked: networkSync,
-                    set: (v: boolean) => {
-                      if (v && !loadConnectSetupDone()) {
-                        setConnectWizardOpen(true);
-                        return;
-                      }
-                      setNetworkSync(v);
-                      saveNetworkSyncEnabled(v);
                     },
                   },
                 ] as const;
@@ -2906,68 +2893,6 @@ export default function SettingsView({
                 )}
               </div>
 
-              {(() => {
-                void sleepTimerTick;
-                const sleep = getSleepTimerSnapshot();
-                const countdown = formatSleepRemaining(
-                  sleep.remainingSeconds,
-                  sleep.isEventBased,
-                  sleep.preset,
-                );
-                return (
-                  <div className="settings-anchor-section p-4 border rounded-xl space-y-3" style={cardStyle}>
-                    <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.playbackSleep} />
-                    <div className="flex items-start gap-3">
-                      <div className="sleep-timer-clock-icon shrink-0 scale-90 origin-top-left">
-                        <AlarmClock className="w-5 h-5" strokeWidth={1.75} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                          SLEEP TIMER
-                        </p>
-                        <p className="ui-hint ui-hint--desc">
-                          Pause playback after a preset duration, when the current track ends, or
-                          when the queue finishes.
-                        </p>
-                      </div>
-                    </div>
-                    {sleep.active ? (
-                      <div className="sleep-timer-countdown-card">
-                        <p className="font-mono text-[10px] uppercase tracking-widest text-accent">
-                          {sleep.preset ? presetLabel(sleep.preset) : 'Active'}
-                        </p>
-                        <p className="sleep-timer-countdown-display font-mono tabular-nums text-2xl">
-                          {countdown}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={cancelSleepTimer}
-                          className="sleep-timer-cancel-btn touch-manipulation max-w-xs"
-                        >
-                          Cancel Timer
-                        </button>
-                      </div>
-                    ) : null}
-                    <div className="sleep-timer-preset-grid">
-                      {SLEEP_TIMER_PRESETS.map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => startSleepTimer(p.id)}
-                          className={`sleep-timer-preset-btn touch-manipulation ${
-                            sleep.active && sleep.preset === p.id
-                              ? 'sleep-timer-preset-btn--active'
-                              : ''
-                          }`}
-                        >
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-
               {isAndroidNative() ? (
                 <div className="p-4 border rounded-xl space-y-2" style={cardStyle}>
                   <div>
@@ -2989,42 +2914,6 @@ export default function SettingsView({
                   </p>
                 </div>
               ) : null}
-
-              {isAndroidNative() ? (
-                <div className="settings-anchor-section p-4 border rounded-xl space-y-3" style={cardStyle}>
-                  <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.playbackMini} />
-                  <div>
-                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                      {t('settings.playback.miniPlayerLabel')}
-                    </p>
-                    <p className="ui-hint ui-hint--desc mt-1">
-                      {t('settings.playback.miniPlayerHint')}
-                    </p>
-                  </div>
-                  <label className="block">
-                    <span className="sr-only">{t('settings.playback.miniPlayerLabel')}</span>
-                    <select
-                      value={androidMiniPlayerMode}
-                      onChange={(e) => {
-                        const mode = e.target.value as AndroidMiniPlayerMode;
-                        setAndroidMiniPlayerMode(mode);
-                        saveAndroidMiniPlayerMode(mode);
-                        void syncAndroidMiniPlayerMode(mode);
-                      }}
-                      className="w-full font-mono text-xs border rounded-lg px-3 py-2 bg-[var(--surface)] text-[var(--text)]"
-                      aria-label={t('settings.playback.miniPlayerLabel')}
-                    >
-                      <option value="off">{t('settings.playback.miniPlayerOff')}</option>
-                      <option value="pip">{t('settings.playback.miniPlayerPip')}</option>
-                      <option value="topBar">{t('settings.playback.miniPlayerTopBar')}</option>
-                    </select>
-                  </label>
-                  <p className="ui-hint ui-hint--desc">
-                    {t('settings.playback.miniPlayerTopBarNote')}
-                  </p>
-                </div>
-              ) : null}
-
               {isAndroidNative() ? (
                 <div className="settings-anchor-section p-4 border rounded-xl space-y-3" style={cardStyle}>
                   <div className="flex items-center justify-between gap-3">
@@ -3145,57 +3034,6 @@ export default function SettingsView({
                   ) : null}
                 </div>
               ) : null}
-
-              {(() => {
-                const carActive = isCarModeActive();
-                return (
-                  <div className="settings-anchor-section p-4 border rounded-xl space-y-3" style={cardStyle}>
-                    <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.playbackCar} />
-                    <div className="flex items-start gap-3">
-                      <Car className="w-5 h-5 shrink-0 text-accent" strokeWidth={1.75} />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                          {t('settings.playback.carModeTitle')}
-                        </p>
-                        <p className="ui-hint ui-hint--desc">
-                          {t('settings.playback.carModeHint')}
-                        </p>
-                      </div>
-                    </div>
-                    {isAndroidNative() ? (
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="font-mono text-xs font-semibold text-[var(--text)]">
-                            {t('settings.playback.carModeSuggestLabel')}
-                          </p>
-                          <p className="ui-hint ui-hint--desc">
-                            {t('settings.playback.carModeSuggestDesc')}
-                          </p>
-                        </div>
-                        <SandboxSwitch
-                          checked={carAutoOffer}
-                          onChange={(v) => {
-                            setCarAutoOffer(v);
-                            saveCarModeAutoOffer(v);
-                          }}
-                          aria-label={t('settings.playback.carModeSuggestAria')}
-                        />
-                      </div>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (carActive) exitCarMode();
-                        else enterCarMode();
-                      }}
-                      className="w-full min-h-[2.75rem] rounded-lg font-mono text-xs font-bold uppercase tracking-wider touch-manipulation btn-car-mode"
-                    >
-                      {carActive ? t('settings.playback.carModeExit') : t('settings.playback.carModeEnter')}
-                    </button>
-                  </div>
-                );
-              })()}
-
               <div key={playbackDiagTick} className="p-4 border rounded-xl space-y-2" style={cardStyle}>
                 <p className="font-mono text-sm font-semibold text-[var(--text)]">
                   {t('settings.playback.replayGainDiagnosticsTitle')}
@@ -3217,91 +3055,6 @@ export default function SettingsView({
                   );
                 })()}
               </div>
-
-              {networkSync ? (
-                <div className="settings-anchor-section p-4 border rounded-xl space-y-3" style={cardStyle}>
-                  <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.playbackConnect} />
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                        {t('settings.playback.multiDeviceTitle')}
-                      </p>
-                      <p className="ui-hint ui-hint--desc">
-                        {t('settings.playback.multiDeviceSetupHint')}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setConnectWizardOpen(true)}
-                      className="font-mono text-[10px] uppercase tracking-wider border px-4 py-2 rounded-sm touch-manipulation shrink-0 text-accent"
-                      style={accentBorder}
-                    >
-                      {t('settings.playback.setupMultiDevice')}
-                    </button>
-                  </div>
-                  <div>
-                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                      {t('settings.playback.roleLabel')}
-                    </p>
-                    <p className="ui-hint ui-hint--desc">
-                      {t('settings.playback.roleHint')}{' '}
-                      <span className="text-accent">{resolveConnectRole(connectRole)}</span>
-                    </p>
-                  </div>
-                  {connectOfflineHint({
-                    browserOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
-                    airGap: airGapEnabled,
-                    tier34Ok: tier34Ok === false ? false : tier34Ok,
-                    meilisearchOk: null,
-                  }) ? (
-                    <OfflineStatusBanner
-                      className="mt-1"
-                      label="Connect limited"
-                      message={
-                        connectOfflineHint({
-                          browserOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
-                          airGap: airGapEnabled,
-                          tier34Ok: tier34Ok === false ? false : tier34Ok,
-                          meilisearchOk: null,
-                        })!
-                      }
-                    />
-                  ) : null}
-                  <select
-                    value={connectRole}
-                    onChange={(e) => {
-                      const v = e.target.value as ConnectRolePref;
-                      setConnectRole(v);
-                      saveConnectRolePref(v);
-                    }}
-                    className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent text-[var(--text)]"
-                    aria-label={t('settings.playback.multiDeviceTitle')}
-                  >
-                    <option value="auto">{t('settings.playback.roleAuto')}</option>
-                    <option value="host">{t('settings.playback.roleHost')}</option>
-                    <option value="remote">{t('settings.playback.roleRemote')}</option>
-                  </select>
-                  <div>
-                    <label className="ui-field-label">{t('settings.playback.deviceNameLabel')}</label>
-                    <input
-                      type="text"
-                      value={connectDeviceName}
-                      onChange={(e) => {
-                        setConnectDeviceName(e.target.value);
-                        saveConnectDeviceName(e.target.value);
-                      }}
-                      placeholder={t('settings.playback.deviceNamePlaceholder')}
-                      className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent"
-                      style={{ color: C.text }}
-                    />
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          )}
-
-          {activeTab === 'addons' && (
-            <div className="space-y-5">
               <div className="settings-anchor-section space-y-3">
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.addonsBuiltin} />
                 <p className="ui-subsection-title text-accent">{t('settings.addons.builtinStationsTitle')}</p>
@@ -3356,108 +3109,6 @@ export default function SettingsView({
                       {t('settings.addons.stemSeparationTitle')}
                     </p>
                     <p className="ui-hint ui-hint--desc">{t('settings.addons.stemSeparationUnavailable')}</p>
-                  </div>
-                ) : null}
-                <div
-                  className="flex items-center justify-between p-4 border rounded-xl"
-                  style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.35)' }}
-                >
-                  <div>
-                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                      PODCASTS STATION
-                    </p>
-                    <p className="ui-hint ui-hint--desc mt-1">
-                      Subscribe to RSS feeds, stream episodes, and show podcast matches in search.
-                    </p>
-                  </div>
-                  <SandboxSwitch
-                    checked={podcastsEnabled}
-                    onChange={(checked) => {
-                      setPodcastsEnabled(checked);
-                      savePodcastsEnabled(checked);
-                      onPodcastsChange?.(checked);
-                    }}
-                    aria-label="Podcasts station"
-                  />
-                </div>
-                <div
-                  className="flex items-center justify-between p-4 border rounded-xl"
-                  style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.35)' }}
-                >
-                  <div>
-                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                      AUDIOBOOKS STATION
-                    </p>
-                    <p className="ui-hint ui-hint--desc mt-1">
-                      Scan Books / Audiobooks on this phone and play them without touching the music
-                      locker or podcast library.
-                    </p>
-                  </div>
-                  <SandboxSwitch
-                    checked={audiobooksEnabled}
-                    onChange={(checked) => {
-                      setAudiobooksEnabled(checked);
-                      saveAudiobooksEnabled(checked);
-                      onAudiobooksChange?.(checked);
-                    }}
-                    aria-label="Audiobooks station"
-                  />
-                </div>
-                {audiobooksEnabled ? <AudiobookSearchPluginsSettings /> : null}
-                {podcastsEnabled ? (
-                  <div
-                    className="p-4 border rounded-xl space-y-4"
-                    style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.25)' }}
-                  >
-                    <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent">
-                      Podcast playback
-                    </p>
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                          Auto-save on Wi‑Fi only
-                        </p>
-                        <p className="ui-hint ui-hint--desc mt-1">
-                          Default for per-show auto-save — skips cellular when caching episodes
-                          offline.
-                        </p>
-                      </div>
-                      <SandboxSwitch
-                        checked={podcastWifiOnlyAutoSave}
-                        onChange={(checked) => {
-                          setPodcastWifiOnlyAutoSave(checked);
-                          savePodcastAutoDownloadWifiOnly(checked);
-                        }}
-                        aria-label="Auto-save podcasts on Wi-Fi only"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                        Skip interval
-                      </p>
-                      <p className="ui-hint ui-hint--desc mt-1 mb-2">
-                        Seconds forward/back in the podcast player and lock-screen controls.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {PODCAST_SEEK_INTERVALS.map((sec) => (
-                          <button
-                            key={sec}
-                            type="button"
-                            className={`h-9 px-3 rounded-lg border font-mono text-[10px] uppercase touch-manipulation transition-colors ${
-                              podcastSeekInterval === sec
-                                ? 'border-accent text-accent bg-[var(--accent-brand)]/10'
-                                : 'border-[var(--border)] text-[var(--text-mid)] hover:border-accent'
-                            }`}
-                            onClick={() => {
-                              setPodcastSeekInterval(sec);
-                              savePodcastSeekIntervalSeconds(sec);
-                            }}
-                          >
-                            {sec}s
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </div>
                 ) : null}
                 <div
@@ -3569,6 +3220,711 @@ export default function SettingsView({
                     aria-label={t('settings.addons.followedReleaseNotif')}
                   />
                 </div>
+              </div>
+              <div className="p-4 border rounded-xl space-y-3" style={cardStyle}>
+                  <div>
+                    <label className="ui-field-label">{t('settings.addons.discogsApiToken')}</label>
+                    <input
+                      type="password"
+                      value={discogsApiToken}
+                      onChange={(e) => {
+                        setDiscogsApiToken(e.target.value);
+                        savePlaybackEngineSettings({ discogsApiToken: e.target.value });
+                      }}
+                      placeholder={t('settings.addons.discogsApiTokenPlaceholder')}
+                      className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent"
+                      style={{ color: C.text }}
+                    />
+                    <p className="ui-hint text-[10px] mt-1">{t('settings.addons.discogsApiTokenHint')}</p>
+                  </div>
+                  <div className="border-t pt-3 mt-1" style={{ borderColor: C.border }}>
+                    <p className="font-mono text-xs uppercase mb-1" style={accentStyle}>
+                      {t('settings.addons.lockerSearchTitle')}
+                    </p>
+                    <p className="ui-hint mb-2">
+                      {t('settings.addons.lockerSearchHint', {
+                        status: meiliStatus ?? t('settings.addons.lockerSearchChecking'),
+                      })}{' '}
+                      <span className="text-[var(--text-dim)]">
+                        {t('settings.addons.lockerSearchFootnote')}
+                      </span>
+                    </p>
+                    <button
+                      type="button"
+                      disabled={!tier34Ok || meiliReindexing}
+                      onClick={() => {
+                        setMeiliReindexing(true);
+                        void tier34ReindexSearch()
+                          .then((r) => {
+                            if ('error' in r) {
+                              setMeiliStatus(r.error);
+                            } else if (r.data.ok) {
+                              setMeiliStatus(`Reindexed ${r.data.indexed ?? 0} tracks`);
+                            } else {
+                              setMeiliStatus(r.data.error ?? 'Reindex failed');
+                            }
+                            setCacheTick((t) => t + 1);
+                          })
+                          .finally(() => setMeiliReindexing(false));
+                      }}
+                      className="px-3 py-1.5 font-mono text-[10px] uppercase font-bold border rounded-lg touch-manipulation disabled:opacity-40"
+                      style={{ ...accentBorder, borderColor: C.border }}
+                    >
+                      {meiliReindexing ? t('settings.addons.reindexing') : t('settings.addons.reindexLockerSearch')}
+                    </button>
+                  </div>
+              </div>
+                <div className="settings-anchor-section">
+                  <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultMetadata} />
+                  <MetadataRepairPanel />
+                </div>
+                <div className="settings-anchor-section">
+                  <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultLockerRepair} />
+                  <LockerRepairPanel />
+                </div>
+                <div className="settings-anchor-section space-y-2">
+                  <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultNetworkSpeakers} />
+                  <p className="ui-field-label">{t('settings.vault.networkSpeakersSection')}</p>
+                  {tier34Ok && dlnaSettings ? (
+                    <>
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                            {t('settings.vault.networkSpeakersBrowse')}
+                          </p>
+                          <p className="ui-hint ui-hint--desc mt-1">
+                            {t('settings.vault.networkSpeakersHint')}
+                          </p>
+                        </div>
+                        <SandboxSwitch
+                          checked={dlnaSettings.enabled}
+                          disabled={dlnaSaving || !tier34Ok}
+                          onChange={(enabled) => {
+                            setDlnaSaving(true);
+                            void tier34SetDlnaEnabled(enabled)
+                              .then((result) => {
+                                if (result.ok) {
+                                  setDlnaSettings((prev) =>
+                                    prev ? { ...prev, enabled: result.data.enabled } : prev,
+                                  );
+                                }
+                                setCacheTick((t) => t + 1);
+                              })
+                              .finally(() => setDlnaSaving(false));
+                          }}
+                          aria-label={t('settings.vault.networkSpeakersSection')}
+                        />
+                      </div>
+                      {dlnaSettings.enabled ? (
+                        <p className="font-mono text-[10px] break-all" style={{ color: C.textMid }}>
+                          {dlnaSettings.friendlyName} · {dlnaSettings.baseUrl}
+                        </p>
+                      ) : null}
+                      {dlnaSettings.envEnabled && dlnaSettings.runtimeOverride === null ? (
+                        <p className="ui-hint">
+                          {t('settings.vault.networkSpeakersEnvHint')}
+                        </p>
+                      ) : (
+                        <p className="ui-hint">
+                          {t('settings.vault.networkSpeakersRuntimeHint')}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="ui-hint">
+                      {t('settings.vault.networkSpeakersIdle')}
+                    </p>
+                  )}
+                </div>
+              <div className="settings-anchor-section p-5 rounded-xl border space-y-4" style={cardStyle}>
+                <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultWatchFolder} />
+                <div>
+                  <p className="font-mono text-xs uppercase">{t('settings.vault.watchFolderTitle')}</p>
+                  <p className="ui-hint mt-1">
+                    {t('settings.vault.watchFolderHint')}{' '}
+                    {t('settings.vault.ingestionGraphHint')}{' '}
+                    (e.g. <span className="font-mono">D:\Music</span> on Windows).
+                  </p>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="font-mono text-xs uppercase" style={{ color: C.textMid }}>
+                    {t('settings.vault.watchFolderEnable')}
+                  </span>
+                  <SandboxSwitch
+                    checked={Boolean(ingestionWatch?.enabled && ingestionWatch?.watching)}
+                    disabled={!tier34Ok || watchSaving}
+                    onChange={(enabled) => {
+                      const path = watchPathInput.trim() || ingestionWatch?.path;
+                      if (enabled && !path) {
+                        setWatchStatusMsg('Set a watch path first, then enable.');
+                        return;
+                      }
+                      setWatchSaving(true);
+                      void tier34SetIngestionWatchDetailed({
+                        enabled,
+                        path,
+                      })
+                        .then((result) => {
+                          if ('error' in result) {
+                            setWatchStatusMsg(result.error);
+                            return;
+                          }
+                          setIngestionWatch(result.data);
+                          setWatchStatusMsg(
+                            result.data.watching
+                              ? `Watching ${sanitizePathForDisplay(result.data.path)}`
+                              : 'Watch stopped',
+                          );
+                        })
+                        .finally(() => setWatchSaving(false));
+                    }}
+                    aria-label="Enable folder watch ingestion"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="ui-field-label" htmlFor="watch-folder-path">
+                    WATCH PATH
+                  </label>
+                  <input
+                    id="watch-folder-path"
+                    type="text"
+                    value={watchPathInput}
+                    disabled={!tier34Ok}
+                    onChange={(e) => setWatchPathInput(e.target.value)}
+                    placeholder="D:\Music or /home/user/Music"
+                    className="input-elevated w-full px-4 py-3 font-mono text-xs"
+                    style={{ color: C.text, borderRadius }}
+                  />
+                  <button
+                    type="button"
+                    disabled={!tier34Ok || watchSaving || !watchPathInput.trim()}
+                    onClick={() => {
+                      const path = watchPathInput.trim();
+                      if (!path) return;
+                      setWatchSaving(true);
+                      void tier34SetIngestionWatchDetailed({
+                        path,
+                        enabled: ingestionWatch?.enabled ?? false,
+                      })
+                        .then((result) => {
+                          if ('error' in result) {
+                            setWatchStatusMsg(result.error);
+                            return;
+                          }
+                          setIngestionWatch(result.data);
+                          setWatchStatusMsg('Watch path saved');
+                        })
+                        .finally(() => setWatchSaving(false));
+                    }}
+                    className="px-3 py-1.5 font-mono text-[10px] uppercase font-bold border rounded-lg touch-manipulation disabled:opacity-40"
+                    style={{ ...accentBorder, borderColor: C.border }}
+                  >
+                    {watchSaving ? 'Saving…' : 'Save path'}
+                  </button>
+                </div>
+                {ingestionWatch ? (
+                  <p className="ui-hint">
+                    Status:{' '}
+                    {ingestionWatch.watching ? (
+                      <span style={accentStyle}>watching</span>
+                    ) : (
+                      'stopped'
+                    )}
+                    {ingestionWatch.path
+                      ? ` · ${sanitizePathForDisplay(ingestionWatch.path)}`
+                      : ''}
+                    {' · '}
+                    {ingestionWatch.filesProcessed} imported, {ingestionWatch.filesSkipped} skipped
+                    (hash dedup)
+                  </p>
+                ) : null}
+                {watchStatusMsg ? (
+                  <p className="text-xs font-mono" style={accentStyle}>
+                    {watchStatusMsg}
+                  </p>
+                ) : null}
+                {!tier34Ok ? (
+                  <p className="ui-hint">Start your Sandbox Server to configure ingestion.</p>
+                ) : !isLocalTier34Backend(backendUrl) && ingestionWatch?.path ? (
+                  <p className="ui-hint">
+                    Watch folder is configured on the Sandbox Server host; path details are hidden for
+                    privacy.
+                  </p>
+                ) : null}
+                <p className="ui-hint text-[10px]">
+                  {t('settings.vault.watchFolderPickerHint')}
+                </p>
+              </div>
+              <div className="settings-anchor-section p-5 rounded-xl border space-y-3" style={cardStyle}>
+                <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultTasteRecipes} />
+                <TasteRecipePanel stationName="Shared taste station" />
+              </div>
+              <div className="settings-anchor-section border-t pt-6 space-y-4" style={{ borderColor: C.border }}>
+                <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.architectHero} />
+                <p className="font-mono text-xs font-bold uppercase tracking-widest" style={accentStyle}>
+                  {t('settings.architect.heroDisplayTitle')}
+                </p>
+                <p className="ui-hint">{t('settings.architect.heroDisplayHint')}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(
+                    [
+                      {
+                        id: 'album-cover' as const,
+                        labelKey: 'settings.architect.heroDisplayAlbumCover',
+                        hintKey: 'settings.architect.heroDisplayAlbumCoverDesc',
+                      },
+                      {
+                        id: 'vinyl-shades' as const,
+                        labelKey: 'settings.architect.heroDisplayVinylShades',
+                        hintKey: 'settings.architect.heroDisplayVinylShadesDesc',
+                      },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setHeroDisplay(opt.id);
+                        saveHeroDisplayMode(opt.id);
+                      }}
+                      className="p-4 rounded-xl border text-left touch-manipulation transition-colors"
+                      style={{
+                        borderRadius,
+                        borderColor:
+                          heroDisplay === opt.id
+                            ? 'hsl(var(--accent-h), var(--accent-s), var(--accent-l))'
+                            : C.border,
+                        ...(heroDisplay === opt.id ? accentBgSoft : cardStyle),
+                      }}
+                    >
+                      <p
+                        className="font-mono text-xs font-bold uppercase"
+                        style={heroDisplay === opt.id ? accentStyle : { color: C.text }}
+                      >
+                        {t(opt.labelKey)}
+                      </p>
+                      <p className="ui-hint mt-1">{t(opt.hintKey)}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="settings-anchor-section border-t pt-6 space-y-4" style={{ borderColor: C.border }}>
+                <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.architectCardScale} />
+                <div className="flex justify-between mb-2">
+                  <label className="ui-field-label ui-field-label--inline">
+                    {t('settings.architect.albumCardSize')}
+                  </label>
+                  <span className="font-mono text-xs font-bold" style={accentStyle}>
+                    {cardScale.toFixed(2)}x
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={2}
+                  step={0.1}
+                  value={cardScale}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    setCardScale(v);
+                    prefsSetItem(CARD_SCALE_KEY, String(v));
+                  }}
+                  className="w-full accent-accent"
+                />
+                <p className="ui-hint mt-2">
+                  {t('settings.architect.albumCardHint')}
+                </p>
+              </div>
+              <p className="ui-hint ui-hint--desc">
+                {t('settings.crossLinks.musicToEverything')}
+              </p>
+            </div>
+          )}
+          {activeTab === 'playback' && (
+            <div className="space-y-6">
+              <p className="ui-subsection-title">{t('settings.everything.playbackChrome')}</p>
+              {(() => {
+                void sleepTimerTick;
+                const sleep = getSleepTimerSnapshot();
+                const countdown = formatSleepRemaining(
+                  sleep.remainingSeconds,
+                  sleep.isEventBased,
+                  sleep.preset,
+                );
+                return (
+                  <div className="settings-anchor-section p-4 border rounded-xl space-y-3" style={cardStyle}>
+                    <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.playbackSleep} />
+                    <div className="flex items-start gap-3">
+                      <div className="sleep-timer-clock-icon shrink-0 scale-90 origin-top-left">
+                        <AlarmClock className="w-5 h-5" strokeWidth={1.75} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                          SLEEP TIMER
+                        </p>
+                        <p className="ui-hint ui-hint--desc">
+                          Pause playback after a preset duration, when the current track ends, or
+                          when the queue finishes.
+                        </p>
+                      </div>
+                    </div>
+                    {sleep.active ? (
+                      <div className="sleep-timer-countdown-card">
+                        <p className="font-mono text-[10px] uppercase tracking-widest text-accent">
+                          {sleep.preset ? presetLabel(sleep.preset) : 'Active'}
+                        </p>
+                        <p className="sleep-timer-countdown-display font-mono tabular-nums text-2xl">
+                          {countdown}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={cancelSleepTimer}
+                          className="sleep-timer-cancel-btn touch-manipulation max-w-xs"
+                        >
+                          Cancel Timer
+                        </button>
+                      </div>
+                    ) : null}
+                    <div className="sleep-timer-preset-grid">
+                      {SLEEP_TIMER_PRESETS.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => startSleepTimer(p.id)}
+                          className={`sleep-timer-preset-btn touch-manipulation ${
+                            sleep.active && sleep.preset === p.id
+                              ? 'sleep-timer-preset-btn--active'
+                              : ''
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+              {isAndroidNative() ? (
+                <div className="settings-anchor-section p-4 border rounded-xl space-y-3" style={cardStyle}>
+                  <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.playbackMini} />
+                  <div>
+                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                      {t('settings.playback.miniPlayerLabel')}
+                    </p>
+                    <p className="ui-hint ui-hint--desc mt-1">
+                      {t('settings.playback.miniPlayerHint')}
+                    </p>
+                  </div>
+                  <label className="block">
+                    <span className="sr-only">{t('settings.playback.miniPlayerLabel')}</span>
+                    <select
+                      value={androidMiniPlayerMode}
+                      onChange={(e) => {
+                        const mode = e.target.value as AndroidMiniPlayerMode;
+                        setAndroidMiniPlayerMode(mode);
+                        saveAndroidMiniPlayerMode(mode);
+                        void syncAndroidMiniPlayerMode(mode);
+                      }}
+                      className="w-full font-mono text-xs border rounded-lg px-3 py-2 bg-[var(--surface)] text-[var(--text)]"
+                      aria-label={t('settings.playback.miniPlayerLabel')}
+                    >
+                      <option value="off">{t('settings.playback.miniPlayerOff')}</option>
+                      <option value="pip">{t('settings.playback.miniPlayerPip')}</option>
+                      <option value="topBar">{t('settings.playback.miniPlayerTopBar')}</option>
+                    </select>
+                  </label>
+                  <p className="ui-hint ui-hint--desc">
+                    {t('settings.playback.miniPlayerTopBarNote')}
+                  </p>
+                </div>
+              ) : null}
+              {(() => {
+                const carActive = isCarModeActive();
+                return (
+                  <div className="settings-anchor-section p-4 border rounded-xl space-y-3" style={cardStyle}>
+                    <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.playbackCar} />
+                    <div className="flex items-start gap-3">
+                      <Car className="w-5 h-5 shrink-0 text-accent" strokeWidth={1.75} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                          {t('settings.playback.carModeTitle')}
+                        </p>
+                        <p className="ui-hint ui-hint--desc">
+                          {t('settings.playback.carModeHint')}
+                        </p>
+                      </div>
+                    </div>
+                    {isAndroidNative() ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-mono text-xs font-semibold text-[var(--text)]">
+                            {t('settings.playback.carModeSuggestLabel')}
+                          </p>
+                          <p className="ui-hint ui-hint--desc">
+                            {t('settings.playback.carModeSuggestDesc')}
+                          </p>
+                        </div>
+                        <SandboxSwitch
+                          checked={carAutoOffer}
+                          onChange={(v) => {
+                            setCarAutoOffer(v);
+                            saveCarModeAutoOffer(v);
+                          }}
+                          aria-label={t('settings.playback.carModeSuggestAria')}
+                        />
+                      </div>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (carActive) exitCarMode();
+                        else enterCarMode();
+                      }}
+                      className="w-full min-h-[2.75rem] rounded-lg font-mono text-xs font-bold uppercase tracking-wider touch-manipulation btn-car-mode"
+                    >
+                      {carActive ? t('settings.playback.carModeExit') : t('settings.playback.carModeEnter')}
+                    </button>
+                  </div>
+                );
+              })()}
+              {(() => {
+                const playbackToggles = [
+                  {
+                    label: t('settings.playback.multiDeviceLabel'),
+                    desc: t('settings.playback.multiDeviceDesc'),
+                    checked: networkSync,
+                    set: (v: boolean) => {
+                      if (v && !loadConnectSetupDone()) {
+                        setConnectWizardOpen(true);
+                        return;
+                      }
+                      setNetworkSync(v);
+                      saveNetworkSyncEnabled(v);
+                    },
+                  },
+                ] as const;
+                if (isMobileLayout) {
+                  return (
+                    <SettingsGroup>
+                      {playbackToggles.map((row) => (
+                        <div key={row.label} role="presentation">
+                          <SettingsToggleRow
+                            label={row.label}
+                            description={row.desc}
+                            checked={row.checked}
+                            onChange={row.set}
+                          />
+                        </div>
+                      ))}
+                    </SettingsGroup>
+                  );
+                }
+                return playbackToggles.map((row) => (
+                  <div
+                    key={row.label}
+                    className="flex items-center justify-between p-4 border rounded-xl"
+                    style={cardStyle}
+                  >
+                    <div>
+                      <p className="font-mono text-sm font-semibold text-[var(--text)]">{row.label}</p>
+                      <p className="ui-hint ui-hint--desc">{row.desc}</p>
+                    </div>
+                    <SandboxSwitch
+                      checked={row.checked}
+                      onChange={row.set}
+                      aria-label={row.label}
+                    />
+                  </div>
+                ));
+              })()}
+              {networkSync ? (
+                <div className="settings-anchor-section p-4 border rounded-xl space-y-3" style={cardStyle}>
+                  <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.playbackConnect} />
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                        {t('settings.playback.multiDeviceTitle')}
+                      </p>
+                      <p className="ui-hint ui-hint--desc">
+                        {t('settings.playback.multiDeviceSetupHint')}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setConnectWizardOpen(true)}
+                      className="font-mono text-[10px] uppercase tracking-wider border px-4 py-2 rounded-sm touch-manipulation shrink-0 text-accent"
+                      style={accentBorder}
+                    >
+                      {t('settings.playback.setupMultiDevice')}
+                    </button>
+                  </div>
+                  <div>
+                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                      {t('settings.playback.roleLabel')}
+                    </p>
+                    <p className="ui-hint ui-hint--desc">
+                      {t('settings.playback.roleHint')}{' '}
+                      <span className="text-accent">{resolveConnectRole(connectRole)}</span>
+                    </p>
+                  </div>
+                  {connectOfflineHint({
+                    browserOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+                    airGap: airGapEnabled,
+                    tier34Ok: tier34Ok === false ? false : tier34Ok,
+                    meilisearchOk: null,
+                  }) ? (
+                    <OfflineStatusBanner
+                      className="mt-1"
+                      label="Connect limited"
+                      message={
+                        connectOfflineHint({
+                          browserOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+                          airGap: airGapEnabled,
+                          tier34Ok: tier34Ok === false ? false : tier34Ok,
+                          meilisearchOk: null,
+                        })!
+                      }
+                    />
+                  ) : null}
+                  <select
+                    value={connectRole}
+                    onChange={(e) => {
+                      const v = e.target.value as ConnectRolePref;
+                      setConnectRole(v);
+                      saveConnectRolePref(v);
+                    }}
+                    className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent text-[var(--text)]"
+                    aria-label={t('settings.playback.multiDeviceTitle')}
+                  >
+                    <option value="auto">{t('settings.playback.roleAuto')}</option>
+                    <option value="host">{t('settings.playback.roleHost')}</option>
+                    <option value="remote">{t('settings.playback.roleRemote')}</option>
+                  </select>
+                  <div>
+                    <label className="ui-field-label">{t('settings.playback.deviceNameLabel')}</label>
+                    <input
+                      type="text"
+                      value={connectDeviceName}
+                      onChange={(e) => {
+                        setConnectDeviceName(e.target.value);
+                        saveConnectDeviceName(e.target.value);
+                      }}
+                      placeholder={t('settings.playback.deviceNamePlaceholder')}
+                      className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent"
+                      style={{ color: C.text }}
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {activeTab === 'addons' && (
+            <div className="space-y-5">
+              <div className="settings-anchor-section space-y-3">
+                <div
+                  className="flex items-center justify-between p-4 border rounded-xl"
+                  style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.35)' }}
+                >
+                  <div>
+                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                      PODCASTS STATION
+                    </p>
+                    <p className="ui-hint ui-hint--desc mt-1">
+                      Subscribe to RSS feeds, stream episodes, and show podcast matches in search.
+                    </p>
+                  </div>
+                  <SandboxSwitch
+                    checked={podcastsEnabled}
+                    onChange={(checked) => {
+                      setPodcastsEnabled(checked);
+                      savePodcastsEnabled(checked);
+                      onPodcastsChange?.(checked);
+                    }}
+                    aria-label="Podcasts station"
+                  />
+                </div>
+                <div
+                  className="flex items-center justify-between p-4 border rounded-xl"
+                  style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.35)' }}
+                >
+                  <div>
+                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                      AUDIOBOOKS STATION
+                    </p>
+                    <p className="ui-hint ui-hint--desc mt-1">
+                      Scan Books / Audiobooks on this phone and play them without touching the music
+                      locker or podcast library.
+                    </p>
+                  </div>
+                  <SandboxSwitch
+                    checked={audiobooksEnabled}
+                    onChange={(checked) => {
+                      setAudiobooksEnabled(checked);
+                      saveAudiobooksEnabled(checked);
+                      onAudiobooksChange?.(checked);
+                    }}
+                    aria-label="Audiobooks station"
+                  />
+                </div>
+                {audiobooksEnabled ? <AudiobookSearchPluginsSettings /> : null}
+                {podcastsEnabled ? (
+                  <div
+                    className="p-4 border rounded-xl space-y-4"
+                    style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.25)' }}
+                  >
+                    <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent">
+                      Podcast playback
+                    </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                          Auto-save on Wi‑Fi only
+                        </p>
+                        <p className="ui-hint ui-hint--desc mt-1">
+                          Default for per-show auto-save — skips cellular when caching episodes
+                          offline.
+                        </p>
+                      </div>
+                      <SandboxSwitch
+                        checked={podcastWifiOnlyAutoSave}
+                        onChange={(checked) => {
+                          setPodcastWifiOnlyAutoSave(checked);
+                          savePodcastAutoDownloadWifiOnly(checked);
+                        }}
+                        aria-label="Auto-save podcasts on Wi-Fi only"
+                      />
+                    </div>
+                    <div>
+                      <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                        Skip interval
+                      </p>
+                      <p className="ui-hint ui-hint--desc mt-1 mb-2">
+                        Seconds forward/back in the podcast player and lock-screen controls.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {PODCAST_SEEK_INTERVALS.map((sec) => (
+                          <button
+                            key={sec}
+                            type="button"
+                            className={`h-9 px-3 rounded-lg border font-mono text-[10px] uppercase touch-manipulation transition-colors ${
+                              podcastSeekInterval === sec
+                                ? 'border-accent text-accent bg-[var(--accent-brand)]/10'
+                                : 'border-[var(--border)] text-[var(--text-mid)] hover:border-accent'
+                            }`}
+                            onClick={() => {
+                              setPodcastSeekInterval(sec);
+                              savePodcastSeekIntervalSeconds(sec);
+                            }}
+                          >
+                            {sec}s
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="settings-anchor-section space-y-3">
@@ -3802,21 +4158,6 @@ export default function SettingsView({
                     />
                   </div>
                   <div>
-                    <label className="ui-field-label">{t('settings.addons.discogsApiToken')}</label>
-                    <input
-                      type="password"
-                      value={discogsApiToken}
-                      onChange={(e) => {
-                        setDiscogsApiToken(e.target.value);
-                        savePlaybackEngineSettings({ discogsApiToken: e.target.value });
-                      }}
-                      placeholder={t('settings.addons.discogsApiTokenPlaceholder')}
-                      className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent"
-                      style={{ color: C.text }}
-                    />
-                    <p className="ui-hint text-[10px] mt-1">{t('settings.addons.discogsApiTokenHint')}</p>
-                  </div>
-                  <div>
                     <label className="ui-field-label">Podcast Index key</label>
                     <input
                       type="password"
@@ -3959,42 +4300,6 @@ export default function SettingsView({
                       {t('settings.addons.premiumDownloadsResult')} {rdTest}
                     </p>
                   ) : null}
-                  <div className="border-t pt-3 mt-1" style={{ borderColor: C.border }}>
-                    <p className="font-mono text-xs uppercase mb-1" style={accentStyle}>
-                      {t('settings.addons.lockerSearchTitle')}
-                    </p>
-                    <p className="ui-hint mb-2">
-                      {t('settings.addons.lockerSearchHint', {
-                        status: meiliStatus ?? t('settings.addons.lockerSearchChecking'),
-                      })}{' '}
-                      <span className="text-[var(--text-dim)]">
-                        {t('settings.addons.lockerSearchFootnote')}
-                      </span>
-                    </p>
-                    <button
-                      type="button"
-                      disabled={!tier34Ok || meiliReindexing}
-                      onClick={() => {
-                        setMeiliReindexing(true);
-                        void tier34ReindexSearch()
-                          .then((r) => {
-                            if ('error' in r) {
-                              setMeiliStatus(r.error);
-                            } else if (r.data.ok) {
-                              setMeiliStatus(`Reindexed ${r.data.indexed ?? 0} tracks`);
-                            } else {
-                              setMeiliStatus(r.data.error ?? 'Reindex failed');
-                            }
-                            setCacheTick((t) => t + 1);
-                          })
-                          .finally(() => setMeiliReindexing(false));
-                      }}
-                      className="px-3 py-1.5 font-mono text-[10px] uppercase font-bold border rounded-lg touch-manipulation disabled:opacity-40"
-                      style={{ ...accentBorder, borderColor: C.border }}
-                    >
-                      {meiliReindexing ? t('settings.addons.reindexing') : t('settings.addons.reindexLockerSearch')}
-                    </button>
-                  </div>
                 </div>
               </div>
 
@@ -5096,14 +5401,6 @@ export default function SettingsView({
                     </p>
                   ) : null}
                 </div>
-                <div className="settings-anchor-section">
-                  <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultMetadata} />
-                  <MetadataRepairPanel />
-                </div>
-                <div className="settings-anchor-section">
-                  <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultLockerRepair} />
-                  <LockerRepairPanel />
-                </div>
                 <div className="space-y-2">
                   <p className="ui-field-label">{t('settings.vault.serverStoragePathLabel')}</p>
                   {tier34Ok && tier34StorageInfo ? (
@@ -5118,60 +5415,6 @@ export default function SettingsView({
                   ) : (
                     <p className="ui-hint">
                       {t('settings.vault.serverStorageIdle')}
-                    </p>
-                  )}
-                </div>
-                <div className="settings-anchor-section space-y-2">
-                  <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultNetworkSpeakers} />
-                  <p className="ui-field-label">{t('settings.vault.networkSpeakersSection')}</p>
-                  {tier34Ok && dlnaSettings ? (
-                    <>
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                            {t('settings.vault.networkSpeakersBrowse')}
-                          </p>
-                          <p className="ui-hint ui-hint--desc mt-1">
-                            {t('settings.vault.networkSpeakersHint')}
-                          </p>
-                        </div>
-                        <SandboxSwitch
-                          checked={dlnaSettings.enabled}
-                          disabled={dlnaSaving || !tier34Ok}
-                          onChange={(enabled) => {
-                            setDlnaSaving(true);
-                            void tier34SetDlnaEnabled(enabled)
-                              .then((result) => {
-                                if (result.ok) {
-                                  setDlnaSettings((prev) =>
-                                    prev ? { ...prev, enabled: result.data.enabled } : prev,
-                                  );
-                                }
-                                setCacheTick((t) => t + 1);
-                              })
-                              .finally(() => setDlnaSaving(false));
-                          }}
-                          aria-label={t('settings.vault.networkSpeakersSection')}
-                        />
-                      </div>
-                      {dlnaSettings.enabled ? (
-                        <p className="font-mono text-[10px] break-all" style={{ color: C.textMid }}>
-                          {dlnaSettings.friendlyName} · {dlnaSettings.baseUrl}
-                        </p>
-                      ) : null}
-                      {dlnaSettings.envEnabled && dlnaSettings.runtimeOverride === null ? (
-                        <p className="ui-hint">
-                          {t('settings.vault.networkSpeakersEnvHint')}
-                        </p>
-                      ) : (
-                        <p className="ui-hint">
-                          {t('settings.vault.networkSpeakersRuntimeHint')}
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="ui-hint">
-                      {t('settings.vault.networkSpeakersIdle')}
                     </p>
                   )}
                 </div>
@@ -5320,125 +5563,6 @@ export default function SettingsView({
                 </div>
               </div>
 
-              <div className="settings-anchor-section p-5 rounded-xl border space-y-4" style={cardStyle}>
-                <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultWatchFolder} />
-                <div>
-                  <p className="font-mono text-xs uppercase">{t('settings.vault.watchFolderTitle')}</p>
-                  <p className="ui-hint mt-1">
-                    {t('settings.vault.watchFolderHint')}{' '}
-                    {t('settings.vault.ingestionGraphHint')}{' '}
-                    (e.g. <span className="font-mono">D:\Music</span> on Windows).
-                  </p>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="font-mono text-xs uppercase" style={{ color: C.textMid }}>
-                    {t('settings.vault.watchFolderEnable')}
-                  </span>
-                  <SandboxSwitch
-                    checked={Boolean(ingestionWatch?.enabled && ingestionWatch?.watching)}
-                    disabled={!tier34Ok || watchSaving}
-                    onChange={(enabled) => {
-                      const path = watchPathInput.trim() || ingestionWatch?.path;
-                      if (enabled && !path) {
-                        setWatchStatusMsg('Set a watch path first, then enable.');
-                        return;
-                      }
-                      setWatchSaving(true);
-                      void tier34SetIngestionWatchDetailed({
-                        enabled,
-                        path,
-                      })
-                        .then((result) => {
-                          if ('error' in result) {
-                            setWatchStatusMsg(result.error);
-                            return;
-                          }
-                          setIngestionWatch(result.data);
-                          setWatchStatusMsg(
-                            result.data.watching
-                              ? `Watching ${sanitizePathForDisplay(result.data.path)}`
-                              : 'Watch stopped',
-                          );
-                        })
-                        .finally(() => setWatchSaving(false));
-                    }}
-                    aria-label="Enable folder watch ingestion"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="ui-field-label" htmlFor="watch-folder-path">
-                    WATCH PATH
-                  </label>
-                  <input
-                    id="watch-folder-path"
-                    type="text"
-                    value={watchPathInput}
-                    disabled={!tier34Ok}
-                    onChange={(e) => setWatchPathInput(e.target.value)}
-                    placeholder="D:\Music or /home/user/Music"
-                    className="input-elevated w-full px-4 py-3 font-mono text-xs"
-                    style={{ color: C.text, borderRadius }}
-                  />
-                  <button
-                    type="button"
-                    disabled={!tier34Ok || watchSaving || !watchPathInput.trim()}
-                    onClick={() => {
-                      const path = watchPathInput.trim();
-                      if (!path) return;
-                      setWatchSaving(true);
-                      void tier34SetIngestionWatchDetailed({
-                        path,
-                        enabled: ingestionWatch?.enabled ?? false,
-                      })
-                        .then((result) => {
-                          if ('error' in result) {
-                            setWatchStatusMsg(result.error);
-                            return;
-                          }
-                          setIngestionWatch(result.data);
-                          setWatchStatusMsg('Watch path saved');
-                        })
-                        .finally(() => setWatchSaving(false));
-                    }}
-                    className="px-3 py-1.5 font-mono text-[10px] uppercase font-bold border rounded-lg touch-manipulation disabled:opacity-40"
-                    style={{ ...accentBorder, borderColor: C.border }}
-                  >
-                    {watchSaving ? 'Saving…' : 'Save path'}
-                  </button>
-                </div>
-                {ingestionWatch ? (
-                  <p className="ui-hint">
-                    Status:{' '}
-                    {ingestionWatch.watching ? (
-                      <span style={accentStyle}>watching</span>
-                    ) : (
-                      'stopped'
-                    )}
-                    {ingestionWatch.path
-                      ? ` · ${sanitizePathForDisplay(ingestionWatch.path)}`
-                      : ''}
-                    {' · '}
-                    {ingestionWatch.filesProcessed} imported, {ingestionWatch.filesSkipped} skipped
-                    (hash dedup)
-                  </p>
-                ) : null}
-                {watchStatusMsg ? (
-                  <p className="text-xs font-mono" style={accentStyle}>
-                    {watchStatusMsg}
-                  </p>
-                ) : null}
-                {!tier34Ok ? (
-                  <p className="ui-hint">Start your Sandbox Server to configure ingestion.</p>
-                ) : !isLocalTier34Backend(backendUrl) && ingestionWatch?.path ? (
-                  <p className="ui-hint">
-                    Watch folder is configured on the Sandbox Server host; path details are hidden for
-                    privacy.
-                  </p>
-                ) : null}
-                <p className="ui-hint text-[10px]">
-                  {t('settings.vault.watchFolderPickerHint')}
-                </p>
-              </div>
 
               <div className="settings-anchor-section p-5 rounded-xl border space-y-3" style={cardStyle}>
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultLockerSync} />
@@ -5736,10 +5860,6 @@ export default function SettingsView({
                 ) : null}
               </div>
 
-              <div className="settings-anchor-section p-5 rounded-xl border space-y-3" style={cardStyle}>
-                <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultTasteRecipes} />
-                <TasteRecipePanel stationName="Shared taste station" />
-              </div>
 
               <div className="border-t pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ borderColor: C.border }}>
                 <span className="ui-field-label ui-field-label--inline">
@@ -6047,83 +6167,6 @@ export default function SettingsView({
                 </div>
               </div>
 
-              <div className="settings-anchor-section border-t pt-6 space-y-4" style={{ borderColor: C.border }}>
-                <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.architectHero} />
-                <p className="font-mono text-xs font-bold uppercase tracking-widest" style={accentStyle}>
-                  {t('settings.architect.heroDisplayTitle')}
-                </p>
-                <p className="ui-hint">{t('settings.architect.heroDisplayHint')}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {(
-                    [
-                      {
-                        id: 'album-cover' as const,
-                        labelKey: 'settings.architect.heroDisplayAlbumCover',
-                        hintKey: 'settings.architect.heroDisplayAlbumCoverDesc',
-                      },
-                      {
-                        id: 'vinyl-shades' as const,
-                        labelKey: 'settings.architect.heroDisplayVinylShades',
-                        hintKey: 'settings.architect.heroDisplayVinylShadesDesc',
-                      },
-                    ] as const
-                  ).map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => {
-                        setHeroDisplay(opt.id);
-                        saveHeroDisplayMode(opt.id);
-                      }}
-                      className="p-4 rounded-xl border text-left touch-manipulation transition-colors"
-                      style={{
-                        borderRadius,
-                        borderColor:
-                          heroDisplay === opt.id
-                            ? 'hsl(var(--accent-h), var(--accent-s), var(--accent-l))'
-                            : C.border,
-                        ...(heroDisplay === opt.id ? accentBgSoft : cardStyle),
-                      }}
-                    >
-                      <p
-                        className="font-mono text-xs font-bold uppercase"
-                        style={heroDisplay === opt.id ? accentStyle : { color: C.text }}
-                      >
-                        {t(opt.labelKey)}
-                      </p>
-                      <p className="ui-hint mt-1">{t(opt.hintKey)}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="settings-anchor-section border-t pt-6 space-y-4" style={{ borderColor: C.border }}>
-                <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.architectCardScale} />
-                <div className="flex justify-between mb-2">
-                  <label className="ui-field-label ui-field-label--inline">
-                    {t('settings.architect.albumCardSize')}
-                  </label>
-                  <span className="font-mono text-xs font-bold" style={accentStyle}>
-                    {cardScale.toFixed(2)}x
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={2}
-                  step={0.1}
-                  value={cardScale}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    setCardScale(v);
-                    prefsSetItem(CARD_SCALE_KEY, String(v));
-                  }}
-                  className="w-full accent-accent"
-                />
-                <p className="ui-hint mt-2">
-                  {t('settings.architect.albumCardHint')}
-                </p>
-              </div>
 
               <div className="settings-anchor-section border-t pt-6 space-y-4" style={{ borderColor: C.border }}>
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.architectShortcuts} />
@@ -6354,3 +6397,4 @@ export default function SettingsView({
     </>
   );
 }
+
