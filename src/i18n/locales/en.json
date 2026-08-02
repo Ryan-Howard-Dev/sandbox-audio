@@ -555,7 +555,7 @@
     },
     "crossLinks": {
       "musicToEverything": "Library folder, stream cache, Connect, sleep timer, and acquisition keys live under Everything.",
-      "podcastsShared": "Shared playback DSP is under Music. Sleep timer, car mode, and mini-player are under Everything → Playback chrome. Podcast Index credentials are under Everything → Server & acquisition.",
+      "podcastsShared": "Shared playback DSP is under Music. Sleep timer, car mode, and mini-player are under Everything → Playback chrome.",
       "audiobooksAcquire": "Acquisition keys and Real-Debrid live under Everything → Server & acquisition.",
       "openLibraryFolder": "Open library folder in Everything"
     },

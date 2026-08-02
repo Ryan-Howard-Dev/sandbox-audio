@@ -1882,7 +1882,140 @@ export default function SettingsView({
           {/* Station shells — panels fill category-by-category. Legacy tabs remain for search/deep links until moved. */}
           {activeTab === 'podcasts' && (
             <div className="space-y-6">
-              <p className="ui-hint ui-hint--desc">{t('settings.categories.podcastsDesc')}</p>
+              <div
+                className="flex items-center justify-between p-4 border rounded-xl"
+                style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.35)' }}
+              >
+                <div>
+                  <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                    PODCASTS STATION
+                  </p>
+                  <p className="ui-hint ui-hint--desc mt-1">
+                    Subscribe to RSS feeds, stream episodes, and show podcast matches in search.
+                  </p>
+                </div>
+                <SandboxSwitch
+                  checked={podcastsEnabled}
+                  onChange={(checked) => {
+                    setPodcastsEnabled(checked);
+                    savePodcastsEnabled(checked);
+                    onPodcastsChange?.(checked);
+                  }}
+                  aria-label="Podcasts station"
+                />
+              </div>
+              {podcastsEnabled ? (
+                <div
+                  className="p-4 border rounded-xl space-y-4"
+                  style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.25)' }}
+                >
+                  <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent">
+                    Podcast playback
+                  </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                        Auto-save on Wi‑Fi only
+                      </p>
+                      <p className="ui-hint ui-hint--desc mt-1">
+                        Default for per-show auto-save — skips cellular when caching episodes
+                        offline.
+                      </p>
+                    </div>
+                    <SandboxSwitch
+                      checked={podcastWifiOnlyAutoSave}
+                      onChange={(checked) => {
+                        setPodcastWifiOnlyAutoSave(checked);
+                        savePodcastAutoDownloadWifiOnly(checked);
+                      }}
+                      aria-label="Auto-save podcasts on Wi-Fi only"
+                    />
+                  </div>
+                  <div>
+                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                      Skip interval
+                    </p>
+                    <p className="ui-hint ui-hint--desc mt-1 mb-2">
+                      Seconds forward/back in the podcast player and lock-screen controls.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {PODCAST_SEEK_INTERVALS.map((sec) => (
+                        <button
+                          key={sec}
+                          type="button"
+                          className={`h-9 px-3 rounded-lg border font-mono text-[10px] uppercase touch-manipulation transition-colors ${
+                            podcastSeekInterval === sec
+                              ? 'border-accent text-accent bg-[var(--accent-brand)]/10'
+                              : 'border-[var(--border)] text-[var(--text-mid)] hover:border-accent'
+                          }`}
+                          onClick={() => {
+                            setPodcastSeekInterval(sec);
+                            savePodcastSeekIntervalSeconds(sec);
+                          }}
+                        >
+                          {sec}s
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              <div className="p-4 border rounded-xl space-y-3" style={cardStyle}>
+                <div>
+                  <label className="ui-field-label">Podcast Index key</label>
+                  <input
+                    type="password"
+                    value={piKey}
+                    onChange={(e) => {
+                      setPiKey(e.target.value);
+                      savePodcastIndexCredentials({ key: e.target.value });
+                      setPiStatus(null);
+                    }}
+                    placeholder="Your podcastindex.org API key"
+                    className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent"
+                    style={{ color: C.text }}
+                  />
+                </div>
+                <div>
+                  <label className="ui-field-label">Podcast Index secret</label>
+                  <input
+                    type="password"
+                    value={piSecret}
+                    onChange={(e) => {
+                      setPiSecret(e.target.value);
+                      savePodcastIndexCredentials({ secret: e.target.value });
+                      setPiStatus(null);
+                    }}
+                    placeholder="Your podcastindex.org API secret"
+                    className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent"
+                    style={{ color: C.text }}
+                  />
+                  <div className="flex items-center gap-2 mt-2">
+                    <button
+                      type="button"
+                      className="ui-btn-ghost text-[10px] uppercase tracking-wider px-3 py-2 touch-manipulation"
+                      onClick={() => {
+                        setPiStatus('checking…');
+                        void testPodcastIndexCredentials().then((r) =>
+                          setPiStatus(`${r.ok ? 'OK' : 'Failed'}: ${r.detail}`),
+                        );
+                      }}
+                    >
+                      Test connection
+                    </button>
+                    {piStatus ? (
+                      <span className="ui-hint text-[10px]">{piStatus}</span>
+                    ) : null}
+                  </div>
+                  <p className="ui-hint text-[10px] mt-1">
+                    Optional — improves coverage of independent shows. Podcast search works
+                    without it (Apple/iTunes is used by default), and falls back automatically
+                    if this key is rate-limited. Keys are per-app and issued free at
+                    podcastindex.org. {PODCAST_INDEX_ATTRIBUTION}.
+                  </p>
+                </div>
+              </div>
+              <p className="ui-hint ui-hint--desc">{t('settings.crossLinks.podcastsShared')}</p>
             </div>
           )}
           {activeTab === 'audiobooks' && (
@@ -3829,28 +3962,6 @@ export default function SettingsView({
                 >
                   <div>
                     <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                      PODCASTS STATION
-                    </p>
-                    <p className="ui-hint ui-hint--desc mt-1">
-                      Subscribe to RSS feeds, stream episodes, and show podcast matches in search.
-                    </p>
-                  </div>
-                  <SandboxSwitch
-                    checked={podcastsEnabled}
-                    onChange={(checked) => {
-                      setPodcastsEnabled(checked);
-                      savePodcastsEnabled(checked);
-                      onPodcastsChange?.(checked);
-                    }}
-                    aria-label="Podcasts station"
-                  />
-                </div>
-                <div
-                  className="flex items-center justify-between p-4 border rounded-xl"
-                  style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.35)' }}
-                >
-                  <div>
-                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
                       AUDIOBOOKS STATION
                     </p>
                     <p className="ui-hint ui-hint--desc mt-1">
@@ -3869,62 +3980,6 @@ export default function SettingsView({
                   />
                 </div>
                 {audiobooksEnabled ? <AudiobookSearchPluginsSettings /> : null}
-                {podcastsEnabled ? (
-                  <div
-                    className="p-4 border rounded-xl space-y-4"
-                    style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.25)' }}
-                  >
-                    <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent">
-                      Podcast playback
-                    </p>
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                          Auto-save on Wi‑Fi only
-                        </p>
-                        <p className="ui-hint ui-hint--desc mt-1">
-                          Default for per-show auto-save — skips cellular when caching episodes
-                          offline.
-                        </p>
-                      </div>
-                      <SandboxSwitch
-                        checked={podcastWifiOnlyAutoSave}
-                        onChange={(checked) => {
-                          setPodcastWifiOnlyAutoSave(checked);
-                          savePodcastAutoDownloadWifiOnly(checked);
-                        }}
-                        aria-label="Auto-save podcasts on Wi-Fi only"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                        Skip interval
-                      </p>
-                      <p className="ui-hint ui-hint--desc mt-1 mb-2">
-                        Seconds forward/back in the podcast player and lock-screen controls.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {PODCAST_SEEK_INTERVALS.map((sec) => (
-                          <button
-                            key={sec}
-                            type="button"
-                            className={`h-9 px-3 rounded-lg border font-mono text-[10px] uppercase touch-manipulation transition-colors ${
-                              podcastSeekInterval === sec
-                                ? 'border-accent text-accent bg-[var(--accent-brand)]/10'
-                                : 'border-[var(--border)] text-[var(--text-mid)] hover:border-accent'
-                            }`}
-                            onClick={() => {
-                              setPodcastSeekInterval(sec);
-                              savePodcastSeekIntervalSeconds(sec);
-                            }}
-                          >
-                            {sec}s
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
               </div>
 
               <div className="settings-anchor-section space-y-3">
@@ -4156,59 +4211,6 @@ export default function SettingsView({
                       className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent"
                       style={{ color: C.text }}
                     />
-                  </div>
-                  <div>
-                    <label className="ui-field-label">Podcast Index key</label>
-                    <input
-                      type="password"
-                      value={piKey}
-                      onChange={(e) => {
-                        setPiKey(e.target.value);
-                        savePodcastIndexCredentials({ key: e.target.value });
-                        setPiStatus(null);
-                      }}
-                      placeholder="Your podcastindex.org API key"
-                      className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent"
-                      style={{ color: C.text }}
-                    />
-                  </div>
-                  <div>
-                    <label className="ui-field-label">Podcast Index secret</label>
-                    <input
-                      type="password"
-                      value={piSecret}
-                      onChange={(e) => {
-                        setPiSecret(e.target.value);
-                        savePodcastIndexCredentials({ secret: e.target.value });
-                        setPiStatus(null);
-                      }}
-                      placeholder="Your podcastindex.org API secret"
-                      className="input-elevated w-full px-4 py-3 font-mono text-xs focus-accent"
-                      style={{ color: C.text }}
-                    />
-                    <div className="flex items-center gap-2 mt-2">
-                      <button
-                        type="button"
-                        className="ui-btn-ghost text-[10px] uppercase tracking-wider px-3 py-2 touch-manipulation"
-                        onClick={() => {
-                          setPiStatus('checking…');
-                          void testPodcastIndexCredentials().then((r) =>
-                            setPiStatus(`${r.ok ? 'OK' : 'Failed'}: ${r.detail}`),
-                          );
-                        }}
-                      >
-                        Test connection
-                      </button>
-                      {piStatus ? (
-                        <span className="ui-hint text-[10px]">{piStatus}</span>
-                      ) : null}
-                    </div>
-                    <p className="ui-hint text-[10px] mt-1">
-                      Optional — improves coverage of independent shows. Podcast search works
-                      without it (Apple/iTunes is used by default), and falls back automatically
-                      if this key is rate-limited. Keys are per-app and issued free at
-                      podcastindex.org. {PODCAST_INDEX_ATTRIBUTION}.
-                    </p>
                   </div>
                   </>
                   ) : null}
@@ -6397,4 +6399,5 @@ export default function SettingsView({
     </>
   );
 }
-
+
+
