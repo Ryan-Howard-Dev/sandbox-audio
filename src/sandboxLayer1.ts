@@ -53,6 +53,7 @@ import {
   shouldUseNativeAudiophile,
 } from './nativeAudiophile';
 import { resolveNativeExoStreamUrlAsync } from './nativeExoStreamResolver';
+import { exoAwaitResolved, resolveExoAwait } from './exoAwaitConfirm';
 import {
   effectiveNativeExoState,
   isNativeExoAudible,
@@ -439,6 +440,15 @@ export function resolveMediaEnvelope(
 // AUDIO FSM
 // =============================================================================
 
+/**
+ * How long to wait for the native player to confirm which track it loaded.
+ *
+ * Long enough that a slow stream still gets to say so before the clock starts, short enough that a
+ * listener never sits watching 0:00 wondering whether the app is broken. Two seconds is roughly
+ * the point at which a stationary timer stops reading as buffering and starts reading as a bug.
+ */
+const EXO_AWAIT_CONFIRM_TIMEOUT_MS = 2_000;
+
 function readBufferedEndSeconds(audio: HTMLAudioElement): number {
   const ranges = audio.buffered;
   if (ranges.length === 0) return 0;
@@ -618,6 +628,16 @@ export function useAudioFSM(): UseAudioFSMResult {
   const lastRenderedExoPosRef = useRef(0);
   /** While set, ignore native position polls until the new track is confirmed loaded. */
   const exoAwaitingEnvelopeIdRef = useRef<string | null>(null);
+  /**
+   * When that wait began, so it can be given up on.
+   *
+   * The latch above could only ever be released by the native side reporting an envelope id that
+   * matched the one we were waiting for. If it reported nothing, or reported it in a form that did
+   * not match, the wait never ended and every poll pinned the position back to zero — audio played
+   * perfectly while the clock sat at 0:00 and the scrubber never left the left edge. A latch that
+   * only opens on a positive signal from somewhere else needs a way out, and this is it.
+   */
+  const exoAwaitingSinceRef = useRef(0);
   const nativeExoStuckResumeAtRef = useRef(0);
   const userSeekedAtRef = useRef(0);
   const userScrubbingRef = useRef(false);
@@ -641,6 +661,7 @@ export function useAudioFSM(): UseAudioFSMResult {
       setStreamDurationSeconds(0);
       if (opts?.setAwaiting !== false) {
         exoAwaitingEnvelopeIdRef.current = next.envelopeId;
+        exoAwaitingSinceRef.current = Date.now();
       }
       if (clearPause) {
         userPausedRef.current = false;
@@ -2374,10 +2395,20 @@ export function useAudioFSM(): UseAudioFSMResult {
 
         const awaitingEnvelopeId = exoAwaitingEnvelopeIdRef.current;
         if (awaitingEnvelopeId) {
-          const nativeId = status.envelopeId?.trim();
-          if (nativeId === awaitingEnvelopeId) {
-            exoAwaitingEnvelopeIdRef.current = null;
-          } else if (status.state === 'error' || status.error) {
+          // See exoAwaitConfirm.ts. This used to be strict equality against an id the native side
+          // frequently does not report, so the wait never ended and the branch below pinned the
+          // clock to zero for the whole track while the audio played perfectly.
+          const decision = resolveExoAwait({
+            awaitingEnvelopeId,
+            nativeEnvelopeId: status.envelopeId,
+            state: status.state,
+            error: status.error,
+            positionSecs: polledPos,
+            previousPositionSecs: prevPos,
+            waitedMs: Date.now() - exoAwaitingSinceRef.current,
+            timeoutMs: EXO_AWAIT_CONFIRM_TIMEOUT_MS,
+          });
+          if (exoAwaitResolved(decision)) {
             exoAwaitingEnvelopeIdRef.current = null;
           } else {
             if (!userScrubbingRef.current) {
