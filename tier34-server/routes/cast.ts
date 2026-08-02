@@ -18,7 +18,8 @@ import {
 } from '../lib/lockerStorage.js';
 import { blobPathForHash } from '../lib/lockerPaths.js';
 import { resolveDlnaBaseUrl } from '../lib/dlnaMediaServer.js';
-import { discoverChromecasts } from '../lib/chromecastDiscovery.js';
+import { addChromecastByHost, discoverChromecasts } from '../lib/chromecastDiscovery.js';
+import { transportFor } from '../lib/castTransports.js';
 import {
   castPause,
   castPlay,
@@ -412,6 +413,111 @@ export function registerCastRoutes(app: Express): void {
    * Chromecast's address is a DHCP lease while its mDNS instance name is stable. Taking the IP
    * would mean a cast that worked yesterday failing today for no reason a user can see.
    */
+  /*
+   * Add a device by address, for the networks discovery cannot cross.
+   * See addChromecastByHost: a VPN or a guest network breaks multicast while leaving the
+   * device perfectly reachable on 8009.
+   */
+  app.post('/api/cast/chromecast/add', (req, res) => {
+    const host = String(req.body?.host ?? '').trim();
+    if (!host) return res.status(400).json({ error: 'host required' });
+    const port = Number(req.body?.port);
+    const device = addChromecastByHost(host, Number.isInteger(port) && port > 0 ? port : undefined);
+    if (!device) return res.status(400).json({ error: 'that is not a usable address' });
+    res.json({ device });
+  });
+
+  /*
+   * One surface for every speaker.
+   *
+   * The deviceId says which protocol it is; castTransports decides who handles it. The
+   * per-protocol routes below still work because saved state and older clients use them, but
+   * nothing new should be added there — a fifth protocol should mean a transport, not a fifth
+   * set of endpoints with a fifth argument shape.
+   */
+  const withTransport = (
+    handler: (
+      t: NonNullable<ReturnType<typeof transportFor>>,
+      deviceId: string,
+      req: Request,
+    ) => Promise<unknown>,
+  ) => async (req: Request, res: Response) => {
+    const deviceId = String(req.body?.deviceId ?? req.query?.deviceId ?? '').trim();
+    if (!deviceId) return res.status(400).json({ error: 'deviceId required' });
+    const transport = transportFor(deviceId);
+    if (!transport) return res.status(404).json({ error: `no transport for ${deviceId}` });
+    try {
+      const state = await handler(transport, deviceId, req);
+      res.json({ ok: true, transport: transport.id, state: state ?? null });
+    } catch (e) {
+      console.error('[tier34] cast', transport.id, e);
+      res.status(502).json({ error: (e as Error)?.message ?? 'cast failed' });
+    }
+  };
+
+  app.post(
+    '/api/cast/play',
+    withTransport(async (transport, deviceId, req) => {
+      const explicitUrl = String(req.body?.streamUrl ?? '').trim();
+      const trackId = String(req.body?.trackId ?? '').trim();
+      const streamUrl = explicitUrl
+        ? explicitUrl
+        : trackId
+          ? `${resolveDlnaBaseUrl(Number(process.env.TIER34_PORT ?? 3001))}/api/cast/stream/${encodeURIComponent(trackId)}`
+          : '';
+      if (!/^https?:\/\//i.test(streamUrl)) throw new Error('trackId or streamUrl required');
+      return transport.play(deviceId, {
+        streamUrl,
+        contentType: String(req.body?.contentType ?? 'audio/mpeg'),
+        title: String(req.body?.title ?? 'Unknown Track'),
+        artist: req.body?.artist ? String(req.body.artist) : undefined,
+        album: req.body?.album ? String(req.body.album) : undefined,
+        artworkUrl: req.body?.artworkUrl ? String(req.body.artworkUrl) : undefined,
+        durationSeconds: Number(req.body?.durationSeconds) || undefined,
+        startSeconds: Number(req.body?.startSeconds) || undefined,
+      });
+    }),
+  );
+
+  app.post('/api/cast/pause', withTransport((t, id) => t.pause(id)));
+  app.post('/api/cast/resume', withTransport((t, id) => t.resume(id)));
+  app.post('/api/cast/stop', withTransport(async (t, id) => {
+    await t.stop(id);
+    return null;
+  }));
+
+  app.post(
+    '/api/cast/seek',
+    withTransport(async (t, id, req) => {
+      const seconds = Number(req.body?.seconds);
+      if (!Number.isFinite(seconds)) throw new Error('seconds required');
+      if (!t.seek) throw new Error(`${t.id} cannot seek`);
+      return t.seek(id, seconds);
+    }),
+  );
+
+  app.post(
+    '/api/cast/volume',
+    withTransport(async (t, id, req) => {
+      const level = Number(req.body?.level);
+      if (!Number.isFinite(level)) throw new Error('level required');
+      if (!t.volume) throw new Error(`${t.id} has no volume control`);
+      await t.volume(id, level);
+      return null;
+    }),
+  );
+
+  app.get('/api/cast/state', (req, res) => {
+    const deviceId = String(req.query?.deviceId ?? '').trim();
+    const transport = deviceId ? transportFor(deviceId) : null;
+    res.json({
+      transport: transport?.id ?? null,
+      state: transport?.state?.(deviceId) ?? null,
+    });
+  });
+
+  // --- Per-protocol routes below. Kept for existing clients; add nothing new here. ---
+
   app.post('/api/cast/chromecast/play', async (req, res) => {
     const deviceId = String(req.body?.deviceId ?? '').trim();
     const trackId = String(req.body?.trackId ?? '').trim();

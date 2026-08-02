@@ -160,6 +160,32 @@ export async function discoverChromecasts(
 }
 
 /**
+ * Register a device by address, for when discovery cannot see it.
+ *
+ * mDNS is multicast, and multicast is the first thing to break. A VPN captures it, guest
+ * networks block it between clients, and plenty of routers have it switched off. None of that
+ * stops the device answering on 8009 — it is only the introduction that fails, not the
+ * conversation. Without this, a Chromecast three metres away and perfectly reachable is
+ * uncastable because nothing announced it.
+ *
+ * Found on a real network: with a VPN up, discovery returned nothing while both cast devices
+ * on the LAN accepted TCP on 8009 immediately.
+ */
+export function addChromecastByHost(host: string, port = CHROMECAST_DEFAULT_PORT): CastDevice | null {
+  const address = host.trim();
+  if (!/^[\w.-]+$/.test(address)) return null;
+  const device: CastDevice = {
+    // Keyed by address rather than by a UUID we were never told, and prefixed so it cannot
+    // collide with a device the same box later announces properly.
+    id: `chromecast:manual:${address}`,
+    name: address,
+    ip: address,
+    type: 'chromecast',
+  };
+  seen.set(device.id, { device, host: address, port });
+  return device;
+}
+/**
  * Where to dial a device found earlier, so control routes take an id rather than an address.
  *
  * Returns the port the device advertised rather than a fixed one, which is what makes casting to

@@ -6,6 +6,10 @@
  * same network, already holds the music, and already casts to Sonos and UPnP renderers. Teaching
  * it Chromecast puts the feature back without putting Google's code in the APK.
  *
+ * It talks to one cast surface rather than a per-protocol one: the server works out from the
+ * device id whether that speaker is a Chromecast, a Sonos or something later, so nothing here
+ * needs to know. See tier34-server/lib/castTransports.ts.
+ *
  * This deliberately mirrors the native plugin's shape rather than inventing a second one, so
  * castTransport can pick between them and everything above stays unaware of which is in use.
  *
@@ -160,7 +164,7 @@ export function getSelectedServerCastDevice(): ServerCastDevice | null {
 }
 
 export async function endServerCastSession(): Promise<void> {
-  if (selectedDevice) await post('/api/cast/chromecast/stop', { deviceId: selectedDevice.id });
+  if (selectedDevice) await post('/api/cast/stop', { deviceId: selectedDevice.id });
   selectServerCastDevice(null);
 }
 
@@ -194,7 +198,7 @@ export async function syncServerCastPlayback(payload: ServerCastPlayback): Promi
 
   const key = payload.trackId ?? payload.streamUrl ?? payload.title;
   if (key !== loadedKey) {
-    const result = await post<{ ok: boolean }>('/api/cast/chromecast/play', {
+    const result = await post<{ ok: boolean }>('/api/cast/play', {
       deviceId: device.id,
       trackId: payload.trackId,
       streamUrl: payload.streamUrl,
@@ -209,19 +213,19 @@ export async function syncServerCastPlayback(payload: ServerCastPlayback): Promi
     return;
   }
 
-  await post(payload.isPlaying ? '/api/cast/chromecast/resume' : '/api/cast/chromecast/pause', {
+  await post(payload.isPlaying ? '/api/cast/resume' : '/api/cast/pause', {
     deviceId: device.id,
   });
 }
 
 export async function seekServerCast(seconds: number): Promise<void> {
   if (!selectedDevice) return;
-  await post('/api/cast/chromecast/seek', { deviceId: selectedDevice.id, seconds });
+  await post('/api/cast/seek', { deviceId: selectedDevice.id, seconds });
 }
 
 export async function setServerCastVolume(level: number): Promise<void> {
   if (!selectedDevice) return;
-  await post('/api/cast/chromecast/volume', { deviceId: selectedDevice.id, level });
+  await post('/api/cast/volume', { deviceId: selectedDevice.id, level });
 }
 
 /** Probe for a usable server. Cheap enough to call when the cast button is first shown. */
