@@ -70,11 +70,31 @@ const ONNXRUNTIME_URL =
 const VOICE_ID = 'vits-piper-en_GB-alan-medium';
 const VOICE_URL = `https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/${VOICE_ID}.tar.bz2`;
 
-/*
- * arm64 only, on purpose. Every Android phone shipped in years is arm64, and building four ABIs
- * quadruples the build time and the APK for architectures nobody reading a book is holding.
+/** The architectures an Android APK split can target here. */
+const KNOWN_ABIS = ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'];
+
+/**
+ * Which architecture to build the engine for, one per run.
+ *
+ * One at a time because compiling this is the slowest thing in the build, and doing four in a row
+ * is how a CI job runs out of its allotted time. F-Droid builds each ABI in its own container with
+ * its own budget, and passes the target in through this variable; locally it defaults to arm64,
+ * which is what a phone from the last several years actually is.
+ *
+ * Worth knowing what the default costs: the voice model lives in assets and therefore ships in
+ * every APK, but the engine that reads it does not. An armeabi-v7a or x86 build made with this
+ * default carries the voice and cannot speak it, and narration quietly falls back to the
+ * platform's own voice. Building each ABI is what fixes that, not shipping fewer of them.
  */
-const ABI = 'arm64-v8a';
+const ABI = (() => {
+  const requested = (process.env.SANDBOX_PIPER_ABI ?? '').trim();
+  if (!requested) return 'arm64-v8a';
+  if (!KNOWN_ABIS.includes(requested)) {
+    console.error(`[piper] unknown ABI "${requested}" — expected one of ${KNOWN_ABIS.join(', ')}`);
+    process.exit(1);
+  }
+  return requested;
+})();
 
 /**
  * Languages whose pronunciation data is kept.

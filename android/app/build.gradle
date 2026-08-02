@@ -105,11 +105,23 @@ android {
 
     // Per-ABI APKs — youtubedl-android bundles Python + ffmpeg natives per arch (~50MB each).
     // Sideload arm64-v8a on OnePlus 12; skip universal fat APK (~200MB with all ABIs).
+    /*
+     * Which architectures this run produces.
+     *
+     * All four by default, which is what a local or Play build wants. F-Droid passes
+     * -PtargetAbi=<abi> and builds one at a time, because compiling the speech engine four
+     * times over does not fit in one CI container's budget. Each F-Droid build block gets its
+     * own container, its own four hours, and its own ABI.
+     */
     splits {
         abi {
             enable true
             reset()
-            include 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+            include(*(
+                project.hasProperty('targetAbi')
+                    ? [project.property('targetAbi').toString()]
+                    : ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64']
+            ).toArray(new String[0]))
             universalApk false
         }
     }

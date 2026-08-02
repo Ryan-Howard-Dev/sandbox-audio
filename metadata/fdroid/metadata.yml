@@ -43,33 +43,184 @@ RepoType: git
 Repo: https://github.com/Ryan-Howard-Dev/sandbox-audio.git
 
 Builds:
+  # One block per architecture, and not for tidiness.
+  #
+  # Compiling sherpa-onnx is the slowest thing in this build, and doing it four times in one
+  # container does not fit in the four hours F-Droid allows. Each block gets its own container
+  # and its own budget, which is how Offline Translator (dev.davidv.translator) ships more than
+  # one ABI. The versionCode for each is derived by VercodeOperation at the bottom of this file,
+  # and those expressions must stay in step with abiVersionCodes in android/app/build.gradle.
+  #
+  # Bump versionName and the base versionCode alongside android/app/build.gradle before each
+  # release. The per-ABI codes follow from the base and should not be written by hand.
+
+  # armeabi-v7a
   - versionName: '1.0.0'
-    versionCode: 1
+    versionCode: 11
     commit: v1.0.0
-    # Bump versionCode/versionName with android/app/build.gradle before each F-Droid release.
     subdir: android
-    # The flavour without Google Cast. play-services-cast-framework is proprietary, so it is
-    # confined to the gplay flavour and this build never links against it. Casting to Sonos and
-    # UPnP speakers still works here: that runs over the local network and uses no Google code.
+    # The flavour without Google Cast. play-services-cast-framework is proprietary, so it
+    # is confined to the gplay flavour and this build never links against it. Casting to
+    # Sonos and UPnP speakers still works: that runs over the local network via Sandbox
+    # Server and uses no Google code.
     gradle:
       - foss
+    # Narrows the APK splits to this one architecture. See the splits block in
+    # android/app/build.gradle.
+    gradleprops:
+      - targetAbi=armeabi-v7a
     # The NDK compiles sherpa-onnx from source. F-Droid rejects prebuilt binaries, so the
-    # engine is built here rather than downloaded as an AAR — which also keeps a hundred
-    # megabytes of unreviewable binaries out of the repository.
+    # engine is built here rather than downloaded, which also keeps a hundred megabytes of
+    # unreviewable binaries out of the repository.
     ndk: r27c
-    # Compiling sherpa-onnx from source runs well past the default. MakeACopy, which builds
-    # ONNX Runtime the same way, sets the same ceiling.
+    # Four hours, which is F-Droid's ceiling. MakeACopy sets the same for the same reason:
+    # it builds ONNX Runtime from source too.
     timeout: 14400
     prebuild:
-      # F-Droid's source scanner reads build.gradle as text, so it flags the Cast dependency on
-      # sight even though the foss flavour never compiles it. Deleting the line makes the file
-      # say what this build actually is. The APK is checked separately and has no Google code
-      # in it either way; this only stops a true statement being read as a false one.
+      # F-Droid's source scanner reads build.gradle as text, so it flags the Cast dependency
+      # on sight even though the foss flavour never compiles it. Deleting the line makes the
+      # file say what this build actually is. The APK is scanned separately and contains no
+      # Google code either way; this only stops a true statement being read as a false one.
       - sed -i '/play-services-cast-framework/d' app/build.gradle
       - cd ..
       - npm ci
       - npm run build:client
-      - node scripts/build-sherpa-onnx.mjs
+      # Builds the speech engine for this block's architecture only. Without the variable
+      # the script defaults to arm64, and three of the four APKs would carry the voice model
+      # with nothing able to read it.
+      - SANDBOX_PIPER_ABI=armeabi-v7a node scripts/build-sherpa-onnx.mjs
+      - npx cap sync android
+    scandelete:
+      - node_modules
+      - .sherpa-build
+      - android/.gradle
+      - dist
+    build:
+      - ./gradlew assembleFossRelease
+
+  # x86
+  - versionName: '1.0.0'
+    versionCode: 12
+    commit: v1.0.0
+    subdir: android
+    # The flavour without Google Cast. play-services-cast-framework is proprietary, so it
+    # is confined to the gplay flavour and this build never links against it. Casting to
+    # Sonos and UPnP speakers still works: that runs over the local network via Sandbox
+    # Server and uses no Google code.
+    gradle:
+      - foss
+    # Narrows the APK splits to this one architecture. See the splits block in
+    # android/app/build.gradle.
+    gradleprops:
+      - targetAbi=x86
+    # The NDK compiles sherpa-onnx from source. F-Droid rejects prebuilt binaries, so the
+    # engine is built here rather than downloaded, which also keeps a hundred megabytes of
+    # unreviewable binaries out of the repository.
+    ndk: r27c
+    # Four hours, which is F-Droid's ceiling. MakeACopy sets the same for the same reason:
+    # it builds ONNX Runtime from source too.
+    timeout: 14400
+    prebuild:
+      # F-Droid's source scanner reads build.gradle as text, so it flags the Cast dependency
+      # on sight even though the foss flavour never compiles it. Deleting the line makes the
+      # file say what this build actually is. The APK is scanned separately and contains no
+      # Google code either way; this only stops a true statement being read as a false one.
+      - sed -i '/play-services-cast-framework/d' app/build.gradle
+      - cd ..
+      - npm ci
+      - npm run build:client
+      # Builds the speech engine for this block's architecture only. Without the variable
+      # the script defaults to arm64, and three of the four APKs would carry the voice model
+      # with nothing able to read it.
+      - SANDBOX_PIPER_ABI=x86 node scripts/build-sherpa-onnx.mjs
+      - npx cap sync android
+    scandelete:
+      - node_modules
+      - .sherpa-build
+      - android/.gradle
+      - dist
+    build:
+      - ./gradlew assembleFossRelease
+
+  # arm64-v8a
+  - versionName: '1.0.0'
+    versionCode: 13
+    commit: v1.0.0
+    subdir: android
+    # The flavour without Google Cast. play-services-cast-framework is proprietary, so it
+    # is confined to the gplay flavour and this build never links against it. Casting to
+    # Sonos and UPnP speakers still works: that runs over the local network via Sandbox
+    # Server and uses no Google code.
+    gradle:
+      - foss
+    # Narrows the APK splits to this one architecture. See the splits block in
+    # android/app/build.gradle.
+    gradleprops:
+      - targetAbi=arm64-v8a
+    # The NDK compiles sherpa-onnx from source. F-Droid rejects prebuilt binaries, so the
+    # engine is built here rather than downloaded, which also keeps a hundred megabytes of
+    # unreviewable binaries out of the repository.
+    ndk: r27c
+    # Four hours, which is F-Droid's ceiling. MakeACopy sets the same for the same reason:
+    # it builds ONNX Runtime from source too.
+    timeout: 14400
+    prebuild:
+      # F-Droid's source scanner reads build.gradle as text, so it flags the Cast dependency
+      # on sight even though the foss flavour never compiles it. Deleting the line makes the
+      # file say what this build actually is. The APK is scanned separately and contains no
+      # Google code either way; this only stops a true statement being read as a false one.
+      - sed -i '/play-services-cast-framework/d' app/build.gradle
+      - cd ..
+      - npm ci
+      - npm run build:client
+      # Builds the speech engine for this block's architecture only. Without the variable
+      # the script defaults to arm64, and three of the four APKs would carry the voice model
+      # with nothing able to read it.
+      - SANDBOX_PIPER_ABI=arm64-v8a node scripts/build-sherpa-onnx.mjs
+      - npx cap sync android
+    scandelete:
+      - node_modules
+      - .sherpa-build
+      - android/.gradle
+      - dist
+    build:
+      - ./gradlew assembleFossRelease
+
+  # x86_64
+  - versionName: '1.0.0'
+    versionCode: 14
+    commit: v1.0.0
+    subdir: android
+    # The flavour without Google Cast. play-services-cast-framework is proprietary, so it
+    # is confined to the gplay flavour and this build never links against it. Casting to
+    # Sonos and UPnP speakers still works: that runs over the local network via Sandbox
+    # Server and uses no Google code.
+    gradle:
+      - foss
+    # Narrows the APK splits to this one architecture. See the splits block in
+    # android/app/build.gradle.
+    gradleprops:
+      - targetAbi=x86_64
+    # The NDK compiles sherpa-onnx from source. F-Droid rejects prebuilt binaries, so the
+    # engine is built here rather than downloaded, which also keeps a hundred megabytes of
+    # unreviewable binaries out of the repository.
+    ndk: r27c
+    # Four hours, which is F-Droid's ceiling. MakeACopy sets the same for the same reason:
+    # it builds ONNX Runtime from source too.
+    timeout: 14400
+    prebuild:
+      # F-Droid's source scanner reads build.gradle as text, so it flags the Cast dependency
+      # on sight even though the foss flavour never compiles it. Deleting the line makes the
+      # file say what this build actually is. The APK is scanned separately and contains no
+      # Google code either way; this only stops a true statement being read as a false one.
+      - sed -i '/play-services-cast-framework/d' app/build.gradle
+      - cd ..
+      - npm ci
+      - npm run build:client
+      # Builds the speech engine for this block's architecture only. Without the variable
+      # the script defaults to arm64, and three of the four APKs would carry the voice model
+      # with nothing able to read it.
+      - SANDBOX_PIPER_ABI=x86_64 node scripts/build-sherpa-onnx.mjs
       - npx cap sync android
     scandelete:
       - node_modules
@@ -84,5 +235,17 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
+# One expression per build block above, in the same order. F-Droid applies these to the
+# upstream versionCode to derive a distinct code per architecture, and the app itself computes
+# the same numbers in android/app/build.gradle. The two must agree, or F-Droid publishes codes
+# that do not match the APKs it built.
+#
+# The ordering is deliberate: arm64-v8a must outrank armeabi-v7a, because a 64-bit phone can
+# install either and takes the highest code it accepts.
+VercodeOperation:
+  - 10 * %c + 1  # armeabi-v7a
+  - 10 * %c + 2  # x86
+  - 10 * %c + 3  # arm64-v8a
+  - 10 * %c + 4  # x86_64
 CurrentVersion: '1.0.0'
-CurrentVersionCode: 1
+CurrentVersionCode: 14
