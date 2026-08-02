@@ -41,7 +41,7 @@ export interface DiscoverStationViewProps {
   onPlayNext: (tracks: MediaEnvelope[]) => void;
   onPrepareForTravel?: (tracks: MediaEnvelope[]) => void;
   onRunSearch: (query: string) => void;
-  onGoToLocker: () => void;
+  onGoToLocker: (section?: import('./CollectionView').LockerSectionId) => void;
   onGoToLockerSection?: (section: LockerSectionId) => void;
   onGoToSearch: () => void;
   onDownloadImportedPlaylist?: (playlist: import('../playlistStorage').StoredPlaylist) => void | Promise<void>;

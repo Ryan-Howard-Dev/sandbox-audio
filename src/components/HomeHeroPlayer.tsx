@@ -210,7 +210,7 @@ function HomeProgressSlider({
         step={0.1}
         value={scrubValue}
         onChange={handleScrubInput}
-        onInput={handleScrubInput}
+        onInput={handleScrubInput as React.FormEventHandler<HTMLInputElement>}
         onPointerDown={startScrub}
         onPointerMove={moveScrub}
         onPointerUp={finishScrubPointer}

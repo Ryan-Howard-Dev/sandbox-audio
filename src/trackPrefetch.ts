@@ -3,6 +3,13 @@
  */
 
 import type { CandidateSource, MediaEnvelope } from './sandboxLayer1';
+/*
+ * The app's own repeat vocabulary. This module used to declare its own inline, spelling the
+ * off state 'off' while every other module says 'none', so no caller of it ever typechecked.
+ * Nothing here reads that state — only 'all' is tested — so adopting the shared type changes
+ * no behaviour, it just stops the lie.
+ */
+import type { RepeatMode } from './queuePersistence';
 import { executeTrack, isFullStreamEnvelope } from './playbackPipeline';
 import { isCellularNetwork } from './networkPlayPolicy';
 import { loadStreamCacheEnabled } from './sandboxSettings';
@@ -256,7 +263,7 @@ export function prefetchPlayableEnvelope(
 export type QueuePrefetchInput = {
   playQueue: MediaEnvelope[];
   queueIndex: number;
-  repeatMode: 'off' | 'all' | 'one';
+  repeatMode: RepeatMode;
   findCandidates: (env: MediaEnvelope) => CandidateSource[] | undefined;
 };
 

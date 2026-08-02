@@ -514,14 +514,14 @@ export default function SleepTimerPanel({ open, onClose }: SleepTimerPanelProps)
                       : t('sleep.noTracksFound')}
                   </p>
                 ) : (
-                  wakeTrackList.map((t) => (
+                  wakeTrackList.map((pick) => (
                     <TrackPickRow
-                      key={t.envelopeId}
-                      track={t}
-                      selected={selectedTrack?.envelopeId === t.envelopeId}
-                      onSelect={() => setSelectedTrack(t)}
+                      key={pick.envelopeId}
+                      track={pick}
+                      selected={selectedTrack?.envelopeId === pick.envelopeId}
+                      onSelect={() => setSelectedTrack(pick)}
                       badge={
-                        wakeSearchMode === 'online' && t.provider !== 'local-vault'
+                        wakeSearchMode === 'online' && pick.provider !== 'local-vault'
                           ? t('sleep.catalog')
                           : undefined
                       }

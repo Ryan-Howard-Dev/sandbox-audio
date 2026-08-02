@@ -2173,6 +2173,11 @@ export default function LocalView({
       displayName: formatAlbumDisplayName(entry.albumName ?? entry.title),
       artist: entry.artist,
       tracks: [entry],
+      // A track with no album still needs the full group shape. There is no release group and
+      // no edition to speak of, so the key stands in and the edition is the unremarkable one.
+      collectionKey: `track-only:${entry.id}`,
+      releaseGroupId: '',
+      editionKind: 'original',
     });
   };
 

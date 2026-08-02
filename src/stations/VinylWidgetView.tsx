@@ -28,7 +28,9 @@ export default function VinylWidgetView() {
   const options = getVinylWidgetOptions();
   const [payload, setPayload] = useState<VinylWidgetPayload>(IDLE);
   const heroMode = loadHeroDisplayMode();
-  const showShades = resolveHeroShowShades(heroMode, payload.title);
+  // hasArt, not the title. Passing the title meant shades keyed off whether a track was named
+  // rather than whether it had a cover, which is the one thing shades exist to sit behind.
+  const showShades = resolveHeroShowShades(heroMode, Boolean(payload.artworkUrl));
   const gradientSeed = payload.title?.trim() || 'Sandbox';
   const { cssVars: vinylCssVars, vinylClass } = useVinylVisualStyle(null);
   const { universeStyle } = useTrackUniverseStyle(payload.artworkUrl, gradientSeed);

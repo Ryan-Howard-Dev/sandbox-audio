@@ -1065,14 +1065,21 @@ export default function SandboxShell() {
   mixRadioSessionRef.current = mixRadioSession;
   const autoSimilarRadioSeedRef = useRef<string | null>(null);
   const scheduleAutoSimilarRadioRef = useRef<
-    (playable: MediaEnvelope, opts?: { seedSearchQueue?: boolean; seamless?: boolean }) => void
+    (
+      playable: MediaEnvelope,
+      opts?: {
+        seedSearchQueue?: boolean;
+        seamless?: boolean;
+        playQueueOverride?: MediaEnvelope[];
+      },
+    ) => void
   >(() => {});
   const [mixRadioSaveOpen, setMixRadioSaveOpen] = useState(false);
   const [mixRadioSaveBusy, setMixRadioSaveBusy] = useState(false);
   /* Playlist picker for the track on the player — the players themselves never hold the envelope. */
   const [playerAddToPlaylistOpen, setPlayerAddToPlaylistOpen] = useState(false);
   const [appToast, setAppToast] = useState<string | null>(null);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
   const ANDROID_SERVER_BANNER_KEY = 'sandbox_android_server_banner_dismissed';
   const MOBILE_RESOLVER_BANNER_KEY = 'sandbox_mobile_resolver_banner_dismissed';
   const [androidServerBannerDismissed, setAndroidServerBannerDismissed] = useState(() => {
@@ -3076,7 +3083,7 @@ export default function SandboxShell() {
               status: 'error',
               error: 'No tracks to download',
             });
-            showAppToast('No tracks to download', 'error');
+            showAppToast('No tracks to download');
             return;
           }
           const parts = [
@@ -3089,7 +3096,7 @@ export default function SandboxShell() {
           showAppToast(parts.join(' · '));
         } catch (err) {
           patchDownloadJob(job.id, { status: 'error', error: String(err) });
-          showAppToast(err instanceof Error ? err.message : String(err), 'error');
+          showAppToast(err instanceof Error ? err.message : String(err));
         }
       })();
     },
@@ -8674,13 +8681,13 @@ export default function SandboxShell() {
     skipBack,
     skipForward,
     focusSearch: () => {},
-    isIdle: () => true,
-    getVolume: () => 1,
+    isIdle: (): boolean => true,
+    getVolume: (): number => 1,
     setVolume: (_level: number) => {},
     toggleMute: () => {},
     seek: (_seconds: number) => {},
-    currentTimeSeconds: () => 0,
-    durationSeconds: () => 0,
+    currentTimeSeconds: (): number => 0,
+    durationSeconds: (): number => 0,
     play: () => {},
     pause: () => {},
     getMetadata: () => null as MediaSessionTrackMetadata | null,
@@ -9436,7 +9443,7 @@ export default function SandboxShell() {
             </p>
             <button
               type="button"
-              onClick={openSettings}
+              onClick={() => openSettings()}
               className="shrink-0 font-mono text-[9px] uppercase tracking-wider text-accent touch-manipulation px-2 py-1 border border-accent/40 rounded"
             >
               {t('shell.androidServerBannerOpen')}
@@ -9469,7 +9476,7 @@ export default function SandboxShell() {
             </p>
             <button
               type="button"
-              onClick={openSettings}
+              onClick={() => openSettings()}
               className="shrink-0 font-mono text-[9px] uppercase tracking-wider text-amber-500 touch-manipulation px-2 py-1 border border-amber-500/40 rounded"
             >
               {t('shell.mobileResolverBannerOpen')}
@@ -9979,30 +9986,24 @@ export default function SandboxShell() {
             onSignOut={profile.signOut}
             onProAudioChange={(enabled) => {
               setProAudio(enabled);
-              if (!enabled && station === 'dj') setStation('home');
             }}
             onPodcastsChange={(enabled) => {
               setPodcastsEnabled(enabled);
               if (!enabled) {
                 setPodcastSearchHits([]);
-                if (station === 'podcasts') setStation('home');
               }
             }}
             onAudiobooksChange={(enabled) => {
               setAudiobooksEnabled(enabled);
-              if (!enabled && station === 'audiobooks') setStation('home');
             }}
             onDiscoverChange={(enabled) => {
               setDiscoverStationEnabled(enabled);
-              if (!enabled && station === 'discover') setStation('home');
             }}
             onLibraryChange={(enabled) => {
               setLibraryStationEnabled(enabled);
-              if (!enabled && station === 'library') setStation('home');
             }}
             onSonicLockerChange={(enabled) => {
               setSonicLockerEnabled(enabled);
-              if (!enabled && station === 'sonic-locker') setStation('home');
             }}
             onOpenListening={() => setStation('insights')}
             downloadTierPreference={downloadTierPreference}

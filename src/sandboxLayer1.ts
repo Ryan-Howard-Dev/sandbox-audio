@@ -2551,7 +2551,7 @@ export function useAudioFSM(): UseAudioFSMResult {
               canAutoResumeNative &&
               !userPausedRef.current &&
               pos > 0.5 &&
-              (prev === 'Playing' || prev === 'Ready' || prev === 'Connecting') &&
+              (prev === 'Playing' || prev === 'Ready') &&
               Date.now() - nativeExoStuckResumeAtRef.current > 2500
             ) {
               nativeExoStuckResumeAtRef.current = Date.now();

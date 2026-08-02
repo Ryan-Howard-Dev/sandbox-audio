@@ -552,8 +552,8 @@ export default function PlaylistsView({
   const lockerEntriesRef = useRef(lockerEntries);
   lockerEntriesRef.current = lockerEntries;
 
-  const smartRefreshDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const smartRefreshIndicatorRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const smartRefreshDebounceRef = useRef<number | null>(null);
+  const smartRefreshIndicatorRef = useRef<number | null>(null);
   const lastSmartRefreshSigRef = useRef<string | null>(null);
 
   const clearSmartRefreshIndicator = useCallback(() => {

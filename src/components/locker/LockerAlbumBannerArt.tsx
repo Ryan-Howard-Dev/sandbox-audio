@@ -60,7 +60,7 @@ export function LockerAlbumBannerCover({
 }: LockerAlbumBannerCoverProps) {
   const [candidateSrc, setCandidateSrc] = useState<string | undefined>();
   const [visibleSrc, setVisibleSrc] = useState<string | undefined>();
-  const visibleSrcRef = useRef<string | undefined>();
+  const visibleSrcRef = useRef<string | undefined>(undefined);
   visibleSrcRef.current = visibleSrc;
   const onlineFetchAttempted = useRef(false);
   const imgRef = useRef<HTMLImageElement>(null);

@@ -264,9 +264,11 @@ export default function PodcastsView({
   const visibleSubscriptions = useMemo(() => {
     const q = libraryQuery.trim().toLowerCase();
     if (!q) return subscriptions;
+    // Title and description. There is no author on a subscription, and the clause that searched
+    // one silently matched nothing.
     return subscriptions.filter(
       (sub) =>
-        sub.title?.toLowerCase().includes(q) || sub.author?.toLowerCase().includes(q),
+        sub.title?.toLowerCase().includes(q) || sub.description?.toLowerCase().includes(q),
     );
   }, [subscriptions, libraryQuery]);
 

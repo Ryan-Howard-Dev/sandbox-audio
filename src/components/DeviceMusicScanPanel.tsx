@@ -392,7 +392,7 @@ export default function DeviceMusicScanPanel({
               )}
               <button
                 type="button"
-                disabled={disabled || phase === 'importing'}
+                disabled={disabled}
                 onClick={() => void runScan()}
                 className="ml-auto text-[var(--text-mid)] hover:text-[var(--text)] underline touch-manipulation"
               >
@@ -541,11 +541,11 @@ export default function DeviceMusicScanPanel({
 
             <button
               type="button"
-              disabled={disabled || selectedCount === 0 || phase === 'importing'}
+              disabled={disabled || selectedCount === 0}
               onClick={() => void runImport()}
               className="w-full h-11 rounded btn-accent text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 touch-manipulation disabled:opacity-40"
             >
-              {phase === 'importing' ? (
+              {false ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   {t('locker.deviceScanImporting', {

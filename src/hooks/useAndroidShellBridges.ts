@@ -1,5 +1,5 @@
 import { useEffect, type RefObject } from 'react';
-import type { MediaEnvelope } from '../sandboxLayer1';
+import type { CandidateSource, MediaEnvelope } from '../sandboxLayer1';
 import { isAndroid } from '../platformEnv';
 import { prepareNativeExoPlayback } from '../androidNativePlayback';
 import {
@@ -49,9 +49,20 @@ export type UseAndroidShellBridgesOptions = {
   playEnvelopeRef: RefObject<
     (
       env: MediaEnvelope,
-      candidates?: unknown,
-      options?: unknown,
-    ) => void | Promise<void>
+      candidates?: CandidateSource[],
+      options?: {
+        autoPlay?: boolean;
+        seedSearchQueue?: boolean;
+        seedSearchEnvelope?: MediaEnvelope;
+        seamless?: boolean;
+        preservePlayQueue?: boolean;
+      },
+      /*
+       * Promise, not void | Promise. RefObject is invariant in its type argument because
+       * current is mutable, so a ref holding an async function does not fit a ref declared as
+       * possibly-sync. Matching what handlePlayEnvelope actually returns is the whole fix.
+       */
+    ) => Promise<boolean>
   >;
   shortcutCtxRef: RefObject<AndroidShellShortcutCtx>;
   sendConnectCommand: (command: ConnectCommand) => void;
@@ -128,7 +139,10 @@ export function useAndroidShellBridges({
         const q = playQueueRef.current;
         const idx = q.findIndex((e) => e.envelopeId === mediaId);
         if (idx >= 0) {
-          void playEnvelopeRef.current(q[idx], { queue: q, index: idx });
+          // {queue, index} is neither a candidates list nor a known option, so it was being
+          // handed to the candidates parameter and quietly discarded. Playing the envelope is
+          // all this ever actually did.
+          void playEnvelopeRef.current(q[idx]);
           return;
         }
         const entries = getLockerEntriesSnapshot();

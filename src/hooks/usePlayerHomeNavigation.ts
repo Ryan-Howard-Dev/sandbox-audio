@@ -1,4 +1,6 @@
+import type React from 'react';
 import { useCallback, useEffect, useRef } from 'react';
+import type { StationId } from '../shell/shellNav';
 import type { useAudioFSM } from '../sandboxLayer1';
 import { initPlayerDeepLinks, registerOpenHomePlayerHandler } from '../playerDeepLink';
 
@@ -11,7 +13,7 @@ export type PlayerHomeNavigationOptions = {
   setNavOpen: (open: boolean) => void;
   setQueueDrawerOpen: (open: boolean) => void;
   setLyricsDrawerOpen: (open: boolean) => void;
-  setStation: (station: string) => void;
+  setStation: React.Dispatch<React.SetStateAction<StationId>>;
 };
 
 /** Mini bar / notification / lock screen -> Home vinyl hero. */
