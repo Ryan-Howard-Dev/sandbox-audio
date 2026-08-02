@@ -2020,7 +2020,31 @@ export default function SettingsView({
           )}
           {activeTab === 'audiobooks' && (
             <div className="space-y-6">
-              <p className="ui-hint ui-hint--desc">{t('settings.categories.audiobooksDesc')}</p>
+              <div
+                className="flex items-center justify-between p-4 border rounded-xl"
+                style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.35)' }}
+              >
+                <div>
+                  <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                    AUDIOBOOKS STATION
+                  </p>
+                  <p className="ui-hint ui-hint--desc mt-1">
+                    Scan Books / Audiobooks on this phone and play them without touching the music
+                    locker or podcast library.
+                  </p>
+                </div>
+                <SandboxSwitch
+                  checked={audiobooksEnabled}
+                  onChange={(checked) => {
+                    setAudiobooksEnabled(checked);
+                    saveAudiobooksEnabled(checked);
+                    onAudiobooksChange?.(checked);
+                  }}
+                  aria-label="Audiobooks station"
+                />
+              </div>
+              {audiobooksEnabled ? <AudiobookSearchPluginsSettings /> : null}
+              <p className="ui-hint ui-hint--desc">{t('settings.crossLinks.audiobooksAcquire')}</p>
             </div>
           )}
           {activeTab === 'documents' && (
@@ -3955,33 +3979,6 @@ export default function SettingsView({
 
           {activeTab === 'addons' && (
             <div className="space-y-5">
-              <div className="settings-anchor-section space-y-3">
-                <div
-                  className="flex items-center justify-between p-4 border rounded-xl"
-                  style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.35)' }}
-                >
-                  <div>
-                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
-                      AUDIOBOOKS STATION
-                    </p>
-                    <p className="ui-hint ui-hint--desc mt-1">
-                      Scan Books / Audiobooks on this phone and play them without touching the music
-                      locker or podcast library.
-                    </p>
-                  </div>
-                  <SandboxSwitch
-                    checked={audiobooksEnabled}
-                    onChange={(checked) => {
-                      setAudiobooksEnabled(checked);
-                      saveAudiobooksEnabled(checked);
-                      onAudiobooksChange?.(checked);
-                    }}
-                    aria-label="Audiobooks station"
-                  />
-                </div>
-                {audiobooksEnabled ? <AudiobookSearchPluginsSettings /> : null}
-              </div>
-
               <div className="settings-anchor-section space-y-3">
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.addonsAcquisition} />
                 <p className="ui-subsection-title text-accent">{t('settings.addons.acquisitionTitle')}</p>
