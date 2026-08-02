@@ -2050,6 +2050,18 @@ export default function SettingsView({
           {activeTab === 'documents' && (
             <div className="space-y-6">
               <p className="ui-hint ui-hint--desc">{t('settings.categories.documentsEmpty')}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('everything');
+                  if (isMobileLayout) setMobileDrill('everything');
+                  setPendingSettingsAnchor(SETTINGS_SEARCH_ANCHORS.vaultLibraryFolder);
+                }}
+                className="font-mono text-[10px] uppercase tracking-wider border px-4 py-2 rounded-sm touch-manipulation text-accent"
+                style={accentBorder}
+              >
+                {t('settings.crossLinks.openLibraryFolder')}
+              </button>
             </div>
           )}
           {activeTab === 'everything' && (
