@@ -294,6 +294,9 @@ import {
   LazySonicLockerStationView,
   withStationSuspense,
 } from './shell/lazyStationViews';
+import { useShellConnect, useShellConnectRuntime } from './shell/useShellConnect';
+import { useShellPodcastControls } from './shell/useShellPodcastControls';
+import { usePlaybackQueue } from './shell/usePlaybackQueue';
 import { loadLibraryStationEnabled } from './libraryStationSettings';
 import { loadSonicLockerStationEnabled } from './sonicLockerStationSettings';
 import {
@@ -3214,31 +3217,16 @@ export default function SandboxShell() {
   );
 
   const healAttemptRef = useRef<string | null>(null);
-  const connectClientRef = useRef<ConnectClient | null>(null);
-  const isConnectRemoteRef = useRef(false);
-  const [connectRolePref, setConnectRolePref] = useState(loadConnectRolePref);
-  const [networkSyncEnabled, setNetworkSyncEnabled] = useState(loadNetworkSyncEnabled);
-  const [remoteMirror, setRemoteMirror] = useState<SyncStatePayload | null>(null);
-  const effectiveConnectRole = networkSyncEnabled
-    ? resolveConnectRole(connectRolePref)
-    : null;
-  isConnectRemoteRef.current = effectiveConnectRole === 'remote';
-  useEffect(() => {
-    const sync = () => {
-      setConnectRolePref(loadConnectRolePref());
-      setNetworkSyncEnabled(loadNetworkSyncEnabled());
-    };
-    window.addEventListener('storage', sync);
-    window.addEventListener('sandbox-settings-change', sync);
-    return () => {
-      window.removeEventListener('storage', sync);
-      window.removeEventListener('sandbox-settings-change', sync);
-    };
-  }, []);
-
-  const sendConnectCommand = useCallback((command: ConnectCommand) => {
-    connectClientRef.current?.sendCommand(command);
-  }, []);
+  const {
+    connectClientRef,
+    isConnectRemoteRef,
+    connectRolePref,
+    networkSyncEnabled,
+    remoteMirror,
+    setRemoteMirror,
+    effectiveConnectRole,
+    sendConnectCommand,
+  } = useShellConnect();
 
   const playGenerationRef = useRef(0);
   playGenerationRef.current = currentPlayGeneration();
@@ -5554,292 +5542,23 @@ export default function SandboxShell() {
     markE2ePlaybackHandlersLive();
   }, [audio.title, audio.artist, runSearch, downloadTierPreference, navigateSearchQuery, handleThumbUp, handleThumbDown]);
 
-  const podcastResumeAppliedRef = useRef<string | null>(null);
-  const podcastAdSkipLastAtRef = useRef(0);
-  const podcastSmartSpeedRef = useRef<PodcastSmartSpeedController | null>(null);
-  const [podcastPlaybackSpeed, setPodcastPlaybackSpeed] = useState(loadPodcastPlaybackSpeed);
-  const [podcastSmartSpeedEnabled, setPodcastSmartSpeedEnabled] = useState(
-    loadPodcastSmartSpeedEnabled,
-  );
-  const [podcastVoiceBoostEnabled, setPodcastVoiceBoostEnabled] = useState(
-    loadPodcastVoiceBoostEnabled,
-  );
-  const [podcastSkipAdChaptersEnabled, setPodcastSkipAdChaptersEnabled] = useState(
-    loadPodcastSkipAdChaptersEnabled,
-  );
-  const [podcastChapters, setPodcastChapters] = useState<PodcastChapter[]>([]);
-  const [episodeVolumeBoostDb, setEpisodeVolumeBoostDb] = useState(0);
-
-  useEffect(() => {
-    const onSettings = () => {
-      setPodcastPlaybackSpeed(loadPodcastPlaybackSpeed());
-      setPodcastSmartSpeedEnabled(loadPodcastSmartSpeedEnabled());
-      setPodcastVoiceBoostEnabled(loadPodcastVoiceBoostEnabled());
-      setPodcastSkipAdChaptersEnabled(loadPodcastSkipAdChaptersEnabled());
-    };
-    window.addEventListener(PODCAST_SETTINGS_CHANGE_EVENT, onSettings);
-    return () => window.removeEventListener(PODCAST_SETTINGS_CHANGE_EVENT, onSettings);
-  }, []);
-
-  useEffect(() => {
-    podcastSmartSpeedRef.current?.stop();
-    podcastSmartSpeedRef.current = null;
-
-    const env = audio.envelope;
-    if (!env || !isPodcastEnvelopeId(env.envelopeId) || !podcastSmartSpeedEnabled) {
-      return;
-    }
-    // Native Exo on Android has no Web Audio analyser — Smart Speed rate wobble fights setPlaybackSpeed.
-    if (isAndroid() && (audio.nativeExoActive || !audio.getPlaybackLevelAnalyser())) {
-      return;
-    }
-    const playing = audio.state === 'Playing' || audio.nativeExoEffectivePlaying;
-    if (!playing) return;
-
-    const episodeId = parsePodcastEpisodeId(env.envelopeId);
-    if (!episodeId) return;
-
-    podcastSmartSpeedRef.current = startPodcastSmartSpeed({
-      episodeId,
-      audioUrl: env.url?.trim() ?? '',
-      analyser: audio.getPlaybackLevelAnalyser(),
-      getUserPlaybackRate: () => loadPodcastPlaybackSpeed(),
-      setPlaybackRate: (rate) => audio.setPlaybackRate(rate),
-      getCurrentTimeSeconds: () => audio.currentTimeSeconds,
-      seek: (seconds) => audio.seek(seconds),
-      isPlaying: () => audio.state === 'Playing' || audio.nativeExoEffectivePlaying,
-    });
-
-    return () => {
-      podcastSmartSpeedRef.current?.stop();
-      podcastSmartSpeedRef.current = null;
-    };
-  }, [
-    audio,
-    audio.envelope?.envelopeId,
-    audio.state,
-    audio.nativeExoEffectivePlaying,
-    audio.nativeExoActive,
+  const {
+    podcastPlaybackSpeed,
     podcastSmartSpeedEnabled,
-  ]);
-
-  useEffect(() => {
-    const env = audio.envelope;
-    if (!env || !isPodcastEnvelopeId(env.envelopeId)) return;
-    const rate = loadPodcastPlaybackSpeed();
-    setPodcastPlaybackSpeed(rate);
-    audio.setPlaybackRate(rate);
-  }, [audio, audio.envelope?.envelopeId]);
-
-  useEffect(() => {
-    const env = audio.envelope;
-    if (!env || !isPodcastEnvelopeId(env.envelopeId)) {
-      setPodcastChapters([]);
-      return;
-    }
-    const feedId = parsePodcastFeedId(env.envelopeId);
-    const episodeId = parsePodcastEpisodeId(env.envelopeId);
-    if (!feedId || !episodeId) return;
-    const ep = findEpisode(feedId, episodeId);
-    if (!ep) {
-      setPodcastChapters([]);
-      return;
-    }
-    if (ep.chapters?.length) {
-      setPodcastChapters(ep.chapters);
-      return;
-    }
-    const feedUrl = findSubscription(feedId)?.feedUrl ?? '';
-    let cancelled = false;
-    void resolvePodcastChapters(ep, feedUrl).then((chapters) => {
-      if (cancelled) return;
-      setPodcastChapters(chapters);
-      if (chapters.length > 0) updateEpisodeChapters(feedId, episodeId, chapters);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [audio.envelope?.envelopeId]);
-
-  useEffect(() => {
-    const env = audio.envelope;
-    if (!env || !isPodcastEnvelopeId(env.envelopeId)) {
-      setEpisodeVolumeBoostDb(0);
-      return;
-    }
-    const feedId = parsePodcastFeedId(env.envelopeId);
-    const episodeId = parsePodcastEpisodeId(env.envelopeId);
-    setPodcastVoiceBoostEnabled(resolveVoiceBoostEnabled(feedId));
-    setEpisodeVolumeBoostDb(episodeId ? loadEpisodeVolumeBoostDb(episodeId) : 0);
-    audio.refreshPodcastPlaybackChain();
-  }, [audio, audio.envelope?.envelopeId]);
-
-  useEffect(() => {
-    const onPodcasts = () => {
-      const env = audio.envelope;
-      if (!env || !isPodcastEnvelopeId(env.envelopeId)) return;
-      const feedId = parsePodcastFeedId(env.envelopeId);
-      setPodcastVoiceBoostEnabled(resolveVoiceBoostEnabled(feedId));
-      audio.refreshPodcastPlaybackChain();
-    };
-    window.addEventListener(PODCASTS_CHANGE_EVENT, onPodcasts);
-    return () => window.removeEventListener(PODCASTS_CHANGE_EVENT, onPodcasts);
-  }, [audio]);
-
-  const handleCyclePodcastSpeed = useCallback(() => {
-    const next = cyclePodcastPlaybackSpeed(podcastPlaybackSpeed);
-    setPodcastPlaybackSpeed(next);
-    audio.setPlaybackRate(next);
-  }, [audio, podcastPlaybackSpeed]);
-
-  const handleTogglePodcastSmartSpeed = useCallback(() => {
-    const next = !loadPodcastSmartSpeedEnabled();
-    savePodcastSmartSpeedEnabled(next);
-    setPodcastSmartSpeedEnabled(next);
-  }, []);
-
-  const handleTogglePodcastSkipAdChapters = useCallback(() => {
-    const next = !loadPodcastSkipAdChaptersEnabled();
-    savePodcastSkipAdChaptersEnabled(next);
-    setPodcastSkipAdChaptersEnabled(next);
-  }, []);
-
-  const handleTogglePodcastVoiceBoost = useCallback(() => {
-    const env = audio.envelope;
-    const feedId = env ? parsePodcastFeedId(env.envelopeId) : null;
-    const current = feedId
-      ? resolveVoiceBoostEnabled(feedId)
-      : loadPodcastVoiceBoostEnabled();
-    const next = !current;
-    if (feedId && findSubscription(feedId)?.voiceBoostDefault !== undefined) {
-      updateSubscriptionMeta(feedId, { voiceBoostDefault: next });
-      void syncPodcastRulesToTier34();
-    } else {
-      savePodcastVoiceBoostEnabled(next);
-    }
-    setPodcastVoiceBoostEnabled(next);
-    audio.refreshPodcastPlaybackChain();
-  }, [audio]);
-
-  const handleCycleEpisodeVolumeBoost = useCallback(() => {
-    const env = audio.envelope;
-    if (!env || !isPodcastEnvelopeId(env.envelopeId)) return;
-    const episodeId = parsePodcastEpisodeId(env.envelopeId);
-    if (!episodeId) return;
-    const next = cycleEpisodeVolumeBoostDb(episodeId);
-    setEpisodeVolumeBoostDb(next);
-    audio.applyPodcastEpisodeVolumeBoostDb(next);
-  }, [audio]);
-
-  const handlePodcastPrevChapter = useCallback(() => {
-    audio.seek(seekSecondsForPreviousChapter(podcastChapters, audio.currentTimeSeconds));
-  }, [audio, podcastChapters]);
-
-  const handlePodcastNextChapter = useCallback(() => {
-    const sec = seekSecondsForNextChapter(podcastChapters, audio.currentTimeSeconds);
-    if (sec != null) audio.seek(sec);
-  }, [audio, podcastChapters]);
-
-  const handleSkipPodcastAd = useCallback(() => {
-    const duration =
-      audio.streamDurationSeconds ||
-      audio.durationSeconds ||
-      audio.envelope?.durationSeconds ||
-      0;
-    const target = seekTargetForManualAdSkip(
-      podcastChapters,
-      audio.currentTimeSeconds,
-      duration > 0 ? duration : undefined,
-    );
-    audio.seek(target);
-  }, [audio, podcastChapters]);
-
-  const podcastSkipAdHint = useMemo(
-    () => manualAdSkipHint(podcastChapters, audio.currentTimeSeconds),
-    [podcastChapters, audio.currentTimeSeconds],
-  );
-
-  useEffect(() => {
-    if (!podcastSkipAdChaptersEnabled || podcastChapters.length === 0) return;
-    const env = audio.envelope;
-    if (!env || !isPodcastEnvelopeId(env.envelopeId)) return;
-    const playing = audio.state === 'Playing' || audio.nativeExoEffectivePlaying;
-    if (!playing) return;
-
-    const target = seekTargetAfterAdChapter(podcastChapters, audio.currentTimeSeconds);
-    if (target == null) return;
-
-    const now = performance.now();
-    if (now - podcastAdSkipLastAtRef.current < 800) return;
-    podcastAdSkipLastAtRef.current = now;
-    audio.seek(target);
-  }, [
-    audio,
-    audio.currentTimeSeconds,
-    audio.envelope?.envelopeId,
-    audio.state,
-    audio.nativeExoEffectivePlaying,
-    podcastChapters,
+    podcastVoiceBoostEnabled,
     podcastSkipAdChaptersEnabled,
-  ]);
-
-  useEffect(() => {
-    const env = audio.envelope;
-    if (!env || !isPodcastEnvelopeId(env.envelopeId)) {
-      podcastResumeAppliedRef.current = null;
-      return;
-    }
-    if (audio.state !== 'Ready' && audio.state !== 'Playing') return;
-    if (podcastResumeAppliedRef.current === env.envelopeId) return;
-    const episodeId = parsePodcastEpisodeId(env.envelopeId);
-    if (!episodeId) return;
-    const saved = getEpisodeResumePosition(episodeId);
-    /*
-     * Resume a little before where you stopped, not exactly on it.
-     *
-     * An exact resume drops you mid-sentence, which after three days away means rewinding by
-     * hand before you can follow anything. The amount is small on purpose: enough to recover
-     * the sentence, not enough to make you listen again to a minute you already heard.
-     */
-    const pos = resumeAtSeconds(saved, getEpisodeResumeSavedAt(episodeId), 'podcast');
-    if (pos > 3) audio.seek(pos);
-    podcastResumeAppliedRef.current = env.envelopeId;
-  }, [audio, audio.state, audio.envelope?.envelopeId]);
-
-  useEffect(() => {
-    const env = audio.envelope;
-    if (!env || !isPodcastEnvelopeId(env.envelopeId)) return;
-    const episodeId = parsePodcastEpisodeId(env.envelopeId);
-    if (!episodeId) return;
-    const save = () => {
-      const episodeIdInner = parsePodcastEpisodeId(audio.envelope?.envelopeId ?? '');
-      if (!episodeIdInner) return;
-      if (audio.state === 'Playing' || audio.state === 'Ready') {
-        const pos = audioCurrentTimeRef.current;
-        const dur =
-          audio.streamDurationSeconds ||
-          audio.durationSeconds ||
-          audio.envelope?.durationSeconds ||
-          0;
-        if (maybeAutoCompleteEpisode(episodeIdInner, pos, dur)) return;
-        saveEpisodeResumePosition(episodeIdInner, pos);
-      }
-    };
-    const interval = window.setInterval(save, 5000);
-    return () => {
-      clearInterval(interval);
-      save();
-    };
-  }, [audio.envelope?.envelopeId, audio.state, audio]);
-
-  useEffect(() => {
-    return audio.subscribeEnded(() => {
-      const env = audioEnvelopeRef.current;
-      if (!env || !isPodcastEnvelopeId(env.envelopeId)) return;
-      const episodeId = parsePodcastEpisodeId(env.envelopeId);
-      if (episodeId) markEpisodeCompleted(episodeId);
-    });
-  }, [audio]);
+    podcastChapters,
+    episodeVolumeBoostDb,
+    handleCyclePodcastSpeed,
+    handleTogglePodcastSmartSpeed,
+    handleTogglePodcastSkipAdChapters,
+    handleTogglePodcastVoiceBoost,
+    handleCycleEpisodeVolumeBoost,
+    handlePodcastPrevChapter,
+    handlePodcastNextChapter,
+    handleSkipPodcastAd,
+    podcastSkipAdHint,
+  } = useShellPodcastControls(audio, audioCurrentTimeRef, audioEnvelopeRef);
 
   useEffect(() => subscribeCastSession(setCastMode), []);
 
@@ -6819,151 +6538,34 @@ export default function SandboxShell() {
     });
   }, [audio, findHitCandidates, showAppToast, t, adoptInPlaceQueueTrack, primeLockerNativeQueueFrom]);
 
-  const handleAddToQueue = useCallback((tracks: MediaEnvelope[]) => {
-    if (tracks.length === 0) return;
-    if (isConnectRemoteRef.current) {
-      for (const env of tracks) {
-        sendConnectCommand({ cmd: 'ADD_TO_QUEUE', envelopeId: env.envelopeId });
-      }
-      return;
-    }
-    setPlayQueue((q) =>
-      mergeIntoUpNextQueue(q, queueIndex, tracks, loadSovereignUpNextSettings()),
-    );
-  }, [sendConnectCommand, queueIndex]);
-
-  const handleRemoveFromQueue = useCallback(
-    (index: number) => {
-      if (isConnectRemoteRef.current) {
-        sendConnectCommand({ cmd: 'REMOVE_QUEUE_ITEM', index });
-        return;
-      }
-      setPlayQueue((q) => {
-        if (index < 0 || index >= q.length) return q;
-        const filtered = q.filter((_, i) => i !== index);
-        if (index === queueIndex) {
-          if (filtered.length === 0) {
-            setQueueIndex(0);
-          } else {
-            const nextIdx = Math.min(index, filtered.length - 1);
-            setQueueIndex(nextIdx);
-            const track = filtered[nextIdx];
-            void handlePlayEnvelope(track, findHitCandidates(track));
-          }
-        } else if (index < queueIndex) {
-          setQueueIndex((i) => Math.max(0, i - 1));
-        }
-        return filtered;
-      });
-    },
-    [queueIndex, handlePlayEnvelope, findHitCandidates, sendConnectCommand],
-  );
-
-  const handleReorderUpNext = useCallback((fromRel: number, toRel: number) => {
-    if (fromRel === toRel) return;
-    if (isConnectRemoteRef.current) {
-      const fromIndex = queueIndex + 1 + fromRel;
-      const toIndex = queueIndex + 1 + toRel;
-      sendConnectCommand({ cmd: 'REORDER_QUEUE', fromIndex, toIndex });
-      return;
-    }
-    setPlayQueue((q) => {
-      const start = queueIndex + 1;
-      const tail = q.slice(start);
-      if (fromRel < 0 || fromRel >= tail.length || toRel < 0 || toRel >= tail.length) {
-        return q;
-      }
-      const reordered = [...tail];
-      const [moved] = reordered.splice(fromRel, 1);
-      reordered.splice(toRel, 0, moved);
-      return [...q.slice(0, start), ...reordered];
-    });
-  }, [queueIndex, sendConnectCommand]);
-
-  const handleReorderQueue = useCallback((fromIndex: number, toIndex: number) => {
-    if (fromIndex === toIndex) return;
-    if (isConnectRemoteRef.current) {
-      sendConnectCommand({ cmd: 'REORDER_QUEUE', fromIndex, toIndex });
-      return;
-    }
-    setPlayQueue((q) => {
-      if (fromIndex < 0 || fromIndex >= q.length || toIndex < 0 || toIndex >= q.length) return q;
-      const next = [...q];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return next;
-    });
-    setQueueIndex((qi) => {
-      if (qi === fromIndex) return toIndex;
-      if (fromIndex < qi && toIndex >= qi) return qi - 1;
-      if (fromIndex > qi && toIndex <= qi) return qi + 1;
-      return qi;
-    });
-  }, [sendConnectCommand]);
-
-  const handleClearQueue = useCallback(() => {
-    if (isConnectRemoteRef.current) {
-      sendConnectCommand({ cmd: 'CLEAR_QUEUE' });
-      return;
-    }
-    setPlayQueue([]);
-    setQueueIndex(0);
-    setMixRadioSession(null);
-    autoSimilarRadioSeedRef.current = null;
-    sovereignUpNextPodcastCountRef.current = 0;
-    clearPersistedQueue();
-  }, [sendConnectCommand]);
-
-  const handleSaveQueueAsPlaylist = useCallback(
-    (name: string) => {
-      if (playQueue.length === 0) return;
-      createPlaylistWithTracks(name, playQueue, 'Saved from play queue');
-    },
-    [playQueue],
-  );
+  const {
+    handleAddToQueue,
+    handleRemoveFromQueue,
+    handleReorderUpNext,
+    handleReorderQueue,
+    handleClearQueue,
+    handleSaveQueueAsPlaylist,
+    handlePlayNext,
+    handleQueueShowUnplayed,
+  } = usePlaybackQueue({
+    playQueue,
+    setPlayQueue,
+    queueIndex,
+    setQueueIndex,
+    isConnectRemoteRef,
+    sendConnectCommand,
+    handlePlayEnvelope,
+    findHitCandidates,
+    setMixRadioSession,
+    autoSimilarRadioSeedRef,
+    sovereignUpNextPodcastCountRef,
+    showAppToast,
+    t,
+  });
 
   const recentPlayHistory = useMemo(
     () => getRecentlyPlayed(5),
     [audio.envelope?.envelopeId, audio.state, playQueue.length],
-  );
-
-  const handlePlayNext = useCallback(
-    (tracks: MediaEnvelope[]) => {
-      if (tracks.length === 0) return;
-      if (isConnectRemoteRef.current) {
-        for (const env of tracks) {
-          sendConnectCommand({ cmd: 'ADD_TO_QUEUE', envelopeId: env.envelopeId });
-        }
-        return;
-      }
-      setPlayQueue((q) =>
-        mergeIntoUpNextQueue(
-          q,
-          queueIndex,
-          tracks,
-          loadSovereignUpNextSettings(),
-          'play-next',
-        ),
-      );
-    },
-    [queueIndex, sendConnectCommand],
-  );
-
-  const handleQueueShowUnplayed = useCallback(
-    (feedId: string) => {
-      const settings = loadSovereignUpNextSettings();
-      const tracks = buildPodcastQueueForFeed(feedId, {
-        unplayedOnly: true,
-        newestFirst: settings.insertNewestAtTop,
-      });
-      if (tracks.length === 0) {
-        showAppToast('No unplayed episodes in this show.');
-        return;
-      }
-      handleAddToQueue(tracks);
-      showAppToast(t('player.sovereignUpNext.queuedUnplayed', { count: tracks.length }));
-    },
-    [handleAddToQueue, showAppToast, t],
   );
 
   const handlePlayAlbum = useCallback(
@@ -7618,133 +7220,34 @@ export default function SandboxShell() {
     [resolveEnvelopeById, handlePlayEnvelope, findHitCandidates],
   );
 
-  const resolveEnvelopeByIdRef = useRef(resolveEnvelopeById);
-  resolveEnvelopeByIdRef.current = resolveEnvelopeById;
-
-  const applyRemoteSyncState = useCallback((payload: SyncStatePayload) => {
-    setRemoteMirror(payload);
-    setPlayQueue(payload.playQueue.map(queueSummaryToEnvelope));
-    setQueueIndex(payload.queueIndex);
-    const track = payload.playQueue[payload.queueIndex];
-    if (track?.artworkUrl) setArtworkUrl(proxiedArtworkUrl(track.artworkUrl) ?? track.artworkUrl);
-  }, []);
-
-  const handleConnectCommand = useCallback((command: ConnectCommand) => {
-    switch (command.cmd) {
-      case 'PLAY': {
-        const env = resolveEnvelopeByIdRef.current(command.envelopeId);
-        if (env) void playEnvelopeRef.current(env, findHitCandidates(env));
-        break;
-      }
-      case 'PAUSE':
-        audio.pause();
-        break;
-      case 'SKIP_NEXT':
-        skipForward();
-        break;
-      case 'SKIP_PREV':
-        skipBack();
-        break;
-      case 'SEEK_TO':
-        audio.seek(command.seconds);
-        break;
-      case 'SET_VOLUME':
-        audio.setVolume(command.volume);
-        break;
-      case 'ADD_TO_QUEUE': {
-        const env = resolveEnvelopeByIdRef.current(command.envelopeId);
-        if (env) handleAddToQueue([env]);
-        break;
-      }
-      case 'REMOVE_QUEUE_ITEM':
-        handleRemoveFromQueue(command.index);
-        break;
-      case 'REORDER_QUEUE':
-        handleReorderQueue(command.fromIndex, command.toIndex);
-        break;
-      case 'CLEAR_QUEUE':
-        handleClearQueue();
-        break;
-      default:
-        break;
-    }
-  }, [audio, skipForward, skipBack, handleAddToQueue, handleRemoveFromQueue, handleReorderQueue, handleClearQueue, findHitCandidates]);
-
-  const handleConnectCommandRef = useRef(handleConnectCommand);
-  handleConnectCommandRef.current = handleConnectCommand;
-
-  const publishHostSyncState = useCallback(() => {
-    if (effectiveConnectRole !== 'host') return;
-    connectClientRef.current?.publishState(
-      buildSyncState({
-        envelope: audio.envelope,
-        currentTimeSeconds: audio.currentTimeSeconds,
-        durationSeconds: audio.durationSeconds,
-        isPlaying: audio.state === 'Playing',
-        volume: audio.volume,
-        playQueue,
-        queueIndex,
-      }),
-    );
-  }, [
-    effectiveConnectRole,
-    audio.envelope,
-    audio.currentTimeSeconds,
-    audio.durationSeconds,
-    audio.state,
-    audio.volume,
+  useShellConnectRuntime({
+    audio,
     playQueue,
     queueIndex,
-  ]);
-
-  useEffect(() => {
-    if (!networkSyncEnabled || !effectiveConnectRole) {
-      connectClientRef.current?.disconnect();
-      connectClientRef.current = null;
-      setRemoteMirror(null);
-      return;
-    }
-    const client = new ConnectClient({
-      room: 'sandbox-room',
-      role: effectiveConnectRole,
-      deviceId: getOrCreateConnectDeviceId(),
-      deviceName: loadConnectDeviceName(),
-    });
-    connectClientRef.current = client;
-    client.connect();
-
-    let unsubState: (() => void) | undefined;
-    let unsubCommand: (() => void) | undefined;
-
-    if (effectiveConnectRole === 'remote') {
-      unsubState = client.subscribeState((payload) => applyRemoteSyncState(payload));
-    } else {
-      unsubCommand = client.subscribeCommand((cmd) => handleConnectCommandRef.current(cmd));
-      client.startHeartbeat(() =>
-        buildSyncState({
-          envelope: audioEnvelopeRef.current,
-          currentTimeSeconds: audioCurrentTimeRef.current,
-          durationSeconds: audioDurationRef.current,
-          isPlaying: audioStateRef.current === 'Playing',
-          volume: audioVolumeRef.current,
-          playQueue: playQueueRef.current,
-          queueIndex: queueIndexRef.current,
-        }),
-      );
-    }
-
-    return () => {
-      unsubState?.();
-      unsubCommand?.();
-      client.disconnect();
-      if (connectClientRef.current === client) connectClientRef.current = null;
-    };
-  }, [networkSyncEnabled, effectiveConnectRole, applyRemoteSyncState]);
-
-  useEffect(() => {
-    if (effectiveConnectRole !== 'host') return;
-    publishHostSyncState();
-  }, [effectiveConnectRole, publishHostSyncState]);
+    setPlayQueue,
+    setQueueIndex,
+    setArtworkUrl,
+    setRemoteMirror,
+    effectiveConnectRole,
+    networkSyncEnabled,
+    connectClientRef,
+    resolveEnvelopeById,
+    playEnvelopeRef,
+    findHitCandidates,
+    skipForward,
+    skipBack,
+    handleAddToQueue,
+    handleRemoveFromQueue,
+    handleReorderQueue,
+    handleClearQueue,
+    audioEnvelopeRef,
+    audioCurrentTimeRef,
+    audioDurationRef,
+    audioStateRef,
+    audioVolumeRef,
+    playQueueRef,
+    queueIndexRef,
+  });
 
   const handleResumeLastQueue = useCallback(() => {
     if (homeLastQueue.length === 0) return;
