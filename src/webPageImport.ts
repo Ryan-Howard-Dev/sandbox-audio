@@ -5,10 +5,14 @@
  * an article, a set of documentation, a long post. Copying it by hand means selecting text that
  * fights back, and importing it as a file means finding an export button that often is not there.
  *
- * This will not work on every page and does not pretend to. A site that renders its text in the
- * browser rather than sending it — which is most Google properties, including the Gemini share
- * pages this was asked for — returns an empty shell over the network. That case is detected and
- * said plainly, because narrating a page's cookie banner would be worse than refusing it.
+ * This will not work on every page by itself. A site that renders its text in the browser rather
+ * than sending it — which is most Google properties, including the Gemini share pages this was
+ * asked for — returns an empty shell over the network. That case is detected rather than narrated,
+ * because reading a page's cookie banner aloud would be worse than refusing it.
+ *
+ * Those pages need a browser to run them, which is what a reader service is. If one is configured
+ * the shell case is retried through it; if not, the refusal is the same as it always was. See
+ * readerService.ts.
  *
  * Everything here that can be tested without a DOM is separated out and tested. The extraction
  * itself needs DOMParser, which Node does not have.
@@ -47,7 +51,10 @@ export type WebPageFailure =
   | 'not-http'
   | 'fetch-failed'
   | 'not-html'
+  /** The page sent no text and no reader service is set up to render it. */
   | 'needs-javascript'
+  /** A reader service is set up, was asked, and could not read the page either. */
+  | 'reader-service-failed'
   | 'too-little-text';
 
 export interface WebPageResult {
@@ -152,10 +159,30 @@ export async function importWebPage(rawUrl: string): Promise<WebPageResult> {
   try {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const { title, text } = extractFromDocument(doc);
-    if (looksLikeJavaScriptShell(html, text)) return { reason: 'needs-javascript' };
+    if (looksLikeJavaScriptShell(html, text)) return viaReaderService(url);
     if (text.length < MIN_ARTICLE_CHARS) return { reason: 'too-little-text' };
     return { title: title || url, text };
   } catch {
     return { reason: 'fetch-failed' };
   }
+}
+
+/**
+ * Second attempt, through a reader service, for a page that sent no text.
+ *
+ * Only reached once the plain fetch has already come back a shell, so an ordinary page never
+ * touches the service and never leaves the device by a second route. With nothing configured this
+ * is the same 'needs-javascript' answer as before, so the default behaviour is unchanged.
+ */
+async function viaReaderService(url: string): Promise<WebPageResult> {
+  const { fetchViaReaderService, isReaderServiceConfigured } = await import('./readerService');
+  if (!isReaderServiceConfigured()) return { reason: 'needs-javascript' };
+
+  const result = await fetchViaReaderService(url);
+  if (!result.text) {
+    // The service was asked and could not do it either. Saying so beats repeating the advice to
+    // paste the page, which is what 'needs-javascript' tells the reader to go and do.
+    return { reason: 'reader-service-failed' };
+  }
+  return { title: result.title || url, text: result.text };
 }

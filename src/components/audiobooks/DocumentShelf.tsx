@@ -11,6 +11,7 @@ import { type ReadAlongRange } from './ReadAlongText';
 import DocumentReaderView from './DocumentReaderView';
 import { createNarrationEngine, type NarrationEngine } from '../../narrationEngine';
 import { importWebPage, isImportableUrl, type WebPageFailure } from '../../webPageImport';
+import { loadReaderServiceUrl, saveReaderServiceUrl } from '../../readerService';
 import {
   clearNarrationPlayback,
   publishNarrationPlayback,
@@ -101,6 +102,8 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
   const [pasteText, setPasteText] = useState('');
   const [urlOpen, setUrlOpen] = useState(false);
   const [urlText, setUrlText] = useState('');
+  /** Address of a self-hosted reader service, empty when there is none. See readerService.ts. */
+  const [readerUrl, setReaderUrl] = useState(() => loadReaderServiceUrl());
   const { voices, voiceId, chooseVoice, speechAvailable } = useNarrationVoices();
 
   const refresh = useCallback(() => {
@@ -223,6 +226,7 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
     (reason: WebPageFailure): string => {
       if (reason === 'not-http') return t('audiobooks.webBadUrl');
       if (reason === 'needs-javascript') return t('audiobooks.webNeedsJs');
+      if (reason === 'reader-service-failed') return t('audiobooks.webReaderFailed');
       if (reason === 'not-html') return t('audiobooks.webNotHtml');
       if (reason === 'too-little-text') return t('audiobooks.webTooLittle');
       return t('audiobooks.webFetchFailed');
@@ -494,6 +498,24 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
             aria-label={t('audiobooks.addFromWeb')}
           />
           <p className="audiobook-doc-url-hint">{t('audiobooks.webHint')}</p>
+          {/*
+            The reader service address lives here rather than in Settings because this is the only
+            screen where it changes anything, and the moment anyone wants it is the moment a page
+            has just come back empty. Somewhere else, it is a setting nobody finds.
+          */}
+          <input
+            type="url"
+            inputMode="url"
+            value={readerUrl}
+            onChange={(e) => {
+              setReaderUrl(e.target.value);
+              saveReaderServiceUrl(e.target.value);
+            }}
+            placeholder={t('audiobooks.readerServicePlaceholder')}
+            className="audiobook-doc-url-input mt-2"
+            aria-label={t('audiobooks.readerServiceLabel')}
+          />
+          <p className="audiobook-doc-url-hint">{t('audiobooks.readerServiceHint')}</p>
           <div className="flex items-center gap-2 mt-2">
             <button
               type="button"

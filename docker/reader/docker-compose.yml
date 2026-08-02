@@ -1,0 +1,37 @@
+# A reader service, running on your own machine.
+#
+# Some pages send their text and some assemble it in the browser. Sandbox Audio can read the first
+# kind on its own. The second kind — Gemini deep research links, Google Docs, most single-page
+# apps — arrives as an empty shell, and reading it needs something that can actually run the page.
+# That is what this is.
+#
+# jina-ai/reader, Apache-2.0. Nothing here talks to Jina's hosted service at r.jina.ai; this is
+# their open-source image running on your hardware, and pages you read go no further than it.
+#
+#   docker compose -f docker/reader/docker-compose.yml up -d
+#
+# Then put the address into Audiobooks, Documents, Add from web, in the "Reader service" field:
+#
+#   http://localhost:3000          on this machine
+#   http://192.168.1.10:3000       from a phone, using the server's address on your network
+#
+# Check it before typing it in:
+#
+#   curl http://localhost:3000/https://example.com
+#
+# Leaving the field empty turns it off, and pages that need a browser are skipped as before.
+
+services:
+  reader:
+    image: ghcr.io/jina-ai/reader:oss
+    container_name: sandbox-reader
+    restart: unless-stopped
+    ports:
+      # 8081 is the container's HTTP/1.1 port. Its other port, 8080, is h2c, which an ordinary
+      # fetch from the app cannot speak.
+      - '3000:8081'
+    # No environment is set on purpose. The image runs stateless without it: no caching, no rate
+    # limiting, and no credentials for object storage it does not need. Its caching options are
+    # for S3-compatible buckets, which would put your reading list somewhere else.
+    security_opt:
+      - no-new-privileges:true
