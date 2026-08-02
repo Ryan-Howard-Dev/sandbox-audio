@@ -5,17 +5,17 @@ ApplicationId: rd.sheepskin.sandboxmusic
 
 Categories:
   - Multimedia
-License: MIT
-SourceCode: https://github.com/SheepSkinRD/sandbox-music
-IssueTracker: https://github.com/SheepSkinRD/sandbox-music/issues
-Changelog: https://github.com/SheepSkinRD/sandbox-music/releases
+License: GPL-3.0-only
+SourceCode: https://github.com/Ryan-Howard-Dev/sandbox-audio
+IssueTracker: https://github.com/Ryan-Howard-Dev/sandbox-audio/issues
+Changelog: https://github.com/Ryan-Howard-Dev/sandbox-audio/releases
 WebSite: https://ssrd.app
 
-AutoName: Sandbox Music
-Name: Sandbox Music
+AutoName: Sandbox Audio
+Name: Sandbox Audio
 Summary: Self-hosted music locker and discovery console
 Description: |-
-  Sandbox Music is an offline-first music locker, catalog explorer,
+  Sandbox Audio is an offline-first music locker, catalog explorer,
   and DJ console shell. Import local audio, browse charts, manage playlists,
   and optionally connect a Tier 3/4 backend for extended search and playback.
 
@@ -40,7 +40,7 @@ AntiFeatures:
   - TetheredNet
 
 RepoType: git
-Repo: https://github.com/SheepSkinRD/sandbox-music.git
+Repo: https://github.com/Ryan-Howard-Dev/sandbox-audio.git
 
 Builds:
   - versionName: '1.0.0'
@@ -48,8 +48,11 @@ Builds:
     commit: v1.0.0
     # Bump versionCode/versionName with android/app/build.gradle before each F-Droid release.
     subdir: android
+    # The flavour without Google Cast. play-services-cast-framework is proprietary, so it is
+    # confined to the gplay flavour and this build never links against it. Casting to Sonos and
+    # UPnP speakers still works here: that runs over the local network and uses no Google code.
     gradle:
-      - yes
+      - foss
     # The NDK compiles sherpa-onnx from source. F-Droid rejects prebuilt binaries, so the
     # engine is built here rather than downloaded as an AAR — which also keeps a hundred
     # megabytes of unreviewable binaries out of the repository.
@@ -66,7 +69,7 @@ Builds:
       - android/.gradle
       - dist
     build:
-      - ./gradlew assembleRelease
+      - ./gradlew assembleFossRelease
 
 # Reproducible build: see docs/fdroid.md and metadata/fdroid/README.md
 # Local verify: npm run fdroid:local

@@ -47,6 +47,29 @@ android {
             }
         }
     }
+    /*
+     * Two distributions of the same app.
+     *
+     * gplay is the build published directly and through Play, and has Google Cast.
+     * foss is the build F-Droid compiles. F-Droid only accepts free software, and
+     * play-services-cast-framework is proprietary, so that flavour leaves Cast out entirely
+     * rather than shipping a dependency that cannot be inspected. Everything else — the media
+     * player, the locker, neural narration — is identical between them.
+     *
+     * UPnP and Sonos casting survive in both. Those run over the local network through
+     * Sandbox Server and involve no Google code.
+     */
+    flavorDimensions += 'distribution'
+    productFlavors {
+        gplay {
+            dimension 'distribution'
+            isDefault = true
+        }
+        foss {
+            dimension 'distribution'
+        }
+    }
+
     // Per-ABI APKs — youtubedl-android bundles Python + ffmpeg natives per arch (~50MB each).
     // Sideload arm64-v8a on OnePlus 12; skip universal fat APK (~200MB with all ABIs).
     splits {
@@ -77,8 +100,9 @@ dependencies {
     implementation "androidx.documentfile:documentfile:1.0.1"
     implementation "androidx.media3:media3-exoplayer:1.5.1"
     implementation "androidx.media3:media3-common:1.5.1"
-    implementation "androidx.mediarouter:mediarouter:1.7.0"
-    implementation "com.google.android.gms:play-services-cast-framework:21.5.0"
+    // Cast, and the route picker it opens. gplay only: see the productFlavors block above.
+    gplayImplementation "androidx.mediarouter:mediarouter:1.7.0"
+    gplayImplementation "com.google.android.gms:play-services-cast-framework:21.5.0"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

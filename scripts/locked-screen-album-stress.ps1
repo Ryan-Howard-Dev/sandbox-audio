@@ -20,7 +20,7 @@ Set-Location $Root
 
 $Package = 'rd.sheepskin.sandboxmusic'
 $EmuSerial = $Serial
-$ApkRel = 'android\app\build\outputs\apk\debug\app-arm64-v8a-debug.apk'
+$ApkRel = 'android\app\build\outputs\apk\gplay\debug\app-gplay-arm64-v8a-debug.apk'
 $ReportPath = Join-Path $Root '.locked-screen-album-stress-report.json'
 $LogPath = Join-Path $Root '.locked-screen-album-stress-logcat.txt'
 $Adb = 'adb.exe'

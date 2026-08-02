@@ -181,7 +181,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(BackgroundMediaPlugin.class);
         registerPlugin(AndroidAutoPlugin.class);
-        registerPlugin(NativeCastPlugin.class);
+        // Google Cast, in the flavours that have it. See CastPlugins in src/gplay and src/foss.
+        CastPlugins.register(this);
         registerPlugin(NativeExoPlaybackPlugin.class);
         registerPlugin(WakeAlarmPlugin.class);
         registerPlugin(FollowedReleasePlugin.class);

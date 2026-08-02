@@ -15,7 +15,20 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const apkDir = join(root, 'android', 'app', 'build', 'outputs', 'apk', 'release');
+/*
+ * Which distribution to package. gplay is the signed build published directly; foss is the
+ * one F-Droid compiles, without Google Cast. Both produce per-ABI APKs, in directories and
+ * under filenames that carry the flavour name.
+ */
+const flavour = process.argv.includes('--flavour')
+  ? process.argv[process.argv.indexOf('--flavour') + 1]
+  : 'gplay';
+if (flavour !== 'gplay' && flavour !== 'foss') {
+  console.error(`[android-package] unknown flavour: ${flavour}`);
+  process.exit(1);
+}
+
+const apkDir = join(root, 'android', 'app', 'build', 'outputs', 'apk', flavour, 'release');
 const outDir = join(root, 'release-android');
 
 if (!existsSync(apkDir)) {
@@ -48,7 +61,7 @@ mkdirSync(outDir, { recursive: true });
 
 const sums = [];
 for (const apk of apks.sort()) {
-  const abiMatch = apk.match(/^app-(.+?)-release(?:-unsigned)?\.apk$/);
+  const abiMatch = apk.match(new RegExp(`^app-${flavour}-(.+?)-release(?:-unsigned)?\.apk$`));
   const abi = abiMatch?.[1] ?? apk.replace(/\.apk$/, '');
   const destName = `sandbox-music-${tagVersion}-${abi}.apk`;
   const srcPath = join(apkDir, apk);

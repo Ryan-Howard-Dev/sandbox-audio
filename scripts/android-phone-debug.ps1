@@ -22,7 +22,7 @@ Set-Location $Root
 . "$PSScriptRoot\set-android-env.ps1"
 
 $Package = 'rd.sheepskin.sandboxmusic'
-$ApkRel = 'android\app\build\outputs\apk\debug\app-arm64-v8a-debug.apk'
+$ApkRel = 'android\app\build\outputs\apk\gplay\debug\app-gplay-arm64-v8a-debug.apk'
 $LogcatFile = Join-Path $Root '.phone-debug-logcat.txt'
 $LogTags = 'Capacitor/Console:I,YtDlpMobile:I,NativeExoPlayback:I,SandboxE2E:I'
 
@@ -88,7 +88,7 @@ function Build-Arm64Apk {
     Write-Host 'Building arm64-v8a debug APK ...'
     npm run build:android:apk
     if (-not (Test-Path (Join-Path $Root $ApkRel))) {
-        throw "APK not found at $ApkRel - connect phone or run gradlew assembleDebug manually"
+        throw "APK not found at $ApkRel - connect phone or run gradlew assembleGplayDebug manually"
     }
 }
 

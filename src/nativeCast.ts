@@ -75,8 +75,15 @@ export function isNativeCastPlatform(): boolean {
   return Capacitor.getPlatform() === 'android';
 }
 
+/**
+ * Whether this build has Google Cast at all.
+ *
+ * The F-Droid build cannot ship the Cast framework, because it is proprietary, so it registers no
+ * NativeCast plugin. Asking Capacitor whether the plugin exists answers that synchronously, which
+ * matters because the cast controls decide whether to render before any probe could resolve.
+ */
 export function isNativeCastSupported(): boolean {
-  return isNativeCastPlatform();
+  return isNativeCastPlatform() && Capacitor.isPluginAvailable('NativeCast');
 }
 
 export async function probeNativeCastAvailable(): Promise<boolean> {

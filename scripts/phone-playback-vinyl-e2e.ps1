@@ -13,7 +13,7 @@ Set-Location $Root
 
 $Package = 'rd.sheepskin.sandboxmusic'
 $EmuSerial = $Serial
-$ApkRel = 'android\app\build\outputs\apk\debug\app-arm64-v8a-debug.apk'
+$ApkRel = 'android\app\build\outputs\apk\gplay\debug\app-gplay-arm64-v8a-debug.apk'
 
 function Invoke-DeepLink {
     param([string]$Path)

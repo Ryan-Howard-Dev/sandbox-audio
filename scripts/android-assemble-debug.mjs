@@ -7,7 +7,7 @@ const androidDir = join(root, 'android');
 const isWin = process.platform === 'win32';
 const gradlew = isWin ? '.\\gradlew.bat' : './gradlew';
 
-const result = spawnSync(gradlew, ['assembleDebug'], {
+const result = spawnSync(gradlew, ['assembleGplayDebug'], {
   cwd: androidDir,
   stdio: 'inherit',
   shell: isWin,

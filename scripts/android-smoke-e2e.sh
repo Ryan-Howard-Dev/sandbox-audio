@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 EMU_SERIAL="${EMU_SERIAL:-emulator-5554}"
 PACKAGE="rd.sheepskin.sandboxmusic"
-APK="$ROOT/android/app/build/outputs/apk/debug/app-x86_64-debug.apk"
+APK="$ROOT/android/app/build/outputs/apk/gplay/debug/app-gplay-x86_64-debug.apk"
 
 deeplink() {
   local path="$1"

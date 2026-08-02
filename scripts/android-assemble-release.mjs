@@ -18,7 +18,7 @@ if (!existsSync(keystoreProps)) {
   process.exit(1);
 }
 
-const result = spawnSync(gradlew, ['assembleRelease'], {
+const result = spawnSync(gradlew, ['assembleGplayRelease'], {
   cwd: androidDir,
   stdio: 'inherit',
   shell: isWin,

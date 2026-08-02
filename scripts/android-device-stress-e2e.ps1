@@ -15,7 +15,7 @@ Set-Location $Root
 $Device = '46349770'
 $Adb = Join-Path $env:LOCALAPPDATA 'Android\Sdk\platform-tools\adb.exe'
 $Package = 'rd.sheepskin.sandboxmusic'
-$ApkRel = 'android\app\build\outputs\apk\debug\app-arm64-v8a-debug.apk'
+$ApkRel = 'android\app\build\outputs\apk\gplay\debug\app-gplay-arm64-v8a-debug.apk'
 $Artist = 'Kanye West'
 $Album = 'Bully'
 $SingleTrack = 'KING'

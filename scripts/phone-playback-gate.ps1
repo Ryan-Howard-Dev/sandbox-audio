@@ -17,7 +17,7 @@ $Track = $pick.Track
 
 $Package = 'rd.sheepskin.sandboxmusic'
 $EmuSerial = $Serial
-$ApkRel = 'android\app\build\outputs\apk\debug\app-arm64-v8a-debug.apk'
+$ApkRel = 'android\app\build\outputs\apk\gplay\debug\app-gplay-arm64-v8a-debug.apk'
 $GateReport = Join-Path $Root '.phone-e2e-gate.json'
 
 function Get-LogcatChunk {

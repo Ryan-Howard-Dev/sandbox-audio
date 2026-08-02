@@ -115,4 +115,8 @@ dist-baseline/
 # in git, and F-Droid would reject them anyway.
 .sherpa-build/
 android/app/src/main/jniLibs/
-android/app/src/main/assets/piper/
+# The voice, named for the model the script fetches. The earlier assets/piper/ rule matched
+# nothing, so twenty megabytes of weights sat untracked and one `git add -A` from being committed.
+android/app/src/main/assets/vits-piper-*/
+# The sherpa-onnx Kotlin binding, copied in from the pinned checkout rather than written here.
+android/app/src/main/java/com/k2fsa/

@@ -304,18 +304,18 @@ jobs:
         working-directory: android
         run: |
           set -euo pipefail
-          ./gradlew assembleRelease --no-daemon
-          echo "PASS: assembleRelease (signed per-ABI APKs)"
+          ./gradlew assembleGplayRelease --no-daemon
+          echo "PASS: assembleGplayRelease (signed per-ABI APKs)"
       - name: Verify APKs are signed
         run: |
           set -euo pipefail
-          UNSIGNED=$(find android/app/build/outputs/apk/release -name '*-unsigned.apk' 2>/dev/null | wc -l)
+          UNSIGNED=$(find android/app/build/outputs/apk/gplay/release -name '*-unsigned.apk' 2>/dev/null | wc -l)
           if [ "$UNSIGNED" -gt 0 ]; then
             echo "::error::Release APKs are unsigned — check ANDROID_* secrets (docs/android-release.md)"
-            find android/app/build/outputs/apk/release -name '*.apk' -ls
+            find android/app/build/outputs/apk/gplay/release -name '*.apk' -ls
             exit 1
           fi
-          SIGNED=$(find android/app/build/outputs/apk/release -name 'app-*-release.apk' | wc -l)
+          SIGNED=$(find android/app/build/outputs/apk/gplay/release -name 'app-gplay-*-release.apk' | wc -l)
           if [ "$SIGNED" -lt 1 ]; then
             echo "::error::No signed release APKs found"
             exit 1
