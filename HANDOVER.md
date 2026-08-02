@@ -53,26 +53,32 @@ Treat as unproven.
 
 ## Known broken
 
-- **Metadata leads playback on skip.** The UI paints the next track's title, artwork and duration
-  immediately while ExoPlayer keeps playing the current one until the new stream resolves. Measured:
-  `UI: title=euphoria state=Resolving` while `NATIVE: nativeTitle="HUMBLE."`. The window shrank from
-  ~15s to ~5s when resolve got faster, but the bug is untouched. **The fix is to not commit the new
-  track's metadata until its stream is live.**
+- **The player's clock was frozen at 0:00 on every track.** Audio played; the timer never moved
+  and the scrubber never left the left edge, on music and audiobooks alike. The wait for native
+  to confirm which envelope it had loaded could only be released by an exact envelope-id match,
+  and native frequently reports none, so every poll pinned the position back to zero for the
+  whole track. **Fixed** in `exoAwaitConfirm.ts` and verified on the OnePlus: two frames twelve
+  seconds apart read 0:16 and 0:30. Note that 261 test files were green throughout, and four
+  store screenshots were taken of the frozen player without anyone noticing.
 - **Every online track is 96 kbps AAC** inside a 360p video (itag 18). YouTube serves no audio-only
   format to this extractor on any player client — `ios`, `web_safari`, `mweb` and `android` were all
   tested. Not a code bug. The badge tells the truth about it.
 - **Ranking below rank 0 is imperfect** — a karaoke row outranked an artist's own remix before the
   derivative filter; re-check now that it exists.
 
-## Built and never wired
+## Was built and never wired — both are wired now
 
-Capability exists, nothing calls it. Both are UI work, not plumbing.
+Kept here rather than deleted, because this section claimed for a long time that these were the
+highest-value unfinished work, and at least one downstream review inherited that and repeated it.
+Check the tree before trusting a list like this one, including this line.
 
-- **`lockerAudiobookChapters`** — M4B chapter parsing (seek-to-`moov`, `chpl` at 100ns ticks, range
-  reads so a 5 GB book never loads into memory). **No callers.** A single-file M4B currently plays as
-  one unnavigable blob. Highest-value unfinished item.
-- **`planCalibreImport`** — folder-tree Calibre import, correctly refuses `metadata.db`. No UI
-  calls it.
+- **`lockerAudiobookChapters`** — M4B chapter parsing (seek-to-`moov`, `chpl` at 100ns ticks,
+  range reads so a 5 GB book never loads into memory). **Wired**: `EmbeddedChapterList` calls it
+  and is mounted in `AudiobooksView.tsx`.
+- **`planCalibreImport`** — folder-tree Calibre import, correctly refuses `metadata.db`.
+  **Wired**: `BookShelf` plans a picked folder through `planCalibreLibraryFiles` behind a
+  `webkitdirectory` picker. A second route now exists over OPDS for a calibre-web server, which
+  is the case the folder import could never cover: the library on a machine that is not this one.
 
 ---
 
@@ -140,11 +146,17 @@ this.
 
 ## Next, in order
 
-1. **Wire M4B chapters into the audiobook player** — call `lockerAudiobookChapters(entryId)`, render
-   the list, tap seeks to `startSeconds`. Everything under it works.
-2. **Stop metadata leading playback** — hold the new track's display until its stream is live.
-3. **Verify the three unrun changes** on device: tier34 TIDAL route, Tracks-tab fusion, karaoke filter.
-4. Rotate the TIDAL credential and put the new pair on tier34 only.
+1. **Retake the store screenshots.** The four in `fastlane/metadata/android/en-US/images/` were
+   taken while the player's clock was frozen, so they show a bug. They also contain a real
+   personal library, which is a decision to make deliberately before publishing.
+2. **Verify the three unrun changes** on device: tier34 TIDAL route, Tracks-tab fusion, karaoke filter.
+3. Rotate the TIDAL credential and put the new pair on tier34 only.
+
+Done, and previously listed here:
+
+- ~~Wire M4B chapters into the audiobook player~~ — `EmbeddedChapterList`, mounted.
+- ~~Stop metadata leading playback~~ — `nowPlayingAuthority.ts` decides whose metadata may be
+  painted, and reaches the lock screen and notification as well as the screen. 39 tests.
 
 ## Not on GitHub
 

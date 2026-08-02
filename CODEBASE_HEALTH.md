@@ -4,22 +4,26 @@ Snapshot for **Sandbox Music** (`sovereign-music-console`). Documentation only; 
 
 ## Key file line counts
 
-Measured with PowerShell `(Get-Content … | Measure-Object -Line).Lines` on 2026-07-09.
+Measured 2026-08-02. The previous figures here were from 2026-07-09 and had drifted far enough
+to mislead: this file claimed 8,040 lines for the shell when it was over ten thousand, and a
+downstream review repeated the stale number. Re-measure before quoting.
 
-| File | Lines | Notes |
-|------|------:|-------|
-| `src/sandboxLayer3.tsx` | **8,040** | God-file — responsive shell, play handler, queue, search, JSX |
-| `src/searchCatalog.ts` | 3,562 | Catalog search, artist discography, singles/albums partition |
-| `src/lockerStorage.ts` | 3,084 | IndexedDB locker, hollow prune, sync helpers |
-| `src/stations/PlaylistsView.tsx` | 2,955 | Playlists UI including system Liked playlist |
-| `src/sandboxLayer1.ts` | 2,460 | Audio FSM, native poll, profile hooks |
-| `src/e2eDevAction.ts` | 2,401 | Dev/E2E action registry and handlers |
-| `src/sandboxLayer2.ts` | 1,790 | Providers & metadata layer |
-| `android/.../NativeExoPlaybackPlugin.java` | 1,109 | Native ExoPlayer bridge |
-| `src/components/PlayerBar.tsx` | 985 | Mini/full player chrome, scrub, controls |
-| `src/stations/PodcastsView.tsx` | 679 | Podcast library, downloaded tab, filters |
-| `src/unifiedSearch.ts` | 510 | Unified search orchestration |
-| `src/lastPlayIntent.ts` | 303 | Play intent + native envelope matching |
+| File | Lines | Was (2026-07-09) | Notes |
+|------|------:|-----------------:|-------|
+| `src/sandboxLayer3.tsx` | **10,552** | 8,040 | God-file — responsive shell, play handler, queue, search, JSX |
+| `src/stations/SettingsView.tsx` | **6,411** | — | Settings surface; second god-file, was not tracked here |
+| `src/lockerStorage.ts` | 5,962 | 3,084 | IndexedDB locker, hollow prune, sync helpers |
+| `src/searchCatalog.ts` | 5,551 | 3,562 | Catalog search, artist discography, singles/albums partition |
+| `src/stations/LocalView.tsx` | 4,348 | — | Locker browse; was not tracked here |
+| `src/e2eDevAction.ts` | 3,984 | 2,401 | Dev/E2E action registry and handlers |
+| `src/stations/PlaylistsView.tsx` | 3,263 | 2,955 | Playlists UI including system Liked playlist |
+| `src/sandboxLayer1.ts` | 2,854 | 2,460 | Audio FSM, native poll, profile hooks |
+| `src/sandboxLayer2.ts` | 2,138 | 1,790 | Providers & metadata layer |
+| `android/.../NativeExoPlaybackPlugin.java` | 1,928 | 1,109 | Native ExoPlayer bridge |
+| `src/components/PlayerBar.tsx` | 1,257 | 985 | Mini/full player chrome, scrub, controls |
+| `src/stations/PodcastsView.tsx` | 776 | 679 | Podcast library, downloaded tab, filters |
+| `src/unifiedSearch.ts` | 651 | 510 | Unified search orchestration |
+| `src/lastPlayIntent.ts` | 334 | 303 | Play intent + native envelope matching |
 | `src/playbackSession.ts` | 201 | Session type, display seed, preemption |
 | `src/likedPlaylist.ts` | 123 | System Liked playlist sync |
 | `src/podcastAdSkip.ts` | 96 | Skip Ad + chapter heuristics |
@@ -35,7 +39,7 @@ Measured with PowerShell `(Get-Content … | Measure-Object -Line).Lines` on 202
 
 ### Strengths
 
-- **Broad test coverage** — 233 Vitest files, 1,700 tests, 0 failures (measured 2026-07-31 via `npx vitest run`; vitest `include` is `src/**/*.test.ts` + `tier34-server/**/*.test.ts`). Strong coverage for playback, podcasts, locker, search, and catalog paths. Superseding figures of 124/544 (2026-07-09) and 224/1,545 (commit `2925782`) that are still quoted in dated audit records; those remain correct as of their own snapshot dates.
+- **Broad test coverage** — 261 Vitest files, 0 failures (measured 2026-08-02 via `npx vitest run`; vitest `include` is `src/**/*.test.ts` + `tier34-server/**/*.test.ts`). Strong coverage for playback, podcasts, locker, search, and catalog paths. Superseding figures of 124/544 (2026-07-09) and 224/1,545 (commit `2925782`) that are still quoted in dated audit records; those remain correct as of their own snapshot dates.
 - **Partial shell extraction already done** — Hooks (`useMobileShell`, `usePlayerHomeNavigation`, `useAndroidShellBridges`, …) and lazy station chunks reduce initial bundle vs monolith baseline.
 - **Playback logic modularizing** — `playbackSession.ts`, `podcastPlayback.ts`, `ensureLockerPlayable.ts`, `exoQueueSync.ts`, `play/*` policies extracted from the shell.
 
@@ -43,9 +47,9 @@ Measured with PowerShell `(Get-Content … | Measure-Object -Line).Lines` on 202
 
 | Area | Status |
 |------|--------|
-| **`sandboxLayer3.tsx` god-file** | 8k+ lines; single point for play, queue, search, Connect, downloads, and most JSX. Highest regression risk. |
-| **TypeScript (`npm run lint`)** | **Fails** — 13 errors in `ensureLockerPlayable.ts`, `sovereignUpNext.ts`, `podcastTranscript.test.ts`, `tier34-server/routes/podcast*.ts`. |
-| **Vitest** | **3 failing tests** — `lockerFuzzyMatch.test.ts`, `mobileAcquisition.test.ts`, `importPlaylistAcquisition.test.ts`. |
+| **`sandboxLayer3.tsx` god-file** | 10.5k lines; single point for play, queue, search, Connect, downloads, and most JSX. Highest regression risk. `SettingsView.tsx` is a second at 6.4k. |
+| **TypeScript (`npm run lint`)** | **Passes** (2026-08-02). Note it passed for a long time only because `@types/react` was never installed, so every hook return was `any`; installing it surfaced 68 errors, since fixed. |
+| **Vitest** | **261 files, 0 failing** (2026-08-02). Green is not proof: the player's clock was frozen at 0:00 on every track while all of them passed. |
 | **Phone E2E gate** | Scripts exist; not enforced on every release build. |
 | **Safe-area / mobile layout** | User-reported overlaps; iterative fixes ongoing. |
 
