@@ -100,6 +100,66 @@
             </intent-filter>
         </service>
 
+        <!--
+          Alternative launcher icons.
+
+          Android has no API for changing an app icon directly. The only way is to declare one
+          activity-alias per icon and enable exactly one at a time, which is what AppIconPlugin
+          does. Exactly one must always be enabled or the app disappears from the launcher.
+
+          Switching force-stops the app: changing component enablement is what Android does to
+          a package it is reconfiguring. That is not a bug to fix, it is the cost of the
+          feature, and the UI says so before it happens.
+        -->
+
+        <!-- Alternative launcher icon: Blood Orange. Disabled until chosen in Settings. -->
+        <activity-alias
+            android:name=".IconAliasBloodorange"
+            android:targetActivity=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:icon="@mipmap/ic_launcher_bloodorange"
+            android:roundIcon="@mipmap/ic_launcher_bloodorange"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Alternative launcher icon: Graphite. Disabled until chosen in Settings. -->
+        <activity-alias
+            android:name=".IconAliasGraphite"
+            android:targetActivity=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:icon="@mipmap/ic_launcher_graphite"
+            android:roundIcon="@mipmap/ic_launcher_graphite"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Alternative launcher icon: Terminal. Disabled until chosen in Settings. -->
+        <activity-alias
+            android:name=".IconAliasTerminal"
+            android:targetActivity=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:icon="@mipmap/ic_launcher_terminal"
+            android:roundIcon="@mipmap/ic_launcher_terminal"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc"

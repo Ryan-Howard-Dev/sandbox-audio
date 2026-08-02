@@ -1268,6 +1268,16 @@
       "selectiveAlbumSync": "Selective album sync",
       "syncApiKeys": "Sync API keys via Sandbox Server",
       "wifiOnlySync": "Wi-Fi only locker sync"
+    },
+    "appearance": {
+      "iconBloodOrange": "Blood Orange",
+      "iconDefault": "Focus",
+      "iconFailed": "The icon could not be changed.",
+      "iconGraphite": "Graphite",
+      "iconHint": "Which icon Sandbox Audio wears on your home screen. Named after the skins, so the two can match.",
+      "iconRestartWarning": "Changing the icon closes the app. Android restarts anything whose icon changes, and your launcher may take a moment to redraw.",
+      "iconTerminal": "Terminal",
+      "iconTitle": "App icon"
     }
   },
   "sleep": {

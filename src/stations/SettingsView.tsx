@@ -26,6 +26,7 @@ import {
 import SandboxSwitch from '../components/SandboxSwitch';
 import TasteRecipePanel from '../components/TasteRecipePanel';
 import NavPinTabsSettings from '../components/settings/NavPinTabsSettings';
+import AppIconPicker from '../components/settings/AppIconPicker';
 import StorageReclaimCard from '../components/settings/StorageReclaimCard';
 import LibraryFolderCard from '../components/settings/LibraryFolderCard';
 import AttributionsCard from '../components/settings/AttributionsCard';
@@ -5906,6 +5907,8 @@ export default function SettingsView({
               <div className="settings-anchor-section p-4 border rounded-xl" style={cardStyle}>
                 <NavPinTabsSettings />
               </div>
+              {/* Android only; the component renders nothing elsewhere. */}
+              <AppIconPicker cardStyle={cardStyle} />
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {THEME_PRESETS.map((preset) => (
                   <button
