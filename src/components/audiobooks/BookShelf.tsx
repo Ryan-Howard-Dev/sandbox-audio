@@ -63,6 +63,7 @@ import { formatTime } from '../../stations/theme';
 import ImportEmptyState from './ImportEmptyState';
 import CalibreWebPanel from './CalibreWebPanel';
 import BookDetailView from './BookDetailView';
+import DocumentReaderView from './DocumentReaderView';
 import NarrationVoicePicker from './NarrationVoicePicker';
 import { useNarrationVoices } from './useNarrationVoices';
 import { seedGradient } from '../../seedGradient';
@@ -639,6 +640,46 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
         : null;
 
   /*
+   * Reading a book is its own page, not a strip under the shelf.
+   *
+   * It used to append the current passage below the book list, which is the "splattered across
+   * the screen" complaint DocumentReaderView was built to answer for documents. Books never
+   * got it. Same reader, handed the spine chapters so choosing one loads that chapter rather
+   * than scrolling within this one.
+   */
+  if (openBook && chunks.length > 0) {
+    return (
+      <DocumentReaderView
+        title={openBook.name}
+        author={openBook.author}
+        coverUrl={openBook.coverUrl}
+        chunks={chunks}
+        chunkIndex={chunkIndex}
+        range={range}
+        state={state}
+        remainingSeconds={remaining}
+        backLabelKey="audiobooks.backToLibrary"
+        bookChapters={openChapters}
+        activeChapterIndex={chapterIndex}
+        onSelectChapter={(index) => void playChapter(openBook, index)}
+        onBack={() => {
+          readerRef.current?.stop();
+          clearNarrationPlayback(openBook.id);
+          openBookRef.current = null;
+          setOpenBook(null);
+          setChunks([]);
+        }}
+        onPlay={() => {
+          if (state === 'paused') readerRef.current?.resume();
+          else void buildReader(chunks, chunkIndexRef.current).then((r) => r?.play());
+        }}
+        onPause={() => readerRef.current?.pause()}
+        onStop={() => readerRef.current?.stop()}
+        onSeekToChunk={(index) => readerRef.current?.seekToChunk(index)}
+      />
+    );
+  }
+  /*
    * The detail page, between the shelf and reading. Nothing is loaded and nothing is spoken
    * until a chapter is picked here, which is how the audiobook shelf two tabs away behaves.
    */
@@ -906,77 +947,7 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
         </ul>
       )}
 
-      {openBook ? (
-        <div className="audiobook-doc-now mt-3">
-          <p className="audiobook-doc-name">{openBook.name}</p>
-          <p className="audiobook-doc-section">
-            {openChapters[chapterIndex] ?? `${chapterIndex + 1}`}
-          </p>
-          {chunks[chunkIndex] ? (
-            <ReadAlongText text={chunks[chunkIndex]!.text} range={range} />
-          ) : null}
-          <p className="audiobook-doc-meta">
-            {t('audiobooks.docPosition', { index: chunkIndex + 1, total: chunks.length })}
-            {remaining > 0 ? ` · ${formatTime(remaining)} ${t('audiobooks.docLeft')}` : ''}
-          </p>
-          <div className="flex items-center gap-2 mt-2">
-            {state === 'speaking' ? (
-              <button
-                type="button"
-                className="mobile-np-icon-btn touch-manipulation"
-                onClick={() => readerRef.current?.pause()}
-                aria-label={t('player.pause')}
-              >
-                <Pause className="w-5 h-5" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="mobile-np-icon-btn touch-manipulation"
-                onClick={() => {
-                  // Pressing play raises the player, the same as tapping a track does.
-                  requestNarrationPlayerOpen();
-                  if (state === 'paused') readerRef.current?.resume();
-                  // Resumes at the current chunk, not the top of the chapter — stopping and
-                  // starting again should not re-read twenty minutes you already heard.
-                  else void buildReader(chunks, chunkIndex).then((r) => r?.play());
-                }}
-                aria-label={t('player.play')}
-              >
-                <Play className="w-5 h-5" />
-              </button>
-            )}
-            <button
-              type="button"
-              className="mobile-np-icon-btn touch-manipulation"
-              onClick={() => readerRef.current?.stop()}
-              aria-label={t('audiobooks.docStop')}
-            >
-              <Square className="w-5 h-5" />
-            </button>
-          </div>
 
-          {/* The spine gives real chapters, so this is a chapter list rather than a guess. */}
-          {openChapters.length > 1 ? (
-            <ul className="audiobook-book-chapters mt-3">
-              {openChapters.map((title, i) => (
-                <li key={`${title}-${i}`}>
-                  <button
-                    type="button"
-                    className={`audiobook-book-chapter touch-manipulation${
-                      i === chapterIndex ? ' is-active' : ''
-                    }`}
-                    onClick={() => void playChapter(openBook, i)}
-                  >
-                    <BookOpen className="w-3.5 h-3.5 shrink-0" aria-hidden />
-                    <span className="truncate">{title}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : null}
     </section>
   );
 }

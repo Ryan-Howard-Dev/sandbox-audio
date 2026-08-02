@@ -31,6 +31,19 @@ export interface DocumentReaderViewProps {
   range: ReadAlongRange | null;
   state: NarrationReaderState;
   remainingSeconds: number;
+  /** Where back goes, in words. Documents return to Documents; books to the book. */
+  backLabelKey?: string;
+  /**
+   * Real chapters, when the source has them.
+   *
+   * An EPUB states its chapter order in the spine and each chapter is loaded separately, so
+   * choosing one is a request for different text rather than a jump within this text. A
+   * document has no such thing and falls back to the chapters inferred from its own headings,
+   * which are pages in this same view.
+   */
+  bookChapters?: string[];
+  activeChapterIndex?: number;
+  onSelectChapter?: (index: number) => void;
   onBack: () => void;
   onPlay: () => void;
   onPause: () => void;
@@ -47,6 +60,10 @@ export default function DocumentReaderView({
   range,
   state,
   remainingSeconds,
+  backLabelKey,
+  bookChapters,
+  activeChapterIndex,
+  onSelectChapter,
   onBack,
   onPlay,
   onPause,
@@ -96,7 +113,7 @@ export default function DocumentReaderView({
         onClick={onBack}
       >
         <ArrowLeft className="w-4 h-4" aria-hidden />
-        {t('audiobooks.backToDocuments')}
+        {t(backLabelKey ?? 'audiobooks.backToDocuments')}
       </button>
 
       <header className="podcasts-show-detail-head">
@@ -145,7 +162,7 @@ export default function DocumentReaderView({
             >
               <Square className="w-4 h-4" />
             </button>
-            {chapters.length > 0 ? (
+            {bookChapters?.length || chapters.length > 0 ? (
               <button
                 type="button"
                 className="mobile-np-icon-btn touch-manipulation"
@@ -160,22 +177,39 @@ export default function DocumentReaderView({
         </div>
       </header>
 
-      {chapterListOpen && chapters.length > 0 ? (
+      {chapterListOpen ? (
         <ul className="document-reader-chapters">
-          {chapters.map((entry) => (
-            <li key={`${entry.page}-${entry.title}`}>
-              <button
-                type="button"
-                className="document-reader-chapter-link touch-manipulation"
-                onClick={() => {
-                  setPageIndex(entry.page);
-                  setChapterListOpen(false);
-                }}
-              >
-                {entry.title}
-              </button>
-            </li>
-          ))}
+          {bookChapters?.length
+            ? // Real chapters: choosing one loads that chapter rather than scrolling this one.
+              bookChapters.map((chapterTitle, index) => (
+                <li key={`${index}-${chapterTitle}`}>
+                  <button
+                    type="button"
+                    className="document-reader-chapter-link touch-manipulation"
+                    aria-current={index === activeChapterIndex ? 'true' : undefined}
+                    onClick={() => {
+                      setChapterListOpen(false);
+                      onSelectChapter?.(index);
+                    }}
+                  >
+                    {chapterTitle || t('audiobooks.chapterFallback', { number: index + 1 })}
+                  </button>
+                </li>
+              ))
+            : chapters.map((entry) => (
+                <li key={`${entry.page}-${entry.title}`}>
+                  <button
+                    type="button"
+                    className="document-reader-chapter-link touch-manipulation"
+                    onClick={() => {
+                      setPageIndex(entry.page);
+                      setChapterListOpen(false);
+                    }}
+                  >
+                    {entry.title}
+                  </button>
+                </li>
+              ))}
         </ul>
       ) : null}
 
