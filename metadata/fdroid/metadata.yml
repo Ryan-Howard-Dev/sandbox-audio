@@ -57,7 +57,15 @@ Builds:
     # engine is built here rather than downloaded as an AAR — which also keeps a hundred
     # megabytes of unreviewable binaries out of the repository.
     ndk: r27c
+    # Compiling sherpa-onnx from source runs well past the default. MakeACopy, which builds
+    # ONNX Runtime the same way, sets the same ceiling.
+    timeout: 14400
     prebuild:
+      # F-Droid's source scanner reads build.gradle as text, so it flags the Cast dependency on
+      # sight even though the foss flavour never compiles it. Deleting the line makes the file
+      # say what this build actually is. The APK is checked separately and has no Google code
+      # in it either way; this only stops a true statement being read as a false one.
+      - sed -i '/play-services-cast-framework/d' app/build.gradle
       - cd ..
       - npm ci
       - npm run build:client

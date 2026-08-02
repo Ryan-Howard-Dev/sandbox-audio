@@ -10,6 +10,16 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
+    /*
+     * AGP signs a summary of the app's dependencies into every APK, encrypted with a key only
+     * Google can read. F-Droid treats an opaque blob nobody can inspect as telemetry and
+     * refuses the build, which is the right call: a repository built on reading the source
+     * cannot ship something it is not allowed to read.
+     */
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
     buildFeatures {
         buildConfig true
     }
@@ -67,6 +77,29 @@ android {
         }
         foss {
             dimension 'distribution'
+        }
+    }
+
+    /*
+     * Every ABI needs its own versionCode.
+     *
+     * Split APKs all carried versionCode 53, so to any store they were the same release four
+     * times over and only one could ever be offered. The ordering matters as much as the
+     * distinctness: a 64-bit phone can install either build, and it takes the highest code it
+     * accepts, so arm64 must outrank armeabi-v7a or every modern device would be handed the
+     * 32-bit one.
+     *
+     * Multiplying rather than adding leaves room to keep bumping versionCode normally: 53
+     * becomes 531 through 534, and 54 becomes 541, which is still higher than all of them.
+     */
+    def abiVersionCodes = ['armeabi-v7a': 1, 'x86': 2, 'arm64-v8a': 3, 'x86_64': 4]
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def abi = output.getFilter('ABI')
+            if (abi != null) {
+                output.versionCodeOverride =
+                    variant.versionCode * 10 + (abiVersionCodes.get(abi) ?: 0)
+            }
         }
     }
 
