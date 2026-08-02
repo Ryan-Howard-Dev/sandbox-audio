@@ -28,6 +28,7 @@ import TasteRecipePanel from '../components/TasteRecipePanel';
 import NavPinTabsSettings from '../components/settings/NavPinTabsSettings';
 import StorageReclaimCard from '../components/settings/StorageReclaimCard';
 import LibraryFolderCard from '../components/settings/LibraryFolderCard';
+import AttributionsCard from '../components/settings/AttributionsCard';
 import SettingsGroup from '../components/settings/SettingsGroup';
 import SettingsMobileRoot, {
   type SettingsCategory,
@@ -6238,6 +6239,8 @@ export default function SettingsView({
                   <li>{t('settings.about.gettingStartedCar')}</li>
                 </ul>
               </div>
+
+              <AttributionsCard cardStyle={cardStyle} />
 
               <div className="p-4 border rounded-xl space-y-3" style={cardStyle}>
                 <p className="font-mono text-sm font-semibold text-[var(--text)]">

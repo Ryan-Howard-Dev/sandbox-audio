@@ -43,7 +43,9 @@
     "lint": "tsc --noEmit",
     "prebuild:desktop:assets": "node scripts/generate-tauri-icons.mjs && node scripts/run-generate-nsis-assets.mjs && node scripts/fetch-portable-node.mjs",
     "prebuild:desktop": "npm run prebuild:desktop:assets",
-    "build:piper": "node scripts/build-sherpa-onnx.mjs"
+    "build:piper": "node scripts/build-sherpa-onnx.mjs",
+    "build:attributions": "node scripts/generate-attributions.mjs",
+    "check:attributions": "node scripts/generate-attributions.mjs --check"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
