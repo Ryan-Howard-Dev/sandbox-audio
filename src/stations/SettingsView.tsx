@@ -611,8 +611,8 @@ function openAcquisitionKeysPanel(
   setPendingSettingsAnchor: (id: string | null) => void,
   isMobileLayout: boolean,
 ): void {
-  setActiveTab('addons');
-  if (isMobileLayout) setMobileDrill('addons');
+  setActiveTab('everything');
+  if (isMobileLayout) setMobileDrill('everything');
   setShowAcquisitionKeys(true);
   setPendingSettingsAnchor(SETTINGS_SEARCH_ANCHORS.addonsAcquisition);
 }
@@ -1073,7 +1073,7 @@ export default function SettingsView({
   }, [tier34Ok, backendUrl, cacheTick]);
 
   useEffect(() => {
-    if (activeTab !== 'security' || !tier34Ok) return;
+    if (activeTab !== 'everything' || !tier34Ok) return;
     void tier34GetDefenseProtocol().then((status) => {
       if (status && typeof status.enabled === 'boolean') {
         setSecurity((prev) => ({ ...prev, defenseProtocol: status.enabled }));
@@ -1304,7 +1304,7 @@ export default function SettingsView({
   }, []);
 
   useEffect(() => {
-    if (activeTab !== 'diagnostics' || !pendingValidationRun) return;
+    if (activeTab !== 'everything' || !pendingValidationRun) return;
     setPendingValidationRun(false);
     runTier34Validation();
   }, [activeTab, pendingValidationRun, runTier34Validation]);
@@ -2064,12 +2064,6 @@ export default function SettingsView({
               </button>
             </div>
           )}
-          {activeTab === 'everything' && (
-            <div className="space-y-6">
-              <p className="ui-hint ui-hint--desc">{t('settings.categories.everythingDesc')}</p>
-            </div>
-          )}
-
           {activeTab === 'music' && (
             <div className="space-y-6">
               <div className="settings-anchor-section">
@@ -3710,7 +3704,7 @@ export default function SettingsView({
               </p>
             </div>
           )}
-          {activeTab === 'playback' && (
+          {activeTab === 'everything' && (
             <div className="space-y-6">
               <p className="ui-subsection-title">{t('settings.everything.playbackChrome')}</p>
               {(() => {
@@ -3989,8 +3983,9 @@ export default function SettingsView({
             </div>
           )}
 
-          {activeTab === 'addons' && (
+          {activeTab === 'everything' && (
             <div className="space-y-5">
+              <p className="ui-subsection-title">{t('settings.everything.serverAcquisition')}</p>
               <div className="settings-anchor-section space-y-3">
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.addonsAcquisition} />
                 <p className="ui-subsection-title text-accent">{t('settings.addons.acquisitionTitle')}</p>
@@ -4689,7 +4684,7 @@ export default function SettingsView({
             </div>
           )}
 
-          {activeTab === 'security' && (
+          {activeTab === 'everything' && (
             <div className="space-y-6">
               <div className="settings-anchor-section">
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.securityMain} />
@@ -4842,7 +4837,7 @@ export default function SettingsView({
             </div>
           )}
 
-          {activeTab === 'diagnostics' && (
+          {activeTab === 'everything' && (
             <div className="space-y-6">
               <div className="settings-anchor-section">
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.diagnosticsMain} />
@@ -5100,7 +5095,7 @@ export default function SettingsView({
             </div>
           )}
 
-          {activeTab === 'telemetry' && (
+          {activeTab === 'everything' && (
             <div className="space-y-8">
               <div className="settings-anchor-section">
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.telemetryMain} />
@@ -5245,8 +5240,9 @@ export default function SettingsView({
             </div>
           )}
 
-          {activeTab === 'vault' && (
+          {activeTab === 'everything' && (
             <div className="space-y-6">
+              <p className="ui-subsection-title">{t('settings.everything.filesStorage')}</p>
               <div className="settings-anchor-section">
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.vaultCapacity} />
                 <p className="ui-subsection-title">
@@ -5893,8 +5889,9 @@ export default function SettingsView({
             </div>
           )}
 
-          {activeTab === 'architect' && (
+          {activeTab === 'everything' && (
             <div className="space-y-6">
+              <p className="ui-subsection-title">{t('settings.everything.appearance')}</p>
               <div className="settings-anchor-section">
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.architectPresets} />
                 <p className="ui-subsection-title">
@@ -6270,7 +6267,7 @@ export default function SettingsView({
             />
           )}
 
-          {activeTab === 'about' && (
+          {activeTab === 'everything' && (
             <div className="space-y-5">
               <div className="settings-anchor-section">
                 <SettingsSectionAnchor id={SETTINGS_SEARCH_ANCHORS.aboutMain} />
@@ -6311,9 +6308,10 @@ export default function SettingsView({
                 <button
                   type="button"
                   onClick={() => {
-                    setActiveTab('addons');
-                    if (isMobileLayout) setMobileDrill('addons');
+                    setActiveTab('everything');
+                    if (isMobileLayout) setMobileDrill('everything');
                     setShowAddonGuide(true);
+                    setPendingSettingsAnchor(SETTINGS_SEARCH_ANCHORS.addonsExperimental);
                   }}
                   className="font-mono text-[10px] uppercase tracking-wider border px-4 py-2 rounded-sm touch-manipulation text-accent"
                   style={accentBorder}
@@ -6330,8 +6328,9 @@ export default function SettingsView({
                 <button
                   type="button"
                   onClick={() => {
-                    setActiveTab('playback');
-                    if (isMobileLayout) setMobileDrill('playback');
+                    setActiveTab('everything');
+                    if (isMobileLayout) setMobileDrill('everything');
+                    setPendingSettingsAnchor(SETTINGS_SEARCH_ANCHORS.playbackConnect);
                   }}
                   className="font-mono text-[10px] uppercase tracking-wider border px-4 py-2 rounded-sm touch-manipulation text-accent"
                   style={accentBorder}
