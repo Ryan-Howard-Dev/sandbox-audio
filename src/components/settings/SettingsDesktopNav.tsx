@@ -16,6 +16,8 @@ export interface SettingsDesktopNavProps {
   advancedOpen: boolean;
   onAdvancedOpenChange: (open: boolean) => void;
   advancedToggleLabel: string;
+  /** Landmark label. A prop, not a hook, because every other label here is one too. */
+  navLabel: string;
 }
 
 const ADVANCED_NESTED_IDS = new Set<SettingsTabId>(['telemetry', 'diagnostics']);
@@ -30,6 +32,7 @@ export default function SettingsDesktopNav({
   advancedOpen,
   onAdvancedOpenChange,
   advancedToggleLabel,
+  navLabel,
 }: SettingsDesktopNavProps) {
   const groups: Array<SettingsCategory['group']> = ['general', 'system', 'advanced'];
 
@@ -53,7 +56,7 @@ export default function SettingsDesktopNav({
   };
 
   return (
-    <nav className="settings-desktop-nav" aria-label="Settings sections">
+    <nav className="settings-desktop-nav" aria-label={navLabel}>
       {groups.map((group) => {
         const items = categories.filter((c) => c.group === group);
         if (items.length === 0) return null;

@@ -836,7 +836,7 @@ export default function AudiobooksView({
           </div>
 
           {/* Books / Authors — format-native groupings (audiobooks have authors, not artists). */}
-          <div className="music-segment-bar" role="tablist" aria-label="Group books by">
+          <div className="music-segment-bar" role="tablist" aria-label={t('audiobooks.groupByAria')}>
             {(
               [
                 ['books', `Books ${originFiltered.length}`],

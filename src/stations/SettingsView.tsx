@@ -1835,6 +1835,7 @@ export default function SettingsView({
             statusFor={categoryStatusFor}
             advancedOpen={advancedNavOpen}
             onAdvancedOpenChange={setAdvancedNavOpen}
+            navLabel={t('settings.aria.sections')}
             advancedToggleLabel={t('settings.desktopAdvancedToggle')}
           />
         ) : null}
@@ -1902,7 +1903,7 @@ export default function SettingsView({
                     savePodcastsEnabled(checked);
                     onPodcastsChange?.(checked);
                   }}
-                  aria-label="Podcasts station"
+                  aria-label={t('settings.aria.podcastsStation')}
                 />
               </div>
               {podcastsEnabled ? (
@@ -1929,7 +1930,7 @@ export default function SettingsView({
                         setPodcastWifiOnlyAutoSave(checked);
                         savePodcastAutoDownloadWifiOnly(checked);
                       }}
-                      aria-label="Auto-save podcasts on Wi-Fi only"
+                      aria-label={t('settings.aria.podcastsWifiOnly')}
                     />
                   </div>
                   <div>
@@ -2041,7 +2042,7 @@ export default function SettingsView({
                     saveAudiobooksEnabled(checked);
                     onAudiobooksChange?.(checked);
                   }}
-                  aria-label="Audiobooks station"
+                  aria-label={t('settings.aria.audiobooksStation')}
                 />
               </div>
               {audiobooksEnabled ? <AudiobookSearchPluginsSettings /> : null}
@@ -3243,7 +3244,7 @@ export default function SettingsView({
                       onProAudioChange?.(checked);
                       window.dispatchEvent(new Event('sandbox-settings-change'));
                     }}
-                    aria-label="DJ Console"
+                    aria-label={t('settings.addons.djConsoleTitle')}
                   />
                 </div>
                 <div
@@ -3264,7 +3265,7 @@ export default function SettingsView({
                       setDjAudioRouting(checked);
                       setDjAudioRoutingEnabled(checked);
                     }}
-                    aria-label="DJ audio routing"
+                    aria-label={t('settings.addons.djAudioRoutingTitle')}
                   />
                 </div>
                 {tier34Ok && demucsAvailable === false ? (
@@ -3542,7 +3543,7 @@ export default function SettingsView({
                         })
                         .finally(() => setWatchSaving(false));
                     }}
-                    aria-label="Enable folder watch ingestion"
+                    aria-label={t('settings.aria.folderWatch')}
                   />
                 </div>
                 <div className="space-y-2">
@@ -4437,7 +4438,7 @@ export default function SettingsView({
                       setShowExperimentalIntegrations(checked);
                       saveShowExperimentalIntegrations(checked);
                     }}
-                    aria-label="Show experimental integrations"
+                    aria-label={t('settings.addons.showExperimentalIntegrations')}
                   />
                 </div>
               </div>
@@ -4707,7 +4708,7 @@ export default function SettingsView({
                 <SandboxSwitch
                   checked={airGapEnabled}
                   onChange={(checked) => setAirGap(checked)}
-                  aria-label="Air-Gap Mode"
+                  aria-label={t('offline.badge.airGap')}
                 />
               </div>
               <div
@@ -4728,7 +4729,7 @@ export default function SettingsView({
                     else setLanPartyMode(false);
                     setAirGapEnabled(isAirGapEnabled());
                   }}
-                  aria-label="LAN Party Mode"
+                  aria-label={t('settings.security.lanPartyLabel')}
                 />
               </div>
               <div className="space-y-3">
@@ -4807,7 +4808,7 @@ export default function SettingsView({
                       setDeviceSecretSyncEnabled(checked);
                       saveDeviceSyncEnabled(checked);
                     }}
-                    aria-label="Sync API keys via Sandbox Server"
+                    aria-label={t('settings.aria.syncApiKeys')}
                   />
                 </div>
               </div>
@@ -5462,7 +5463,7 @@ export default function SettingsView({
                       setStreamCacheEnabled(enabled);
                       saveStreamCacheEnabled(enabled);
                     }}
-                    aria-label="Enable stream cache"
+                    aria-label={t('settings.vault.streamCacheEnable')}
                   />
                 </div>
                 <div className="flex justify-between items-center gap-4">
@@ -5594,7 +5595,7 @@ export default function SettingsView({
                       });
                       setLockerSync(next);
                     }}
-                    aria-label="Cross-device locker sync"
+                    aria-label={t('settings.vault.syncTitle')}
                   />
                 </div>
                 <div className="flex items-center justify-between gap-4">
@@ -5613,7 +5614,7 @@ export default function SettingsView({
                       const next = saveLockerSyncSettings({ backgroundSync });
                       setLockerSync(next);
                     }}
-                    aria-label="Background locker sync"
+                    aria-label={t('settings.aria.backgroundSync')}
                   />
                 </div>
                 <LockerSyncConflictsPanel />
@@ -5631,7 +5632,7 @@ export default function SettingsView({
                       const next = saveLockerSyncSettings({ wifiOnly });
                       setLockerSync(next);
                     }}
-                    aria-label="Wi-Fi only locker sync"
+                    aria-label={t('settings.aria.wifiOnlySync')}
                   />
                 </div>
                 <div className="flex items-center justify-between gap-4">
@@ -5650,7 +5651,7 @@ export default function SettingsView({
                       const next = saveLockerSyncSettings({ selectiveSync });
                       setLockerSync(next);
                     }}
-                    aria-label="Selective album sync"
+                    aria-label={t('settings.aria.selectiveAlbumSync')}
                   />
                 </div>
                 <div className="flex justify-between items-center gap-4">

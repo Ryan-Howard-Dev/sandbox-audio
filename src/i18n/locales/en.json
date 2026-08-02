@@ -1257,7 +1257,18 @@
       "collectionHealHint": "Missing file repair: Settings → Device Capacity → watch folder ingestion, or the server repair endpoint when configured.",
       "providerReliability": "PROVIDER RELIABILITY"
     },
-    "cancelTimer": "Cancel Timer"
+    "cancelTimer": "Cancel Timer",
+    "aria": {
+      "audiobooksStation": "Audiobooks station",
+      "backgroundSync": "Background locker sync",
+      "folderWatch": "Enable folder watch ingestion",
+      "podcastsStation": "Podcasts station",
+      "podcastsWifiOnly": "Auto-save podcasts on Wi-Fi only",
+      "sections": "Settings sections",
+      "selectiveAlbumSync": "Selective album sync",
+      "syncApiKeys": "Sync API keys via Sandbox Server",
+      "wifiOnlySync": "Wi-Fi only locker sync"
+    }
   },
   "sleep": {
     "title": "Sleep & Wake",
@@ -2059,6 +2070,7 @@
     "filterEmpty": "No results for this source filter.",
     "filterSource": "Source",
     "formatsSupported": "Works with: {formats}",
+    "groupByAria": "Group books by",
     "idleHint": "Scan for .m4b and files in Audiobooks / Books folders. Playback stays outside the music locker.",
     "importBook": "Import EPUB",
     "importBookAction": "Import an ebook",
