@@ -1,5 +1,10 @@
 /**
- * Network speaker casting — UPnP/DLNA discovery, Sonos SOAP, locker stream proxy.
+ * Network speaker casting: UPnP/DLNA discovery, Sonos SOAP, Chromecast, locker stream proxy.
+ *
+ * Chromecast is handled here rather than on the phone because Google's Cast SDK is proprietary
+ * and cannot ship in a build F-Droid will accept. It is also the better place for it: a
+ * Chromecast is handed a URL and fetches it itself, so whatever casts has to be able to serve
+ * the file, and the phone often cannot when the track lives in the locker.
  */
 
 import type { Express, Request, Response } from 'express';
@@ -12,8 +17,20 @@ import {
   sha256HexFile,
 } from '../lib/lockerStorage.js';
 import { blobPathForHash } from '../lib/lockerPaths.js';
+import { resolveDlnaBaseUrl } from '../lib/dlnaMediaServer.js';
+import { discoverChromecasts } from '../lib/chromecastDiscovery.js';
+import {
+  castPause,
+  castPlay,
+  castResume,
+  castSeek,
+  castState,
+  castStop,
+  castVolume,
+  onCastState,
+} from '../lib/chromecastTransport.js';
 
-export type CastDeviceType = 'upnp' | 'sonos' | 'remote_cast';
+export type CastDeviceType = 'upnp' | 'sonos' | 'remote_cast' | 'chromecast';
 
 export type CastDevice = {
   id: string;
@@ -314,8 +331,19 @@ function pipeRange(
 export function registerCastRoutes(app: Express): void {
   app.get('/api/cast/discover', async (_req, res) => {
     try {
-      const raw = await discoverUPnPDevices();
-      const devices = await enhanceDiscoveredDevices(raw);
+      /*
+       * Two protocols, run together. Chromecast answers over mDNS and everything else over
+       * SSDP, so neither search finds the other's devices. allSettled rather than all: a
+       * network where one search fails should still list the devices that did answer.
+       */
+      const [upnp, chromecast] = await Promise.allSettled([
+        discoverUPnPDevices().then(enhanceDiscoveredDevices),
+        discoverChromecasts(),
+      ]);
+      const devices = [
+        ...(upnp.status === 'fulfilled' ? upnp.value : []),
+        ...(chromecast.status === 'fulfilled' ? chromecast.value : []),
+      ];
       res.json({ devices });
     } catch (e) {
       console.error('[tier34] cast discover', e);
@@ -375,6 +403,136 @@ export function registerCastRoutes(app: Express): void {
       console.error('[tier34] sonos volume', e);
       res.status(502).json({ error: msg });
     }
+  });
+
+  /*
+   * Chromecast control.
+   *
+   * Every route takes a deviceId from /api/cast/discover rather than an IP, because a
+   * Chromecast's address is a DHCP lease while its mDNS instance name is stable. Taking the IP
+   * would mean a cast that worked yesterday failing today for no reason a user can see.
+   */
+  app.post('/api/cast/chromecast/play', async (req, res) => {
+    const deviceId = String(req.body?.deviceId ?? '').trim();
+    const trackId = String(req.body?.trackId ?? '').trim();
+    const explicitUrl = String(req.body?.streamUrl ?? '').trim();
+    if (!deviceId) return res.status(400).json({ error: 'deviceId required' });
+
+    /*
+     * A track id is enough on its own. The device fetches the URL itself, so it has to be one
+     * reachable across the network rather than a localhost address that only means something
+     * here, which is exactly what resolveDlnaBaseUrl already works out for the DLNA server.
+     */
+    const streamUrl = explicitUrl
+      ? explicitUrl
+      : trackId
+        ? `${resolveDlnaBaseUrl(Number(process.env.TIER34_PORT ?? 3001))}/api/cast/stream/${encodeURIComponent(trackId)}`
+        : '';
+    if (!streamUrl) return res.status(400).json({ error: 'trackId or streamUrl required' });
+    if (!/^https?:\/\//i.test(streamUrl)) {
+      return res.status(400).json({ error: 'streamUrl must be http(s)' });
+    }
+
+    try {
+      const state = await castPlay(deviceId, {
+        streamUrl,
+        contentType: String(req.body?.contentType ?? 'audio/mpeg'),
+        title: String(req.body?.title ?? 'Unknown Track'),
+        artist: req.body?.artist ? String(req.body.artist) : undefined,
+        album: req.body?.album ? String(req.body.album) : undefined,
+        artworkUrl: req.body?.artworkUrl ? String(req.body.artworkUrl) : undefined,
+        durationSeconds: Number(req.body?.durationSeconds) || undefined,
+        startSeconds: Number(req.body?.startSeconds) || undefined,
+      });
+      res.json({ ok: true, state });
+    } catch (e) {
+      console.error('[tier34] chromecast play', e);
+      res.status(502).json({ error: (e as Error)?.message ?? 'cast failed' });
+    }
+  });
+
+  for (const [action, run] of [
+    ['pause', castPause],
+    ['resume', castResume],
+  ] as const) {
+    app.post(`/api/cast/chromecast/${action}`, async (req, res) => {
+      const deviceId = String(req.body?.deviceId ?? '').trim();
+      if (!deviceId) return res.status(400).json({ error: 'deviceId required' });
+      try {
+        // A null state means there was no session. Not an error: pausing something already
+        // stopped is a no-op, and a 4xx would make an ordinary race look like a failure.
+        res.json({ ok: true, state: await run(deviceId) });
+      } catch (e) {
+        console.error(`[tier34] chromecast ${action}`, e);
+        res.status(502).json({ error: (e as Error)?.message ?? 'cast failed' });
+      }
+    });
+  }
+
+  app.post('/api/cast/chromecast/seek', async (req, res) => {
+    const deviceId = String(req.body?.deviceId ?? '').trim();
+    const seconds = Number(req.body?.seconds);
+    if (!deviceId || !Number.isFinite(seconds)) {
+      return res.status(400).json({ error: 'deviceId and seconds required' });
+    }
+    try {
+      res.json({ ok: true, state: await castSeek(deviceId, seconds) });
+    } catch (e) {
+      console.error('[tier34] chromecast seek', e);
+      res.status(502).json({ error: (e as Error)?.message ?? 'seek failed' });
+    }
+  });
+
+  app.post('/api/cast/chromecast/volume', async (req, res) => {
+    const deviceId = String(req.body?.deviceId ?? '').trim();
+    const level = Number(req.body?.level);
+    if (!deviceId || !Number.isFinite(level)) {
+      return res.status(400).json({ error: 'deviceId and level required' });
+    }
+    try {
+      await castVolume(deviceId, level);
+      res.json({ ok: true });
+    } catch (e) {
+      console.error('[tier34] chromecast volume', e);
+      res.status(502).json({ error: (e as Error)?.message ?? 'volume failed' });
+    }
+  });
+
+  app.post('/api/cast/chromecast/stop', async (req, res) => {
+    const deviceId = String(req.body?.deviceId ?? '').trim();
+    if (!deviceId) return res.status(400).json({ error: 'deviceId required' });
+    await castStop(deviceId);
+    res.json({ ok: true });
+  });
+
+  app.get('/api/cast/chromecast/state', (req, res) => {
+    const deviceId = String(req.query?.deviceId ?? '').trim();
+    res.json({ state: deviceId ? castState(deviceId) : null });
+  });
+
+  /*
+   * Position and player state as they change, rather than on a timer.
+   *
+   * A progress bar polled once a second is both jerky and constant traffic to a device that is
+   * already telling us when something changes. Server-sent events carry that straight through,
+   * and reconnect on their own when a phone's screen comes back on.
+   */
+  app.get('/api/cast/chromecast/events', (req, res) => {
+    res.set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+    res.flushHeaders?.();
+    const unsubscribe = onCastState((state) => {
+      res.write(`data: ${JSON.stringify(state)}\n\n`);
+    });
+    // Without this an idle proxy closes the connection after a minute of silence.
+    const keepAlive = setInterval(() => res.write(': keep-alive\n\n'), 20_000);
+    req.on('close', () => {
+      clearInterval(keepAlive);
+      unsubscribe();
+    });
   });
 
   app.get('/api/cast/stream/:trackId', async (req, res) => {
