@@ -11,6 +11,7 @@ import {
   getFormatMinutes,
   getFormatStats,
   getWrappedSummary,
+  WRAPPED_TIER_LABELS,
   type MediaKind,
   type RankedItem,
   type TimeRange,
@@ -201,8 +202,22 @@ export default function ListeningStatsView({ onBack }: ListeningStatsViewProps) 
     [segment, range, tick],
   );
   const rankLabels = RANK_LABELS[segment];
-  const years = useMemo(() => getAvailableWrappedYears(), [tick]);
-  const wrapped = useMemo(() => getWrappedSummary(wrappedYear), [wrappedYear, tick]);
+  /*
+   * Wrapped follows the tab you are on. On overview it pools every format, which is the right
+   * answer for "what was my year"; on a format tab it is that format alone, so the podcast year
+   * is not buried under whichever music artist happened to be played most.
+   */
+  const wrappedKind: MediaKind | 'all' = segment === 'overview' ? 'all' : segment;
+  const years = useMemo(
+    () => getAvailableWrappedYears(wrappedKind),
+    [wrappedKind, tick],
+  );
+  const wrapped = useMemo(
+    () => getWrappedSummary(wrappedYear, wrappedKind),
+    [wrappedYear, wrappedKind, tick],
+  );
+  // The words for the three top slots, from the same table the shareable card reads.
+  const [primaryLabel, secondaryLabel, tertiaryLabel] = WRAPPED_TIER_LABELS[wrappedKind];
 
   useEffect(() => {
     if (years.length && !years.includes(wrappedYear)) {
@@ -474,9 +489,9 @@ export default function ListeningStatsView({ onBack }: ListeningStatsViewProps) 
           </div>
 
           <div className="mt-8 space-y-4">
-            <WrappedHighlight label="Top artist" value={wrapped.topArtist?.label} />
-            <WrappedHighlight label="Top album" value={wrapped.topAlbum?.label} />
-            <WrappedHighlight label="Top track" value={wrapped.topTrack?.label} />
+            <WrappedHighlight label={primaryLabel} value={wrapped.topPrimary?.label} />
+            <WrappedHighlight label={secondaryLabel} value={wrapped.topSecondary?.label} />
+            <WrappedHighlight label={tertiaryLabel} value={wrapped.topTertiary?.label} />
           </div>
         </div>
 

@@ -62,8 +62,20 @@ export type ListeningStats = {
   topTracks: RankedItem[];
 };
 
+/**
+ * A year, summarised.
+ *
+ * The three top slots are named by tier rather than by what they hold, because what they hold
+ * depends on the format. For music they are artist, album and track; for podcasts, show, series
+ * and episode; for books, author, book and chapter. Naming the field topArtist and then putting
+ * a podcast show in it was the version of this that read as a bug every time anyone looked.
+ *
+ * The caller supplies the words. ListeningStatsView already has them, in RANK_LABELS.
+ */
 export type WrappedSummary = {
   year: number;
+  /** Which format this covers, or every format together. */
+  kind: MediaKind | 'all';
   minutesListened: number;
   totalPlays: number;
   meaningfulPlays: number;
@@ -71,12 +83,12 @@ export type WrappedSummary = {
   skipCount: number;
   repeatCount: number;
   avgCompletionPct: number;
-  topArtist: RankedItem | null;
-  topAlbum: RankedItem | null;
-  topTrack: RankedItem | null;
-  topArtists: RankedItem[];
-  topAlbums: RankedItem[];
-  topTracks: RankedItem[];
+  topPrimary: RankedItem | null;
+  topSecondary: RankedItem | null;
+  topTertiary: RankedItem | null;
+  topPrimaries: RankedItem[];
+  topSecondaries: RankedItem[];
+  topTertiaries: RankedItem[];
 };
 
 const MS_DAY = 86_400_000;
@@ -419,17 +431,29 @@ export function getFormatMinutes(range: TimeRange): Record<MediaKind, number> {
   };
 }
 
+/**
+ * A year of listening, for one format or all of them.
+ *
+ * Passing a kind is what makes this work for podcasts and books. Without it the summary is
+ * every format pooled together, which for a mixed library means the top "artist" is whichever
+ * podcast host talked the most, and the music year disappears behind it.
+ */
 export function getWrappedSummary(
   year: number,
+  kind: MediaKind | 'all' = 'all',
   events = resolveEvents(),
   topN = 5,
 ): WrappedSummary {
   const { start, end } = yearBounds(year);
-  const filtered = filterByTimestamp(events, start, end);
+  const filtered = filterByKind(
+    filterByTimestamp(events, start, end),
+    kind === 'all' ? undefined : kind,
+  );
   const listeningSessions = filterListeningSessions(getAllListeningSessions(), start, end);
   const stats = aggregateEvents(filtered, listeningSessions, 'lifetime', topN);
   return {
     year,
+    kind,
     minutesListened: stats.minutesListened,
     totalPlays: stats.totalPlays,
     meaningfulPlays: stats.meaningfulPlays,
@@ -437,25 +461,46 @@ export function getWrappedSummary(
     skipCount: stats.skipCount,
     repeatCount: stats.repeatCount,
     avgCompletionPct: stats.avgCompletionPct,
-    topArtist: stats.topArtists[0] ?? null,
-    topAlbum: stats.topAlbums[0] ?? null,
-    topTrack: stats.topTracks[0] ?? null,
-    topArtists: stats.topArtists,
-    topAlbums: stats.topAlbums,
-    topTracks: stats.topTracks,
+    topPrimary: stats.topArtists[0] ?? null,
+    topSecondary: stats.topAlbums[0] ?? null,
+    topTertiary: stats.topTracks[0] ?? null,
+    topPrimaries: stats.topArtists,
+    topSecondaries: stats.topAlbums,
+    topTertiaries: stats.topTracks,
   };
 }
 
-export function getAvailableWrappedYears(events = resolveEvents()): number[] {
+/**
+ * Years there is anything to show for.
+ *
+ * Filtered by kind so the year picker on the podcasts tab does not offer a year in which the
+ * only thing played was music, which then renders an empty card.
+ */
+export function getAvailableWrappedYears(
+  kind: MediaKind | 'all' = 'all',
+  events = resolveEvents(),
+): number[] {
   const years = new Set<number>();
   const now = new Date().getFullYear();
   years.add(now);
-  for (const e of events) {
+  for (const e of filterByKind(events, kind === 'all' ? undefined : kind)) {
     years.add(new Date(e.timestamp).getFullYear());
   }
   return [...years].sort((a, b) => b - a);
 }
 
+/**
+ * What the three top slots are called, per format.
+ *
+ * Exported because two places need these words — the Insights screen and the shareable card —
+ * and a second hand-kept copy is the one that ends up calling a podcast host an artist.
+ */
+export const WRAPPED_TIER_LABELS: Record<MediaKind | 'all', [string, string, string]> = {
+  all: ['Top artist', 'Top album', 'Top track'],
+  music: ['Top artist', 'Top album', 'Top track'],
+  podcast: ['Top show', 'Top series', 'Top episode'],
+  audiobook: ['Top author', 'Top book', 'Top chapter'],
+};
 export function formatMinutesHuman(minutes: number): string {
   if (!Number.isFinite(minutes) || minutes <= 0) return '0 min';
   if (minutes < 60) return `${Math.round(minutes)} min`;
@@ -576,11 +621,13 @@ export function renderWrappedCardToPng(
   drawStat('Minutes listened', formatMinutesHuman(summary.minutesListened), statY);
   drawStat('Meaningful plays', String(summary.meaningfulPlays), statY + statGap);
 
-  const highlights = [
-    ['Top artist', summary.topArtist?.label ?? '—'],
-    ['Top album', summary.topAlbum?.label ?? '—'],
-    ['Top track', summary.topTrack?.label ?? '—'],
-  ] as const;
+  // Named for the format the card covers, so a podcast year does not claim a top artist.
+  const [primaryLabel, secondaryLabel, tertiaryLabel] = WRAPPED_TIER_LABELS[summary.kind];
+  const highlights: Array<[string, string]> = [
+    [primaryLabel, summary.topPrimary?.label ?? '—'],
+    [secondaryLabel, summary.topSecondary?.label ?? '—'],
+    [tertiaryLabel, summary.topTertiary?.label ?? '—'],
+  ];
 
   let hy = statY + statGap * 2 + 40;
   ctx.fillStyle = c.accent;
