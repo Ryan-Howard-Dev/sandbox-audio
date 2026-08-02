@@ -1,5 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BookOpen, FolderOpen, Loader2, Pause, Play, Plus, Square, Trash2 } from 'lucide-react';
+import {
+  BookOpen,
+  FolderOpen,
+  Loader2,
+  Pause,
+  Play,
+  Plus,
+  Server,
+  Square,
+  Trash2,
+} from 'lucide-react';
 import { documentToNarration, estimateNarrationSeconds } from '../../documentNarration';
 import type { NarrationChunk } from '../../documentNarration';
 import ReadAlongText, { type ReadAlongRange } from './ReadAlongText';
@@ -51,6 +61,7 @@ import { fetchAudiobookDescription } from '../../audiobookDescription';
 import { supportedDocumentFormatLabels } from '../../documentExtract';
 import { formatTime } from '../../stations/theme';
 import ImportEmptyState from './ImportEmptyState';
+import CalibreWebPanel from './CalibreWebPanel';
 import NarrationVoicePicker from './NarrationVoicePicker';
 import { useNarrationVoices } from './useNarrationVoices';
 import { seedGradient } from '../../seedGradient';
@@ -406,6 +417,27 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
    * The plan is what the confirmation step renders, so the counts a listener approves are the same
    * numbers the import loop then walks — there is no second traversal that could disagree.
    */
+  /** Whether the calibre-web panel is open. Its own settings live in calibreWeb.ts. */
+  const [calibreWebOpen, setCalibreWebOpen] = useState(false);
+
+  /**
+   * Import a book fetched from calibre-web.
+   *
+   * Goes through importBookFile, the same path a picked file takes, so a downloaded book is
+   * read, covered, paginated and narrated identically. A second route here would be a second
+   * set of bugs.
+   */
+  const onImportCalibreFile = useCallback(
+    async (file: File) => {
+      const reason = await importBookFile(file, { lookUpDescription: true });
+      if (reason) {
+        onError?.(t(bookFailureKey(reason)));
+        return;
+      }
+      refresh();
+    },
+    [importBookFile, onError, refresh, t],
+  );
   const onPickLibrary = useCallback(
     (picked: FileList | null) => {
       const files = picked ? [...picked] : [];
@@ -648,6 +680,17 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
                   {t('audiobooks.calibreImport')}
                 </button>
               ) : null}
+              {/* A Calibre library that is not on this device: calibre-web serves it over OPDS. */}
+              <button
+                type="button"
+                className="audiobook-doc-import touch-manipulation"
+                onClick={() => setCalibreWebOpen((v) => !v)}
+                disabled={busy || importing}
+                aria-expanded={calibreWebOpen}
+              >
+                <Server className="w-3.5 h-3.5" />
+                {t('audiobooks.calibreWebOpen')}
+              </button>
               <button
                 type="button"
                 className="audiobook-doc-import touch-manipulation"
@@ -665,6 +708,14 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
           ) : null}
         </div>
       </div>
+
+      {calibreWebOpen ? (
+        <CalibreWebPanel
+          onImportFile={onImportCalibreFile}
+          onClose={() => setCalibreWebOpen(false)}
+          onError={onError}
+        />
+      ) : null}
 
       {books.length > 0 ? (
         <p className="font-mono text-[10px] text-[var(--text-dim)] px-1 mb-2">
