@@ -62,6 +62,7 @@ import { supportedDocumentFormatLabels } from '../../documentExtract';
 import { formatTime } from '../../stations/theme';
 import ImportEmptyState from './ImportEmptyState';
 import CalibreWebPanel from './CalibreWebPanel';
+import BookDetailView from './BookDetailView';
 import NarrationVoicePicker from './NarrationVoicePicker';
 import { useNarrationVoices } from './useNarrationVoices';
 import { seedGradient } from '../../seedGradient';
@@ -155,6 +156,14 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
 
   const [books, setBooks] = useState<DocumentSummary[]>([]);
   const [openBook, setOpenBook] = useState<DocumentSummary | null>(null);
+  /**
+   * The book whose detail page is open, before anything is being read.
+   *
+   * Separate from openBook, which means "this book is loaded in the reader". Tapping a book
+   * used to go straight to narration, so its cover, author, blurb and chapter list — all
+   * parsed on import — were never shown to anybody.
+   */
+  const [detailBook, setDetailBook] = useState<DocumentSummary | null>(null);
   const [chapterIndex, setChapterIndex] = useState(0);
   const [chunks, setChunks] = useState<NarrationChunk[]>([]);
   // rememberPosition runs from a speech callback, so it needs the chunks without a dependency.
@@ -629,6 +638,30 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
         ? t('audiobooks.calibreEmptyHint')
         : null;
 
+  /*
+   * The detail page, between the shelf and reading. Nothing is loaded and nothing is spoken
+   * until a chapter is picked here, which is how the audiobook shelf two tabs away behaves.
+   */
+  if (detailBook && !openBook) {
+    return (
+      <BookDetailView
+        book={detailBook}
+        onBack={() => setDetailBook(null)}
+        onOpenChapter={(index) => {
+          const at = detailBook.position;
+          void playChapter(detailBook, index, at?.chunkIndex ?? 0, {
+            // Only resume mid-chapter in the chapter that was actually left off in. Picking
+            // any other chapter means starting at its beginning.
+            charOffset:
+              index === at?.chapterIndex && at?.charOffset !== undefined
+                ? resumeOffset(at.charOffset, at.updatedAt)
+                : undefined,
+          });
+        }}
+      />
+    );
+  }
+
   return (
     <section className="podcasts-library-grid-section audiobooks-library-section">
       <div className="flex items-center justify-between gap-3 mb-3 px-1">
@@ -825,7 +858,9 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
               <button
                 type="button"
                 className="audiobook-doc-open touch-manipulation"
-                onClick={() => void openFromShelf(book)}
+                // Opens the book, it does not start reading it. An audiobook two tabs away
+                // behaves this way and a book should not be the odd one out.
+                onClick={() => setDetailBook(book)}
               >
                 <span className="audiobook-book-cover">
                   {book.coverUrl ? (

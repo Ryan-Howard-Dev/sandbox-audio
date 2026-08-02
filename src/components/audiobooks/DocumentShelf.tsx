@@ -325,9 +325,12 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
       });
       setChunks(parsed);
       setChunkIndex(0);
-      // Opening a document starts it reading, so the player belongs on screen here too. Raising it
-      // only from the transport button meant the ordinary path never showed a player at all.
-      requestNarrationPlayerOpen();
+      /*
+       * Reading starts, but the player is not raised over it. Opening a document is a request to
+       * see the document: raising the full player here covered the text with a transport screen,
+       * so the reader that exists to show the words was never visible on the ordinary path. The
+       * mini player still appears at the bottom, and the player is one tap from the reader.
+       */
       (await buildReader(parsed, 0)).play();
     },
     [buildReader, onError, t],
@@ -408,7 +411,8 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
           setChunks([]);
         }}
         onPlay={() => {
-          requestNarrationPlayerOpen();
+          // Play resumes reading. It does not leave the page — someone who wanted the transport
+          // screen instead would tap the mini player.
           if (state === 'paused') readerRef.current?.resume();
           else void buildReader(chunks, chunkIndexRef.current).then((r) => r.play());
         }}
