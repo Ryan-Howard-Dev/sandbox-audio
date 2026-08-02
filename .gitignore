@@ -61,6 +61,13 @@ proof-screenshots/
 !android/app/src/main/res/**/*.jpg
 !ios/App/App/Assets.xcassets/**/*.png
 
+# Store listing images are the listing. F-Droid and Play render the page straight from this
+# directory, so a blanket *.png rule quietly shipping an entry with no screenshots is the same
+# class of mistake as the launcher icons above: the files sit on disk, the build works locally,
+# and only a clean checkout reveals there was never anything there.
+!fastlane/metadata/**/*.png
+!fastlane/metadata/**/*.jpg
+
 # OS
 .DS_Store
 Thumbs.db
