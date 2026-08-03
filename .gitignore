@@ -61,6 +61,12 @@ proof-screenshots/
 !android/app/src/main/res/**/*.jpg
 !ios/App/App/Assets.xcassets/**/*.png
 
+# Store listing images are the listing. F-Droid builds the app's page straight from this
+# directory, so the blanket *.png rule above was quietly publishing an entry with no
+# screenshots at all -- the same mistake as the launcher icons, with the same symptom: the
+# files sit on disk, everything looks right locally, and what ships is missing them.
+!fastlane/metadata/**/*.png
+
 # OS
 .DS_Store
 Thumbs.db
