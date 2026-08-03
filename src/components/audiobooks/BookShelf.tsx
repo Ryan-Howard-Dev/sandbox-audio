@@ -68,6 +68,7 @@ import NarrationVoicePicker from './NarrationVoicePicker';
 import { useNarrationVoices } from './useNarrationVoices';
 import { seedGradient } from '../../seedGradient';
 import { useTranslation } from '../../i18n';
+import { resolveNarrationLocation, savedOffsetFor } from '../../narrationLocation';
 
 const ACCEPTED = '.epub,application/epub+zip';
 
@@ -230,14 +231,29 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
     };
   }, []);
 
-  const rememberPosition = useCallback((chunk: number) => {
+  /**
+   * Write down where the reading is.
+   *
+   * Takes the word being spoken when the engine has reported one, and the start of the passage
+   * when it has not. Saving the passage start is what a chunk index can express and it is wrong by
+   * up to a passage: a six hundred character paragraph you were nearly through resumes from its
+   * first word, so coming back to a book means listening to a paragraph again every time. The word
+   * is a position in the same document coordinates, so nothing downstream changes. See
+   * narrationLocation.ts.
+   */
+  const rememberPosition = useCallback((chunk: number, at?: ReadAlongRange | null) => {
     const book = openBookRef.current;
     if (!book) return;
+    const located = resolveNarrationLocation({
+      chunks: chunksRef.current,
+      utteranceIndex: chunk,
+      range: at ?? null,
+    });
     const next: ReadingPosition = {
       chapterIndex: chapterIndexRef.current,
       chunkIndex: chunk,
       // The offset is the position that means something; the index is kept for older readers.
-      charOffset: offsetForChunk(chunksRef.current, chunk),
+      charOffset: located ? savedOffsetFor(located) : offsetForChunk(chunksRef.current, chunk),
       updatedAt: Date.now(),
     };
     if (!shouldPersistReadingPosition(positionRef.current, next)) return;
@@ -287,6 +303,13 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
           // updater, which must stay pure.
           if (index !== chunkIndexRef.current) return;
           setRange({ start, end });
+          /*
+           * Save at the word too, not only when the passage changes. Ranges arrive several times a
+           * second, but shouldPersistReadingPosition already decides what is worth a write, so this
+           * costs nothing on the passages where nothing meaningful moved — and on a long paragraph
+           * it is the difference between resuming mid-sentence and starting the paragraph again.
+           */
+          rememberPosition(index, { start, end });
         },
         onStateChange: (s) => {
           setState(s);
@@ -612,6 +635,7 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
       state,
       chunkIndex,
       chunkCount: chunks.length,
+      location: resolveNarrationLocation({ chunks, utteranceIndex: chunkIndex, range }),
       elapsedSeconds: estimateNarrationSeconds(chunks.slice(0, chunkIndex)),
       totalSeconds: estimateNarrationSeconds(chunks),
       controls: {

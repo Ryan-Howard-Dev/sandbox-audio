@@ -17,6 +17,7 @@
  * component that unmounts the moment the user navigates away.
  */
 import type { NarrationReaderState } from './narrationReader';
+import type { NarrationLocation } from './narrationLocation';
 
 export interface NarrationPlaybackControls {
   play(): void;
@@ -43,6 +44,17 @@ export interface NarrationPlaybackSnapshot {
   state: NarrationReaderState;
   chunkIndex: number;
   chunkCount: number;
+  /**
+   * Where the reading is, at both granularities, in document coordinates.
+   *
+   * chunkIndex and range above say which passage and which word, but only relative to the passage
+   * — enough to draw a highlight and not enough to answer how far through the document this is,
+   * or where to resume. This carries both as located positions. See narrationLocation.ts.
+   *
+   * Optional because a publisher without a chunk list to measure against has nothing honest to
+   * put here, and a consumer must fall back rather than assume.
+   */
+  location?: NarrationLocation | null;
   /**
    * Estimated position and length in seconds, for the player's clock and progress bar.
    *

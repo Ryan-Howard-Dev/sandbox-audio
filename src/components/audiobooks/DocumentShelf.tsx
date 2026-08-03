@@ -48,6 +48,7 @@ import {
   endNarrationSession,
   syncNarrationSession,
 } from '../../narrationMediaSession';
+import { resolveNarrationLocation } from '../../narrationLocation';
 
 /**
  * Formats the extractor can actually read, kept in one place so the picker and the extractor
@@ -372,6 +373,7 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
       state,
       chunkIndex,
       chunkCount: chunks.length,
+      location: resolveNarrationLocation({ chunks, utteranceIndex: chunkIndex, range }),
       elapsedSeconds: estimateNarrationSeconds(chunks.slice(0, chunkIndex)),
       totalSeconds: estimateNarrationSeconds(chunks),
       controls: {

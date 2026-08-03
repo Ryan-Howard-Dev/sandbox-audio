@@ -42,6 +42,7 @@ import StemSlidersPanel from './StemSlidersPanel';
 import MobileHomeVinylSettingsSheet from '../mobile/MobileHomeVinylSettingsSheet';
 import PodcastPlayerControls from './podcasts/PodcastPlayerControls';
 import type { NarrationPlaybackSnapshot } from '../narrationPlayback';
+import { narrationProgressPercent } from '../narrationLocation';
 import type { PillarControls } from '../mediaPillar';
 
 export interface MobileNowPlayingViewProps {
@@ -540,12 +541,23 @@ export default function MobileNowPlayingView({
             structuralProgress={
               pillarControls && !pillarControls.seekBar && narration
                 ? {
-                    label: t('audiobooks.pageOf', {
-                      page: narration.chunkIndex + 1,
+                    label: t('audiobooks.passageOf', {
+                      passage: narration.chunkIndex + 1,
                       total: narration.chunkCount,
                     }),
-                    percent:
-                      narration.chunkCount > 0
+                    /*
+                     * Measured in characters, not passages.
+                     *
+                     * Passage count assumes every passage is the same size, so a four word heading
+                     * advanced this bar exactly as far as a six hundred character paragraph, and
+                     * the bar moved in lurches that had nothing to do with how much was left to
+                     * hear. It also could not move at all while a long paragraph was being read.
+                     * The location knows where the voice is in the document; see
+                     * narrationLocation.ts.
+                     */
+                    percent: narration.location
+                      ? narrationProgressPercent(narration.location)
+                      : narration.chunkCount > 0
                         ? ((narration.chunkIndex + 1) / narration.chunkCount) * 100
                         : 0,
                   }
