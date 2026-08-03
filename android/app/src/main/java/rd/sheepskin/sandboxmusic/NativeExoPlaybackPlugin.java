@@ -1660,6 +1660,24 @@ public class NativeExoPlaybackPlugin extends Plugin {
     }
 
     /**
+     * A byte offset sent from JavaScript.
+     *
+     * Not call.getLong. JavaScript has one number type and Capacitor deserialises it as a Double,
+     * so getLong finds no Long where it looks and quietly hands back the default -- which for an
+     * offset is zero. Every ranged read then returned the first bytes of the file whatever it
+     * asked for, and since the first bytes of an audiobook are a perfectly valid header, nothing
+     * threw: the walk simply looked at byte zero, found no chapter table, and reported a book with
+     * no chapters. That is the same wrong answer a book genuinely without chapters gives.
+     *
+     * A double carries whole numbers exactly to 2^53, which is nine petabytes of audiobook.
+     */
+    private static long offsetArg(PluginCall call) {
+        Double raw = call.getDouble("offset");
+        if (raw == null || raw.isNaN() || raw < 0) return 0L;
+        return (long) Math.floor(raw);
+    }
+
+    /**
      * Byte size of a locker blob on disk.
      *
      * Downloaded tracks keep their audio in the native cache rather than an IndexedDB blob, so the
@@ -1691,7 +1709,7 @@ public class NativeExoPlaybackPlugin extends Plugin {
          * written faststart. Walking to it needs ranges from anywhere in the file, not just the
          * front — but still only a few kilobytes at a time.
          */
-        final long offset = Math.max(0L, call.getLong("offset", 0L));
+        final long offset = offsetArg(call);
         playbackExecutor.execute(
             () -> {
                 try {
@@ -1750,7 +1768,7 @@ public class NativeExoPlaybackPlugin extends Plugin {
         final String uriText = rawUri.trim();
         final int requested = call.getInt("bytes", 8192);
         final int limit = Math.max(1, Math.min(requested, 65536));
-        final long offset = Math.max(0L, call.getLong("offset", 0L));
+        final long offset = offsetArg(call);
         playbackExecutor.execute(
             () -> {
                 try {
