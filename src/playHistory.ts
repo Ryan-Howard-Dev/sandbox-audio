@@ -13,6 +13,7 @@ import {
   playEventKindFromEnvelopeId,
   PLAY_EVENTS_LEGACY_KEY,
   queryPlayEventsPage,
+  type PlayEventKind,
   type PlayEventOrigin,
   type PlayEventRecord,
   type PlayEventSource,
@@ -82,7 +83,14 @@ export type PlayEvent = {
   origin?: PlayEventOrigin;
   /** Local UTC offset (minutes) at capture — required on new writes. */
   tz_offset_minutes?: number;
-  kind?: 'music' | 'podcast' | 'audiobook';
+  /**
+   * Which pillar this listen was.
+   *
+   * Taken from the stored type rather than spelled out again here. The two copies had already
+   * drifted the moment a fourth pillar existed, and a hand-kept duplicate of a union is a
+   * migration waiting to be forgotten.
+   */
+  kind?: PlayEventKind;
 };
 
 /** Continuous listening session (device-local). */

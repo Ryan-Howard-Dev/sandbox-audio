@@ -69,6 +69,11 @@ import { useNarrationVoices } from './useNarrationVoices';
 import { seedGradient } from '../../seedGradient';
 import { useTranslation } from '../../i18n';
 import { resolveNarrationLocation, savedOffsetFor } from '../../narrationLocation';
+import {
+  flushNarrationListen,
+  narrationListenPaused,
+  narrationListenStarted,
+} from '../../narrationListenLog';
 
 const ACCEPTED = '.epub,application/epub+zip';
 
@@ -226,6 +231,10 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
     return () => {
       readerRef.current?.stop();
       clearNarrationPlayback();
+      // Bank whatever was listened to. The span cannot grow once this screen is gone, and an
+      // unflushed one is simply lost time.
+      narrationListenPaused();
+      flushNarrationListen();
       enginePortRef.current?.dispose?.();
       enginePortRef.current = null;
     };
@@ -314,6 +323,22 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
         onStateChange: (s) => {
           setState(s);
           if (s !== 'speaking') setRange(null);
+          /*
+           * Count this as listening. A book read aloud produced no play event at all, so hours
+           * of it were invisible to Insights — three pillars tracked out of four. The clock runs
+           * only while the voice does. See narrationListenLog.ts.
+           */
+          const book = openBookRef.current;
+          if (s === 'speaking' && book) {
+            narrationListenStarted({
+              documentId: book.id,
+              title: book.name,
+              author: book.author,
+              kind: 'book',
+            });
+          } else {
+            narrationListenPaused();
+          }
           if (s === 'finished') advanceChapter();
         },
       });

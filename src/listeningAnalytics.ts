@@ -9,14 +9,18 @@ import type { PlaySession } from './playHistory';
 import { isPodcastEnvelopeId } from './podcastStorage';
 import { isAudiobookEnvelopeId } from './audiobookPlayback';
 import { isAudiobookCatalogEnvelopeId } from './audiobookCatalogIds';
+import { isNarrationEnvelopeId } from './narrationListenLog';
 
 export type TimeRange = 'day' | 'week' | 'month' | 'year' | 'lifetime';
 
 /** Listening format, classified from the envelope id (no schema/migration needed). */
-export type MediaKind = 'music' | 'podcast' | 'audiobook';
+export type MediaKind = 'music' | 'podcast' | 'audiobook' | 'spoken-text';
 
 export function playEventKind(event: { envelopeId: string }): MediaKind {
   const id = event.envelopeId;
+  // A book read aloud is listening too. Without this it fell through to 'music', which would put
+  // a research paper among the year's top artists.
+  if (isNarrationEnvelopeId(id)) return 'spoken-text';
   if (isPodcastEnvelopeId(id)) return 'podcast';
   if (isAudiobookEnvelopeId(id) || isAudiobookCatalogEnvelopeId(id)) return 'audiobook';
   return 'music';
@@ -420,14 +424,21 @@ export function getFormatStats(
 export function getFormatMinutes(range: TimeRange): Record<MediaKind, number> {
   const start = rangeStartMs(range);
   const events = filterByTimestamp(resolveEvents(), start);
-  const ms: Record<MediaKind, number> = { music: 0, podcast: 0, audiobook: 0 };
+  const ms: Record<MediaKind, number> = {
+    music: 0,
+    podcast: 0,
+    audiobook: 0,
+    'spoken-text': 0,
+  };
   for (const e of events) {
     ms[playEventKind(e)] += e.listenedMs;
   }
+  const minutes = (value: number) => Math.round((value / 60_000) * 10) / 10;
   return {
-    music: Math.round((ms.music / 60_000) * 10) / 10,
-    podcast: Math.round((ms.podcast / 60_000) * 10) / 10,
-    audiobook: Math.round((ms.audiobook / 60_000) * 10) / 10,
+    music: minutes(ms.music),
+    podcast: minutes(ms.podcast),
+    audiobook: minutes(ms.audiobook),
+    'spoken-text': minutes(ms['spoken-text']),
   };
 }
 
@@ -500,6 +511,11 @@ export const WRAPPED_TIER_LABELS: Record<MediaKind | 'all', [string, string, str
   music: ['Top artist', 'Top album', 'Top track'],
   podcast: ['Top show', 'Top series', 'Top episode'],
   audiobook: ['Top author', 'Top book', 'Top chapter'],
+  /*
+   * Read aloud rather than performed, so nobody narrated it and calling anyone the top narrator
+   * would be a fiction. The author is the author; the rest is the document and the passage.
+   */
+  'spoken-text': ['Top author', 'Top book', 'Top passage'],
 };
 export function formatMinutesHuman(minutes: number): string {
   if (!Number.isFinite(minutes) || minutes <= 0) return '0 min';

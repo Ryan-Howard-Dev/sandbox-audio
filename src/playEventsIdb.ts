@@ -9,6 +9,7 @@ import { prefsGetItem, prefsRemoveItem, prefsSetItem } from './prefsStorage';
 import { isAudiobookCatalogEnvelopeId } from './audiobookCatalogIds';
 import { isAudiobookEnvelopeId } from './audiobookPlayback';
 import { isPodcastEnvelopeId } from './podcastStorage';
+import { isNarrationEnvelopeId } from './narrationListenLog';
 
 export const PLAY_EVENTS_DB_NAME = 'SandboxPlayEventsDB';
 export const PLAY_EVENTS_DB_VERSION = 1;
@@ -35,7 +36,14 @@ export type PlayEventSource =
   | 'oauth_tidal'
   | 'manual';
 
-export type PlayEventKind = 'music' | 'podcast' | 'audiobook';
+/**
+ * Which pillar a listen belongs to.
+ *
+ * 'spoken-text' is a book or document read aloud by the synthesiser. It has no envelope of its
+ * own — that is why narration needed a separate seam in the player — so it carries a synthetic
+ * `narration:` id purely to take its place in this log. See narrationListenLog.ts.
+ */
+export type PlayEventKind = 'music' | 'podcast' | 'audiobook' | 'spoken-text';
 
 /** Stored play-event row (v3). */
 export type PlayEventRecord = {
@@ -120,6 +128,7 @@ export function resetPlayEventsIdbForTests(): void {
 
 export function playEventKindFromEnvelopeId(envelopeId: string): PlayEventKind {
   const id = envelopeId ?? '';
+  if (isNarrationEnvelopeId(id)) return 'spoken-text';
   if (isPodcastEnvelopeId(id)) return 'podcast';
   if (isAudiobookEnvelopeId(id) || isAudiobookCatalogEnvelopeId(id)) return 'audiobook';
   return 'music';

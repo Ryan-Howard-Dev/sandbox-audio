@@ -49,6 +49,11 @@ import {
   syncNarrationSession,
 } from '../../narrationMediaSession';
 import { resolveNarrationLocation } from '../../narrationLocation';
+import {
+  flushNarrationListen,
+  narrationListenPaused,
+  narrationListenStarted,
+} from '../../narrationListenLog';
 
 /**
  * Formats the extractor can actually read, kept in one place so the picker and the extractor
@@ -92,6 +97,13 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
 
   const [docs, setDocs] = useState<DocumentSummary[]>([]);
   const [openDoc, setOpenDoc] = useState<DocumentSummary | null>(null);
+  /*
+   * The open document, readable from a speech callback. Those fire outside React's render, so
+   * they cannot close over state without capturing whichever document was open when the reader
+   * was built — which is the wrong one the moment somebody opens another.
+   */
+  const openDocRef = useRef<DocumentSummary | null>(null);
+  openDocRef.current = openDoc;
   const [chunks, setChunks] = useState<NarrationChunk[]>([]);
   const [chunkIndex, setChunkIndex] = useState(0);
   // Where the voice is inside the current chunk, when the engine reports it.
@@ -119,6 +131,10 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
       readerRef.current?.stop();
       void endNarrationSession();
       clearNarrationPlayback();
+      // Bank whatever was listened to. The span cannot grow once this screen is gone, and an
+      // unflushed one is simply lost time.
+      narrationListenPaused();
+      flushNarrationListen();
       enginePortRef.current?.dispose?.();
       enginePortRef.current = null;
     };
@@ -155,6 +171,18 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
       onStateChange: (s) => {
         setState(s);
         if (s !== 'speaking') setRange(null);
+        // Listening, counted on the wall clock while the voice is actually speaking. A document
+        // read aloud recorded nothing at all before this. See narrationListenLog.ts.
+        const doc = openDocRef.current;
+        if (s === 'speaking' && doc) {
+          narrationListenStarted({
+            documentId: doc.id,
+            title: documentDisplayName(doc.name),
+            kind: 'document',
+          });
+        } else {
+          narrationListenPaused();
+        }
         // Mirror onto the app's existing media session so a document behaves like playback:
         // lock screen, headphone pause, and survival with the screen off.
         void syncNarrationSession(s);
