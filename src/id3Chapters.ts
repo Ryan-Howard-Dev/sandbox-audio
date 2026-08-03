@@ -64,12 +64,39 @@ function readSyncsafe(bytes: Uint8Array, offset: number): number {
  * that trusting the version alone mis-parses real files: a well-known class of v2.4 writers emits
  * plain sizes. A byte with its top bit set cannot be part of a syncsafe number, so its presence is
  * proof the size is plain whatever the header claims.
+ *
+ * That only settles the obvious half. When every byte is under 0x80 the two readings are both
+ * legal and they differ: ffmpeg writes a cover art frame as 00 00 12 63, which is 2403 read
+ * syncsafe and 4707 read plainly. Nothing in the four bytes says which. See frameSizeCandidates.
  */
 export function frameSize(bytes: Uint8Array, offset: number, major: number): number {
   if (major < 4) return readUint32(bytes, offset);
   const plainLooking =
     (bytes[offset]! | bytes[offset + 1]! | bytes[offset + 2]! | bytes[offset + 3]!) & 0x80;
   return plainLooking ? readUint32(bytes, offset) : readSyncsafe(bytes, offset);
+}
+
+/**
+ * Both readings of a v2.4 size, best first, when they genuinely differ.
+ *
+ * The ambiguity is real and it is not rare — it applies to every v2.4 frame smaller than 2MB
+ * whose size bytes all fall under 0x80, which is most of them. Guessing wrong lands the walk in
+ * the middle of a frame's data, where the next four bytes are audio or JPEG rather than a frame
+ * id, and the walk stops. If the cover art comes before the chapters, as it does in plenty of
+ * files, stopping there loses every chapter in the tag.
+ *
+ * So both are offered and the caller settles it by looking at where each one lands. Syncsafe goes
+ * first because it is what the specification says and what correct encoders write.
+ */
+export function frameSizeCandidates(
+  bytes: Uint8Array,
+  offset: number,
+  major: number,
+): number[] {
+  if (major < 4) return [readUint32(bytes, offset)];
+  const syncsafe = readSyncsafe(bytes, offset);
+  const plain = readUint32(bytes, offset);
+  return syncsafe === plain ? [syncsafe] : [syncsafe, plain];
 }
 
 function isFrameId(bytes: Uint8Array, offset: number): boolean {
@@ -199,6 +226,21 @@ export async function readId3Chapters(
     offset += extSize;
   }
 
+  /**
+   * Does a size land somewhere a frame could legitimately end?
+   *
+   * The tag's own end counts, and so does padding, which is what fills the tail of most tags.
+   * Anything else has to look like the start of another frame.
+   */
+  const landsWell = async (end: number): Promise<boolean> => {
+    if (end === tagEnd) return true;
+    if (end + FRAME_HEADER_BYTES > tagEnd) return false;
+    const next = await read(end, 4);
+    if (!next || next.length < 4) return false;
+    if (next[0] === 0 && next[1] === 0 && next[2] === 0 && next[3] === 0) return true;
+    return isFrameId(next, 0);
+  };
+
   const chapters: Id3Chapter[] = [];
   for (let i = 0; i < MAX_FRAMES && offset + FRAME_HEADER_BYTES <= tagEnd; i++) {
     const frame = await read(offset, FRAME_HEADER_BYTES);
@@ -207,7 +249,22 @@ export async function readId3Chapters(
     if (!isFrameId(frame, 0)) break;
 
     const id = frameId(frame, 0);
-    const size = frameSize(frame, 4, major);
+    /*
+     * Choose between the two legal readings of a v2.4 size by where each one lands. A size that
+     * puts the next frame header in the middle of a JPEG is the wrong reading, whatever the
+     * header claims about its version.
+     */
+    let size = 0;
+    for (const candidate of frameSizeCandidates(frame, 4, major)) {
+      if (candidate <= 0 || offset + FRAME_HEADER_BYTES + candidate > tagEnd) continue;
+      if (await landsWell(offset + FRAME_HEADER_BYTES + candidate)) {
+        size = candidate;
+        break;
+      }
+      // Keep the first plausible size as a fallback, so a tag that fails every landing test
+      // still walks as far as it can rather than reporting nothing at all.
+      if (size === 0) size = candidate;
+    }
     if (size <= 0 || offset + FRAME_HEADER_BYTES + size > tagEnd) break;
 
     if (id === 'CHAP') {

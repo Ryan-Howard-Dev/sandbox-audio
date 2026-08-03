@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import {
   decodeId3Text,
   frameSize,
+  frameSizeCandidates,
   parseChapFrame,
   readId3Chapters,
 } from './id3Chapters';
@@ -12,6 +13,11 @@ import {
 const FIXTURE = readFileSync(join(import.meta.dirname, '__fixtures__', 'chaptered.mp3'));
 const readFixture = async (offset: number, length: number) =>
   new Uint8Array(FIXTURE.subarray(offset, Math.min(offset + length, FIXTURE.length)));
+
+/** The same book written as ID3v2.4, where frame sizes are syncsafe. */
+const V4 = readFileSync(join(import.meta.dirname, '__fixtures__', 'chaptered-v4.mp3'));
+const readV4 = async (offset: number, length: number) =>
+  new Uint8Array(V4.subarray(offset, Math.min(offset + length, V4.length)));
 
 function bytes(...values: number[]): Uint8Array {
   return new Uint8Array(values);
@@ -37,6 +43,24 @@ describe('frameSize', () => {
      * anyway, and trusting the version there walks into the middle of a frame.
      */
     expect(frameSize(bytes(0, 0, 0x80, 0), 0, 4)).toBe(0x8000);
+  });
+});
+
+describe('frameSizeCandidates', () => {
+  it('offers one reading for ID3v2.3, which is unambiguous', () => {
+    expect(frameSizeCandidates(bytes(0, 0, 0x12, 0x63), 0, 3)).toEqual([0x1263]);
+  });
+
+  it('offers both readings for a v2.4 size, spec-correct first', () => {
+    /*
+     * This is ffmpeg's cover art frame, verbatim. 2403 read syncsafe, 4707 read plainly, and
+     * nothing in the four bytes says which. Getting it wrong lands the walk inside the JPEG.
+     */
+    expect(frameSizeCandidates(bytes(0, 0, 0x12, 0x63), 0, 4)).toEqual([2403, 4707]);
+  });
+
+  it('offers one reading when both agree', () => {
+    expect(frameSizeCandidates(bytes(0, 0, 0, 0x0f), 0, 4)).toEqual([15]);
   });
 });
 
@@ -176,6 +200,16 @@ describe('readId3Chapters on a file ffmpeg wrote', () => {
       return calls > 2 ? null : readFixture(offset, length);
     };
     expect(await readId3Chapters(flaky, FIXTURE.length)).toEqual([]);
+  });
+
+  it('reads the same book written as ID3v2.4, where sizes are syncsafe', async () => {
+    expect((await readId3Chapters(readV4, V4.length)).map((c) => [c.startSeconds, c.title])).toEqual(
+      [
+        [0, 'One: The Opening'],
+        [60, 'Two: The Middle'],
+        [150, 'Three: The End'],
+      ],
+    );
   });
 
   it('declines an unsynchronised tag instead of walking it wrong', async () => {
