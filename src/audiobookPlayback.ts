@@ -44,5 +44,12 @@ export function audiobookHitToEnvelope(
     transport: 'element-src',
     sourceId: `audiobook-media-${hit.id}`,
     artworkUrl: options?.artworkUrl?.trim() || undefined,
+    /*
+     * Carried through because a content:// URI says nothing about what the file is — there is no
+     * extension in `content://media/external/audio/media/42`. Without the type, the chapter reader
+     * cannot tell an M4B from an MP3, and the two keep their chapters in entirely different
+     * places. The scan already knew; the envelope was simply dropping it.
+     */
+    mimeType: hit.mimeType?.trim() || undefined,
   };
 }

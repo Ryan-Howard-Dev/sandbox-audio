@@ -36,8 +36,8 @@ export function useAudiobookChapters(input: {
     const id = envelopeId?.trim() ?? '';
     const uri = url?.trim() ?? '';
     if (!id && !uri) return;
-    // Cheap containers test first: opening every MP3 to learn it is an MP3 costs a round trip per
-    // book, and the answer is always no.
+    // Container test first, from the name alone: a file that cannot carry chapters is not worth
+    // opening, and the shelf asks about every book it draws.
     if (!mayCarryChapters({ uri, mimeType: mimeType ?? undefined, name: title ?? undefined })) {
       return;
     }
@@ -47,6 +47,8 @@ export function useAudiobookChapters(input: {
       // The envelope id carries its prefix; the file it names does not.
       id: id.replace(/^audiobook:/, ''),
       uri,
+      mimeType: mimeType ?? undefined,
+      name: title ?? undefined,
     }).then((rows) => {
       if (!cancelled) setChapters(rows);
     });

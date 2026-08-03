@@ -25,6 +25,15 @@ const DEPS: ChapterSourceDeps = {
     const { readM4bChapters } = await import('./m4bChapters');
     return readM4bChapters(read, fileSize);
   },
+  parseId3: async (read, fileSize) => {
+    const { readId3Chapters } = await import('./id3Chapters');
+    const { normaliseMarks } = await import('./chapterScrubber');
+    // ID3 frames arrive in file order, which is usually but not always start order.
+    return normaliseMarks(await readId3Chapters(read, fileSize)).map((mark) => ({
+      startSeconds: mark.startSeconds,
+      title: mark.title ?? '',
+    }));
+  },
 };
 
 /** Chapters inside one audiobook file, or an empty list. Cached for the session. */

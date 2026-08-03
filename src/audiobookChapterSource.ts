@@ -34,31 +34,62 @@ export interface ChapterSourceDeps {
   fromContentUri: (uri: string) => Promise<ByteSource | null>;
   /** Bytes of an imported locker track. */
   fromLockerEntry: (entryId: string) => Promise<ByteSource | null>;
-  /** The parser. Injected so a test does not have to build a valid MP4. */
+  /** MP4 atoms. Injected so a test does not have to build a valid MP4. */
   parse: (
+    read: (offset: number, length: number) => Promise<Uint8Array | null>,
+    fileSize: number,
+  ) => Promise<Array<{ startSeconds: number; title: string }>>;
+  /** ID3 frames, for a book that ships as one MP3. */
+  parseId3: (
     read: (offset: number, length: number) => Promise<Uint8Array | null>,
     fileSize: number,
   ) => Promise<Array<{ startSeconds: number; title: string }>>;
 }
 
-/** A book, described by only the parts that decide where its bytes are. */
+/** A book, described by only the parts that decide where its bytes are and how to read them. */
 export interface ChapterSourceTarget {
   /** MediaStore id or locker entry id, depending on where it came from. */
   id: string;
   /** content:// for a device scan, https:// for a catalogue book, file:// for a download. */
   uri?: string;
+  /** Used to choose the parser. Falls back to the uri when a scan reported no type. */
+  mimeType?: string;
+  name?: string;
 }
 
+/** Which parser a file wants, or null when it is not a container that carries chapters. */
+export type ChapterContainer = 'mp4' | 'mp3';
+
 /**
- * Whether this is worth opening at all.
+ * Which container this is, from its name and type alone.
  *
- * Only containers that can carry a chapter atom. Reading the first kilobytes of an MP3 to discover
- * it is an MP3 is a wasted round trip per book, and the shelf asks about every book it draws.
+ * Deliberately decided without opening the file. The shelf asks about every book it draws, and a
+ * round trip per book to learn a fact the filename already states is a cost paid for nothing.
+ *
+ * Both formats are here because both are how audiobooks actually ship. The M4B is the one people
+ * mean when they say audiobook, and it was the only one supported — but a great many books are
+ * distributed as a single enormous MP3 with ID3 chapter frames, and that is the shape of the only
+ * book on the device this was tested against: 845 megabytes, past thirty hours, one file.
  */
-export function mayCarryChapters(input: { uri?: string; mimeType?: string; name?: string }): boolean {
-  const blob = `${input.mimeType ?? ''} ${input.uri ?? ''} ${input.name ?? ''}`.toLowerCase();
-  if (/\.(m4b|m4a|mp4|aac)(\?|#|$)/.test(blob)) return true;
-  return /mp4|m4b|m4a|aac/.test(input.mimeType?.toLowerCase() ?? '');
+export function chapterContainerFor(input: {
+  uri?: string;
+  mimeType?: string;
+  name?: string;
+}): ChapterContainer | null {
+  const mime = input.mimeType?.toLowerCase() ?? '';
+  const blob = `${mime} ${input.uri ?? ''} ${input.name ?? ''}`.toLowerCase();
+  if (/\.(m4b|m4a|mp4|aac)(\?|#|$)/.test(blob) || /mp4|m4b|m4a|aac/.test(mime)) return 'mp4';
+  if (/\.mp3(\?|#|$)/.test(blob) || /mpeg|mp3/.test(mime)) return 'mp3';
+  return null;
+}
+
+/** Whether this is worth opening at all. */
+export function mayCarryChapters(input: {
+  uri?: string;
+  mimeType?: string;
+  name?: string;
+}): boolean {
+  return chapterContainerFor(input) !== null;
 }
 
 /**
@@ -78,6 +109,10 @@ export async function readAudiobookChapters(
   // Remote books are deliberately not walked. See the note at the top of the file.
   if (/^https?:/i.test(uri)) return [];
 
+  // Decided before anything is opened: a file that cannot carry chapters is not worth a read.
+  const container = chapterContainerFor({ uri, mimeType: target.mimeType, name: target.name });
+  if (!container) return [];
+
   const source = uri.startsWith('content://')
     ? await deps.fromContentUri(uri)
     : id
@@ -86,7 +121,8 @@ export async function readAudiobookChapters(
   if (!source || source.size <= 0) return [];
 
   try {
-    const rows = await deps.parse(source.read, source.size);
+    const parse = container === 'mp3' ? deps.parseId3 : deps.parse;
+    const rows = await parse(source.read, source.size);
     /*
      * One chapter is not a chapter list. An encoder that writes a single marker at zero has told
      * us the file starts at its start, which is not navigation, and showing it as a chapter list

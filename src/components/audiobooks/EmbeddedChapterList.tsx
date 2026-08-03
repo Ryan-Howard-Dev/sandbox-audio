@@ -26,6 +26,14 @@ export interface EmbeddedChapterListProps {
    * a file to parse. See audiobookChapterSource.ts.
    */
   contentUri?: string;
+  /**
+   * What kind of file it is, so the right chapter table is looked for.
+   *
+   * An M4B keeps chapters in MP4 atoms and an MP3 keeps them in ID3 frames, and the two share no
+   * structure at all. Passed rather than sniffed: the scan already knows.
+   */
+  mimeType?: string;
+  displayName?: string;
   /** Current playhead, so the active chapter can be highlighted. */
   positionSeconds?: number;
   /** Seek within the already-playing file — chapters are offsets, not separate tracks. */
@@ -59,6 +67,8 @@ function activeIndex(chapters: Chapter[], positionSeconds: number | undefined): 
 export function EmbeddedChapterList({
   entryId,
   contentUri,
+  mimeType,
+  displayName,
   positionSeconds,
   onSeek,
   label = 'Chapters',
@@ -69,7 +79,12 @@ export function EmbeddedChapterList({
     let cancelled = false;
     setChapters(null);
     if (!entryId && !contentUri) return;
-    void audiobookChaptersFor({ id: entryId, uri: contentUri }).then((rows) => {
+    void audiobookChaptersFor({
+      id: entryId,
+      uri: contentUri,
+      mimeType,
+      name: displayName,
+    }).then((rows) => {
       // Guarded because a listener can move between books faster than a header read returns, and
       // the late one would otherwise overwrite the book actually open.
       if (!cancelled) setChapters(rows.map((row) => ({ ...row, title: row.title ?? '' })));
@@ -77,7 +92,7 @@ export function EmbeddedChapterList({
     return () => {
       cancelled = true;
     };
-  }, [entryId, contentUri]);
+  }, [entryId, contentUri, mimeType, displayName]);
 
   // Nothing at all while loading, and nothing when the file carries no chapter table. A heading
   // over an empty list reads as breakage; most audiobooks legitimately have no embedded chapters.

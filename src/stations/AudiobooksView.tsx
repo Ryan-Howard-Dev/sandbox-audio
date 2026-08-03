@@ -502,6 +502,10 @@ export default function AudiobooksView({
               // Where the file is. A scanned book is played from this URI and was never copied
               // into the locker, so the id alone resolved to nothing and the list stayed empty.
               contentUri={selected.tracks[0].contentUri}
+              // An M4B and an MP3 keep their chapters in completely different places, and the
+              // scan already knows which this is.
+              mimeType={selected.tracks[0].mimeType}
+              displayName={selected.tracks[0].displayName}
               positionSeconds={
                 // Only when this very file is the one playing — the highlight is a claim about the
                 // playhead, and any other book's clock would put it on an arbitrary chapter.
