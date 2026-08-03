@@ -121,6 +121,13 @@ export interface MobileNowPlayingViewProps {
   narration?: NarrationPlaybackSnapshot | null;
   /** Which controls this kind of content is allowed to show. See mediaPillar.ts. */
   pillarControls?: PillarControls;
+  /**
+   * The chapter to scope the seek bar to, where the chapters are known.
+   *
+   * Null for music, and for a book whose chapter marks nothing has parsed — in both cases the
+   * ordinary bar is the right control. See chapterScrubber.ts.
+   */
+  chapterWindow?: import('../chapterScrubber').ChapterWindow | null;
   isPodcast?: boolean;
   podcastPlaybackSpeed?: number;
   onCyclePodcastSpeed?: () => void;
@@ -199,6 +206,7 @@ export default function MobileNowPlayingView({
   stemSliders,
   narration = null,
   pillarControls,
+  chapterWindow = null,
   isPodcast = false,
   podcastPlaybackSpeed = 1,
   onCyclePodcastSpeed,
@@ -543,6 +551,8 @@ export default function MobileNowPlayingView({
                   }
                 : null
             }
+            chapterWindow={chapterWindow}
+            onSeekAbsolute={onSeek}
             heroDisplayMode={heroDisplay}
             onHeroDisplayModeChange={setHeroDisplay}
             onSkipBack={onSkipBack}

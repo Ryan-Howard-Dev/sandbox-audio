@@ -73,6 +73,7 @@ export default function DocumentReaderView({
   const { t } = useTranslation();
   const activeRef = useRef<HTMLLIElement | null>(null);
   const bodyRef = useRef<HTMLOListElement | null>(null);
+  const rootRef = useRef<HTMLElement | null>(null);
   const speaking = state === 'speaking';
 
   const pages = useMemo(() => paginateDocument(chunks), [chunks]);
@@ -91,10 +92,44 @@ export default function DocumentReaderView({
   const page = pages[pageIndex];
   const visible = page ? chunks.slice(page.startIndex, page.endIndex + 1) : [];
 
+  /**
+   * Which chapter this is, said as a chapter.
+   *
+   * An EPUB knows: the spine names it and says which of how many. A pasted document does not, so
+   * it falls back to the heading the paginator inferred, and to nothing at all when there is no
+   * heading either — better silence than a chapter number invented for a page.
+   */
+  const chapterLine =
+    bookChapters?.length && activeChapterIndex !== undefined
+      ? [
+          bookChapters[activeChapterIndex]?.trim() ||
+            t('audiobooks.chapterFallback', { number: activeChapterIndex + 1 }),
+          bookChapters.length > 1
+            ? t('audiobooks.chapterPosition', {
+                index: activeChapterIndex + 1,
+                count: bookChapters.length,
+              })
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : (page?.chapter ?? '');
+
   // A turned page starts at the top. Landing halfway down a fresh page reads as a broken scroll.
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: 0, behavior: 'auto' });
   }, [pageIndex]);
+
+  /*
+   * Arrive at the top of the reader, not halfway down it.
+   *
+   * The shelf underneath had been scrolled to reach the book, and that scroll belongs to the page
+   * this replaces. Without this the reader opens with its own cover and title already above the
+   * fold, which reads as a rendering fault rather than as a book opening.
+   */
+  useEffect(() => {
+    rootRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+  }, []);
 
   /*
    * Follow the reading within a page, but only when it moves to a new passage. Scrolling on every
@@ -106,7 +141,7 @@ export default function DocumentReaderView({
   }, [chunkIndex, pageIndex, spokenPage]);
 
   return (
-    <section className="podcasts-library-show-detail document-reader">
+    <section className="podcasts-library-show-detail document-reader" ref={rootRef}>
       <button
         type="button"
         className="podcasts-show-detail-back touch-manipulation mb-3"
@@ -130,14 +165,29 @@ export default function DocumentReaderView({
         <div className="min-w-0 flex-1">
           <h2 className="podcasts-show-detail-title">{title}</h2>
           {author ? <p className="podcasts-show-detail-author">{author}</p> : null}
-          {page?.chapter ? <p className="document-reader-chapter">{page.chapter}</p> : null}
+          {chapterLine ? <p className="document-reader-chapter">{chapterLine}</p> : null}
           <p className="font-mono text-[10px] text-[var(--text-dim)] mt-1">
-            {t('audiobooks.pageOf', {
-              page: pageIndex + 1,
-              total: pages.length,
+            {/*
+              Passages, not seconds.
+
+              This used to lead with a page count and a time remaining, and both misread. "Page 1
+              of 1" for a whole chapter says nothing, because a chapter that fits on one page has
+              no pages worth counting. The time was worse: nothing knows how long generated speech
+              runs until it has been spoken, so that figure was an estimate wearing the clothes of
+              a fact, and it drifts as the voice slows for punctuation and names.
+
+              What is known exactly is how many passages there are and which one is being read.
+              So that is what it says, with the estimate kept but plainly marked as one.
+            */}
+            {t('audiobooks.passageOf', {
+              passage: chunkIndex + 1,
+              total: chunks.length,
             })}
+            {pages.length > 1
+              ? ` · ${t('audiobooks.pageOf', { page: pageIndex + 1, total: pages.length })}`
+              : ''}
             {remainingSeconds > 0
-              ? ` · ${formatTime(remainingSeconds)} ${t('audiobooks.docLeft')}`
+              ? ` · ${t('audiobooks.docEstLeft', { time: formatTime(remainingSeconds) })}`
               : ''}
           </p>
           <div className="podcasts-show-detail-actions mt-3 flex items-center gap-2">

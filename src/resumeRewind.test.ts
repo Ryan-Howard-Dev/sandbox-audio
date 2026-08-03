@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  HOUR_GAP_MS,
   LONG_GAP_MS,
   SHORT_GAP_MS,
   resumeAtSeconds,
@@ -29,9 +30,24 @@ describe('rewindSecondsFor', () => {
     expect(rewindSecondsFor('audiobook', SHORT_GAP_MS)).toBe(10);
   });
 
-  it('rewinds further after a long one', () => {
-    expect(rewindSecondsFor('podcast', LONG_GAP_MS)).toBe(5);
-    expect(rewindSecondsFor('audiobook', LONG_GAP_MS + 1)).toBe(15);
+  it('rewinds further after an hour away, where the sentence is gone', () => {
+    expect(rewindSecondsFor('podcast', HOUR_GAP_MS)).toBe(10);
+    expect(rewindSecondsFor('audiobook', HOUR_GAP_MS)).toBe(15);
+  });
+
+  it('rewinds furthest after a day, where you are re-entering rather than continuing', () => {
+    expect(rewindSecondsFor('podcast', LONG_GAP_MS)).toBe(30);
+    expect(rewindSecondsFor('audiobook', LONG_GAP_MS + 1)).toBe(60);
+  });
+
+  it('grows with every step away and never shrinks', () => {
+    for (const pillar of ['podcast', 'audiobook'] as const) {
+      const steps = [SHORT_GAP_MS, HOUR_GAP_MS, LONG_GAP_MS].map((away) =>
+        rewindSecondsFor(pillar, away),
+      );
+      expect(steps[0]).toBeLessThan(steps[1]!);
+      expect(steps[1]).toBeLessThan(steps[2]!);
+    }
   });
 
   /*
@@ -58,8 +74,8 @@ describe('resumeAtSeconds', () => {
   });
 
   it('lands before where you left off after a long absence', () => {
-    expect(resumeAtSeconds(3600, NOW - LONG_GAP_MS, 'audiobook', NOW)).toBe(3585);
-    expect(resumeAtSeconds(3600, NOW - LONG_GAP_MS, 'podcast', NOW)).toBe(3595);
+    expect(resumeAtSeconds(3600, NOW - LONG_GAP_MS, 'audiobook', NOW)).toBe(3540);
+    expect(resumeAtSeconds(3600, NOW - LONG_GAP_MS, 'podcast', NOW)).toBe(3570);
   });
 
   it('never rewinds past the start', () => {

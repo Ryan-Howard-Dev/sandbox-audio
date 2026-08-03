@@ -22865,6 +22865,22 @@ input.shell-search:focus-visible {
   .home-structural-progress-fill { transition: none; }
 }
 
+/*
+ * Where the book as a whole sits, under a bar that spans only the chapter.
+ *
+ * Deliberately quieter than the times above it. The chapter countdown is the number anyone
+ * actually plans around; this one answers "how far through am I" once a session, so it should
+ * read as a footnote rather than compete with the control.
+ */
+.home-chapter-progress-label {
+  margin-top: 0.15rem;
+  text-align: center;
+  font-family: 'IBM Plex Mono', var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
 .home-hero-spoken-poster {
   width: 100%;
   height: 100%;
@@ -22914,9 +22930,20 @@ input.shell-search:focus-visible {
  * One page, scrollable only as far as the page goes. The fixed height is the point: it is what
  * makes a page a page rather than a section of an endless column.
  */
+/*
+ * Reader layout: back, header, text, pager, in that order and nothing on top of anything.
+ *
+ * The pager used to be sticky to the bottom, which on a page shorter than the viewport pinned it
+ * over the last lines of the passage being read. A column with the text as the flexible middle
+ * puts it under the text by construction rather than by arithmetic that has to keep being right.
+ */
+.document-reader {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .document-reader-pager {
-  position: sticky;
-  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -22935,6 +22962,9 @@ input.shell-search:focus-visible {
   margin-top: 1rem;
   padding-bottom: 1rem;
   list-style: none;
+  /* The flexible middle. min-height:0 is what lets it actually shrink inside the column. */
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: 58vh;
   overflow-y: auto;
   overscroll-behavior: contain;

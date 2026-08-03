@@ -41,6 +41,7 @@ import PlayerBarMoreMenu, { type PlayerBarMoreMenuProps } from './PlayerBarMoreM
 import ResolvingPlaybackBanner from './ResolvingPlaybackBanner';
 import { isPodcastEnvelopeId } from '../podcastStorage';
 import { formatTime } from '../stations/theme';
+import { absoluteSeekFromChapter, type ChapterWindow } from '../chapterScrubber';
 import { useTranslation } from '../i18n';
 import { tapHaptic } from '../uiTapFeedback';
 
@@ -62,6 +63,15 @@ type HomeProgressSliderProps = {
   timesClassName?: string;
   timesPosition?: 'above' | 'below';
   fidelityRow?: React.ReactNode;
+  /**
+   * Show what is left rather than how long the whole thing is.
+   *
+   * "How much of this chapter is left" is the number people plan a listening session around —
+   * whether it finishes before the bus stop — and a total they already know is not.
+   */
+  countdown?: boolean;
+  /** Rendered under the bar. Where the whole-book figure goes, as text rather than a target. */
+  footerRow?: React.ReactNode;
   ariaLabel: string;
 };
 
@@ -87,6 +97,8 @@ function HomeProgressSlider({
   timesClassName = 'home-progress-times',
   timesPosition = 'above',
   fidelityRow,
+  countdown = false,
+  footerRow,
   ariaLabel,
 }: HomeProgressSliderProps) {
   const [scrubValue, setScrubValue] = useState(progress);
@@ -195,7 +207,11 @@ function HomeProgressSlider({
   const times = (
     <div className={timesClassName}>
       <span>{formatTime(displayTime)}</span>
-      <span>{formatTime(durationSeconds)}</span>
+      <span>
+        {countdown
+          ? `-${formatTime(Math.max(0, durationSeconds - displayTime))}`
+          : formatTime(durationSeconds)}
+      </span>
     </div>
   );
 
@@ -220,6 +236,7 @@ function HomeProgressSlider({
         aria-label={ariaLabel}
       />
       {timesPosition === 'below' ? times : null}
+      {footerRow}
     </div>
   );
 }
@@ -288,6 +305,19 @@ export interface HomeHeroPlayerProps {
    * both lies and invites a scrub that cannot be honoured. A page count is the true position.
    */
   structuralProgress?: { label: string; percent: number } | null;
+  /**
+   * Scope the bar to the chapter being listened to rather than the whole book.
+   *
+   * A bar across fourteen hours gives a thumb-width of about half an hour, so it is drawn at a
+   * precision no hand can supply and nobody uses it twice. Across one chapter the same bar is
+   * accurate to a sentence. See chapterScrubber.ts for the arithmetic and the reasoning.
+   *
+   * Null keeps the ordinary full-length bar, which is right for a song and right for anything
+   * whose chapters are not known.
+   */
+  chapterWindow?: ChapterWindow | null;
+  /** Absolute seek, for when the bar hands back a position inside the chapter. */
+  onSeekAbsolute?: (seconds: number) => void;
 }
 
 export default function HomeHeroPlayer({
@@ -335,6 +365,8 @@ export default function HomeHeroPlayer({
   flipOnArtworkTap = false,
   coverArtOnly = false,
   structuralProgress = null,
+  chapterWindow = null,
+  onSeekAbsolute,
 }: HomeHeroPlayerProps) {
   const { t } = useTranslation();
   const [vinylSettingsOpen, setVinylSettingsOpen] = useState(false);
@@ -667,6 +699,50 @@ export default function HomeHeroPlayer({
                   </div>
                   <p className="home-structural-progress-label">{structuralProgress.label}</p>
                 </div>
+              ) : tidalNowPlaying && chapterWindow ? (
+                /*
+                 * The same bar, spanning the chapter. Everything about the whole book sits in the
+                 * line underneath, because where you are in fourteen hours is something to read
+                 * and not something to aim a thumb at.
+                 */
+                <HomeProgressSlider
+                  duration={chapterWindow.durationSeconds}
+                  durationSeconds={chapterWindow.durationSeconds}
+                  currentTimeSeconds={chapterWindow.positionSeconds}
+                  progress={
+                    chapterWindow.durationSeconds > 0
+                      ? (chapterWindow.positionSeconds / chapterWindow.durationSeconds) * 100
+                      : 0
+                  }
+                  onSeek={(withinChapter) =>
+                    (onSeekAbsolute ?? onSeek)(
+                      absoluteSeekFromChapter(chapterWindow, withinChapter),
+                    )
+                  }
+                  onScrubStart={onScrubStart}
+                  onScrubEnd={onScrubEnd}
+                  countdown
+                  blockClassName="home-progress-block home-progress-block--tidal home-progress-block--chapter"
+                  timesClassName="home-progress-times home-progress-times--tidal"
+                  timesPosition="below"
+                  footerRow={
+                    <p className="home-chapter-progress-label">
+                      {chapterWindow.title
+                        ? chapterWindow.title
+                        : t('player.chapterOf', {
+                            index: chapterWindow.index + 1,
+                            count: chapterWindow.count,
+                          })}
+                      {chapterWindow.overallRemainingSeconds > 0
+                        ? ` · ${t('player.bookRemaining', {
+                            percent: Math.round(chapterWindow.overallPercent),
+                            remaining: formatTime(chapterWindow.overallRemainingSeconds),
+                          })}`
+                        : ''}
+                    </p>
+                  }
+                  ariaLabel={t('player.chapterProgress')}
+                />
               ) : tidalNowPlaying ? (
                 <HomeProgressSlider
                   duration={duration}

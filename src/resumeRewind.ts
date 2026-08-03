@@ -17,13 +17,22 @@ import type { MediaPillar } from './mediaPillar';
 
 /** Below this you have not been away; you paused to do something and came back. */
 export const SHORT_GAP_MS = 60_000;
-/** Beyond this the context is gone, not merely faded, and the longer rewind applies. */
+/**
+ * An hour away is a different kind of absence from a minute.
+ *
+ * You did something else entirely — a meal, a commute, a meeting — and the sentence you were in
+ * is gone even though the chapter is still roughly in mind. A few seconds no longer recovers it.
+ */
+export const HOUR_GAP_MS = 60 * 60 * 1000;
+/** Beyond this the context is gone, not merely faded, and the longest rewind applies. */
 export const LONG_GAP_MS = 24 * 60 * 60 * 1000;
 
 export interface RewindPolicy {
   /** Seconds to rewind after a short absence. */
   brief: number;
-  /** Seconds to rewind after a long one. */
+  /** Seconds after an hour or more, where the sentence is gone but the thread is not. */
+  hour: number;
+  /** Seconds after a day or more, where you are re-entering rather than continuing. */
   extended: number;
 }
 
@@ -34,8 +43,8 @@ export interface RewindPolicy {
  */
 const POLICY: Record<MediaPillar, RewindPolicy | null> = {
   music: null,
-  podcast: { brief: 3, extended: 5 },
-  audiobook: { brief: 10, extended: 15 },
+  podcast: { brief: 3, hour: 10, extended: 30 },
+  audiobook: { brief: 10, hour: 15, extended: 60 },
   // Spoken text rewinds in characters rather than seconds; see narrationPosition.ts.
   'spoken-text': null,
 };
@@ -54,7 +63,8 @@ export function rewindSecondsFor(pillar: MediaPillar, awayMs: number): number {
   const policy = POLICY[pillar];
   if (!policy) return 0;
   if (!Number.isFinite(awayMs) || awayMs < SHORT_GAP_MS) return 0;
-  return awayMs >= LONG_GAP_MS ? policy.extended : policy.brief;
+  if (awayMs >= LONG_GAP_MS) return policy.extended;
+  return awayMs >= HOUR_GAP_MS ? policy.hour : policy.brief;
 }
 
 /**

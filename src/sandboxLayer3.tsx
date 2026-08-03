@@ -53,6 +53,8 @@ import PodcastChapterSheet from './components/podcasts/PodcastChapterSheet';
 import MobileDockWithShell from './mobile/MobileDockWithShell';
 import { useNarrationPlayback } from './hooks/useNarrationPlayback';
 import { controlsForPillar, resolveMediaPillar } from './mediaPillar';
+import { seekIntervalsFor, seekTargetSeconds } from './spokenSeekIntervals';
+import { resolveChapterWindow, type ChapterMark } from './chapterScrubber';
 import { resumeAtSeconds } from './resumeRewind';
 import {
   clearNarrationPlayback,
@@ -6850,15 +6852,27 @@ export default function SandboxShell() {
     }
     // Audiobooks included: a twelve-hour book had music's transport, so this button jumped a
     // whole chapter instead of stepping back a few seconds. See spokenWordPlayback.
+    //
+    // Back is deliberately shorter than forward. Pressing it means a name or a clause went past
+    // while you were doing something else, and the shortest jump that recovers it is the right
+    // one; the same thirty seconds that usefully clears a sponsor read puts you back into a
+    // minute you already understood. See spokenSeekIntervals.
     if (audio.envelope && usesIntervalSeekTransport(audio.envelope.envelopeId)) {
-      const interval = loadPodcastSeekIntervalSeconds();
-      const dur =
-        audio.streamDurationSeconds ||
-        audio.durationSeconds ||
-        audio.envelope.durationSeconds ||
-        0;
-      const next = Math.max(0, audio.currentTimeSeconds - interval);
-      audio.seek(dur > 0 ? Math.min(next, dur) : next);
+      const { back } = seekIntervalsFor(
+        resolveMediaPillar({ envelopeId: audio.envelope.envelopeId }),
+        loadPodcastSeekIntervalSeconds(),
+      );
+      audio.seek(
+        seekTargetSeconds({
+          currentSeconds: audio.currentTimeSeconds,
+          deltaSeconds: -back,
+          durationSeconds:
+            audio.streamDurationSeconds ||
+            audio.durationSeconds ||
+            audio.envelope.durationSeconds ||
+            0,
+        }),
+      );
       return;
     }
     const back = computeSkipBackIndex({
@@ -6922,15 +6936,24 @@ export default function SandboxShell() {
       return;
     }
     if (audio.envelope && usesIntervalSeekTransport(audio.envelope.envelopeId)) {
-      const interval = loadPodcastSeekIntervalSeconds();
-      const dur =
-        audio.streamDurationSeconds ||
-        audio.durationSeconds ||
-        audio.envelope.durationSeconds ||
-        0;
-      const next = audio.currentTimeSeconds + interval;
+      // Forward keeps the configured interval: that setting was always really about how much
+      // sponsor read or theme music one press should clear.
+      const { forward } = seekIntervalsFor(
+        resolveMediaPillar({ envelopeId: audio.envelope.envelopeId }),
+        loadPodcastSeekIntervalSeconds(),
+      );
       lastSkipOutcomeRef.current = 'seek';
-      audio.seek(dur > 0 ? Math.min(next, dur) : next);
+      audio.seek(
+        seekTargetSeconds({
+          currentSeconds: audio.currentTimeSeconds,
+          deltaSeconds: forward,
+          durationSeconds:
+            audio.streamDurationSeconds ||
+            audio.durationSeconds ||
+            audio.envelope.durationSeconds ||
+            0,
+        }),
+      );
       return;
     }
     const upNextSettings = loadSovereignUpNextSettings();
@@ -7931,6 +7954,63 @@ export default function SandboxShell() {
     npIsPodcast &&
     seekSecondsForNextChapter(podcastChapters, npCurrentTimeSeconds) != null;
 
+  /**
+   * The chapter to scope the seek bar to, when there is one.
+   *
+   * Two shapes reach this, and they are genuinely different:
+   *
+   *   A podcast episode is one file with chapter offsets inside it, so the window is a real slice
+   *   of that file and a scrub inside it is a scrub inside the episode.
+   *
+   *   A book held as one file per chapter is already playing only the chapter, so its window
+   *   starts at zero and spans the track. Nothing about seeking changes; what it adds is knowing
+   *   this is chapter six of forty-one with eleven hours left, which the player never said.
+   *
+   * A single-file M4B lands in neither and gets the ordinary bar, because its chapter atoms are
+   * parsed by m4bChapters but nothing yet carries them to playback. Better an honest full-length
+   * bar than a chapter window invented from nothing.
+   */
+  const nowPlayingChapterWindow = useMemo(() => {
+    if (npIsPodcast) {
+      return resolveChapterWindow({
+        positionSeconds: npCurrentTimeSeconds,
+        durationSeconds: npDurationSeconds,
+        chapters: podcastChapters as ChapterMark[],
+      });
+    }
+    if (!isAnyAudiobookEnvelopeId(npEnvelope?.envelopeId) || playQueue.length < 2) return null;
+    const trackLength = npDurationSeconds > 0 ? npDurationSeconds : 0;
+    if (trackLength <= 0) return null;
+    // Every chapter's length, so "how much of the book is left" is a sum and not a guess.
+    const lengths = playQueue.map((item, index) =>
+      index === queueIndex ? trackLength : Math.max(0, item.durationSeconds ?? 0),
+    );
+    const bookSeconds = lengths.reduce((sum, length) => sum + length, 0);
+    const before = lengths.slice(0, queueIndex).reduce((sum, length) => sum + length, 0);
+    const played = before + Math.min(trackLength, Math.max(0, npCurrentTimeSeconds));
+    return {
+      index: queueIndex,
+      count: playQueue.length,
+      title: '',
+      startSeconds: 0,
+      durationSeconds: trackLength,
+      positionSeconds: Math.min(trackLength, Math.max(0, npCurrentTimeSeconds)),
+      remainingSeconds: Math.max(0, trackLength - npCurrentTimeSeconds),
+      // Zero where a chapter reported no length, since a percentage of an unknown total is a
+      // number that looks true and is not.
+      overallPercent: bookSeconds > 0 ? Math.min(100, (played / bookSeconds) * 100) : 0,
+      overallRemainingSeconds: bookSeconds > 0 ? Math.max(0, bookSeconds - played) : 0,
+    };
+  }, [
+    npIsPodcast,
+    podcastChapters,
+    npCurrentTimeSeconds,
+    npDurationSeconds,
+    npEnvelope,
+    playQueue,
+    queueIndex,
+  ]);
+
   const displayArt = homeArt;
   /**
    * Only non-null while the screen is holding a still-audible track through another track's
@@ -8161,10 +8241,32 @@ export default function SandboxShell() {
     getMetadata: () => null as MediaSessionTrackMetadata | null,
   });
 
+  /*
+   * The lock screen, the steering wheel and the keyboard all arrive here.
+   *
+   * For a book or a podcast these buttons already seek by an interval rather than change item —
+   * a driver hitting Next reflexively to clear a sponsor read must not lose a ninety minute
+   * chapter, and finding the timestamp again on a dashboard is not something to do while moving.
+   * See skipForward, spokenSeekIntervals, and spokenWordPlayback.
+   *
+   * Narration was the one spoken thing left out. It has no envelope at all, so the interval test
+   * could never match it and Next fell through to a queue that is empty while a book is being
+   * read aloud: the button did nothing. A passage is narration's interval, so that is what it
+   * moves. Mirrors what the in-app transport already does with the same two buttons.
+   */
+  const narrationOwnsOutput = audio.envelope ? null : narrationPlayback;
   shortcutCtxRef.current = {
     togglePlay,
-    skipBack,
-    skipForward,
+    skipBack: narrationOwnsOutput
+      ? () =>
+          narrationOwnsOutput.controls.seekToChunk(Math.max(0, narrationOwnsOutput.chunkIndex - 1))
+      : skipBack,
+    skipForward: narrationOwnsOutput
+      ? () =>
+          narrationOwnsOutput.controls.seekToChunk(
+            Math.min(narrationOwnsOutput.chunkCount - 1, narrationOwnsOutput.chunkIndex + 1),
+          )
+      : skipForward,
     focusSearch: () => {
       if (showMobileShell) {
         openMobileSearch();
@@ -9557,6 +9659,7 @@ export default function SandboxShell() {
                    * same act as not having a handler for it.
                    */
                   pillarControls: nowPlayingControls,
+                  chapterWindow: nowPlayingChapterWindow,
                   title: narrationForPlayer ? narrationForPlayer.title : homeTitle,
                   artist: narrationForPlayer
                     ? narrationForPlayer.author?.trim() || 'Read aloud'
