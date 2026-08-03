@@ -128,15 +128,31 @@ const CHPL_TICKS_PER_SECOND = 10_000_000;
  * Layout after the atom header: one version byte, three flag bytes, then a chapter count and, per
  * chapter, an eight-byte start time followed by a length-prefixed UTF-8 title.
  *
- * The count is a byte in the original Nero layout and a 32-bit integer in the variant most tools
- * now write. Both appear in real files, so the shape is detected rather than assumed — reading the
- * wrong one yields either one chapter or tens of thousands of nonsense entries.
+ * Three shapes exist in real files and the count is in a different place in each:
+ *
+ *   version 0, count as one byte      — the original Nero layout
+ *   version 0, count as 32 bits       — the variant several tools write
+ *   version 1, four reserved bytes    — then a one-byte count. This is what ffmpeg writes, and
+ *                                       therefore what most M4B files in the world actually are.
+ *
+ * The third was missing, and it is the one that matters most. Reading a version 1 payload as a
+ * version 0 one takes the first byte of the reserved field as the count: that byte is zero, the
+ * count is rejected, and the file reports no chapters at all. Every ffmpeg-made audiobook came
+ * back empty — which looks exactly like a book that has no chapter table, so nothing ever
+ * suggested a parser fault.
+ *
+ * Shapes are still tried in order rather than trusted from the version byte, because encoders do
+ * write a version they then contradict. The version only decides which to try first.
  */
 export function parseChplPayload(body: Uint8Array): M4bChapter[] {
   if (body.length < 9) return [];
   const decoder = new TextDecoder('utf-8');
 
-  const attempt = (countOffset: number, countIsByte: boolean): M4bChapter[] | null => {
+  const attempt = (
+    countOffset: number,
+    countIsByte: boolean,
+  ): { chapters: M4bChapter[]; consumedToEnd: boolean } | null => {
+    if (countOffset >= body.length) return null;
     const count = countIsByte ? body[countOffset]! : readUint32(body, countOffset);
     if (count <= 0 || count > 100_000) return null;
     const chapters: M4bChapter[] = [];
@@ -152,11 +168,37 @@ export function parseChplPayload(body: Uint8Array): M4bChapter[] {
       at += titleLength;
       chapters.push({ startSeconds: ticks / CHPL_TICKS_PER_SECOND, title });
     }
-    return chapters;
+    // Trailing padding is legal, so allow a little slack rather than demanding an exact landing.
+    return { chapters, consumedToEnd: body.length - at <= 4 };
   };
 
-  // 4 bytes version+flags, then either a 32-bit count (common) or a single byte (original Nero).
-  return attempt(4, false) ?? attempt(4, true) ?? [];
+  /*
+   * A shape that parses every chapter it promised and lands on the end of the payload is the
+   * right one. Without that last check a version 1 payload read as version 0 can still produce a
+   * plausible-looking first chapter out of the reserved bytes, and a wrong reading that yields
+   * something is worse than one that yields nothing.
+   */
+  const shapes: Array<[number, boolean]> =
+    body[0] === 1
+      ? [
+          [8, true], // version 1: four reserved bytes sit between the flags and the count
+          [4, false],
+          [4, true],
+        ]
+      : [
+          [4, false],
+          [4, true],
+          [8, true],
+        ];
+
+  let fallback: M4bChapter[] | null = null;
+  for (const [countOffset, countIsByte] of shapes) {
+    const parsed = attempt(countOffset, countIsByte);
+    if (!parsed) continue;
+    if (parsed.consumedToEnd) return parsed.chapters;
+    fallback ??= parsed.chapters;
+  }
+  return fallback ?? [];
 }
 
 /**

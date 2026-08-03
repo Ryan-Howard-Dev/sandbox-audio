@@ -499,6 +499,9 @@ export default function AudiobooksView({
           {selected.tracks.length === 1 && selected.tracks[0] ? (
             <EmbeddedChapterList
               entryId={selected.tracks[0].id}
+              // Where the file is. A scanned book is played from this URI and was never copied
+              // into the locker, so the id alone resolved to nothing and the list stayed empty.
+              contentUri={selected.tracks[0].contentUri}
               positionSeconds={
                 // Only when this very file is the one playing — the highlight is a claim about the
                 // playhead, and any other book's clock would put it on an arbitrary chapter.

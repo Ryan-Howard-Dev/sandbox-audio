@@ -55,6 +55,7 @@ import { useNarrationPlayback } from './hooks/useNarrationPlayback';
 import { controlsForPillar, resolveMediaPillar } from './mediaPillar';
 import { seekIntervalsFor, seekTargetSeconds } from './spokenSeekIntervals';
 import { resolveChapterWindow, type ChapterMark } from './chapterScrubber';
+import { useAudiobookChapters } from './hooks/useAudiobookChapters';
 import { resumeAtSeconds } from './resumeRewind';
 import {
   clearNarrationPlayback,
@@ -7954,6 +7955,22 @@ export default function SandboxShell() {
     npIsPodcast &&
     seekSecondsForNextChapter(podcastChapters, npCurrentTimeSeconds) != null;
 
+  /*
+   * The chapter table inside the file, for a book that is one file.
+   *
+   * Read once per book and cached, since walking to an moov that sits behind the audio takes a few
+   * round trips and the bar asks about chapters several times a second.
+   */
+  const embeddedChapters = useAudiobookChapters({
+    envelopeId: npEnvelope?.envelopeId,
+    url: npEnvelope?.url,
+    mimeType: npEnvelope?.mimeType,
+    title: npEnvelope?.title,
+    // Only where a book is genuinely one file. A multi-file book plays a chapter per track and
+    // has nothing to gain from opening each of them.
+    enabled: isAnyAudiobookEnvelopeId(npEnvelope?.envelopeId) && playQueue.length < 2,
+  });
+
   /**
    * The chapter to scope the seek bar to, when there is one.
    *
@@ -7966,9 +7983,10 @@ export default function SandboxShell() {
    *   starts at zero and spans the track. Nothing about seeking changes; what it adds is knowing
    *   this is chapter six of forty-one with eleven hours left, which the player never said.
    *
-   * A single-file M4B lands in neither and gets the ordinary bar, because its chapter atoms are
-   * parsed by m4bChapters but nothing yet carries them to playback. Better an honest full-length
-   * bar than a chapter window invented from nothing.
+   *   A single M4B carries its chapter table inside the file, so it is the first case again: real
+   *   offsets, a real slice, a scrub that lands where it says. This is the shape the whole idea
+   *   was for — one file, fourteen hours — and until embeddedChapters existed it was the one shape
+   *   that could not be served, because nothing carried the parsed atoms to playback.
    */
   const nowPlayingChapterWindow = useMemo(() => {
     if (npIsPodcast) {
@@ -7977,6 +7995,15 @@ export default function SandboxShell() {
         durationSeconds: npDurationSeconds,
         chapters: podcastChapters as ChapterMark[],
       });
+    }
+    // The book's own chapter table wins over anything derived from how its files are arranged.
+    if (embeddedChapters.length > 1) {
+      const window = resolveChapterWindow({
+        positionSeconds: npCurrentTimeSeconds,
+        durationSeconds: npDurationSeconds,
+        chapters: embeddedChapters,
+      });
+      if (window) return window;
     }
     if (!isAnyAudiobookEnvelopeId(npEnvelope?.envelopeId) || playQueue.length < 2) return null;
     const trackLength = npDurationSeconds > 0 ? npDurationSeconds : 0;
@@ -8004,6 +8031,7 @@ export default function SandboxShell() {
   }, [
     npIsPodcast,
     podcastChapters,
+    embeddedChapters,
     npCurrentTimeSeconds,
     npDurationSeconds,
     npEnvelope,
@@ -9628,7 +9656,7 @@ export default function SandboxShell() {
                       (audio.state === 'Resolving' || audio.state === 'Connecting')),
                   isPodcast: npIsPodcast,
                   podcastChapterTitle: activePodcastChapter?.title ?? null,
-                  hasPodcastChapters: podcastChapters.length > 0,
+                  hasPodcastChapters: podcastChapters.length > 0 || embeddedChapters.length > 1,
                   onPodcastPrevChapter: handlePodcastPrevChapter,
                   onPodcastNextChapter: handlePodcastNextChapter,
                   onOpenPodcastChapters: () => setPodcastChaptersOpen(true),
@@ -9803,7 +9831,7 @@ export default function SandboxShell() {
                   episodeVolumeBoostDb,
                   onCycleEpisodeVolumeBoost: handleCycleEpisodeVolumeBoost,
                   onOpenPodcastChapters: () => setPodcastChaptersOpen(true),
-                  hasPodcastChapters: podcastChapters.length > 0,
+                  hasPodcastChapters: podcastChapters.length > 0 || embeddedChapters.length > 1,
                   podcastSkipAdChaptersEnabled,
                   onTogglePodcastSkipAdChapters: handleTogglePodcastSkipAdChapters,
                   onSkipPodcastAd: handleSkipPodcastAd,
@@ -9818,13 +9846,31 @@ export default function SandboxShell() {
         </>
       ) : null}
 
-      {npIsPodcast ? (
+      {/*
+        The same sheet for a book's own chapters.
+
+        Chapters are a table of contents, not a queue: an author's index of one continuous thing,
+        with no reordering, no shuffling and nothing to delete. This sheet is already exactly that,
+        so a book gets it rather than a second list that would only differ by accident. Seeking is
+        the whole interaction, because a chapter in an M4B is an offset in the file that is already
+        playing, not a track to switch to.
+      */}
+      {npIsPodcast || embeddedChapters.length > 1 ? (
         <PodcastChapterSheet
           open={podcastChaptersOpen}
           onClose={() => setPodcastChaptersOpen(false)}
           title={homeTitle}
           feedTitle={homeArtist}
-          chapters={podcastChapters}
+          chapters={
+            npIsPodcast
+              ? podcastChapters
+              : embeddedChapters.map((mark, index) => ({
+                  startSeconds: mark.startSeconds,
+                  // An untitled marker keeps its number rather than being renamed, which is the
+                  // one thing the parser deliberately refuses to invent.
+                  title: mark.title?.trim() || t('audiobooks.chapterFallback', { number: index + 1 }),
+                }))
+          }
           currentTimeSeconds={npCurrentTimeSeconds}
           onSeek={(seconds) => audio.seek(seconds)}
         />
@@ -9906,7 +9952,7 @@ export default function SandboxShell() {
           onResumeQueue={showResumeQueuePrompt ? handleResumeLastQueue : undefined}
           isPodcast={npIsPodcast}
           podcastChapterTitle={activePodcastChapter?.title ?? null}
-          hasPodcastChapters={podcastChapters.length > 0}
+          hasPodcastChapters={podcastChapters.length > 0 || embeddedChapters.length > 1}
           onPodcastPrevChapter={handlePodcastPrevChapter}
           onPodcastNextChapter={handlePodcastNextChapter}
           onOpenPodcastChapters={() => setPodcastChaptersOpen(true)}

@@ -137,6 +137,17 @@ export interface NativeExoPlaybackPlugin {
     bytes?: number;
     offset?: number;
   }): Promise<{ base64?: string }>;
+  /**
+   * A byte range of any readable media URI, base64, with the file's size.
+   *
+   * Same job as getLockerBlobHead for files the locker never took a copy of — a book scanned off
+   * the device is played straight from its content:// URI and has no locker id to resolve.
+   */
+  readMediaUriRange(options: {
+    uri: string;
+    bytes?: number;
+    offset?: number;
+  }): Promise<{ base64?: string; size?: number }>;
   importLockerBlobFromPath(options: {
     id: string;
     sourcePath: string;

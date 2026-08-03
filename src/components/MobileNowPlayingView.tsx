@@ -636,7 +636,12 @@ export default function MobileNowPlayingView({
             ) : null}
           </div>
           <div className="mobile-np-footer-actions">
-            {isPodcast && hasPodcastChapters && onOpenPodcastChapters ? (
+            {/*
+              Not podcast-only any more. A single-file audiobook carries its chapter table inside
+              the file, and now that something reads it, a book has exactly as much to open here
+              as an episode does.
+            */}
+            {hasPodcastChapters && onOpenPodcastChapters ? (
               <button
                 type="button"
                 className="mobile-np-lyrics-pill touch-manipulation"

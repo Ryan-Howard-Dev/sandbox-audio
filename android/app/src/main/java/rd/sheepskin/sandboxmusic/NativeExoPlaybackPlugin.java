@@ -1726,6 +1726,83 @@ public class NativeExoPlaybackPlugin extends Plugin {
             });
     }
 
+    /**
+     * A byte range of any readable media URI, base64 encoded.
+     *
+     * getLockerBlobHead answers the same question for a locker file, but it resolves ids through
+     * LockerBlobRegistry, so a book that was scanned off the device rather than imported has no
+     * entry to find. That is most audiobooks: they arrive over USB into Books or Audiobooks and
+     * are played straight from their content:// URI, never copied. Asking the registry for one
+     * returns nothing, which is why the chapter list on a device M4B has always been empty.
+     *
+     * The point of a range rather than a head is the same as it is for the locker: MP4 written
+     * without faststart keeps its moov behind the audio, so the chapter table can be hundreds of
+     * megabytes into a file. Seeking to it costs nothing; reading past it would copy a whole book
+     * across the bridge.
+     */
+    @PluginMethod
+    public void readMediaUriRange(PluginCall call) {
+        final String rawUri = call.getString("uri");
+        if (rawUri == null || rawUri.trim().isEmpty()) {
+            call.reject("uri required");
+            return;
+        }
+        final String uriText = rawUri.trim();
+        final int requested = call.getInt("bytes", 8192);
+        final int limit = Math.max(1, Math.min(requested, 65536));
+        final long offset = Math.max(0L, call.getLong("offset", 0L));
+        playbackExecutor.execute(
+            () -> {
+                try {
+                    Uri uri = Uri.parse(uriText);
+                    android.content.ContentResolver resolver = getContext().getContentResolver();
+                    try (android.os.ParcelFileDescriptor pfd = resolver.openFileDescriptor(uri, "r")) {
+                        if (pfd == null) {
+                            mainHandler.post(() -> call.reject("uri not readable"));
+                            return;
+                        }
+                        long size = pfd.getStatSize();
+                        if (size <= 0 || offset >= size) {
+                            JSObject empty = new JSObject();
+                            empty.put("base64", "");
+                            empty.put("size", Math.max(size, 0L));
+                            mainHandler.post(() -> call.resolve(empty));
+                            return;
+                        }
+                        int want = (int) Math.min(limit, size - offset);
+                        byte[] buffer = new byte[want];
+                        try (java.io.FileInputStream in =
+                                 new java.io.FileInputStream(pfd.getFileDescriptor())) {
+                            /*
+                             * Position the channel rather than skip() the stream. A content
+                             * provider may hand back a stream whose skip is a read-and-discard,
+                             * which turns a seek past the audio into reading all of it.
+                             */
+                            in.getChannel().position(offset);
+                            int read = 0;
+                            while (read < want) {
+                                int n = in.read(buffer, read, want - read);
+                                if (n < 0) break;
+                                read += n;
+                            }
+                            if (read < want) buffer = java.util.Arrays.copyOf(buffer, Math.max(read, 0));
+                        }
+                        JSObject ret = new JSObject();
+                        ret.put("base64", Base64.encodeToString(buffer, Base64.NO_WRAP));
+                        ret.put("size", size);
+                        mainHandler.post(() -> call.resolve(ret));
+                    }
+                } catch (SecurityException e) {
+                    // A revoked or never-granted permission for this URI. Not an error worth
+                    // shouting about: the caller falls back to having no chapters.
+                    mainHandler.post(() -> call.reject("uri not permitted"));
+                } catch (Exception e) {
+                    String msg = e.getMessage() != null ? e.getMessage() : "range read failed";
+                    mainHandler.post(() -> call.reject(msg));
+                }
+            });
+    }
+
     @PluginMethod
     public void getLockerBlobBytes(PluginCall call) {
         final String rawId = call.getString("id");

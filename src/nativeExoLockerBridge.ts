@@ -166,6 +166,57 @@ export async function nativeLockerBlobHead(
   }
 }
 
+/**
+ * A byte-range reader over a media URI, plus the file's size, or null when it cannot be read.
+ *
+ * Shaped to match what lockerAudioByteReader returns, so a chapter parser does not need to know
+ * which of the two it was handed. The size comes back with the first read rather than from a
+ * separate call: one round trip across the bridge answers both, and asking twice invites the two
+ * answers to disagree about a file that was being written.
+ */
+export async function nativeMediaUriByteReader(
+  uri: string,
+): Promise<{ read: (offset: number, length: number) => Promise<Uint8Array | null>; size: number } | null> {
+  if (Capacitor.getPlatform() !== 'android') return null;
+  const target = uri?.trim() ?? '';
+  if (!target) return null;
+
+  const decode = (base64: string): Uint8Array | null => {
+    if (!base64) return null;
+    const binary = atob(base64);
+    const out = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+    return out.length > 0 ? out : null;
+  };
+
+  let size = 0;
+  try {
+    // A one-byte probe purely to learn the length; the range read reports it either way.
+    const probe = await NativeExoPlayback.readMediaUriRange({ uri: target, bytes: 1, offset: 0 });
+    size = typeof probe?.size === 'number' && Number.isFinite(probe.size) ? probe.size : 0;
+  } catch {
+    return null;
+  }
+  if (size <= 0) return null;
+
+  return {
+    size,
+    read: async (offset, length) => {
+      if (offset < 0 || length <= 0 || offset >= size) return null;
+      try {
+        const result = await NativeExoPlayback.readMediaUriRange({
+          uri: target,
+          bytes: Math.min(length, 65_536),
+          offset,
+        });
+        return decode(result?.base64?.trim() ?? '');
+      } catch {
+        return null;
+      }
+    },
+  };
+}
+
 export async function registerLockerBlobFromFileUri(
   lockerId: string,
   fileUri: string,

@@ -119,6 +119,11 @@ export class NativeExoPlaybackWeb extends WebPlugin implements NativeExoPlayback
     return { base64: '' };
   }
 
+  /** No content:// URIs off Android, so nothing to read and no size to report. */
+  async readMediaUriRange(): Promise<{ base64?: string; size?: number }> {
+    return { base64: '', size: 0 };
+  }
+
   async importLockerBlobFromPath(): Promise<{ ok: boolean; contentUri?: string; bytes?: number }> {
     return { ok: false };
   }

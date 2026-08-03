@@ -10,11 +10,22 @@
  */
 
 import { useEffect, useState } from 'react';
-import { lockerAudiobookChapters } from '../../lockerStorage';
+import { audiobookChaptersFor } from '../../audiobookChapters';
 
 export interface EmbeddedChapterListProps {
-  /** Locker entry holding the audiobook file. */
+  /**
+   * The book's id — a MediaStore id for a scanned book, a locker entry id for an imported one.
+   */
   entryId: string;
+  /**
+   * Where the file is, when it is not in the locker.
+   *
+   * Without this the id alone was resolved through the locker blob store, which never held a book
+   * that was scanned off the device rather than imported. That is most audiobooks, and it is why
+   * this list has been rendering nothing on real phones: the parse worked, the lookup never found
+   * a file to parse. See audiobookChapterSource.ts.
+   */
+  contentUri?: string;
   /** Current playhead, so the active chapter can be highlighted. */
   positionSeconds?: number;
   /** Seek within the already-playing file — chapters are offsets, not separate tracks. */
@@ -47,6 +58,7 @@ function activeIndex(chapters: Chapter[], positionSeconds: number | undefined): 
 
 export function EmbeddedChapterList({
   entryId,
+  contentUri,
   positionSeconds,
   onSeek,
   label = 'Chapters',
@@ -56,16 +68,16 @@ export function EmbeddedChapterList({
   useEffect(() => {
     let cancelled = false;
     setChapters(null);
-    if (!entryId) return;
-    void lockerAudiobookChapters(entryId).then((rows) => {
+    if (!entryId && !contentUri) return;
+    void audiobookChaptersFor({ id: entryId, uri: contentUri }).then((rows) => {
       // Guarded because a listener can move between books faster than a header read returns, and
       // the late one would otherwise overwrite the book actually open.
-      if (!cancelled) setChapters(rows);
+      if (!cancelled) setChapters(rows.map((row) => ({ ...row, title: row.title ?? '' })));
     });
     return () => {
       cancelled = true;
     };
-  }, [entryId]);
+  }, [entryId, contentUri]);
 
   // Nothing at all while loading, and nothing when the file carries no chapter table. A heading
   // over an empty list reads as breakage; most audiobooks legitimately have no embedded chapters.
