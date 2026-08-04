@@ -19,6 +19,7 @@ function deps(overrides: Partial<ChapterSourceDeps> = {}): ChapterSourceDeps {
     fromLockerEntry: vi.fn(async () => ({ read: async () => null, size: 5_000 })),
     parse: vi.fn(async () => CHAPTERS),
     parseId3: vi.fn(async () => CHAPTERS),
+    parseFlac: vi.fn(async () => CHAPTERS),
     ...overrides,
   };
 }
@@ -26,6 +27,7 @@ function deps(overrides: Partial<ChapterSourceDeps> = {}): ChapterSourceDeps {
 /** Stated on every target, because nothing is opened until the container is known. */
 const M4B = { mimeType: 'audio/mp4' };
 const MP3 = { mimeType: 'audio/mpeg' };
+const FLAC = { mimeType: 'audio/flac' };
 
 beforeEach(() => {
   clearAudiobookChapterCache();
@@ -52,8 +54,9 @@ describe('chapterContainerFor', () => {
   });
 
   it('declines a container that carries no chapter table at all', () => {
-    expect(chapterContainerFor({ name: 'book.flac' })).toBeNull();
     expect(chapterContainerFor({ name: 'book.ogg', mimeType: 'audio/ogg' })).toBeNull();
+    expect(chapterContainerFor({ name: 'book.wav' })).toBeNull();
+    expect(chapterContainerFor({ name: 'book.opus' })).toBeNull();
     expect(chapterContainerFor({})).toBeNull();
   });
 });
@@ -62,7 +65,9 @@ describe('mayCarryChapters', () => {
   it('agrees with the container test', () => {
     expect(mayCarryChapters({ name: 'book.m4b' })).toBe(true);
     expect(mayCarryChapters({ name: 'chapter-01.mp3' })).toBe(true);
-    expect(mayCarryChapters({ name: 'book.flac' })).toBe(false);
+    // FLAC joined the list once its cue sheet could be read; ogg still has nowhere to put marks.
+    expect(mayCarryChapters({ name: 'Live at Leeds.flac' })).toBe(true);
+    expect(mayCarryChapters({ name: 'book.ogg' })).toBe(false);
     expect(mayCarryChapters({})).toBe(false);
   });
 });
@@ -105,7 +110,7 @@ describe('readAudiobookChapters', () => {
 
   it('does not open a file whose container carries no chapters', async () => {
     const d = deps();
-    expect(await readAudiobookChapters({ id: 'x', name: 'book.flac' }, d)).toEqual([]);
+    expect(await readAudiobookChapters({ id: 'x', name: 'book.ogg' }, d)).toEqual([]);
     expect(d.fromLockerEntry).not.toHaveBeenCalled();
   });
 
@@ -190,5 +195,22 @@ describe('readAudiobookChaptersCached', () => {
       }),
     });
     expect(await readAudiobookChaptersCached({ id: '42', ...M4B }, d)).toEqual([]);
+  });
+});
+
+describe('FLAC', () => {
+  it('recognises a lossless rip kept as one file', () => {
+    expect(chapterContainerFor({ name: 'Live at Leeds.flac' })).toBe('flac');
+    expect(chapterContainerFor({ mimeType: 'audio/flac' })).toBe('flac');
+  });
+
+  it('sends it to the cue sheet reader, not the atom or frame ones', () => {
+    // The three formats share no structure; reading one as another finds nothing at all.
+    const d = deps();
+    return readAudiobookChapters({ id: 'x', ...FLAC }, d).then(() => {
+      expect(d.parseFlac).toHaveBeenCalled();
+      expect(d.parse).not.toHaveBeenCalled();
+      expect(d.parseId3).not.toHaveBeenCalled();
+    });
   });
 });

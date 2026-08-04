@@ -44,6 +44,11 @@ export interface ChapterSourceDeps {
     read: (offset: number, length: number) => Promise<Uint8Array | null>,
     fileSize: number,
   ) => Promise<Array<{ startSeconds: number; title: string }>>;
+  /** A FLAC cue sheet, for a lossless rip kept as one file. */
+  parseFlac: (
+    read: (offset: number, length: number) => Promise<Uint8Array | null>,
+    fileSize: number,
+  ) => Promise<Array<{ startSeconds: number; title: string }>>;
 }
 
 /** A book, described by only the parts that decide where its bytes are and how to read them. */
@@ -58,7 +63,7 @@ export interface ChapterSourceTarget {
 }
 
 /** Which parser a file wants, or null when it is not a container that carries chapters. */
-export type ChapterContainer = 'mp4' | 'mp3';
+export type ChapterContainer = 'mp4' | 'mp3' | 'flac';
 
 /**
  * Which container this is, from its name and type alone.
@@ -79,6 +84,7 @@ export function chapterContainerFor(input: {
   const mime = input.mimeType?.toLowerCase() ?? '';
   const blob = `${mime} ${input.uri ?? ''} ${input.name ?? ''}`.toLowerCase();
   if (/\.(m4b|m4a|mp4|aac)(\?|#|$)/.test(blob) || /mp4|m4b|m4a|aac/.test(mime)) return 'mp4';
+  if (/\.flac(\?|#|$)/.test(blob) || /flac/.test(mime)) return 'flac';
   if (/\.mp3(\?|#|$)/.test(blob) || /mpeg|mp3/.test(mime)) return 'mp3';
   return null;
 }
@@ -121,7 +127,8 @@ export async function readAudiobookChapters(
   if (!source || source.size <= 0) return [];
 
   try {
-    const parse = container === 'mp3' ? deps.parseId3 : deps.parse;
+    const parse =
+      container === 'mp3' ? deps.parseId3 : container === 'flac' ? deps.parseFlac : deps.parse;
     const rows = await parse(source.read, source.size);
     /*
      * One chapter is not a chapter list. An encoder that writes a single marker at zero has told

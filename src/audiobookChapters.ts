@@ -25,6 +25,10 @@ const DEPS: ChapterSourceDeps = {
     const { readM4bChapters } = await import('./m4bChapters');
     return readM4bChapters(read, fileSize);
   },
+  parseFlac: async (read, fileSize) => {
+    const { readFlacChapters } = await import('./flacCuesheet');
+    return readFlacChapters(read, fileSize);
+  },
   parseId3: async (read, fileSize) => {
     const { readId3Chapters } = await import('./id3Chapters');
     const { normaliseMarks } = await import('./chapterScrubber');
