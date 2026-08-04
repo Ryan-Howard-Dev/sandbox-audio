@@ -5,6 +5,7 @@ import {
   DEFAULT_SILENCE_THRESHOLD_DB,
   createSilenceScanner,
   scanForSilences,
+  silencesFromFrameDb,
   type SilenceSpan,
 } from './silenceScan';
 import { detectChapters, keywordWindows } from './spokenChapterDetect';
@@ -207,5 +208,66 @@ describe('feeding the chapter detector', () => {
       settings,
     );
     expect(found.map((c) => Math.round(c.startSeconds * 10) / 10)).toEqual([0, 6, 10.5]);
+  });
+});
+
+describe('from frame loudness, as the device supplies it', () => {
+  /** What the native side sends: one dBFS value per frame, quantised to a byte. */
+  function frameDbFrom(pcm: Float32Array, frameSeconds: number): Int8Array {
+    const frameSamples = Math.round(RATE * frameSeconds);
+    const frames = Math.floor(pcm.length / frameSamples);
+    const out = new Int8Array(frames);
+    for (let f = 0; f < frames; f += 1) {
+      let sum = 0;
+      for (let i = 0; i < frameSamples; i += 1) {
+        const s = pcm[f * frameSamples + i]!;
+        sum += s * s;
+      }
+      const rms = Math.sqrt(sum / frameSamples);
+      const db = rms > 0 ? 20 * Math.log10(rms) : -128;
+      out[f] = Math.max(-128, Math.min(0, Math.round(db)));
+    }
+    return out;
+  }
+
+  it('agrees with the sample path on the same audio', () => {
+    /*
+     * The join that makes the split safe. On a phone the samples never reach JS — seven gigabytes
+     * for a thirty hour book — so the native half measures and this half decides. Both paths must
+     * land on the same silences or the device behaves differently from every test here.
+     */
+    const pcm = fixturePcm();
+    const frameSeconds = 0.02;
+    const fromFrames = silencesFromFrameDb(frameDbFrom(pcm, frameSeconds), frameSeconds);
+    expect(rounded(fromFrames)).toEqual(rounded(scanForSilences([pcm], RATE)));
+  });
+
+  it('still finds the pauses at the coarse frame size the device will use', () => {
+    // A tenth of a second is plenty for a two second pause, and it is what keeps a thirty hour
+    // book down to about a megabyte across the bridge.
+    const pcm = fixturePcm();
+    expect(rounded(silencesFromFrameDb(frameDbFrom(pcm, 0.1), 0.1))).toEqual([
+      [3, 6],
+      [8, 10.5],
+    ]);
+  });
+
+  it('does not treat an unmeasurable frame as silence', () => {
+    // A damaged stretch of a file must not become an invented chapter break.
+    const frames = new Float64Array(200).fill(-60);
+    frames[50] = Number.NaN;
+    const spans = silencesFromFrameDb(frames, 0.1);
+    expect(spans).toHaveLength(2);
+    expect(spans[0]!.endSeconds).toBeCloseTo(5, 5);
+  });
+
+  it('reports nothing for no frames or a nonsense frame size', () => {
+    expect(silencesFromFrameDb(new Int8Array(0), 0.1)).toEqual([]);
+    expect(silencesFromFrameDb(new Int8Array(100), 0)).toEqual([]);
+  });
+
+  it('closes a silence still open at the end of the book', () => {
+    const frames = new Int8Array(100).fill(-60);
+    expect(rounded(silencesFromFrameDb(frames, 0.1))).toEqual([[0, 10]]);
   });
 });

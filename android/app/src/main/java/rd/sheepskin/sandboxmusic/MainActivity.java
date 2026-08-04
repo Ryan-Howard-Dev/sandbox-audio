@@ -196,6 +196,7 @@ public class MainActivity extends BridgeActivity {
         // Neural narration. Reports itself unavailable when the engine was not built in, so
         // registering it unconditionally is safe and the reader falls back on its own.
         registerPlugin(PiperTtsPlugin.class);
+        registerPlugin(AudioScanPlugin.class);
         super.onCreate(savedInstanceState);
         instanceRef = new WeakReference<>(this);
         registerScreenLockReceiver();

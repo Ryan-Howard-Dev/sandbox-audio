@@ -138,6 +138,60 @@ export function createSilenceScanner(
   };
 }
 
+/**
+ * The same decision, from frame loudness rather than from samples.
+ *
+ * On a phone the samples never reach this layer. A thirty hour book decoded to 16 kHz mono float
+ * is about seven gigabytes, which cannot cross the Capacitor bridge and cannot be resident, so the
+ * native side decodes and measures and sends back one number per frame. At a tenth of a second
+ * that is roughly a million numbers for a thirty hour book — a megabyte as bytes, which crosses
+ * comfortably.
+ *
+ * What deliberately does *not* move native is this function. Where the threshold sits, how long a
+ * run has to be, whether a part-filled frame counts — those are the judgement calls, they are what
+ * decides whether the feature works, and they belong somewhere they can be tested without a
+ * device. The native half measures; this half decides.
+ *
+ * Takes dBFS because that is what survives the trip cheaply: a byte per frame covers -128 to 0 dB
+ * at one decibel resolution, which is far finer than a decision made at -45 needs.
+ */
+export function silencesFromFrameDb(
+  frameDb: ArrayLike<number>,
+  frameSeconds: number,
+  options: SilenceScanOptions = {},
+): SilenceSpan[] {
+  const thresholdDb = options.thresholdDb ?? DEFAULT_SILENCE_THRESHOLD_DB;
+  const minSilenceSeconds = options.minSilenceSeconds ?? DEFAULT_MIN_SILENCE_SECONDS;
+  if (!(frameSeconds > 0)) return [];
+
+  const spans: SilenceSpan[] = [];
+  let quietFrom: number | null = null;
+
+  const closeRun = (endFrame: number) => {
+    if (quietFrom === null) return;
+    const startSeconds = quietFrom * frameSeconds;
+    const endSeconds = endFrame * frameSeconds;
+    if (endSeconds - startSeconds >= minSilenceSeconds) spans.push({ startSeconds, endSeconds });
+    quietFrom = null;
+  };
+
+  for (let i = 0; i < frameDb.length; i += 1) {
+    const db = frameDb[i]!;
+    /*
+     * A frame the decoder could not measure is not a silence. Treating it as one would turn a
+     * damaged stretch of a file into an invented chapter break.
+     */
+    const quiet = Number.isFinite(db) && db <= thresholdDb;
+    if (quiet) {
+      if (quietFrom === null) quietFrom = i;
+    } else {
+      closeRun(i);
+    }
+  }
+  closeRun(frameDb.length);
+  return spans;
+}
+
 /** One-shot, for a caller holding the whole thing. */
 export function scanForSilences(
   channels: readonly Float32Array[],
