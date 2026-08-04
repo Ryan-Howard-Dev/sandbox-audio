@@ -211,3 +211,70 @@ describe('resolvePlaybackFidelityLabel — depth and rate from the container', (
     expect(resolvePlaybackFidelityLabel(stream, { t })).toBe('FLAC lossless');
   });
 });
+
+/**
+ * The badge answers two different questions once dynamic range is measured.
+ *
+ * Depth, rate and codec describe the container: whether anything was thrown away in encoding. DR
+ * describes the master: whether anything was squeezed out before encoding ever happened. A 24-bit
+ * file crushed to DR5 is losslessly storing something already flattened, and until this the badge
+ * could not say so.
+ */
+describe('resolvePlaybackFidelityLabel — measured dynamic range', () => {
+  const t = (key: string, params?: Record<string, string | number>) =>
+    params?.format ? `${params.format} lossless` : key;
+
+  const flac = env({
+    envelopeId: 'f-dr',
+    provider: 'local-vault',
+    url: 'file:///music/track.flac',
+    mimeType: 'audio/flac',
+    bitsPerSample: 24,
+    sampleRateHz: 96_000,
+  });
+
+  it('appends the measurement to what the container already said', () => {
+    expect(resolvePlaybackFidelityLabel(flac, { t, dynamicRange: 12 })).toBe(
+      'FLAC 24-bit 96 kHz · DR12',
+    );
+  });
+
+  it('says nothing about range when nothing measured it', () => {
+    // Never estimated, never inferred from bitrate. An unmeasured track is silent on the subject.
+    expect(resolvePlaybackFidelityLabel(flac, { t })).toBe('FLAC 24-bit 96 kHz');
+    expect(resolvePlaybackFidelityLabel(flac, { t, dynamicRange: null })).toBe(
+      'FLAC 24-bit 96 kHz',
+    );
+  });
+
+  it('exposes a crushed master that the container calls high resolution', () => {
+    // The entire reason the number is here: this file is 24-bit and flattened, and both facts
+    // now appear together.
+    expect(resolvePlaybackFidelityLabel(flac, { t, dynamicRange: 5 })).toBe(
+      'FLAC 24-bit 96 kHz · DR5',
+    );
+  });
+
+  it('ignores a reading that is not a number', () => {
+    expect(resolvePlaybackFidelityLabel(flac, { t, dynamicRange: Number.NaN })).toBe(
+      'FLAC 24-bit 96 kHz',
+    );
+    expect(resolvePlaybackFidelityLabel(flac, { t, dynamicRange: -3 })).toBe(
+      'FLAC 24-bit 96 kHz',
+    );
+  });
+
+  it('does not put a range on a lossy stream', () => {
+    /*
+     * The measurement is only ever taken for lossless files, so a DR arriving alongside a bitrate
+     * is a bug upstream. The badge stating it anyway would make that bug look like a feature.
+     */
+    const mp3 = env({
+      envelopeId: 'm-1',
+      url: 'https://example.org/a.mp3',
+      mimeType: 'audio/mpeg',
+      bitrateKbps: 128,
+    });
+    expect(resolvePlaybackFidelityLabel(mp3, { t, dynamicRange: 9 })).toBe('MP3 · 128 kbps');
+  });
+});

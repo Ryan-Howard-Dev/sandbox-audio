@@ -42,6 +42,7 @@ import { useTranslation } from '../i18n';
 import { tapHaptic } from '../uiTapFeedback';
 import { usePlaybackResolveElapsed } from '../hooks/usePlaybackResolveElapsed';
 import { resolvePlaybackFidelityLabel } from '../trackFidelityLabel';
+import { useTrackDynamicRange } from '../hooks/useTrackDynamicRange';
 import PlayerBarMoreMenu from './PlayerBarMoreMenu';
 import PlayerArtistLink from './PlayerArtistLink';
 
@@ -320,9 +321,12 @@ export default function PlayerBar({
     streamLabel === 'MOBILE'
       ? 'text-amber-500/90 border-amber-500/40 bg-amber-500/5'
       : themeBadgeOutlineClass;
+  // Measured range where it exists. Read only; the bar never triggers a decode.
+  const barDynamicRange = useTrackDynamicRange(displayEnvelope, undefined);
   const fidelityLabel = resolvePlaybackFidelityLabel(displayEnvelope, {
     streamLabel,
     t,
+    dynamicRange: barDynamicRange.record?.dr ?? null,
   });
   const barArt = connectRemote && track
     ? proxiedArtworkUrl(track.artworkUrl) ?? track.artworkUrl ?? ''

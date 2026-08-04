@@ -91,12 +91,38 @@ export function losslessBadgeLabel(
  * stream came from. The policy label still exists for the settings menu, where it is a true
  * statement about a setting.
  */
+/**
+ * Append the measured range, if there is one.
+ *
+ * "DR12" rather than a word, because the number is the thing a listener comparing two pressings
+ * wants and the word is an interpretation. dynamicRangeVerdict exists for anywhere that wants to
+ * colour it; the badge states the measurement.
+ */
+function withDynamicRange(label: string | null, dr: number | null | undefined): string | null {
+  if (!label) return label;
+  if (dr === null || dr === undefined || !Number.isFinite(dr) || dr < 0) return label;
+  return `${label} · DR${Math.round(dr)}`;
+}
+
 export function resolvePlaybackFidelityLabel(
   envelope: MediaEnvelope | null | undefined,
   options: {
     streamLabel?: string | null;
     t: (key: string, params?: Record<string, string | number>) => string;
     policy?: FidelityPolicy;
+    /**
+     * Measured dynamic range, when this track has been measured.
+     *
+     * Appended rather than substituted, because it answers a different question from the rest of
+     * the badge. Depth, rate and codec describe the container: whether anything was thrown away in
+     * encoding. DR describes the master: whether anything was squeezed out before encoding ever
+     * happened. A 24-bit file crushed to DR5 is losslessly storing something that was already
+     * flattened, and until now nothing on this screen could say so.
+     *
+     * Only ever shown when it was actually measured. See trackDynamicRange.ts — nothing here
+     * estimates it, and an unmeasured track simply says nothing about its range.
+     */
+    dynamicRange?: number | null;
   },
 ): string | null {
   if (!envelope) return null;
@@ -114,9 +140,9 @@ export function resolvePlaybackFidelityLabel(
       const format = losslessFormatForEnvelope(envelope) ?? 'Lossless';
       const rate =
         rateHz % 1000 === 0 ? `${rateHz / 1000} kHz` : `${(rateHz / 1000).toFixed(1)} kHz`;
-      return `${format} ${depth}-bit ${rate}`;
+      return withDynamicRange(`${format} ${depth}-bit ${rate}`, options.dynamicRange);
     }
-    return losslessBadgeLabel(envelope, options.t);
+    return withDynamicRange(losslessBadgeLabel(envelope, options.t), options.dynamicRange);
   }
 
   /*

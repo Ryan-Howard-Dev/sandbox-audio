@@ -23,6 +23,8 @@ import { isAndroid } from '../platformEnv';
 import { hasActiveMobileResolvers, preferFreshMobileResolve } from '../mobileResolverRegistry';
 import { usePlaybackResolveElapsed } from '../hooks/usePlaybackResolveElapsed';
 import { resolvePlaybackFidelityLabel } from '../trackFidelityLabel';
+import { useTrackDynamicRange } from '../hooks/useTrackDynamicRange';
+import { loadLockerTrackBytes } from '../trackDynamicRange';
 import {
   applyHeroDisplayFromSettingsEvent,
   loadHeroDisplayMode,
@@ -294,11 +296,17 @@ export default function MobileNowPlayingView({
         envelope.resolutionSource,
       )
     : null;
+  /*
+   * Measured range, when this track has been measured. Read only — nothing here decodes, because
+   * decoding materialises the whole track as float PCM. See useTrackDynamicRange.
+   */
+  const dynamicRange = useTrackDynamicRange(envelope, loadLockerTrackBytes);
   const qualityLabel =
     resolvePlaybackFidelityLabel(envelope, {
       streamLabel,
       t,
       policy: loadFidelityPolicy(),
+      dynamicRange: dynamicRange.record?.dr ?? null,
     }) ?? undefined;
   /** First character of the profile name — falls back to the generic glyph when unusable. */
   const profileInitial = profileName?.trim().charAt(0).toUpperCase() ?? '';
@@ -565,6 +573,17 @@ export default function MobileNowPlayingView({
             }
             chapterWindow={chapterWindow}
             onSeekAbsolute={onSeek}
+            /*
+             * Offered only where there is something to offer: a lossless track of measurable
+             * length that nobody has measured yet. Once measured the number is in the label and
+             * the offer is gone, because asking twice for an answer already on screen is clutter.
+             */
+            onMeasureDynamicRange={
+              dynamicRange.available && !dynamicRange.record
+                ? () => void dynamicRange.measure()
+                : undefined
+            }
+            measuringDynamicRange={dynamicRange.measuring}
             heroDisplayMode={heroDisplay}
             onHeroDisplayModeChange={setHeroDisplay}
             onSkipBack={onSkipBack}

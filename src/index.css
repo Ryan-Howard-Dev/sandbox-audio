@@ -17753,6 +17753,40 @@ html[data-platform='android']:not([data-platform='android-tv'])
   white-space: nowrap;
 }
 
+/*
+ * The badge when it is also an offer to measure.
+ *
+ * Deliberately still a badge. It reads as a label with a question attached rather than as a
+ * control, because for most tracks it is only a label — turning it into an obvious button would
+ * put a call to action under every title for a measurement most listeners will never want.
+ */
+button.home-progress-fidelity--askable {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  /* A touch target the size of the text is not a touch target. */
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.home-progress-fidelity-ask {
+  color: var(--accent-burnt);
+}
+
+button.home-progress-fidelity--askable:disabled {
+  cursor: default;
+}
+
+button.home-progress-fidelity--askable:disabled .home-progress-fidelity-ask {
+  /* Measuring takes seconds and holds the main thread through decode; say so rather than
+     appearing to have ignored the tap. */
+  opacity: 0.6;
+}
+
 .resolving-playback-banner {
   display: flex;
   align-items: center;

@@ -315,6 +315,14 @@ export interface HomeHeroPlayerProps {
    * Null keeps the ordinary full-length bar, which is right for a song and right for anything
    * whose chapters are not known.
    */
+  /**
+   * Offered only when this track can be measured and has not been.
+   *
+   * Absent means either the track is not a candidate — lossy, too short, too long to decode —
+   * or its reading already sits in the label. See trackDynamicRange.ts.
+   */
+  onMeasureDynamicRange?: () => void;
+  measuringDynamicRange?: boolean;
   chapterWindow?: ChapterWindow | null;
   /** Absolute seek, for when the bar hands back a position inside the chapter. */
   onSeekAbsolute?: (seconds: number) => void;
@@ -365,6 +373,8 @@ export default function HomeHeroPlayer({
   flipOnArtworkTap = false,
   coverArtOnly = false,
   structuralProgress = null,
+  onMeasureDynamicRange,
+  measuringDynamicRange = false,
   chapterWindow = null,
   onSeekAbsolute,
 }: HomeHeroPlayerProps) {
@@ -758,7 +768,35 @@ export default function HomeHeroPlayer({
                   fidelityRow={
                     fidelityLabel ? (
                       <div className="home-progress-fidelity-row">
-                        <span className="home-progress-fidelity">{fidelityLabel}</span>
+                        {/*
+                          The badge asks for the measurement it cannot make on its own.
+
+                          Measuring means decoding the whole track to float samples, which for five
+                          minutes of stereo is around a hundred megabytes. Doing that quietly for
+                          every lossless file somebody played would be a memory spike nobody asked
+                          for, so the badge offers instead — and once measured, the number is
+                          remembered and the offer never returns for that track.
+                        */}
+                        {onMeasureDynamicRange ? (
+                          <button
+                            type="button"
+                            className="home-progress-fidelity home-progress-fidelity--askable touch-manipulation"
+                            onClick={onMeasureDynamicRange}
+                            disabled={measuringDynamicRange}
+                            aria-label={t('player.measureDynamicRange')}
+                            title={t('player.measureDynamicRange')}
+                          >
+                            {fidelityLabel}
+                            <span className="home-progress-fidelity-ask">
+                              {' · '}
+                              {measuringDynamicRange
+                                ? t('player.measuring')
+                                : t('player.dynamicRangeAsk')}
+                            </span>
+                          </button>
+                        ) : (
+                          <span className="home-progress-fidelity">{fidelityLabel}</span>
+                        )}
                       </div>
                     ) : null
                   }
