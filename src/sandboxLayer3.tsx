@@ -152,7 +152,6 @@ import {
   enrichEnvelopeWithPlaybackLockerArt,
   subscribeLockerCache,
   tracksForAlbumGroup,
-  warmLockerCache,
   withMeasuredBitrate,
   type LockerEntry,
 } from './lockerStorage';
@@ -285,6 +284,12 @@ import { loadDiscoverStationEnabled } from './discoverStationSettings';
 import { useShellConnect, useShellConnectRuntime } from './shell/useShellConnect';
 import { useShellPodcastControls } from './shell/useShellPodcastControls';
 import { useShellCastRuntime } from './shell/useShellCastRuntime';
+import {
+  useShellQueuePersistWrites,
+  useShellQueueRestore,
+  useShellQueueResume,
+  useShellQueueSave,
+} from './shell/useShellQueuePersistence';
 import { usePlaybackQueue } from './shell/usePlaybackQueue';
 import { ShellStationRouter } from './shell/ShellStationRouter';
 import { loadLibraryStationEnabled } from './libraryStationSettings';
@@ -447,12 +452,10 @@ import { useStableEnvelopeId } from './hooks/useStableEnvelopeId';
 import { resolvePlaybackFidelityLabel } from './trackFidelityLabel';
 import { isOfflineUnplayableStreamUrl } from './nativeExoStreamResolver';
 import {
-  getNativeExoPlaybackStatus,
   lastJsInitiatedNativeNav,
-  nativeExoPlaybackStatus,
   subscribeNativeExoStatus,
 } from './androidNativePlayback';
-import { isNativeExoAudible, clearLastPlayIntent, lastPlayIntentToEnvelope, loadLastPlayIntent } from './lastPlayIntent';
+import { isNativeExoAudible, clearLastPlayIntent } from './lastPlayIntent';
 import { getYtDlpMobileStatus, waitForYtDlpInit } from './ytDlpMobile';
 import {
   beginPlayIntent,
@@ -554,13 +557,10 @@ import {
   getOrCreateConnectDeviceId,
   loadConnectDeviceName,
   ensureAndroidLocalPlaybackOnLaunch,
-  loadConnectRolePref,
   loadGaplessEnabled,
-  loadNetworkSyncEnabled,
   loadOnboardingComplete,
   loadTvCoverageBannerDismissed,
   requestTauriCastGuidance,
-  resolveConnectRole,
   saveTvCoverageBannerDismissed,
   shouldShowOnboardingWizard,
   shouldShowServerSetup,
@@ -582,10 +582,8 @@ import {
 } from './downloadQueue';
 import {
   computeSkipped,
-  getAllPlayHistory,
   getMostPlayed,
   getRecentlyPlayed,
-  loadLastQueue,
   recordPlay,
   recordPlaySession,
   storedHitToEnvelope,
@@ -599,20 +597,11 @@ import {
   subscribeTasteFeedback,
 } from './tasteFeedback';
 import {
-  clearPersistedQueue,
-  initQueuePersistenceLifecycle,
   isStablePlaybackFsmState,
-  loadQueueState,
   markActivePlaybackSession,
-  persistableCurrentTrackId,
-  rehydrateQueueState,
   sanitizeRestoredEnvelope,
-  saveQueueState,
   isLikelyPageReload,
   isColdPlaybackStart,
-  shouldAutoRestorePlayerOnLoad,
-  shouldSkipPlayerRestoreOnLoad,
-  shouldRestoreLastPlayIntentOnLoad,
   type RepeatMode,
 } from './queuePersistence';
 import {
@@ -5711,122 +5700,19 @@ export default function SandboxShell() {
     return () => window.removeEventListener('sandbox-exo-media-transition', onExoTransition);
   }, [audio, syncThumbsFromFeedback, findHitCandidates, adoptInPlaceQueueTrack, primeLockerNativeQueueFrom]);
 
-  const queueRestoredRef = useRef(false);
-  const queueRestorePendingRef = useRef<{ seekTo: number; envelopeId: string } | null>(null);
-  const [queuePersistReady, setQueuePersistReady] = useState(false);
-
-  useEffect(() => {
-    if (queueRestoredRef.current) return;
-    if (resolveConnectRole(loadConnectRolePref()) === 'remote' && loadNetworkSyncEnabled()) {
-      queueRestoredRef.current = true;
-      setQueuePersistReady(true);
-      return;
-    }
-
-    let cancelled = false;
-
-    const lockerEnvelopesFromSnapshot = (): MediaEnvelope[] => {
-      const entries = getLockerEntriesSnapshot();
-      if (!entries?.length) return [];
-      return entries.map((e) => ({
-        envelopeId: `local-${e.id}`,
-        title: e.title,
-        artist: e.artist,
-        album: e.albumName,
-        url: e.url,
-        durationSeconds: e.durationSeconds || 210,
-        provider: 'local-vault' as const,
-        transport: 'element-src' as const,
-        sourceId: e.id,
-        artworkUrl: e.albumArt,
-        releaseYear: e.releaseYear,
-      }));
-    };
-
-    const attemptRestore = async () => {
-      try {
-        await warmLockerCache();
-        if (cancelled || queueRestoredRef.current) return;
-
-        const raw = loadQueueState();
-        if (!raw) {
-          if (shouldRestoreLastPlayIntentOnLoad()) {
-            const intent = loadLastPlayIntent();
-            if (intent) {
-              queueRestoredRef.current = true;
-              const env = lastPlayIntentToEnvelope(intent);
-              queueRestorePendingRef.current = { seekTo: 0, envelopeId: env.envelopeId };
-              setHomeAwaitingUserResume(false);
-              void playEnvelopeRef.current(env, findHitCandidates(env), { autoPlay: false });
-              return;
-            }
-          }
-          queueRestoredRef.current = true;
-          return;
-        }
-
-        const restored = rehydrateQueueState(raw, {
-          lockerEnvelopes: lockerEnvelopesFromSnapshot(),
-          playHistory: getAllPlayHistory(),
-        });
-        if (!restored || cancelled) {
-          queueRestoredRef.current = true;
-          return;
-        }
-
-        queueRestoredRef.current = true;
-        setPlayQueue(restored.playQueue);
-        setQueueIndex(restored.queueIndex);
-        setShuffleOn(restored.shuffleOn);
-        setRepeatMode(restored.repeatMode);
-
-        if (!shouldAutoRestorePlayerOnLoad(raw)) {
-          if (
-            shouldSkipPlayerRestoreOnLoad() &&
-            audioStateRef.current === 'Idle' &&
-            !audioEnvelopeRef.current
-          ) {
-            let nativeStillPlaying = false;
-            try {
-              const status = await nativeExoPlaybackStatus();
-              nativeStillPlaying = isNativeExoAudible(status);
-            } catch {
-              /* optional */
-            }
-            if (!nativeStillPlaying) {
-              bumpPlayGeneration();
-              playGenerationRef.current = currentPlayGeneration();
-              audio.stop();
-            }
-          }
-          return;
-        }
-
-        const track = restored.currentTrackId
-          ? restored.playQueue.find((e) => e.envelopeId === restored.currentTrackId) ??
-            restored.playQueue[restored.queueIndex]
-          : restored.playQueue[restored.queueIndex];
-        if (!track) return;
-
-        queueRestorePendingRef.current = {
-          seekTo: restored.currentTimeSeconds,
-          envelopeId: track.envelopeId,
-        };
-        setHomeAwaitingUserResume(false);
-        void playEnvelopeRef.current(track, findHitCandidates(track), { autoPlay: false });
-      } catch (err) {
-        console.warn('[Sandbox] queue restore failed:', err);
-        queueRestoredRef.current = true;
-      } finally {
-        if (!cancelled) setQueuePersistReady(true);
-      }
-    };
-
-    void attemptRestore();
-    return () => {
-      cancelled = true;
-    };
-  }, [findHitCandidates]);
+  const { queuePersistReady, queueRestorePendingRef } = useShellQueueRestore({
+    audio,
+    setPlayQueue,
+    setQueueIndex,
+    setShuffleOn,
+    setRepeatMode,
+    setHomeAwaitingUserResume,
+    playEnvelopeRef,
+    findHitCandidates,
+    audioEnvelopeRef,
+    audioStateRef,
+    playGenerationRef,
+  });
 
   useEffect(() => {
     if (isStablePlaybackFsmState(audio.state)) {
@@ -6101,51 +5987,18 @@ export default function SandboxShell() {
     audio.failResolve();
   }, [audio]);
 
-  useEffect(() => {
-    const pending = queueRestorePendingRef.current;
-    if (!pending) return;
-    // The boot-time restore's own load runs async (warmLockerCache, rehydrateQueueState, etc.)
-    // and can still be in flight — or already superseded — by the time the user manually taps a
-    // different track. Without this check, whichever track next reaches Ready/Playing gets the
-    // restore's stale seek+pause applied to IT instead, killing playback the user just started
-    // (seconds after tapping play, for a track that has nothing to do with the restore). Only
-    // discard once we have DEFINITIVE evidence of a mismatch (a different envelope actually
-    // loaded) — a still-null/loading envelope just means the intended restore hasn't landed yet.
-    if (audio.envelope && audio.envelope.envelopeId !== pending.envelopeId) {
-      queueRestorePendingRef.current = null;
-      return;
-    }
-    if (audio.state === 'Failed') {
-      queueRestorePendingRef.current = null;
-      return;
-    }
-    if (audio.state !== 'Ready' && audio.state !== 'Playing') return;
-    if (!audio.envelope || audio.envelope.envelopeId !== pending.envelopeId) return;
-
-    const { seekTo } = pending;
-    queueRestorePendingRef.current = null;
-
-    if (seekTo > 0) audio.seek(seekTo);
-    if (audio.state === 'Playing' || audio.nativeExoEffectivePlaying) audio.pause();
-  }, [audio.state, audio.envelope?.envelopeId, audio]);
-
-  useEffect(() => {
-    return initQueuePersistenceLifecycle(() => {
-      if (isConnectRemoteRef.current) return null;
-      return {
-        playQueue: playQueueRef.current,
-        queueIndex: queueIndexRef.current,
-        shuffleOn: shuffleOnRef.current,
-        repeatMode: repeatModeRef.current,
-        currentTrackId: persistableCurrentTrackId(
-          audioEnvelopeRef.current?.envelopeId,
-          audioStateRef.current,
-        ),
-        currentTimeSeconds: audioCurrentTimeRef.current,
-        wasPlaying: audioStateRef.current === 'Playing',
-      };
-    });
-  }, []);
+  useShellQueuePersistWrites({
+    audio,
+    queueRestorePendingRef,
+    isConnectRemoteRef,
+    playQueueRef,
+    queueIndexRef,
+    shuffleOnRef,
+    repeatModeRef,
+    audioEnvelopeRef,
+    audioStateRef,
+    audioCurrentTimeRef,
+  });
 
   /*
    * Per-book listening position. The queue persistence below is one global slot: play a song and
@@ -6185,27 +6038,15 @@ export default function SandboxShell() {
     };
   }, [audio.envelope?.envelopeId]);
 
-  useEffect(() => {
-    if (!queuePersistReady || isConnectRemoteRef.current) return;
-    saveQueueState({
-      playQueue,
-      queueIndex,
-      shuffleOn,
-      repeatMode,
-      currentTrackId: persistableCurrentTrackId(audio.envelope?.envelopeId, audio.state),
-      currentTimeSeconds: audio.currentTimeSeconds,
-      wasPlaying: audio.state === 'Playing',
-    });
-  }, [
-    queuePersistReady,
+  useShellQueueSave({
+    audio,
     playQueue,
     queueIndex,
     shuffleOn,
     repeatMode,
-    audio.envelope?.envelopeId,
-    audio.currentTimeSeconds,
-    audio.state,
-  ]);
+    queuePersistReady,
+    isConnectRemoteRef,
+  });
 
   useEffect(() => {
     if (audio.state === 'Playing' || audio.nativeExoEffectivePlaying) {
@@ -6484,6 +6325,18 @@ export default function SandboxShell() {
     },
     [handlePlayEnvelope, findHitCandidates, sendConnectCommand, primeLockerNativeQueueFrom, audio],
   );
+
+  const {
+    homeLastQueue,
+    handleResumeLastQueue,
+    resumeQueueCandidate,
+    showResumeQueuePrompt,
+  } = useShellQueueResume({
+    playQueue,
+    audioState: audio.state,
+    handlePlayAlbum,
+    setHomeAwaitingUserResume,
+  });
 
   const handleExploreInstantMix = useCallback(
     (tracks: MediaEnvelope[], label: string) => {
@@ -6995,8 +6848,6 @@ export default function SandboxShell() {
       }));
   }, [lockerEnvelopes]);
 
-  const homeLastQueue = playQueue.length > 0 ? playQueue : loadLastQueue();
-
   const tvRecentlyAdded = useMemo(() => {
     const entries = getLockerEntriesSnapshot();
     if (!entries?.length) return [];
@@ -7125,12 +6976,6 @@ export default function SandboxShell() {
     playQueueRef,
     queueIndexRef,
   });
-
-  const handleResumeLastQueue = useCallback(() => {
-    if (homeLastQueue.length === 0) return;
-    setHomeAwaitingUserResume(false);
-    handlePlayAlbum(homeLastQueue);
-  }, [homeLastQueue, handlePlayAlbum]);
 
   const handleTVHomeSelect = useCallback(
     (id: string, row: TVRowId) => {
@@ -8393,11 +8238,6 @@ export default function SandboxShell() {
       />
     );
   }
-
-  const resumeQueueCandidate =
-    playQueue.length > 0 ? playQueue : loadLastQueue();
-  const showResumeQueuePrompt =
-    resumeQueueCandidate.length > 0 && audio.state === 'Idle';
 
   const showBottomPlayer =
     !isTV &&

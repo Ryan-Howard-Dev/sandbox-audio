@@ -2,8 +2,9 @@
  * Play-queue mutation helpers for the shell — add/remove/reorder, play-next, clear,
  * save-as-playlist, and podcast "queue unplayed". Extracted from sandboxLayer3 with no JSX.
  *
- * Queue state (playQueue / queueIndex / shuffle / repeat) and persistence effects stay in the
- * shell so their registration order relative to play / exo / Connect effects is unchanged.
+ * Queue state (playQueue / queueIndex / shuffle / repeat) stays in the shell. Restore / save /
+ * resume helpers live in useShellQueuePersistence so their call sites keep the old registration
+ * order relative to heal, Android resume, and Connect.
  */
 
 import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
