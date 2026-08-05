@@ -188,12 +188,9 @@ import {
 import { parsePlaylistShareFromHash } from './playlistCollaborativeShare';
 import { buildSuggestedQueueTracks } from './suggestedQueueTracks';
 import { seedGradientUniverseStyle } from './seedGradient';
-import { useTrackUniverseStyle } from './hooks/useTrackUniverseStyle';
 import MusicUniverseBackdrop from './components/MusicUniverseBackdrop';
 import HomeActiveWash from './components/HomeActiveWash';
 import { useShowMusicUniverse } from './musicUniverse';
-import { getGenreBucketForTrack } from './vinylGenreThemes';
-import { useVinylVisualStyle } from './vinylVisualSettings';
 import HomeView from './stations/HomeView';
 import type { DiscoverTabId } from './stations/DiscoverStationView';
 import type { LockerSectionId } from './stations/CollectionView';
@@ -244,6 +241,7 @@ import {
 import { useShellNavConstruction } from './shell/useShellNavConstruction';
 import { useShellMobileNavActions } from './shell/useShellMobileNavActions';
 import { useShellCarModeAndSleepTimer } from './shell/useShellCarModeAndSleepTimer';
+import { useShellHomeArtStyle } from './shell/useShellHomeArtStyle';
 import { useShellExoTransition } from './shell/useShellExoTransition';
 import { useShellPlaySessionEffects } from './shell/useShellPlaySessionEffects';
 import {
@@ -1126,14 +1124,7 @@ export default function SandboxShell() {
     });
   }, []);
 
-  const {
-    openSettings,
-    openSettingsAddons,
-    goToLockerHome,
-    handleMobileTabNavigate,
-    handleMobileMenuSelect,
-    musicSegmentBar,
-  } = useShellMobileNavActions({
+  const shellMobileNavActions = useShellMobileNavActions({
     station,
     lockerSection,
     showMobileShell,
@@ -1342,7 +1333,7 @@ export default function SandboxShell() {
     registerE2eHandlers(
       buildE2eSearchHandlers({
         runSearch,
-        handleMobileTabNavigate,
+        handleMobileTabNavigate: shellMobileNavActions.handleMobileTabNavigate,
         transitionToSearchStation,
         setNavOpen,
         setOnboardingComplete,
@@ -1364,7 +1355,7 @@ export default function SandboxShell() {
         setPodcastsEnabled,
       }),
     );
-  }, [runSearch, handleMobileTabNavigate, transitionToSearchStation, station]);
+  }, [runSearch, shellMobileNavActions.handleMobileTabNavigate, transitionToSearchStation, station]);
 
   const { runExploreSearch, handleBrowsePick } = useShellExploreSearch({
     station,
@@ -1596,13 +1587,7 @@ export default function SandboxShell() {
     [handleOpenAlbumByName, runSearch],
   );
 
-  const {
-    handleDownloadTierChange,
-    handleDownloadAlbum,
-    handleDownloadTrack,
-    handleDownloadSearchHit,
-    handleDownloadImportedPlaylist,
-  } = useShellDownloadHandlers({
+  const shellDownloadHandlers = useShellDownloadHandlers({
     downloadTierPreference,
     setDownloadTierPreference,
     albumDrillAlbum,
@@ -1850,7 +1835,7 @@ export default function SandboxShell() {
     showMobileShell,
     showAppToast,
     t,
-    openSettings,
+    openSettings: shellMobileNavActions.openSettings,
     connectRolePref,
     networkSyncEnabled,
     isConnectRemoteRef,
@@ -2348,16 +2333,7 @@ export default function SandboxShell() {
     syncThumbsFromFeedback,
   });
 
-  const {
-    handleAddToQueue,
-    handleRemoveFromQueue,
-    handleReorderUpNext,
-    handleReorderQueue,
-    handleClearQueue,
-    handleSaveQueueAsPlaylist,
-    handlePlayNext,
-    handleQueueShowUnplayed,
-  } = usePlaybackQueue({
+  const shellPlaybackQueue = usePlaybackQueue({
     playQueue,
     setPlayQueue,
     queueIndex,
@@ -2378,18 +2354,7 @@ export default function SandboxShell() {
     [audio.envelope?.envelopeId, audio.state, playQueue.length],
   );
 
-  const {
-    handlePlayAlbum,
-    handleExploreInstantMix,
-    handlePlayDiscoveryMix,
-    handleSaveInstantPlaylist,
-    handlePrepareForTravel,
-    handleShareMix,
-    handleArtistMix,
-    handleTrackRadio,
-    handleSaveMixRadio,
-    handlePlaySource,
-  } = useShellPlayActions({
+  const shellPlayActions = useShellPlayActions({
     audio,
     isConnectRemoteRef,
     sendConnectCommand,
@@ -2418,21 +2383,18 @@ export default function SandboxShell() {
     t,
   });
 
-  const {
-    homeLastQueue,
-    handleResumeLastQueue,
-    resumeQueueCandidate,
-    showResumeQueuePrompt,
-  } = useShellQueueResume({
+  const shellQueueResume = useShellQueueResume({
     playQueue,
     audioState: audio.state,
-    handlePlayAlbum,
+    handlePlayAlbum: shellPlayActions.handlePlayAlbum,
     setHomeAwaitingUserResume,
   });
 
   // Mix-page Download lives in useShellDownloadMix, called right below Share since the two used
   // to be declared as one pair (Download reuses the travel prefetch; Share exports/copies M3U).
-  const { handleDownloadMix } = useShellDownloadMix({ handlePrepareForTravel });
+  const { handleDownloadMix } = useShellDownloadMix({
+    handlePrepareForTravel: shellPlayActions.handlePrepareForTravel,
+  });
 
   const suggestedQueueTracks = useMemo(
     () =>
@@ -2514,25 +2476,17 @@ export default function SandboxShell() {
       }));
   }, [lockerEnvelopes]);
 
-  const {
-    tvRecentlyAdded,
-    tvContinueListening,
-    tvPlaylistCards,
-    tvCollectionCards,
-    resolveEnvelopeById,
-    handleHomePlayById,
-    handleTVHomeSelect,
-  } = useShellTvHome({
+  const shellTvHome = useShellTvHome({
     lockerEnvelopes,
     playQueue,
     searchHits,
-    homeLastQueue,
+    homeLastQueue: shellQueueResume.homeLastQueue,
     audio,
     tvPlaylists,
     handlePlayEnvelope,
     findHitCandidates,
-    handleResumeLastQueue,
-    handlePlayAlbum,
+    handleResumeLastQueue: shellQueueResume.handleResumeLastQueue,
+    handlePlayAlbum: shellPlayActions.handlePlayAlbum,
     goToDiscover,
     setTvScreen,
     setStation,
@@ -2549,15 +2503,15 @@ export default function SandboxShell() {
     effectiveConnectRole,
     networkSyncEnabled,
     connectClientRef,
-    resolveEnvelopeById,
+    resolveEnvelopeById: shellTvHome.resolveEnvelopeById,
     playEnvelopeRef,
     findHitCandidates,
     skipForward,
     skipBack,
-    handleAddToQueue,
-    handleRemoveFromQueue,
-    handleReorderQueue,
-    handleClearQueue,
+    handleAddToQueue: shellPlaybackQueue.handleAddToQueue,
+    handleRemoveFromQueue: shellPlaybackQueue.handleRemoveFromQueue,
+    handleReorderQueue: shellPlaybackQueue.handleReorderQueue,
+    handleClearQueue: shellPlaybackQueue.handleClearQueue,
     audioEnvelopeRef,
     audioCurrentTimeRef,
     audioDurationRef,
@@ -2654,7 +2608,7 @@ export default function SandboxShell() {
   const shellLyricsResolve = useShellLyricsResolve({
     isConnectRemote,
     remoteMirror,
-    resolveEnvelopeById,
+    resolveEnvelopeById: shellTvHome.resolveEnvelopeById,
     audio,
     effectiveConnectRole,
     sendConnectCommand,
@@ -2833,7 +2787,7 @@ export default function SandboxShell() {
     homeTitle,
     homeArtist,
     homeAlbum,
-    handleDownloadTrack,
+    handleDownloadTrack: shellDownloadHandlers.handleDownloadTrack,
   });
 
   const [heroDisplayMode, setHeroDisplayMode] = useState(loadHeroDisplayMode);
@@ -2858,58 +2812,28 @@ export default function SandboxShell() {
     isTV,
     tvScreen,
   });
-  const showHomeActiveWash =
-    station === 'home' && homeHasLoadedTrack && !showMusicUniverse && !isCarMode;
-  const homeGenreBucket = useMemo(
-    () => (showHomeActiveWash ? getGenreBucketForTrack(audio.envelope) : null),
-    [showHomeActiveWash, audio.envelope?.envelopeId, audio.envelope?.title, audio.envelope?.artist],
-  );
-  const { cssVars: vinylCssVars, vinylClass: vinylPsycheClass } = useVinylVisualStyle(
-    audio.envelope,
-  );
-  const { universeStyle: trackUniverseStyle, isArtDriven: homeArtDriven, isMonochrome: homeArtMono } =
-    useTrackUniverseStyle(homeArt?.trim() ? homeArt : undefined, homeGradientSeed);
-  const musicUniverseStyle = useMemo(
-    () => ({ ...trackUniverseStyle, ...vinylCssVars }),
-    [trackUniverseStyle, vinylCssVars],
-  );
-  const homeArtUniverseClass =
-    homeHasLoadedTrack && homeArtDriven
-      ? ` music-universe-backdrop--art-driven${homeArtMono ? ' music-universe-backdrop--art-monochrome' : ''}`
-      : '';
-  const miniPlayerNavigatesHome = showMobileShell || (!isTV && !isCarMode && !showMobileShell);
-
-  const mobilePlayingFromLabel = useMemo(() => {
-    if (mixRadioSession) {
-      if (mixRadioSession.kind === 'discovery-station') {
-        return t('nowPlaying.discoveryStation', { defaultValue: 'Discovery Station' });
-      }
-      if (mixRadioSession.kind === 'discovery-mfy') {
-        return t('nowPlaying.fromDiscoveryMix', { title: mixRadioSession.seedTitle });
-      }
-      return mixRadioSession.kind === 'mix'
-        ? t('nowPlaying.fromArtistMix', { artist: mixRadioSession.seedArtist })
-        : t('nowPlaying.fromTrackRadio', { title: mixRadioSession.seedTitle });
-    }
-    switch (station) {
-      case 'podcasts':
-        return t('nav.podcasts');
-      case 'audiobooks':
-        return t('nav.audiobooks');
-      case 'search':
-        return t('nowPlaying.fromSearch');
-      case 'locker':
-        return t('nowPlaying.fromLocker');
-      case 'discover':
-        return t('nowPlaying.fromDiscover');
-      case 'library':
-        return t('library.title');
-      case 'home':
-        return t('nowPlaying.fromHome');
-      default:
-        return t('nowPlaying.fromQueue');
-    }
-  }, [mixRadioSession, station, t]);
+  const {
+    showHomeActiveWash,
+    homeGenreBucket,
+    vinylCssVars,
+    vinylPsycheClass,
+    musicUniverseStyle,
+    homeArtUniverseClass,
+    miniPlayerNavigatesHome,
+    mobilePlayingFromLabel,
+  } = useShellHomeArtStyle({
+    station,
+    homeHasLoadedTrack,
+    showMusicUniverse,
+    isCarMode,
+    showMobileShell,
+    isTV,
+    audioEnvelope: audio.envelope,
+    homeArt,
+    homeGradientSeed,
+    mixRadioSession,
+    t,
+  });
 
   // embeddedChapters / scannedChapters feed bookChapterMarks inside the hook and are not
   // read again here.
@@ -3258,71 +3182,48 @@ export default function SandboxShell() {
         exploreDrillBackRef,
         findHitCandidates,
         focusPlaylistId,
-        goToLockerHome,
+        ...shellMobileNavActions,
         handleAcquireAndPlayHit,
-        handleAddToQueue,
         handleAlbumBack,
         handleAnalyzeStems,
         handleArtistBack,
-        handleArtistMix,
         handleBrowsePick,
         handleCacheSearchHit,
         handleCacheTrack,
         handleClearPlayer,
-        handleClearQueue,
         handleCycleEpisodeVolumeBoost,
         handleCyclePodcastSpeed,
         handleDismissStuckPlayback,
-        handleDownloadAlbum,
-        handleDownloadImportedPlaylist,
+        ...shellDownloadHandlers,
         handleDownloadMix,
-        handleDownloadSearchHit,
-        handleDownloadTierChange,
-        handleDownloadTrack,
         handleEnterCarMode,
-        handleExploreInstantMix,
-        handleHomePlayById,
+        ...shellPlayActions,
+        ...shellTvHome,
         ...shellPlayTriggers,
         ...shellLyricsResolve,
-        handleMobileMenuSelect,
-        handleMobileTabNavigate,
         handleMobileTrackTitleTap,
         handleOpenAlbumByName,
         handleOpenArtistByName,
         handleOpenDownloadJob,
         handleOpenPlaylistsPrompt,
         handleOpenVideoFeed,
-        handlePlayAlbum,
-        handlePlayDiscoveryMix,
         handlePlayEnvelope,
-        handlePlayNext,
-        handlePlaySource,
         handlePodcastNextChapter,
         handlePodcastPrevChapter,
-        handlePrepareForTravel,
-        handleQueueShowUnplayed,
         handleQuickFilter,
-        handleRemoveFromQueue,
-        handleReorderQueue,
-        handleReorderUpNext,
-        handleResumeLastQueue,
-        handleSaveInstantPlaylist,
-        handleSaveMixRadio,
-        handleSaveQueueAsPlaylist,
+        ...shellPlaybackQueue,
+        ...shellQueueResume,
         handleSearchBack,
         handleSelectAlbum,
         handleSelectArtist,
         handleSelectSuggestion,
         handleSendToDj,
-        handleShareMix,
         handleSkipPodcastAd,
-        handleTVHomeSelect,
         handleThumbDown,
         handleThumbUp,
         handleTogglePodcastSkipAdChapters,
         handleTogglePodcastSmartSpeed,
         handleTogglePodcastVoiceBoost,
-        handleTrackRadio,
         handleUniversalOpenFormat,
         handleUniversalSearchSelect,
         hasActivePlayback,
@@ -3336,7 +3237,6 @@ export default function SandboxShell() {
         homeGenreBucket,
         homeGradientSeed,
         homeHasLoadedTrack,
-        homeLastQueue,
         homeListeningPreview,
         homeRecentlyAdded,
         homeShowShades,
@@ -3376,7 +3276,6 @@ export default function SandboxShell() {
         mobileTabActiveId,
         mobileTabItems,
         mobileUsesPlayerPadding,
-        musicSegmentBar,
         musicUniverseStyle,
         narrationForPlayer,
         narrowShell,
@@ -3392,7 +3291,6 @@ export default function SandboxShell() {
         openHomePlayer,
         openMobileNowPlaying,
         openMobileSearch,
-        openSettings,
         openStationDownloads,
         pendingDjDeckLoad,
         pendingExternalImport,
@@ -3429,7 +3327,6 @@ export default function SandboxShell() {
         recentSearchMatches,
         remoteMirror,
         repeatMode,
-        resumeQueueCandidate,
         runExploreSearch,
         runSearch,
         searchActiveIndex,
@@ -3508,7 +3405,6 @@ export default function SandboxShell() {
         showMobileShell,
         showMobileShellHeader,
         showMusicUniverse,
-        showResumeQueuePrompt,
         showShellHeaderOffset,
         showTopSearch,
         showTvCoverageBanner,
@@ -3528,12 +3424,8 @@ export default function SandboxShell() {
         thumbUp,
         togglePlay,
         tvActiveStation,
-        tvCollectionCards,
-        tvContinueListening,
         tvNowPlaying,
-        tvPlaylistCards,
         tvQueueOpen,
-        tvRecentlyAdded,
         tvScreen,
         unifiedSearchLoading,
         unifiedSearchResult,
