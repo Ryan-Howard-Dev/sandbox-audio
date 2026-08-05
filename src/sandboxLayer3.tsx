@@ -243,6 +243,7 @@ import {
 } from './shell/useShellDownloads';
 import { useShellNavConstruction } from './shell/useShellNavConstruction';
 import { useShellMobileNavActions } from './shell/useShellMobileNavActions';
+import { useShellCarModeAndSleepTimer } from './shell/useShellCarModeAndSleepTimer';
 import { useShellExoTransition } from './shell/useShellExoTransition';
 import { useShellPlaySessionEffects } from './shell/useShellPlaySessionEffects';
 import {
@@ -420,13 +421,10 @@ import TVPlaybackView from './stations/TVPlaybackView';
 import CarModeView from './stations/CarModeView';
 import { detectTVPlatform } from './tvDetection';
 import {
-  enterCarMode as activateCarMode,
-  exitCarMode as deactivateCarMode,
   isAndroidNative,
   isCarModeActive,
   loadCarModeAutoOffer,
   loadCarModeOfferDismissed,
-  registerCarVoiceActions,
   saveCarModeOfferDismissed,
   subscribeCarMode,
   syncCarModeFromPrefs,
@@ -504,13 +502,7 @@ import {
   type MediaKind,
 } from './listeningAnalytics';
 import { initNativeWakeAlarm } from './nativeWakeAlarm';
-import {
-  formatSleepRemaining,
-  getSleepTimerSnapshot,
-  handleNativeWakeAlarmFired,
-  registerSleepTimerCallbacks,
-  subscribeSleepTimer,
-} from './sleepTimer';
+import { handleNativeWakeAlarmFired } from './sleepTimer';
 
 const EMPTY_CATALOG: CatalogSearchResult = {
   suggestions: [],
@@ -1875,15 +1867,9 @@ export default function SandboxShell() {
     scheduleAutoSimilarRadioRef,
   });
 
-  const {
-    scheduleAutoSimilarRadio,
-    handleLockerTrackPlay,
-    handleSearchPlay,
-    handleStreamSearchHit,
-    handleSonicLockerPlayQueue,
-    handleSonicLockerSaveMix,
-    handleSonicLockerDiscoveryStation,
-  } = useShellPlayTriggers({
+  // scheduleAutoSimilarRadio is intentionally unread here — the hook wires
+  // scheduleAutoSimilarRadioRef.current itself; downstream code always calls through the ref.
+  const shellPlayTriggers = useShellPlayTriggers({
     audio,
     t,
     handlePlayEnvelope,
@@ -1960,17 +1946,7 @@ export default function SandboxShell() {
     setStation,
   });
 
-  const {
-    handleSelectTrack,
-    handleSelectPlaylist,
-    handleActivateRecentSearch,
-    searchDropdownItems,
-    activateSearchDropdownItem,
-    submitSearch,
-    handleRemoveRecentSearch,
-    handleClearSearchHistory,
-    handleClearSearchInput,
-  } = useShellSearchDropdownActions({
+  const shellSearchDropdownActions = useShellSearchDropdownActions({
     setSearchHistoryTick,
     finishMobileSearchNavigation,
     showMobileShell,
@@ -2675,15 +2651,7 @@ export default function SandboxShell() {
     ],
   );
 
-  const {
-    lyricsEnvelope,
-    lyricsTitle,
-    lyricsArtist,
-    lyricsCurrentTimeSeconds,
-    lyricsIsPlaying,
-    handleLyricsSeek,
-    resolveActiveLyrics,
-  } = useShellLyricsResolve({
+  const shellLyricsResolve = useShellLyricsResolve({
     isConnectRemote,
     remoteMirror,
     resolveEnvelopeById,
@@ -2943,22 +2911,9 @@ export default function SandboxShell() {
     }
   }, [mixRadioSession, station, t]);
 
-  const {
-    npCurrentTimeSeconds,
-    npDurationSeconds,
-    npIsPlaying,
-    npEnvelope,
-    npIsPodcast,
-    npIsBusy,
-    activePodcastChapter,
-    canPodcastPrevChapter,
-    canPodcastNextChapter,
-    embeddedChapters,
-    scannedChapters,
-    bookChapterMarks,
-    nowPlayingChapterWindow,
-    playerBarHeldNowPlaying,
-  } = useShellNowPlayingChapters({
+  // embeddedChapters / scannedChapters feed bookChapterMarks inside the hook and are not
+  // read again here.
+  const shellNowPlayingChapters = useShellNowPlayingChapters({
     serverStemMix,
     isConnectRemote,
     remoteMirror,
@@ -2966,7 +2921,7 @@ export default function SandboxShell() {
     nowPlayingDisplay,
     audio,
     lockerFeatured,
-    lyricsEnvelope,
+    lyricsEnvelope: shellLyricsResolve.lyricsEnvelope,
     authoritativeEnvelope,
     podcastChapters,
     playQueue,
@@ -3028,91 +2983,6 @@ export default function SandboxShell() {
     persistLockerPlayRepair,
   });
 
-  const handleEnterCarMode = useCallback(() => {
-    if (isTV || isCarModeActive()) return;
-    setNavOpen(false);
-    closeMobileSearch();
-    setQueueDrawerOpen(false);
-    setLyricsDrawerOpen(false);
-    setSleepTimerPanelOpen(false);
-    setCastPickerOpen(false);
-    activateCarMode();
-  }, [isTV, closeMobileSearch]);
-
-  const handleExitCarMode = useCallback(() => {
-    if (!isCarModeActive()) return;
-    deactivateCarMode();
-    if (carHistoryPushedRef.current) {
-      carHistoryPushedRef.current = false;
-      window.history.back();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isCarMode || isTV || carHistoryPushedRef.current) return;
-    window.history.pushState({ sandboxCarMode: true }, '');
-    carHistoryPushedRef.current = true;
-  }, [isCarMode, isTV]);
-
-  useEffect(() => {
-    if (!isCarMode) return;
-    const onPopState = () => {
-      if (carHistoryPushedRef.current) {
-        carHistoryPushedRef.current = false;
-        deactivateCarMode();
-      }
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, [isCarMode]);
-
-  useEffect(() => {
-    return registerCarVoiceActions([
-      { id: 'play', label: t('carMode.play'), handler: () => shortcutCtxRef.current.play() },
-      { id: 'pause', label: t('carMode.pause'), handler: () => shortcutCtxRef.current.pause() },
-      { id: 'next', label: t('carMode.nextTrack'), handler: () => shortcutCtxRef.current.skipForward() },
-      { id: 'previous', label: t('carMode.previousTrack'), handler: () => shortcutCtxRef.current.skipBack() },
-      { id: 'exit', label: t('carMode.exit'), handler: () => handleExitCarMode() },
-    ]);
-  }, [handleExitCarMode, t]);
-
-  useEffect(() => {
-    return subscribeSleepTimer(() => setSleepTimerTick((t) => t + 1));
-  }, []);
-
-  useEffect(() => {
-    return registerSleepTimerCallbacks({
-      onSleepExpire: () => {
-        if (isConnectRemoteRef.current) {
-          sendConnectCommand({ cmd: 'PAUSE' });
-        } else {
-          audio.pause();
-        }
-      },
-      onWakeAlarm: (track) => {
-        const env: MediaEnvelope = {
-          envelopeId: track.envelopeId,
-          title: track.title,
-          artist: track.artist,
-          album: track.album,
-          url: track.url ?? '',
-          artworkUrl: track.artworkUrl,
-          provider: track.provider ?? 'unknown',
-          sourceId: track.sourceId,
-          durationSeconds: track.durationSeconds ?? 0,
-          transport: track.transport ?? 'element-src',
-        };
-        void playEnvelopeRef.current(env, findHitCandidates(env));
-      },
-    });
-  }, [audio, sendConnectCommand, findHitCandidates]);
-
-  const sleepTimerLabel = useMemo(() => {
-    const snap = getSleepTimerSnapshot();
-    if (!snap.active) return null;
-    return formatSleepRemaining(snap.remainingSeconds, snap.isEventBased, snap.preset);
-  }, [sleepTimerTick]);
-
   const { shortcutCtxRef } = useShellMediaSessionWiring({
     audio,
     togglePlay,
@@ -3131,6 +3001,27 @@ export default function SandboxShell() {
     authoritativeEnvelope,
     artworkUrl,
     nowPlayingAuthority,
+  });
+
+  const { handleEnterCarMode, handleExitCarMode, sleepTimerLabel } = useShellCarModeAndSleepTimer({
+    isTV,
+    isCarMode,
+    closeMobileSearch,
+    setNavOpen,
+    setQueueDrawerOpen,
+    setLyricsDrawerOpen,
+    setSleepTimerPanelOpen,
+    setCastPickerOpen,
+    carHistoryPushedRef,
+    t,
+    shortcutCtxRef,
+    audio,
+    sendConnectCommand,
+    findHitCandidates,
+    playEnvelopeRef,
+    isConnectRemoteRef,
+    sleepTimerTick,
+    setSleepTimerTick,
   });
 
   useAndroidShellBridges({
@@ -3333,9 +3224,9 @@ export default function SandboxShell() {
   return (
     <ShellChrome
       {...{
-        activateSearchDropdownItem,
+        ...shellSearchDropdownActions,
         activeLyrics,
-        activePodcastChapter,
+        ...shellNowPlayingChapters,
         albumDrillAlbum,
         albumDrillQuery,
         albumDrillTracks,
@@ -3350,9 +3241,6 @@ export default function SandboxShell() {
         authoritativeEnvelope,
         batterySaver,
         blockSearchDropdown,
-        bookChapterMarks,
-        canPodcastNextChapter,
-        canPodcastPrevChapter,
         castMode,
         castPickerOpen,
         catalogLoading,
@@ -3372,7 +3260,6 @@ export default function SandboxShell() {
         focusPlaylistId,
         goToLockerHome,
         handleAcquireAndPlayHit,
-        handleActivateRecentSearch,
         handleAddToQueue,
         handleAlbumBack,
         handleAnalyzeStems,
@@ -3383,8 +3270,6 @@ export default function SandboxShell() {
         handleCacheTrack,
         handleClearPlayer,
         handleClearQueue,
-        handleClearSearchHistory,
-        handleClearSearchInput,
         handleCycleEpisodeVolumeBoost,
         handleCyclePodcastSpeed,
         handleDismissStuckPlayback,
@@ -3397,8 +3282,8 @@ export default function SandboxShell() {
         handleEnterCarMode,
         handleExploreInstantMix,
         handleHomePlayById,
-        handleLockerTrackPlay,
-        handleLyricsSeek,
+        ...shellPlayTriggers,
+        ...shellLyricsResolve,
         handleMobileMenuSelect,
         handleMobileTabNavigate,
         handleMobileTrackTitleTap,
@@ -3418,7 +3303,6 @@ export default function SandboxShell() {
         handleQueueShowUnplayed,
         handleQuickFilter,
         handleRemoveFromQueue,
-        handleRemoveRecentSearch,
         handleReorderQueue,
         handleReorderUpNext,
         handleResumeLastQueue,
@@ -3426,19 +3310,12 @@ export default function SandboxShell() {
         handleSaveMixRadio,
         handleSaveQueueAsPlaylist,
         handleSearchBack,
-        handleSearchPlay,
         handleSelectAlbum,
         handleSelectArtist,
-        handleSelectPlaylist,
         handleSelectSuggestion,
-        handleSelectTrack,
         handleSendToDj,
         handleShareMix,
         handleSkipPodcastAd,
-        handleSonicLockerDiscoveryStation,
-        handleSonicLockerPlayQueue,
-        handleSonicLockerSaveMix,
-        handleStreamSearchHit,
         handleTVHomeSelect,
         handleThumbDown,
         handleThumbUp,
@@ -3477,11 +3354,7 @@ export default function SandboxShell() {
         lockerRemoveConfirm,
         lockerSection,
         lockerTracks,
-        lyricsArtist,
-        lyricsCurrentTimeSeconds,
         lyricsDrawerOpen,
-        lyricsIsPlaying,
-        lyricsTitle,
         mfyDrillBackRef,
         miniPlayerNavigatesHome,
         mixRadioSaveBusy,
@@ -3512,15 +3385,8 @@ export default function SandboxShell() {
         navOpen,
         navPinTabs,
         nowPlayingAuthority,
-        nowPlayingChapterWindow,
         nowPlayingControls,
         nowPlayingDisplay,
-        npCurrentTimeSeconds,
-        npDurationSeconds,
-        npEnvelope,
-        npIsBusy,
-        npIsPlaying,
-        npIsPodcast,
         offlineStatus,
         openCastPicker,
         openHomePlayer,
@@ -3536,7 +3402,6 @@ export default function SandboxShell() {
         playbackFidelityLabel,
         playbackResolveElapsed,
         playerAddToPlaylistOpen,
-        playerBarHeldNowPlaying,
         playerDownloadEnabled,
         playlistsDrillBackRef,
         podcastCatalogHits,
@@ -3564,14 +3429,12 @@ export default function SandboxShell() {
         recentSearchMatches,
         remoteMirror,
         repeatMode,
-        resolveActiveLyrics,
         resumeQueueCandidate,
         runExploreSearch,
         runSearch,
         searchActiveIndex,
         searchCatalog,
         searchDropdownEffectiveOpen,
-        searchDropdownItems,
         searchDropdownRef,
         searchFormRef,
         searchFormat,
@@ -3658,7 +3521,6 @@ export default function SandboxShell() {
         speakerCast,
         station,
         stemSlidersPanelProps,
-        submitSearch,
         suggestedQueueTracks,
         t,
         tabletShell,
