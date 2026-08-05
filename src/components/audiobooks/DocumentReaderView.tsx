@@ -126,10 +126,26 @@ export default function DocumentReaderView({
    * The shelf underneath had been scrolled to reach the book, and that scroll belongs to the page
    * this replaces. Without this the reader opens with its own cover and title already above the
    * fold, which reads as a rendering fault rather than as a book opening.
+   *
+   * Not on mount, which is what the first attempt did and why it silently failed on the device:
+   * at mount the passages have not been laid out, the page is barely taller than the viewport, and
+   * scrolling to the top of something that is already at the top does nothing — then the text
+   * arrives, the page grows, and the old scroll position is still there. So it waits for content,
+   * and then for the frame that lays it out.
+   *
+   * Once per book. Re-running on every chunk change would yank the page back to the top each time
+   * the voice moved on, which is worse than the fault it fixes.
    */
+  const scrolledForRef = useRef<string | null>(null);
   useEffect(() => {
-    rootRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
-  }, []);
+    if (chunks.length === 0) return;
+    if (scrolledForRef.current === title) return;
+    scrolledForRef.current = title;
+    const frame = requestAnimationFrame(() => {
+      rootRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [chunks.length, title]);
 
   /*
    * Follow the reading within a page, but only when it moves to a new passage. Scrolling on every
