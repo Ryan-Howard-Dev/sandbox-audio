@@ -72,11 +72,9 @@ import {
   shouldShowMobileMiniBar,
   shouldUseAndroidInlinePlayerDock,
 } from './mobile/mobilePlayerShellLogic';
-import { resolveDiscoverHardwareBack } from './mobile/discoverAndroidBack';
 import { resolveMobileTabActiveId } from './mobile/mobileTabActiveLogic';
 import { useMobileShell } from './hooks/useMobileShell';
 import { isNativeCapacitorNonTv, isTabletViewport } from './hooks/mobileShellLayout';
-import { useAndroidBackNavigation } from './hooks/useAndroidBackNavigation';
 import {
   flushPendingShellScrollRestore,
   registerShellScrollContainer,
@@ -85,7 +83,6 @@ import {
   SEARCH_RESULTS_SCROLL_KEY,
   searchArtistScrollKey,
 } from './scrollRestore';
-import { closeSandboxOverlay } from './hooks/useDismissableOverlay';
 import SystemLogin from './shell/SystemLogin';
 import {
   BASE_NAV,
@@ -218,7 +215,6 @@ import { formatTime, themeBadgeOutlineClass } from './stations/theme';
 import { loadHeroDisplayMode, saveHeroDisplayMode, resolveHeroShowShades, applyHeroDisplayFromSettingsEvent, toggleHeroDisplayMode } from './heroDisplaySettings';
 import {
   clickHomeVinylToggleButton,
-  isNowPlayingSheetDomOpen,
   probeHeroVisualFromDom,
 } from './homeHeroPlayerLogic';
 import MixRadioSaveDialog, { type MixRadioSaveMode } from './components/MixRadioSaveDialog';
@@ -286,6 +282,13 @@ import {
   useShellDownloadMix,
   useShellDownloadCurrentTrack,
 } from './shell/useShellDownloads';
+import {
+  useShellTvBackHandler,
+  useShellStationSettingsSync,
+  useShellStationGuards,
+  useShellBackNavigation,
+  useShellGoToDiscover,
+} from './shell/useShellNavigation';
 import { ShellStationRouter } from './shell/ShellStationRouter';
 import { loadLibraryStationEnabled } from './libraryStationSettings';
 import { loadSonicLockerStationEnabled } from './sonicLockerStationSettings';
@@ -789,7 +792,6 @@ export default function SandboxShell() {
   const podcastsDrillBackRef = useRef<(() => boolean) | null>(null);
   const audiobooksDrillBackRef = useRef<(() => boolean) | null>(null);
   const audiobooksReturnStationRef = useRef<StationId>('home');
-  const prevStationForAudiobooksRef = useRef<StationId>(station);
   const [, setSettingsMobileDrill] = useState<SettingsTab | null>(null);
   const offlineStatus = useOfflineStatus();
   const [isTV, setIsTV] = useState(false);
@@ -1529,89 +1531,47 @@ export default function SandboxShell() {
     };
   }, [isTV, isCarMode, station, showMobileShell, mobileSearchOpen]);
 
-  useEffect(() => {
-    if (!isTV) return;
-    const onTvBack = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' && e.key !== 'Back' && e.keyCode !== 4) return;
-      if (tvQueueOpen) {
-        e.preventDefault();
-        e.stopPropagation();
-        setTvQueueOpen(false);
-        return;
-      }
-      if (castPickerOpen) {
-        e.preventDefault();
-        e.stopPropagation();
-        setCastPickerOpen(false);
-        return;
-      }
-      if (navOpen) {
-        e.preventDefault();
-        e.stopPropagation();
-        setNavOpen(false);
-        return;
-      }
-      if (station === 'home' && tvScreen === 'playback') {
-        e.preventDefault();
-        e.stopPropagation();
-        setTvScreen('home');
-      }
-    };
-    window.addEventListener('keydown', onTvBack, true);
-    return () => window.removeEventListener('keydown', onTvBack, true);
-  }, [isTV, tvQueueOpen, castPickerOpen, navOpen, station, tvScreen]);
+  useShellTvBackHandler({
+    isTV,
+    tvQueueOpen,
+    setTvQueueOpen,
+    castPickerOpen,
+    setCastPickerOpen,
+    navOpen,
+    setNavOpen,
+    station,
+    tvScreen,
+    setTvScreen,
+  });
 
   useEffect(() => subscribePlaylists(() => setTvPlaylists(loadPlaylists())), []);
 
-  useEffect(() => {
-    const sync = () => {
-      setProAudio(readProAudio());
-      setPodcastsEnabled(readPodcastsEnabled());
-      setAudiobooksEnabled(readAudiobooksEnabled());
-      setDiscoverStationEnabled(readDiscoverStationEnabled());
-      setSonicLockerEnabled(readSonicLockerStationEnabled());
-    };
-    window.addEventListener('storage', sync);
-    window.addEventListener('sandbox-settings-change', sync);
-    return () => {
-      window.removeEventListener('storage', sync);
-      window.removeEventListener('sandbox-settings-change', sync);
-    };
-  }, []);
-
-  useEffect(() => {
-    const prev = prevStationForAudiobooksRef.current;
-    if (station === 'audiobooks' && prev !== 'audiobooks') {
-      audiobooksReturnStationRef.current = prev;
-    }
-    prevStationForAudiobooksRef.current = station;
-  }, [station]);
+  useShellStationSettingsSync({
+    station,
+    setProAudio,
+    setPodcastsEnabled,
+    setAudiobooksEnabled,
+    setDiscoverStationEnabled,
+    setSonicLockerEnabled,
+    audiobooksReturnStationRef,
+  });
 
   useEffect(() => {
     if (station === 'podcasts') setPodcastsMounted(true);
     if (station === 'audiobooks') setAudiobooksMounted(true);
   }, [station]);
 
-  useEffect(() => {
-    if (station === 'dj' && !proAudio) {
-      setStation('settings');
-    }
-    if (station === 'podcasts' && !podcastsEnabled) {
-      setStation(settingsReturnStationRef.current);
-    }
-    if (station === 'audiobooks' && !audiobooksEnabled) {
-      setStation(settingsReturnStationRef.current);
-    }
-    if (station === 'discover' && !discoverStationEnabled) {
-      setStation('home');
-    }
-    if (station === 'library' && !libraryStationEnabled) {
-      setStation('home');
-    }
-    if (station === 'sonic-locker' && !sonicLockerEnabled) {
-      setStation('home');
-    }
-  }, [station, proAudio, podcastsEnabled, audiobooksEnabled, discoverStationEnabled, libraryStationEnabled, sonicLockerEnabled]);
+  useShellStationGuards({
+    station,
+    proAudio,
+    podcastsEnabled,
+    audiobooksEnabled,
+    discoverStationEnabled,
+    libraryStationEnabled,
+    sonicLockerEnabled,
+    settingsReturnStationRef,
+    setStation,
+  });
 
   useEffect(() => {
     const syncLockerTracks = () => {
@@ -2057,145 +2017,42 @@ export default function SandboxShell() {
       searchScrollParentRef,
     });
 
-  const handleShellBack = useCallback((): boolean => {
-    if (playerAddToPlaylistOpen) {
-      closeSandboxOverlay(() => setPlayerAddToPlaylistOpen(false));
-      return true;
-    }
-    if (mixRadioSaveOpen) {
-      closeSandboxOverlay(() => setMixRadioSaveOpen(false));
-      return true;
-    }
-    if (lyricsDrawerOpen) {
-      closeSandboxOverlay(() => setLyricsDrawerOpen(false));
-      return true;
-    }
-    if (mobileNowPlayingOpenRef.current || isNowPlayingSheetDomOpen()) {
-      setMobileNowPlayingOpen(false);
-      return true;
-    }
-    if (podcastChaptersOpenRef.current) {
-      setPodcastChaptersOpen(false);
-      return true;
-    }
-    if (sleepTimerPanelOpen) {
-      closeSandboxOverlay(() => setSleepTimerPanelOpen(false));
-      return true;
-    }
-    if (castPickerOpen) {
-      closeSandboxOverlay(() => setCastPickerOpen(false));
-      return true;
-    }
-    if (queueDrawerOpen) {
-      closeSandboxOverlay(() => setQueueDrawerOpen(false));
-      return true;
-    }
-    if (navOpen) {
-      closeSandboxOverlay(() => setNavOpen(false));
-      return true;
-    }
-    if (mobileSearchOpen) {
-      closeMobileSearch();
-      return true;
-    }
-    if (mobileMenuOpen) {
-      closeSandboxOverlay(() => setMobileMenuOpen(false));
-      return true;
-    }
-    if (videoFeedOpen) {
-      setVideoFeedOpen(false);
-      return true;
-    }
-    if (searchDropdownOpen) {
-      setSearchDropdownOpen(false);
-      return true;
-    }
-    if (settingsDrillBackRef.current?.()) {
-      return true;
-    }
-    if (playlistsDrillBackRef.current?.()) {
-      return true;
-    }
-    if (exploreDrillBackRef.current?.()) {
-      return true;
-    }
-    // Ahead of the tab-level resolver: the expanded mix page is a drill-down *inside* the Feed
-    // tab, so letting the resolver run first would leave it open and switch tabs underneath it.
-    if (mfyDrillBackRef.current?.()) {
-      return true;
-    }
-    const discoverBack = resolveDiscoverHardwareBack({
-      station: stationRef.current,
-      discoverTab: discoverTabRef.current,
-      discoverDrillFromTab: discoverDrillFromTabRef.current,
-    });
-    if (discoverBack.handled) {
-      setDiscoverTab(discoverBack.nextTab);
-      if (discoverBack.clearDrill) {
-        setDiscoverDrillFromTab(null);
-      }
-      return true;
-    }
-    if (station === 'search') {
-      if (albumDrillQuery) {
-        handleAlbumBack();
-        return true;
-      }
-      if (selectedArtist) {
-        handleArtistBack();
-        return true;
-      }
-      if (searchQuery.trim() || searchInput.trim()) {
-        setSearchQuery('');
-        setSearchInput('');
-        setSearchHits([]);
-        setSearchResults([]);
-        setSearchLoading(false);
-        return true;
-      }
-    }
-    if (station === 'locker') {
-      if (lockerDrillBackRef.current?.()) {
-        return true;
-      }
-    }
-    if (station === 'podcasts') {
-      if (podcastsDrillBackRef.current?.()) {
-        return true;
-      }
-    }
-    if (station === 'audiobooks') {
-      if (audiobooksDrillBackRef.current?.()) {
-        return true;
-      }
-      setStation(audiobooksReturnStationRef.current);
-      return true;
-    }
-    if (station === 'settings') {
-      if (settingsDrillBackRef.current?.()) {
-        return true;
-      }
-      setStation(settingsReturnStationRef.current);
-      return true;
-    }
-    // Root of any non-home station: hardware back returns Home instead of
-    // minimizing the app. Only Home itself falls through to minimize.
-    if (stationRef.current !== 'home') {
-      setStation('home');
-      return true;
-    }
-    return false;
-  }, [
+  const { handleShellBackRef } = useShellBackNavigation({
     playerAddToPlaylistOpen,
+    setPlayerAddToPlaylistOpen,
     mixRadioSaveOpen,
-    sleepTimerPanelOpen,
-    castPickerOpen,
-    queueDrawerOpen,
+    setMixRadioSaveOpen,
     lyricsDrawerOpen,
+    setLyricsDrawerOpen,
+    mobileNowPlayingOpenRef,
+    setMobileNowPlayingOpen,
+    podcastChaptersOpenRef,
+    setPodcastChaptersOpen,
+    sleepTimerPanelOpen,
+    setSleepTimerPanelOpen,
+    castPickerOpen,
+    setCastPickerOpen,
+    queueDrawerOpen,
+    setQueueDrawerOpen,
     navOpen,
+    setNavOpen,
     mobileSearchOpen,
     closeMobileSearch,
+    mobileMenuOpen,
+    setMobileMenuOpen,
+    videoFeedOpen,
+    setVideoFeedOpen,
     searchDropdownOpen,
+    setSearchDropdownOpen,
+    settingsDrillBackRef,
+    playlistsDrillBackRef,
+    exploreDrillBackRef,
+    mfyDrillBackRef,
+    stationRef,
+    discoverTabRef,
+    discoverDrillFromTabRef,
+    setDiscoverTab,
+    setDiscoverDrillFromTab,
     station,
     albumDrillQuery,
     selectedArtist,
@@ -2203,14 +2060,18 @@ export default function SandboxShell() {
     handleArtistBack,
     searchQuery,
     searchInput,
-    mobileMenuOpen,
-    videoFeedOpen,
-  ]);
-
-  const handleShellBackRef = useRef(handleShellBack);
-  handleShellBackRef.current = handleShellBack;
-
-  useAndroidBackNavigation(handleShellBack);
+    setSearchQuery,
+    setSearchInput,
+    setSearchHits,
+    setSearchResults,
+    setSearchLoading,
+    lockerDrillBackRef,
+    podcastsDrillBackRef,
+    audiobooksDrillBackRef,
+    audiobooksReturnStationRef,
+    settingsReturnStationRef,
+    setStation,
+  });
 
   const { handleSelectArtist, handleOpenArtistByName, handleOpenAlbumByName, handleSelectAlbum } =
     useShellSearchDrillNav({
@@ -2877,11 +2738,11 @@ export default function SandboxShell() {
     [handlePlayEnvelope, findHitCandidates],
   );
 
-  const goToDiscover = useCallback((tab: DiscoverTabId = 'feed') => {
-    setDiscoverTab(tab);
-    setStation('discover');
-    setNavOpen(false);
-  }, []);
+  const { goToDiscover } = useShellGoToDiscover({
+    setDiscoverTab,
+    setStation,
+    setNavOpen,
+  });
 
   const playEnvelopeRef = useRef(handlePlayEnvelope);
   playEnvelopeRef.current = handlePlayEnvelope;
