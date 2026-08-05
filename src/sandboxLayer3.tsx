@@ -118,7 +118,6 @@ import { usePlayerHomeNavigation } from './hooks/usePlayerHomeNavigation';
 import { useAndroidShellBridges } from './hooks/useAndroidShellBridges';
 import {
   prepareCleanPlaybackStop,
-  waitForPlaybackStarted,
   waitForStablePlayback,
   waitForTrackTransition,
 } from './e2ePlaybackWait';
@@ -185,8 +184,6 @@ import { findQueueIndexForExoTransition, isExoMediaItemTransitionEvent } from '.
 import { cacheUpcomingOnWifi, prefetchUpcomingOnWifi } from './wifiBackgroundPrefetch';
 import {
   cacheEnvelopeForOffline,
-  getStreamCacheEnvelope,
-  isEnvelopeStreamCached,
   warmStreamCacheIndex,
 } from './streamCache';
 import {
@@ -267,6 +264,7 @@ import {
   useShellNowPlayingChapters,
   useShellTogglePlay,
 } from './shell/useShellNowPlayingDisplay';
+import { buildE2eSearchHandlers } from './shell/shellE2eSearchHandlers';
 import { usePlaybackQueue } from './shell/usePlaybackQueue';
 import { useShellPlayActions } from './shell/useShellPlayActions';
 import { useShellTvHome } from './shell/useShellTvHome';
@@ -298,7 +296,6 @@ import {
   savePodcastSmartSpeedEnabled,
   savePodcastSkipAdChaptersEnabled,
   savePodcastVoiceBoostEnabled,
-  savePodcastsEnabled,
   PODCAST_SETTINGS_CHANGE_EVENT,
 } from './podcastSettings';
 import {
@@ -321,14 +318,7 @@ import {
   maybeAutoCompleteEpisode,
 } from './podcastStorage';
 import { type PodcastSearchHit } from './podcastSearch';
-import {
-  resolveOnlineCatalogEpisode,
-  searchPodcastsUnified,
-  subscribeFromCatalogShow,
-  type PodcastCatalogEpisodeHit,
-} from './podcastCatalog';
-import { episodeEnvelope } from './podcastSearch';
-import { loadOfflinePodcastEpisodes } from './podcastOfflineEpisodes';
+import { type PodcastCatalogEpisodeHit } from './podcastCatalog';
 import { resolvePodcastEnvelopeForPlayback } from './podcastPlayback';
 import { tapHaptic } from './uiTapFeedback';
 import {
@@ -1619,270 +1609,31 @@ export default function SandboxShell() {
   });
 
   useEffect(() => {
-    registerE2eHandlers({
-      runSearch: (q) => runSearch(q),
-      navigateTab: (tab) => {
-        void import('./stations/SearchResultsView');
-        if (tab === 'search') {
-          transitionToSearchStation();
-          setNavOpen(false);
-          return;
-        }
-        handleMobileTabNavigate(tab);
-      },
-      completeOnboarding: () => setOnboardingComplete(true),
-      getSearchHitCount: () => {
-        const hits = searchHitsRef.current.length;
-        const unifiedTracks = unifiedSearchResultRef.current.tracks?.length ?? 0;
-        const webBuffered = webSupplementTracksRef.current.length;
-        return Math.max(hits, unifiedTracks, webBuffered);
-      },
-      getSearchHitSummary: (limit = 5) => {
-        // Reads searchHits first because that is the list playSearchQuery indexes into â€” reporting
-        // the unified list instead would describe an order nothing plays from.
-        const hits = searchHitsRef.current.slice(0, limit).map((h) => {
-          const env = h.primaryEnvelope;
-          return `${env?.artist ?? '?'} â€” ${env?.title ?? '?'}`;
-        });
-        if (hits.length > 0) return hits;
-        return unifiedSearchResultRef.current.tracks
-          .slice(0, limit)
-          .map((t) => `${t.artist} â€” ${t.title}`);
-      },
-      playMobileQuery: async (query) => {
-        const env: MediaEnvelope = {
-          envelopeId: `e2e-mobile-${Date.now()}`,
-          title: query,
-          artist: '',
-          url: '',
-          durationSeconds: 0,
-          provider: 'https',
-          transport: 'element-src',
-          sourceId: `e2e-mobile-${Date.now()}`,
-        };
-        setStation('home');
-        setHomeAwaitingUserResume(false);
-        if (isAndroid() && hasActiveMobileResolvers()) {
-          ensureYtDlpMobileReady();
-          await waitForYtDlpInit();
-        }
-        await playEnvelopeRef.current(env, undefined, { autoPlay: true });
-        const nudgePlayback = async () => {
-          audio.primePlaybackGesture();
-          await audio.play();
-        };
-        return waitForPlaybackStarted({
-          expectedTitle: query,
-          getProbeTitle: () => audioEnvelopeRef.current?.title,
-          getProbePosition: () => audioCurrentTimeRef.current,
-          getProbeDuration: () => audioDurationRef.current,
-          getProbeState: () => audioStateRef.current,
-          timeoutMs: 300_000,
-          onStuck: nudgePlayback,
-        });
-      },
-      playSearchQuery: async (query, hitIndex = 0) => {
-        setHomeAwaitingUserResume(false);
-        if (station !== 'search') {
-          searchReturnStationRef.current = station;
-        }
-        setStation('search');
-        setNavOpen(false);
-        await runSearch(query);
-        const searchDeadline = Date.now() + 90_000;
-        while (Date.now() < searchDeadline) {
-          const loading = searchLoadingRef.current || unifiedSearchLoadingRef.current;
-          if (!loading) {
-            const hit = searchHitsRef.current[hitIndex];
-            const catalogTrack = unifiedSearchResultRef.current.tracks[hitIndex];
-            if (hit?.primaryEnvelope || catalogTrack?.envelope) break;
-          }
-          await new Promise((r) => window.setTimeout(r, 250));
-        }
-        const hit = searchHitsRef.current[hitIndex];
-        const catalogTrack = unifiedSearchResultRef.current.tracks[hitIndex];
-        const envelope = hit?.primaryEnvelope ?? catalogTrack?.envelope;
-        const candidates = hit?.sources;
-        if (!envelope) {
-          /*
-           * One line, interpolated. This used to pass an object, which the Android bridge prints
-           * as "[object Object]" â€” so the one diagnostic covering a failed search told you only
-           * that it had failed, which is what you already knew from the FAIL line.
-           */
-          console.warn(
-            `[playSearchQuery] no envelope query="${query}" hitIndex=${hitIndex} ` +
-              `hits=${searchHitsRef.current.length} ` +
-              `catalogTracks=${unifiedSearchResultRef.current.tracks.length} ` +
-              `stillLoading=${searchLoadingRef.current || unifiedSearchLoadingRef.current}`,
-          );
-          return false;
-        }
-        if (isAndroid() && hasActiveMobileResolvers()) {
-          ensureYtDlpMobileReady();
-          await waitForYtDlpInit();
-        }
-        /*
-         * What was chosen, and out of what. A search can rank correctly and still play the wrong
-         * recording â€” the list and the pick are separate steps, and without this the only visible
-         * evidence is the track that came out of the speaker.
-         */
-        console.warn(
-          `[playSearchQuery] picked "${envelope.artist} â€” ${envelope.title}" ` +
-            `id=${envelope.envelopeId} provider=${envelope.provider} ` +
-            `sources=${candidates?.length ?? 0} ` +
-            `hit0="${searchHitsRef.current[0]?.primaryEnvelope?.artist} â€” ` +
-            `${searchHitsRef.current[0]?.primaryEnvelope?.title}" ` +
-            `hits=${searchHitsRef.current.length}`,
-        );
-        await playEnvelopeRef.current(envelope, candidates, {
-          autoPlay: true,
-          seedSearchQueue: true,
-        });
-        const nudgePlayback = async () => {
-          audio.primePlaybackGesture();
-          await audio.play();
-        };
-        return waitForPlaybackStarted({
-          expectedTitle: envelope.title,
-          getProbeTitle: () => audioEnvelopeRef.current?.title,
-          getProbePosition: () => audioCurrentTimeRef.current,
-          getProbeDuration: () => audioDurationRef.current,
-          getProbeState: () => audioStateRef.current,
-          timeoutMs: 300_000,
-          onStuck: nudgePlayback,
-        });
-      },
-      playOfflinePodcast: async (index = 0, titleQuery) => {
-        setPodcastsEnabled(true);
-        savePodcastsEnabled(true);
-        setStation('podcasts');
-        setNavOpen(false);
-        const rows = loadOfflinePodcastEpisodes();
-        if (!rows.length) return false;
-        let row = rows[Math.max(0, Math.min(rows.length - 1, index))];
-        if (titleQuery?.trim()) {
-          const q = titleQuery.trim().toLowerCase();
-          row =
-            rows.find(
-              (r) =>
-                r.episode.title.toLowerCase().includes(q) ||
-                r.feedTitle.toLowerCase().includes(q),
-            ) ?? row;
-        }
-        const base = episodeEnvelope(row.episode, row.feedTitle, row.feedArtworkUrl);
-        if (!isEnvelopeStreamCached(base)) return false;
-        await playEnvelopeRef.current(base, undefined, { autoPlay: true });
-        return true;
-      },
-      cachePodcastQueryOffline: async (query) => {
-        setPodcastsEnabled(true);
-        savePodcastsEnabled(true);
-        setStation('podcasts');
-        setNavOpen(false);
-        const { catalogShows, catalogHits, localHits } = await searchPodcastsUnified(query, {
-          catalogLimit: 8,
-        });
-        let envelope = localHits[0]?.envelope ?? catalogHits[0]?.envelope;
-        if (!envelope?.url?.trim()) {
-          const show = catalogShows.find((s) =>
-            s.title.toLowerCase().includes(query.toLowerCase().split(' ')[0] ?? ''),
-          ) ?? catalogShows[0];
-          if (!show) return false;
-          const { subscription, episodes } = await subscribeFromCatalogShow(show);
-          const ep = episodes[0];
-          if (!ep?.audioUrl?.trim()) return false;
-          envelope = episodeEnvelope(ep, subscription.title, subscription.artworkUrl);
-        }
-        await playEnvelopeRef.current(envelope, undefined, { autoPlay: true });
-        const deadline = Date.now() + 180_000;
-        while (Date.now() < deadline) {
-          const state = audioStateRef.current;
-          if (state === 'Playing' || (state === 'Ready' && Boolean(audioEnvelopeRef.current?.url?.trim()))) break;
-          if (state === 'Failed') return false;
-          await new Promise((r) => window.setTimeout(r, 300));
-        }
-        const playingEnv = audioEnvelopeRef.current;
-        if (!playingEnv?.url?.trim()) return false;
-        await cacheEnvelopeForOffline(playingEnv);
-        return Boolean(await getStreamCacheEnvelope(playingEnv));
-      },
-      playPodcastQuery: async (query) => {
-        setPodcastsEnabled(true);
-        savePodcastsEnabled(true);
-        setStation('podcasts');
-        setNavOpen(false);
-        const q = query.trim();
-        const qLower = q.toLowerCase();
-        const episodeNum = q.match(/#?(\d{3,5})\b/)?.[1];
-        const guestTokens = qLower
-          .split(/\s+/)
-          .filter((t) => t.length > 2 && !/^\d{3,5}$/.test(t));
-        const { catalogShows, catalogHits, localHits } = await searchPodcastsUnified(q, {
-          catalogLimit: 12,
-        });
-        const pickCatalogHit = () => {
-          if (!catalogHits.length) return undefined;
-          if (episodeNum) {
-            return (
-              catalogHits.find((h) => (h.episode?.title ?? h.envelope?.title ?? '').includes(episodeNum)) ??
-              catalogHits.find((h) => (h.envelope?.artist ?? '').includes(episodeNum))
-            );
-          }
-          const tokens = qLower.split(/\s+/).filter((t) => t.length > 2);
-          if (!tokens.length) return catalogHits[0];
-          return catalogHits.find((h) => {
-            const blob = `${h.envelope?.artist ?? ''} ${h.episode?.title ?? h.envelope?.title ?? ''}`.toLowerCase();
-            return tokens.every((t) => blob.includes(t));
-          });
-        };
-        const catalogHit = pickCatalogHit() ?? catalogHits[0];
-        const localHit = localHits[0];
-        const localTitle = localHit?.envelope?.title ?? '';
-        const useLocal =
-          Boolean(localHit?.envelope?.url?.trim()) &&
-          (!episodeNum || localTitle.includes(episodeNum)) &&
-          guestTokens.length < 2;
-        if (useLocal) {
-          return await playEnvelopeRef.current(localHit!.envelope, undefined, { autoPlay: true });
-        }
-        if (catalogHit?.envelope?.url?.trim()) {
-          return await playEnvelopeRef.current(catalogHit.envelope, undefined, { autoPlay: true });
-        }
-        const show = catalogShows.find((s) =>
-          s.title.toLowerCase().includes(qLower.split(' ')[0] ?? ''),
-        ) ?? catalogShows[0];
-        if (!show) return false;
-        const { subscription, episodes } = await subscribeFromCatalogShow(show);
-        const ep = episodeNum
-          ? episodes.find((e) => e.title.includes(episodeNum)) ?? episodes[0]
-          : episodes[0];
-        if (!ep?.audioUrl?.trim()) return false;
-        return await playEnvelopeRef.current(
-          episodeEnvelope(ep, subscription.title, subscription.artworkUrl),
-          undefined,
-          { autoPlay: true },
-        );
-      },
-      playPodcastEpisode: async (feedQuery, episodeQuery, options) => {
-        setPodcastsEnabled(true);
-        savePodcastsEnabled(true);
-        setStation('podcasts');
-        setNavOpen(false);
-        const onlineOnly = options?.online !== false;
-        if (onlineOnly) {
-          const resolved = await resolveOnlineCatalogEpisode(feedQuery, episodeQuery);
-          if (!resolved?.episode?.audioUrl?.trim()) return false;
-          const env = episodeEnvelope(
-            resolved.episode,
-            resolved.feedTitle,
-            resolved.feedArtworkUrl,
-          );
-          if (env.provider === 'stream-cache') return false;
-          return await playEnvelopeRef.current(env, undefined, { autoPlay: true });
-        }
-        return false;
-      },
-    });
+    registerE2eHandlers(
+      buildE2eSearchHandlers({
+        runSearch,
+        handleMobileTabNavigate,
+        transitionToSearchStation,
+        setNavOpen,
+        setOnboardingComplete,
+        searchHitsRef,
+        unifiedSearchResultRef,
+        webSupplementTracksRef,
+        station,
+        setStation,
+        setHomeAwaitingUserResume,
+        audio,
+        playEnvelopeRef,
+        audioEnvelopeRef,
+        audioCurrentTimeRef,
+        audioDurationRef,
+        audioStateRef,
+        searchReturnStationRef,
+        searchLoadingRef,
+        unifiedSearchLoadingRef,
+        setPodcastsEnabled,
+      }),
+    );
   }, [runSearch, handleMobileTabNavigate, transitionToSearchStation, station]);
 
   const { runExploreSearch, handleBrowsePick } = useShellExploreSearch({
