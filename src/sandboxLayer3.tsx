@@ -238,6 +238,7 @@ import { useShellMobileNavActions } from './shell/useShellMobileNavActions';
 import { useShellCarModeAndSleepTimer } from './shell/useShellCarModeAndSleepTimer';
 import { useShellHomeArtStyle } from './shell/useShellHomeArtStyle';
 import { useShellArtworkResolution } from './shell/useShellArtworkResolution';
+import { useShellConnectivityBanners } from './shell/useShellConnectivityBanners';
 import { useShellExoTransition } from './shell/useShellExoTransition';
 import { useShellPlaySessionEffects } from './shell/useShellPlaySessionEffects';
 import {
@@ -371,17 +372,15 @@ import type { QuickBrowseFilter } from './exploreBrowseData';
 import {
   tier34HealDeadSource,
   getTier34BaseUrl,
-  isServerReachableCached,
   isTier34ReachableCached,
-  refreshTier34Reachability,
 } from './tier34/client';
-import { hasActiveMobileResolvers, getLastMobileResolveError, ensureYtDlpMobileReady, preferFreshMobileResolve } from './mobileResolverRegistry';
+import { hasActiveMobileResolvers, getLastMobileResolveError, preferFreshMobileResolve } from './mobileResolverRegistry';
 import { usePlaybackResolveElapsed } from './hooks/usePlaybackResolveElapsed';
 import { useStableEnvelopeId } from './hooks/useStableEnvelopeId';
 import { resolvePlaybackFidelityLabel } from './trackFidelityLabel';
 import { subscribeNativeExoStatus } from './androidNativePlayback';
 import { isNativeExoAudible, clearLastPlayIntent } from './lastPlayIntent';
-import { getYtDlpMobileStatus, waitForYtDlpInit } from './ytDlpMobile';
+import { getYtDlpMobileStatus } from './ytDlpMobile';
 import {
   bumpPlayGeneration,
   currentPlayGeneration,
@@ -442,7 +441,7 @@ import { publishVinylWidgetState } from './vinylWidget';
 import CinemaCastOverlay from './stations/CinemaCastOverlay';
 import VerticalVideoFeed from './components/discovery/VerticalVideoFeed';
 import { searchBarPlaceholder, searchConnectivityHint, useOfflineStatus } from './offlineStatus';
-import { isAndroid, isCapacitorNative } from './platformEnv';
+import { isAndroid } from './platformEnv';
 import { resetMobileKeyboardInsets } from './androidSafeAreaInsets';
 import { isTauriDesktop } from './castPlatform';
 import { requestAndroidPermissions } from './androidPermissions';
@@ -450,10 +449,8 @@ import { useTranslation } from './i18n';
 import {
   getOrCreateConnectDeviceId,
   loadConnectDeviceName,
-  ensureAndroidLocalPlaybackOnLaunch,
   loadGaplessEnabled,
   loadOnboardingComplete,
-  loadTvCoverageBannerDismissed,
   requestTauriCastGuidance,
   saveTvCoverageBannerDismissed,
   shouldShowOnboardingWizard,
@@ -924,68 +921,19 @@ export default function SandboxShell() {
   const [playerAddToPlaylistOpen, setPlayerAddToPlaylistOpen] = useState(false);
   const [appToast, setAppToast] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
-  const ANDROID_SERVER_BANNER_KEY = 'sandbox_android_server_banner_dismissed';
-  const MOBILE_RESOLVER_BANNER_KEY = 'sandbox_mobile_resolver_banner_dismissed';
-  const [androidServerBannerDismissed, setAndroidServerBannerDismissed] = useState(() => {
-    try {
-      return localStorage.getItem(ANDROID_SERVER_BANNER_KEY) === 'true';
-    } catch {
-      return false;
-    }
+  const {
+    showAndroidServerBanner,
+    setAndroidServerBannerDismissed,
+    showMobileResolverBanner,
+    setMobileResolverBannerDismissed,
+    showTvCoverageBanner,
+    setTvCoverageBannerDismissed,
+  } = useShellConnectivityBanners({
+    showMobileShell,
+    isTV,
+    station,
+    tvScreen,
   });
-  const [mobileResolverBannerDismissed, setMobileResolverBannerDismissed] = useState(() => {
-    try {
-      return localStorage.getItem(MOBILE_RESOLVER_BANNER_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
-  const [serverReachable, setServerReachable] = useState(() => isServerReachableCached());
-  const [mobileResolversActive, setMobileResolversActive] = useState(() =>
-    hasActiveMobileResolvers(),
-  );
-  const showAndroidServerBanner =
-    isAndroid() && !getTier34BaseUrl().trim() && !androidServerBannerDismissed && !showMobileShell;
-  const showMobileResolverBanner =
-    isCapacitorNative() &&
-    getTier34BaseUrl().trim() &&
-    !serverReachable &&
-    !mobileResolversActive &&
-    !mobileResolverBannerDismissed;
-  const [tvCoverageBannerDismissed, setTvCoverageBannerDismissed] = useState(
-    loadTvCoverageBannerDismissed,
-  );
-  const showTvCoverageBanner =
-    isTV && station === 'home' && tvScreen === 'home' && !tvCoverageBannerDismissed;
-
-  useEffect(() => {
-    if (!isAndroid()) return;
-    ensureAndroidLocalPlaybackOnLaunch();
-    ensureYtDlpMobileReady();
-    void waitForYtDlpInit();
-  }, []);
-
-  useEffect(() => {
-    const syncReachability = () => {
-      setServerReachable(isServerReachableCached());
-      setMobileResolversActive(hasActiveMobileResolvers());
-    };
-    const onSettingsChange = () => {
-      syncReachability();
-      if (getTier34BaseUrl().trim()) {
-        void refreshTier34Reachability().then(syncReachability);
-      }
-    };
-    window.addEventListener('sandbox-settings-change', onSettingsChange);
-    window.addEventListener('sandbox-resolution-change', syncReachability);
-    if (getTier34BaseUrl().trim()) {
-      void refreshTier34Reachability().then(syncReachability);
-    }
-    return () => {
-      window.removeEventListener('sandbox-settings-change', onSettingsChange);
-      window.removeEventListener('sandbox-resolution-change', syncReachability);
-    };
-  }, []);
 
   const showAppToast = useCallback((msg: string, durationMs = 3200) => {
     setAppToast(msg);
