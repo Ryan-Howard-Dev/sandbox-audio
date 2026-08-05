@@ -254,6 +254,266 @@ public class AudioScanPlugin extends Plugin {
             });
     }
 
+    /**
+     * Where a keyword-spotting model would live if one were installed.
+     *
+     * Not bundled. The English zipformer spotter is about fourteen megabytes, against an APK that
+     * already carries twenty for the Piper voice, so it is a download rather than ballast in every
+     * install — including for the many people whose books already carry a chapter table and who
+     * would never need it.
+     */
+    private java.io.File keywordModelDir() {
+        return new java.io.File(getContext().getFilesDir(), "kws");
+    }
+
+    /** A model is present only if every file the spotter needs is there. */
+    private boolean hasKeywordModel() {
+        java.io.File dir = keywordModelDir();
+        return new java.io.File(dir, "encoder.onnx").exists()
+            && new java.io.File(dir, "decoder.onnx").exists()
+            && new java.io.File(dir, "joiner.onnx").exists()
+            && new java.io.File(dir, "tokens.txt").exists();
+    }
+
+    /** Whether chapter detection can run at all on this device today. */
+    @PluginMethod
+    public void keywordModelStatus(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("installed", hasKeywordModel());
+        ret.put("path", keywordModelDir().getAbsolutePath());
+        call.resolve(ret);
+    }
+
+    /**
+     * Listen for the announcing words, only where the pauses said to look.
+     *
+     * The saving that makes this affordable happens before we get here: silenceScan proposes a few
+     * hundred short windows, so the spotter hears perhaps twenty minutes of a thirty hour book.
+     *
+     * No resampler. sherpa's acceptWaveform takes the source rate and converts internally, which
+     * is the second time this feature has avoided writing the component most likely to be subtly
+     * wrong — the loudness scan did not need one either, because RMS is rate-independent.
+     *
+     * Rejects with "no-model" rather than returning an empty list when nothing is installed. Those
+     * mean opposite things to the caller: one is "this book announces no chapters", the other is
+     * "nothing was listened to". Collapsing them is the mistake that let a read-byte-zero bug
+     * masquerade as a book without chapters for months. See bookChapterScan.ts.
+     */
+    @PluginMethod
+    public void spotKeywords(PluginCall call) {
+        final String rawUri = call.getString("uri");
+        final com.getcapacitor.JSArray windows = call.getArray("windows");
+        final String keywords = call.getString("keywords", "");
+        if (rawUri == null || rawUri.trim().isEmpty()) {
+            call.reject("uri required");
+            return;
+        }
+        if (windows == null || windows.length() == 0) {
+            call.reject("windows required");
+            return;
+        }
+        if (!hasKeywordModel()) {
+            call.reject("no-model");
+            return;
+        }
+        final String uriText = rawUri.trim();
+        final String keywordList = keywords == null ? "" : keywords;
+
+        scanExecutor.execute(
+            () -> {
+                com.k2fsa.sherpa.onnx.KeywordSpotter spotter = null;
+                try {
+                    java.io.File dir = keywordModelDir();
+                    com.k2fsa.sherpa.onnx.OnlineModelConfig model =
+                        new com.k2fsa.sherpa.onnx.OnlineModelConfig();
+                    com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig transducer =
+                        new com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig();
+                    transducer.setEncoder(new java.io.File(dir, "encoder.onnx").getAbsolutePath());
+                    transducer.setDecoder(new java.io.File(dir, "decoder.onnx").getAbsolutePath());
+                    transducer.setJoiner(new java.io.File(dir, "joiner.onnx").getAbsolutePath());
+                    model.setTransducer(transducer);
+                    model.setTokens(new java.io.File(dir, "tokens.txt").getAbsolutePath());
+
+                    com.k2fsa.sherpa.onnx.KeywordSpotterConfig config =
+                        new com.k2fsa.sherpa.onnx.KeywordSpotterConfig();
+                    config.setModelConfig(model);
+                    spotter = new com.k2fsa.sherpa.onnx.KeywordSpotter(null, config);
+
+                    com.getcapacitor.JSArray hits = new com.getcapacitor.JSArray();
+                    for (int w = 0; w < windows.length(); w++) {
+                        org.json.JSONObject window = windows.getJSONObject(w);
+                        double from = window.optDouble("startSeconds", 0);
+                        double to = window.optDouble("endSeconds", 0);
+                        if (!(to > from)) continue;
+
+                        DecodedRange range = decodeRange(uriText, from, to);
+                        if (range == null || range.samples.length == 0) continue;
+
+                        com.k2fsa.sherpa.onnx.OnlineStream stream = spotter.createStream(keywordList);
+                        stream.acceptWaveform(range.samples, range.sampleRate);
+                        stream.inputFinished();
+                        while (spotter.isReady(stream)) {
+                            spotter.decode(stream);
+                            com.k2fsa.sherpa.onnx.KeywordSpotterResult result =
+                                spotter.getResult(stream);
+                            String word = result.getKeyword();
+                            if (word == null || word.trim().isEmpty()) continue;
+                            float[] stamps = result.getTimestamps();
+                            /*
+                             * Timestamps are relative to the window the spotter was given, so the
+                             * window's own offset is added back. Without that every chapter in the
+                             * book would be reported in the first few seconds.
+                             */
+                            double at = from + (stamps != null && stamps.length > 0 ? stamps[0] : 0);
+                            JSObject hit = new JSObject();
+                            hit.put("atSeconds", at);
+                            hit.put("keyword", word.trim().toLowerCase(java.util.Locale.ROOT));
+                            // The binding exposes no per-hit confidence, so a spotted word is
+                            // reported at full score; the threshold that matters is the spotter's
+                            // own keywordsThreshold, applied before it ever says anything.
+                            hit.put("score", 1.0);
+                            hits.put(hit);
+                        }
+                        stream.release();
+                    }
+
+                    JSObject ret = new JSObject();
+                    ret.put("hits", hits);
+                    mainHandler.post(() -> call.resolve(ret));
+                } catch (Throwable t) {
+                    rejectOnMain(call, t.getMessage() != null ? t.getMessage() : "spot failed");
+                } finally {
+                    if (spotter != null) {
+                        try {
+                            spotter.release();
+                        } catch (Throwable ignored) {
+                            /* already gone */
+                        }
+                    }
+                }
+            });
+    }
+
+    /** Mono float samples for one time range, at the file's own rate. */
+    private static final class DecodedRange {
+        final float[] samples;
+        final int sampleRate;
+
+        DecodedRange(float[] samples, int sampleRate) {
+            this.samples = samples;
+            this.sampleRate = sampleRate;
+        }
+    }
+
+    /**
+     * Decode just the seconds asked for.
+     *
+     * seekTo with SEEK_TO_PREVIOUS_SYNC, because a decoder started at an arbitrary offset produces
+     * noise until the next sync point. Landing early and discarding the run-up costs a fraction of
+     * a second and gives the spotter clean audio.
+     */
+    private DecodedRange decodeRange(String uriText, double fromSeconds, double toSeconds) {
+        MediaExtractor extractor = new MediaExtractor();
+        MediaCodec codec = null;
+        try {
+            extractor.setDataSource(getContext(), Uri.parse(uriText), null);
+            int track = -1;
+            MediaFormat format = null;
+            for (int i = 0; i < extractor.getTrackCount(); i++) {
+                MediaFormat candidate = extractor.getTrackFormat(i);
+                String mime = candidate.getString(MediaFormat.KEY_MIME);
+                if (mime != null && mime.startsWith("audio/")) {
+                    track = i;
+                    format = candidate;
+                    break;
+                }
+            }
+            if (track < 0 || format == null) return null;
+            extractor.selectTrack(track);
+            extractor.seekTo((long) (fromSeconds * 1_000_000L), MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
+
+            int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+            int channels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
+            if (sampleRate <= 0 || channels <= 0) return null;
+
+            codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME));
+            codec.configure(format, null, null, 0);
+            codec.start();
+
+            int wanted = (int) Math.ceil((toSeconds - fromSeconds) * sampleRate);
+            if (wanted <= 0) return null;
+            float[] out = new float[wanted];
+            int written = 0;
+            boolean sawInputEnd = false;
+            int stalls = 0;
+            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+
+            while (written < wanted) {
+                if (!sawInputEnd) {
+                    int inIndex = codec.dequeueInputBuffer(DEQUEUE_TIMEOUT_US);
+                    if (inIndex >= 0) {
+                        ByteBuffer in = codec.getInputBuffer(inIndex);
+                        int size = in == null ? -1 : extractor.readSampleData(in, 0);
+                        if (size < 0) {
+                            codec.queueInputBuffer(
+                                inIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                            sawInputEnd = true;
+                        } else {
+                            codec.queueInputBuffer(inIndex, 0, size, extractor.getSampleTime(), 0);
+                            extractor.advance();
+                        }
+                    }
+                }
+                int outIndex = codec.dequeueOutputBuffer(info, DEQUEUE_TIMEOUT_US);
+                if (outIndex < 0) {
+                    if (++stalls > MAX_CONSECUTIVE_STALLS) break;
+                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) break;
+                    continue;
+                }
+                stalls = 0;
+                ByteBuffer buf = codec.getOutputBuffer(outIndex);
+                if (buf != null && info.size > 0) {
+                    // Discard anything before the window: the sync point lands early by design.
+                    double bufferStart = info.presentationTimeUs / 1_000_000.0;
+                    buf.order(ByteOrder.nativeOrder());
+                    buf.position(info.offset);
+                    buf.limit(info.offset + info.size);
+                    ShortBuffer pcm = buf.asShortBuffer();
+                    int frameIndex = 0;
+                    while (pcm.hasRemaining() && written < wanted) {
+                        double mixed = 0;
+                        int taken = 0;
+                        for (int c = 0; c < channels && pcm.hasRemaining(); c++) {
+                            mixed += pcm.get() / 32768.0;
+                            taken++;
+                        }
+                        if (taken == 0) break;
+                        double at = bufferStart + (double) frameIndex / sampleRate;
+                        frameIndex++;
+                        if (at < fromSeconds) continue;
+                        out[written++] = (float) (mixed / taken);
+                    }
+                }
+                codec.releaseOutputBuffer(outIndex, false);
+                if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) break;
+            }
+            if (written == 0) return null;
+            return new DecodedRange(written == wanted ? out : java.util.Arrays.copyOf(out, written), sampleRate);
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (codec != null) {
+                try {
+                    codec.stop();
+                } catch (Exception ignored) {
+                    /* already stopped */
+                }
+                codec.release();
+            }
+            extractor.release();
+        }
+    }
+
     /** One frame's loudness, clamped into a signed byte. */
     private static byte frameDb(double sumOfSquares, int count) {
         if (count <= 0) return (byte) MIN_DB;

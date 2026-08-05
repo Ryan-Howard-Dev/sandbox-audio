@@ -10,6 +10,7 @@
  */
 import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core';
 import { silencesFromFrameDb, type SilenceSpan, type SilenceScanOptions } from './silenceScan';
+import type { KeywordHit } from './spokenChapterDetect';
 
 export interface AudioScanResult {
   /** Signed bytes of dBFS, one per frame, base64 encoded. */
@@ -24,6 +25,13 @@ export interface AudioScanResult {
 
 export interface AudioScanPlugin {
   scanAudioFrames(options: { uri: string; frameSeconds?: number }): Promise<AudioScanResult>;
+  /** Whether a keyword model is installed. It is a download, not part of the APK. */
+  keywordModelStatus(): Promise<{ installed: boolean; path: string }>;
+  spotKeywords(options: {
+    uri: string;
+    windows: Array<{ startSeconds: number; endSeconds: number }>;
+    keywords: string;
+  }): Promise<{ hits: Array<{ atSeconds: number; keyword: string; score: number }> }>;
   addListener(
     eventName: 'audioScanProgress',
     listenerFunc: (event: { percent: number }) => void,
@@ -113,4 +121,56 @@ export async function scanSilences(
   } finally {
     await handle?.remove().catch(() => {});
   }
+}
+
+/** Is a keyword model installed? False on every platform without the plugin. */
+export async function isKeywordModelInstalled(): Promise<boolean> {
+  if (!isAudioScanAvailable()) return false;
+  try {
+    return (await AudioScan.keywordModelStatus()).installed;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Listen for the announcing words at the given windows.
+ *
+ * Null means nothing was listened to — no plugin, no model, a file that would not decode. An
+ * empty array means it listened and heard nothing announced. The two are not the same answer and
+ * bookChapterScan depends on telling them apart.
+ */
+export async function spotChapterKeywords(
+  uri: string,
+  windows: Array<{ startSeconds: number; endSeconds: number }>,
+  keywords: readonly string[],
+): Promise<KeywordHit[] | null> {
+  if (!isAudioScanAvailable()) return null;
+  const target = uri?.trim() ?? '';
+  if (!target || windows.length === 0) return null;
+  try {
+    const result = await AudioScan.spotKeywords({
+      uri: target,
+      windows,
+      // The spotter takes its keywords inline, one per line, so no model-side file is needed and
+      // the words can change without touching the download.
+      keywords: keywords.join('\n'),
+    });
+    return result.hits ?? [];
+  } catch {
+    // Includes the deliberate "no-model" rejection. Null, never an empty list.
+    return null;
+  }
+}
+
+/** Deps for scanBookChapters, wired to this device. */
+export function deviceChapterScanDeps() {
+  return {
+    scanSilences: (uri: string) => scanSilences(uri),
+    spotKeywords: (
+      uri: string,
+      windows: Array<{ startSeconds: number; endSeconds: number }>,
+      keywords: readonly string[],
+    ) => spotChapterKeywords(uri, windows, keywords),
+  };
 }
