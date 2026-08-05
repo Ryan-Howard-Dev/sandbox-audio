@@ -168,8 +168,7 @@ import {
   loadSovereignUpNextSettings,
   mergeIntoUpNextQueue,
 } from './sovereignUpNext';
-import { startAutoSimilarRadioIfNeeded } from './play/standaloneSimilarRadio';
-import { ensureLockerPlayable, envelopeClaimsLocker } from './play/ensureLockerPlayable';
+import { envelopeClaimsLocker } from './play/ensureLockerPlayable';
 import { findQueueIndexForExoTransition, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
 import { cacheUpcomingOnWifi, prefetchUpcomingOnWifi } from './wifiBackgroundPrefetch';
 import {
@@ -227,6 +226,7 @@ import { useShellConnect, useShellConnectRuntime } from './shell/useShellConnect
 import { useShellPodcastControls } from './shell/useShellPodcastControls';
 import { useShellCastRuntime } from './shell/useShellCastRuntime';
 import { usePlayEnvelope } from './shell/usePlayEnvelope';
+import { useShellPlayTriggers } from './shell/useShellPlayTriggers';
 import {
   useShellSearchRunner,
   useShellExploreSearch,
@@ -416,9 +416,6 @@ import {
   displayTransportLabel,
   proxiedArtworkUrl,
 } from './displaySanitize';
-import {
-  preserveTappedEnvelopeIdentity,
-} from './playbackPipeline';
 import {
   retryTrackInDownloadJob,
   scheduleCatalogAlbumDownload,
@@ -663,6 +660,13 @@ export default function SandboxShell() {
   const sessionEnvelopeRef = useRef<MediaEnvelope | null>(null);
   const [shuffleOn, setShuffleOn] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('none');
+  /*
+   * Declared here (rather than next to the other queue-state refs further down) so
+   * useShellPlayTriggers — called well before that point — can read repeatModeRef.current
+   * without a temporal-dead-zone forward reference. Still synced every render like the rest.
+   */
+  const repeatModeRef = useRef(repeatMode);
+  repeatModeRef.current = repeatMode;
   const [thumbUp, setThumbUp] = useState(false);
   const [thumbDown, setThumbDown] = useState(false);
 
@@ -2122,151 +2126,41 @@ export default function SandboxShell() {
     scheduleAutoSimilarRadioRef,
   });
 
-  const scheduleAutoSimilarRadio = useCallback(
-    (
-      playable: MediaEnvelope,
-      opts?: { seedSearchQueue?: boolean; seamless?: boolean; playQueueOverride?: MediaEnvelope[] },
-    ) => {
-      if (opts?.seamless) return;
-
-      const queueNow = opts?.playQueueOverride ?? playQueueRef.current;
-      const refQueue = playQueueRef.current;
-      const lockerAlbumFromRef =
-        refQueue.length > queueNow.length &&
-        isLockerVaultPlayQueue(refQueue) &&
-        refQueue.some((track) => track.envelopeId === playable.envelopeId)
-          ? refQueue
-          : null;
-      const effectiveQueue = lockerAlbumFromRef ?? queueNow;
-      if (
-        autoSimilarRadioSeedRef.current === playable.envelopeId &&
-        effectiveQueue.length > 1 &&
-        effectiveQueue.some((track) => track.envelopeId === playable.envelopeId)
-      ) {
-        return;
-      }
-
-      const midRadio =
-        Boolean(mixRadioSessionRef.current) &&
-        effectiveQueue.length > 1 &&
-        effectiveQueue.some((track) => track.envelopeId === playable.envelopeId);
-
-      const primeRadioContinuation = (queue: MediaEnvelope[], index: number) => {
-        void primeLockerNativeQueueFrom(queue, index);
-        prefetchUpcomingQueueTracks({
-          playQueue: queue,
-          queueIndex: index,
-          repeatMode: repeatModeRef.current,
-          findCandidates: findHitCandidates,
-          onResolvedUrl: (url, envelope) =>
-            audio.prebufferUrl(url, {
-              title: envelope.title,
-              artist: envelope.artist,
-              album: envelope.album,
-              artworkUrl: envelope.artworkUrl,
-              envelopeId: envelope.envelopeId,
-            }),
-        });
-      };
-
-      if (
-        !opts?.seedSearchQueue &&
-        effectiveQueue.length > 1 &&
-        isLockerVaultPlayQueue(effectiveQueue) &&
-        effectiveQueue.some((track) => track.envelopeId === playable.envelopeId)
-      ) {
-        const idx = effectiveQueue.findIndex((track) => track.envelopeId === playable.envelopeId);
-        primeRadioContinuation(effectiveQueue, idx >= 0 ? idx : 0);
-        return;
-      }
-
-      void startAutoSimilarRadioIfNeeded(
-        {
-          envelope: playable,
-          playQueue: effectiveQueue,
-          // Seeded singles must not be blocked by a stale album-drill listing
-          // (e.g. American Dream still in refs after playing one locker track).
-          albumTracks: opts?.seedSearchQueue ? undefined : albumDrillTracksRef.current,
-          searchHits: searchHitsRef.current,
-          albumTitle: opts?.seedSearchQueue ? undefined : albumDrillAlbumRef.current?.title,
-          expectedTrackCount: opts?.seedSearchQueue
-            ? undefined
-            : albumDrillAlbumRef.current?.trackCount,
-          seedSearchQueue: opts?.seedSearchQueue,
-          hasMixRadioSession: midRadio,
-        },
-        {
-          setPlayQueue,
-          setQueueIndex,
-          setMixRadioSession,
-          setRepeatMode,
-          setShuffleOn,
-          isStillCurrent: () => audioEnvelopeRef.current?.envelopeId === playable.envelopeId,
-          labelFor: (key) =>
-            key === 'unknownTitle' ? t('player.unknownTitle') : t('player.unknownArtist'),
-          persistRadioPlaylist: true,
-        },
-      ).then((result) => {
-        if (!result.started) return;
-        autoSimilarRadioSeedRef.current = playable.envelopeId;
-        primeRadioContinuation(result.queue, result.index);
-      });
-    },
-    [t, audio.prebufferUrl, findHitCandidates, primeLockerNativeQueueFrom],
-  );
-  scheduleAutoSimilarRadioRef.current = scheduleAutoSimilarRadio;
-
-  const handleLockerTrackPlay = useCallback(
-    async (env: MediaEnvelope): Promise<boolean> => {
-      setHomeAwaitingUserResume(false);
-      const artistName = env.artist?.trim() ?? '';
-      const albumTitle = env.album?.trim();
-      const sourceId = env.sourceId?.trim();
-      const trackTitle = env.title?.trim() ?? '';
-
-      if (albumTitle && artistName) {
-        const snapshot = getLockerEntriesSnapshot() ?? [];
-        const seeded = seedLockerAlbumPlayQueue(
-          snapshot,
-          albumTitle,
-          artistName,
-          sourceId,
-          trackTitle,
-        );
-        if (seeded) {
-          logLockerQueueInstrumentation('tap', sourceId, seeded.index, seeded.envs);
-          const target = seeded.envs[seeded.index]!;
-          const locker = await ensureLockerPlayable(target);
-          if (locker.kind !== 'playable' || !locker.envelope.url?.trim()) {
-            return false;
-          }
-          const playable = preserveTappedEnvelopeIdentity(target, locker.envelope);
-          const started = await handlePlayEnvelope(playable, findHitCandidates(playable), {
-            autoPlay: true,
-            preservePlayQueue: true,
-          });
-          if (started) {
-            await primeLockerNativeQueueFrom(seeded.envs, seeded.index);
-            await audio.flushNativeExoEnqueueChain();
-          }
-          return started;
-        }
-      }
-
-      return handlePlayEnvelope(env, findHitCandidates(env), {
-        autoPlay: true,
-        preservePlayQueue: true,
-      });
-    },
-    [
-      audio,
-      findHitCandidates,
-      handlePlayEnvelope,
-      logLockerQueueInstrumentation,
-      primeLockerNativeQueueFrom,
-      seedLockerAlbumPlayQueue,
-    ],
-  );
+  const {
+    scheduleAutoSimilarRadio,
+    handleLockerTrackPlay,
+    handleSearchPlay,
+    handleStreamSearchHit,
+    handleSonicLockerPlayQueue,
+    handleSonicLockerSaveMix,
+    handleSonicLockerDiscoveryStation,
+  } = useShellPlayTriggers({
+    audio,
+    t,
+    handlePlayEnvelope,
+    findHitCandidates,
+    primeLockerNativeQueueFrom,
+    showAppToast,
+    setHomeAwaitingUserResume,
+    setMobilePlayerPending,
+    setPlayQueue,
+    setQueueIndex,
+    setMixRadioSession,
+    setRepeatMode,
+    setShuffleOn,
+    setMixRadioSaveOpen,
+    playQueueRef,
+    mixRadioSessionRef,
+    autoSimilarRadioSeedRef,
+    repeatModeRef,
+    audioEnvelopeRef,
+    albumDrillTracksRef,
+    albumDrillAlbumRef,
+    searchHitsRef,
+    scheduleAutoSimilarRadioRef,
+    logLockerQueueInstrumentation,
+    seedLockerAlbumPlayQueue,
+  });
 
   const podcastsActiveEnvelopeId = useStableEnvelopeId(audio.envelope?.envelopeId);
 
@@ -2317,35 +2211,6 @@ export default function SandboxShell() {
     setStation,
   });
 
-  const handleSearchPlay = useCallback(
-    (env: MediaEnvelope, candidates?: CandidateSource[]) => {
-      /*
-       * The entry point, logged before anything can swallow it. handlePlayEnvelope already times
-       * itself, but a silent log there is ambiguous: it means either the tap was slow or the tap
-       * never arrived, and those need opposite investigations. This line separates them â€” if it
-       * appears and the timing does not, the play call itself is being dropped; if neither
-       * appears, the gesture never reached this handler at all.
-       */
-      console.warn(
-        `[handleSearchPlay] play requested track="${env.artist} â€” ${env.title}" ` +
-          `provider=${env.provider} sources=${candidates?.length ?? 0}`,
-      );
-      void handlePlayEnvelope(env, candidates, { seedSearchQueue: true }).catch((err) => {
-        console.warn('[handleSearchPlay] playback failed:', err);
-        showAppToast(t('artist.playbackHybridUnavailable'), 3800);
-        setMobilePlayerPending(false);
-      });
-    },
-    [handlePlayEnvelope, showAppToast, t],
-  );
-
-  const handleStreamSearchHit = useCallback(
-    (hit: ResolvedSearchHit) => {
-      handleSearchPlay(hit.primaryEnvelope, hit.sources);
-    },
-    [handleSearchPlay],
-  );
-
   const {
     handleSelectTrack,
     handleSelectPlaylist,
@@ -2392,53 +2257,6 @@ export default function SandboxShell() {
       });
     },
     [downloadTierPreference, handlePlayEnvelope, showAppToast],
-  );
-
-  const handleSonicLockerPlayQueue = useCallback(
-    (tracks: MediaEnvelope[], shuffle = false) => {
-      if (tracks.length === 0) return;
-      const ordered = shuffle ? [...tracks].sort(() => Math.random() - 0.5) : tracks;
-      setPlayQueue(ordered);
-      setQueueIndex(0);
-      setMixRadioSession({
-        kind: 'radio',
-        seedTitle: ordered[0]?.title?.trim() || t('player.unknownTitle'),
-        seedArtist: ordered[0]?.artist?.trim() || t('player.unknownArtist'),
-      });
-      setShuffleOn(shuffle);
-      handlePlayEnvelope(ordered[0], findHitCandidates(ordered[0]));
-    },
-    [handlePlayEnvelope, findHitCandidates, t],
-  );
-
-  const handleSonicLockerSaveMix = useCallback((tracks: MediaEnvelope[]) => {
-    if (tracks.length === 0) return;
-    setPlayQueue(tracks);
-    setQueueIndex(0);
-    setMixRadioSession({
-      kind: 'radio',
-      seedTitle: 'Sonic Locker',
-      seedArtist: 'Saved mix',
-    });
-    setMixRadioSaveOpen(true);
-  }, []);
-
-  const handleSonicLockerDiscoveryStation = useCallback(
-    (tracks: MediaEnvelope[]) => {
-      if (tracks.length === 0) return;
-      setPlayQueue(tracks);
-      setQueueIndex(0);
-      setMixRadioSession({
-        kind: 'discovery-station',
-        skipOnly: true,
-        seedTitle: 'Discovery Station',
-        seedArtist: 'Sonic Locker',
-      });
-      setShuffleOn(false);
-      setRepeatMode('all');
-      handlePlayEnvelope(tracks[0], findHitCandidates(tracks[0]));
-    },
-    [handlePlayEnvelope, findHitCandidates],
   );
 
   const { goToDiscover } = useShellGoToDiscover({
@@ -2599,7 +2417,6 @@ export default function SandboxShell() {
     findHitCandidates,
   ]);
 
-  const repeatModeRef = useRef(repeatMode);
   const shuffleOnRef = useRef(shuffleOn);
   const sovereignUpNextPodcastCountRef = useRef(0);
   playQueueRef.current = playQueue;
