@@ -56,6 +56,7 @@ import { controlsForPillar, resolveMediaPillar } from './mediaPillar';
 import { seekIntervalsFor, seekTargetSeconds } from './spokenSeekIntervals';
 import { resolveChapterWindow, type ChapterMark } from './chapterScrubber';
 import { useAudiobookChapters } from './hooks/useAudiobookChapters';
+import { useBookChapterScan } from './hooks/useBookChapterScan';
 import { resumeAtSeconds } from './resumeRewind';
 import {
   clearNarrationPlayback,
@@ -283,6 +284,7 @@ import { shouldPreferAndroidNativePlayback } from './androidNativePlayback';
 import { loadDiscoverStationEnabled } from './discoverStationSettings';
 import { useShellConnect, useShellConnectRuntime } from './shell/useShellConnect';
 import { useShellPodcastControls } from './shell/useShellPodcastControls';
+import { useShellCastRuntime } from './shell/useShellCastRuntime';
 import { usePlaybackQueue } from './shell/usePlaybackQueue';
 import { ShellStationRouter } from './shell/ShellStationRouter';
 import { loadLibraryStationEnabled } from './libraryStationSettings';
@@ -496,7 +498,6 @@ import ConfirmDialog from './components/ConfirmDialog';
 import { getDownloadJobs, subscribeDownloadQueue } from './downloadQueue';
 import { acquireAndPlayHit } from './acquireAndPlay';
 import { notifyAcquireProgress } from './acquireProgressNotify';
-import { resolveCastStreamUrl } from './castStreamResolver';
 import CastPicker from './components/CastPicker';
 import QueueDrawer from './components/QueueDrawer';
 import TVNavigation, { type TVStationId } from './components/TVNavigation';
@@ -534,18 +535,10 @@ import {
 } from './resolveTrackLyrics';
 import {
   getCastState,
-  isSpeakerCastActive,
-  loadAutoCastEnabled,
-  loadDefaultCastDevice,
-  startCastToDevice,
-  subscribeCastState,
-  syncCastEnvelope,
   type CastState,
 } from './castState';
 import {
   getCinemaCastMode,
-  publishCinemaCast,
-  subscribeCastSession,
   type CinemaCastMode,
 } from './cinemaCast';
 import { publishVinylWidgetState } from './vinylWidget';
@@ -562,7 +555,6 @@ import {
   loadConnectDeviceName,
   ensureAndroidLocalPlaybackOnLaunch,
   loadConnectRolePref,
-  loadFidelityPolicy,
   loadGaplessEnabled,
   loadNetworkSyncEnabled,
   loadOnboardingComplete,
@@ -5548,140 +5540,16 @@ export default function SandboxShell() {
     podcastSkipAdHint,
   } = useShellPodcastControls(audio, audioCurrentTimeRef, audioEnvelopeRef);
 
-  useEffect(() => subscribeCastSession(setCastMode), []);
-
-  useEffect(() => subscribeCastState(setSpeakerCast), []);
-
-  const wasCastingRef = useRef(false);
-  useEffect(() => {
-    if (wasCastingRef.current && !speakerCast.isActive && audio.envelope) {
-      void audio.play();
-    }
-    wasCastingRef.current = speakerCast.isActive;
-  }, [speakerCast.isActive, audio]);
-
-  useEffect(() => {
-    if (!loadAutoCastEnabled()) return;
-    const device = loadDefaultCastDevice();
-    if (!device || isSpeakerCastActive()) return;
-    const env = audio.envelope;
-    if (!env) return;
-    void startCastToDevice(device, env, {
-      title: audio.title,
-      artist: audio.artist,
-      artworkUrl: artworkUrl || env.artworkUrl,
-      isPlaying: audio.state === 'Playing',
-      currentTimeSeconds: audio.currentTimeSeconds,
-      durationSeconds: audio.durationSeconds,
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!speakerCast.isActive || !audio.envelope) return;
-    if (speakerCast.deviceType !== 'remote_cast') {
-      if (audio.state === 'Playing' || audio.nativeExoEffectivePlaying) audio.pause();
-    }
-    void syncCastEnvelope(
-      audio.envelope,
-      {
-        title: audio.title,
-        artist: audio.artist,
-        artworkUrl: artworkUrl || audio.envelope.artworkUrl,
-        isPlaying: audio.state === 'Playing',
-        currentTimeSeconds: audioCurrentTimeRef.current,
-        durationSeconds: audio.durationSeconds,
-      },
-      speakerCast.deviceType === 'remote_cast' && playQueue.length > 0
-        ? { queue: playQueue, index: queueIndex }
-        : undefined,
-    );
-  }, [
-    speakerCast.isActive,
-    speakerCast.deviceType,
-    audio.envelope,
-    audio.envelope?.envelopeId,
-    audio.envelope?.url,
-    audio.envelope?.sourceId,
-    audio.title,
-    audio.artist,
-    audio.state,
-    audio.durationSeconds,
+  useShellCastRuntime({
+    audio,
     artworkUrl,
     playQueue,
     queueIndex,
-  ]);
-
-  useEffect(() => {
-    if (!speakerCast.isActive || audio.state !== 'Playing') return;
-    const id = window.setInterval(() => {
-      if (!audio.envelope) return;
-      void syncCastEnvelope(
-        audio.envelope,
-        {
-          title: audio.title,
-          artist: audio.artist,
-          artworkUrl: artworkUrl || audio.envelope.artworkUrl,
-          isPlaying: true,
-          currentTimeSeconds: audioCurrentTimeRef.current,
-          durationSeconds: audio.durationSeconds,
-        },
-        speakerCast.deviceType === 'remote_cast' && playQueue.length > 0
-          ? { queue: playQueue, index: queueIndex }
-          : undefined,
-      );
-    }, 1500);
-    return () => window.clearInterval(id);
-  }, [
-    speakerCast.isActive,
-    speakerCast.deviceType,
-    audio.state,
-    audio.envelope?.envelopeId,
-    audio.title,
-    audio.artist,
-    audio.durationSeconds,
-    artworkUrl,
-    playQueue,
-    queueIndex,
-  ]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const publish = () => {
-      void (async () => {
-        const resolvedUrl = await resolveCastStreamUrl(audio.envelope ?? null);
-        if (cancelled) return;
-        publishCinemaCast({
-          title: audio.title || 'Sovereign Music Console',
-          artist: audio.artist || 'Ready to cast',
-          albumArt: artworkUrl || audio.envelope?.artworkUrl,
-          isPlaying: audio.state === 'Playing',
-          currentTimeSeconds: audioCurrentTimeRef.current,
-          durationSeconds: audio.durationSeconds,
-          fidelity: loadFidelityPolicy(),
-          streamUrl: resolvedUrl ?? undefined,
-        });
-      })();
-    };
-    publish();
-    const intervalId =
-      audio.state === 'Playing' ? window.setInterval(publish, 1500) : undefined;
-    return () => {
-      cancelled = true;
-      if (intervalId !== undefined) window.clearInterval(intervalId);
-    };
-  }, [
-    audio.title,
-    audio.artist,
-    audio.state,
-    audio.durationSeconds,
-    audio.envelope,
-    audio.envelope?.url,
-    audio.envelope?.artworkUrl,
-    audio.envelope?.provider,
-    audio.envelope?.sourceId,
-    audio.envelope?.envelopeId,
-    artworkUrl,
-  ]);
+    setCastMode,
+    setSpeakerCast,
+    speakerCast,
+    audioCurrentTimeRef,
+  });
 
   useEffect(() => {
     publishVinylWidgetState({
@@ -7971,6 +7839,32 @@ export default function SandboxShell() {
     enabled: isAnyAudiobookEnvelopeId(npEnvelope?.envelopeId) && playQueue.length < 2,
   });
 
+  /*
+   * Chapters found by listening, for a book that states none.
+   *
+   * Offered only where the file itself has nothing to say — a book that carries a chapter table is
+   * telling the truth about itself, and inferring over the top of that would replace fact with
+   * guesswork. Never runs on its own: decoding thirty hours is minutes of work and real battery.
+   */
+  const scannedChapters = useBookChapterScan({
+    bookId: npEnvelope?.envelopeId,
+    uri: npEnvelope?.url,
+    enabled:
+      isAnyAudiobookEnvelopeId(npEnvelope?.envelopeId) &&
+      playQueue.length < 2 &&
+      embeddedChapters.length < 2,
+  });
+
+  /**
+   * The marks the bar should use: the book's own where it has them, otherwise what was heard.
+   *
+   * Ordered, not merged. A file that states its chapters is authoritative and a scan is inference,
+   * so the two are never mixed — mixing them would put a guessed mark between two stated ones and
+   * leave nothing on screen to say which was which.
+   */
+  const bookChapterMarks =
+    embeddedChapters.length > 1 ? embeddedChapters : scannedChapters.marks;
+
   /**
    * The chapter to scope the seek bar to, when there is one.
    *
@@ -7997,11 +7891,11 @@ export default function SandboxShell() {
       });
     }
     // The book's own chapter table wins over anything derived from how its files are arranged.
-    if (embeddedChapters.length > 1) {
+    if (bookChapterMarks.length > 1) {
       const window = resolveChapterWindow({
         positionSeconds: npCurrentTimeSeconds,
         durationSeconds: npDurationSeconds,
-        chapters: embeddedChapters,
+        chapters: bookChapterMarks,
       });
       if (window) return window;
     }
@@ -8031,7 +7925,7 @@ export default function SandboxShell() {
   }, [
     npIsPodcast,
     podcastChapters,
-    embeddedChapters,
+    bookChapterMarks,
     npCurrentTimeSeconds,
     npDurationSeconds,
     npEnvelope,
@@ -9656,7 +9550,7 @@ export default function SandboxShell() {
                       (audio.state === 'Resolving' || audio.state === 'Connecting')),
                   isPodcast: npIsPodcast,
                   podcastChapterTitle: activePodcastChapter?.title ?? null,
-                  hasPodcastChapters: podcastChapters.length > 0 || embeddedChapters.length > 1,
+                  hasPodcastChapters: podcastChapters.length > 0 || bookChapterMarks.length > 1,
                   onPodcastPrevChapter: handlePodcastPrevChapter,
                   onPodcastNextChapter: handlePodcastNextChapter,
                   onOpenPodcastChapters: () => setPodcastChaptersOpen(true),
@@ -9831,7 +9725,7 @@ export default function SandboxShell() {
                   episodeVolumeBoostDb,
                   onCycleEpisodeVolumeBoost: handleCycleEpisodeVolumeBoost,
                   onOpenPodcastChapters: () => setPodcastChaptersOpen(true),
-                  hasPodcastChapters: podcastChapters.length > 0 || embeddedChapters.length > 1,
+                  hasPodcastChapters: podcastChapters.length > 0 || bookChapterMarks.length > 1,
                   podcastSkipAdChaptersEnabled,
                   onTogglePodcastSkipAdChapters: handleTogglePodcastSkipAdChapters,
                   onSkipPodcastAd: handleSkipPodcastAd,
@@ -9855,7 +9749,7 @@ export default function SandboxShell() {
         the whole interaction, because a chapter in an M4B is an offset in the file that is already
         playing, not a track to switch to.
       */}
-      {npIsPodcast || embeddedChapters.length > 1 ? (
+      {npIsPodcast || bookChapterMarks.length > 1 ? (
         <PodcastChapterSheet
           open={podcastChaptersOpen}
           onClose={() => setPodcastChaptersOpen(false)}
@@ -9864,7 +9758,7 @@ export default function SandboxShell() {
           chapters={
             npIsPodcast
               ? podcastChapters
-              : embeddedChapters.map((mark, index) => ({
+              : bookChapterMarks.map((mark, index) => ({
                   startSeconds: mark.startSeconds,
                   // An untitled marker keeps its number rather than being renamed, which is the
                   // one thing the parser deliberately refuses to invent.
@@ -9952,7 +9846,7 @@ export default function SandboxShell() {
           onResumeQueue={showResumeQueuePrompt ? handleResumeLastQueue : undefined}
           isPodcast={npIsPodcast}
           podcastChapterTitle={activePodcastChapter?.title ?? null}
-          hasPodcastChapters={podcastChapters.length > 0 || embeddedChapters.length > 1}
+          hasPodcastChapters={podcastChapters.length > 0 || bookChapterMarks.length > 1}
           onPodcastPrevChapter={handlePodcastPrevChapter}
           onPodcastNextChapter={handlePodcastNextChapter}
           onOpenPodcastChapters={() => setPodcastChaptersOpen(true)}
