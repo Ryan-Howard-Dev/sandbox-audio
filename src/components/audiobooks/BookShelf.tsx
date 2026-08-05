@@ -338,6 +338,18 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
             });
           } else {
             narrationListenPaused();
+            /*
+             * Stopping is the end of a listen, so write it down now.
+             *
+             * The first version only flushed on unmount, and on the phone that meant eight minutes
+             * of reading recorded nothing: stop paused the clock, the span stayed open, and the
+             * next app launch started from nothing. Insights showed "Read aloud 0 min" beside a
+             * book that had just been read aloud.
+             *
+             * Pausing still only pauses — somebody who pauses mid-chapter and resumes has had one
+             * listen, not two, and splitting it would fill a year's stats with fragments.
+             */
+            if (s === 'idle' || s === 'finished') flushNarrationListen();
           }
           if (s === 'finished') advanceChapter();
         },

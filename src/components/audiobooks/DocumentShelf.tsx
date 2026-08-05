@@ -182,6 +182,10 @@ export default function DocumentShelf({ onError }: DocumentShelfProps) {
           });
         } else {
           narrationListenPaused();
+          // Stopping ends a listen, so write it now rather than waiting for unmount — an app kill
+          // loses an open span, which is how eight minutes of reading recorded nothing. Pausing
+          // still only pauses; a pause and a resume is one listen, not two.
+          if (s === 'idle' || s === 'finished') flushNarrationListen();
         }
         // Mirror onto the app's existing media session so a document behaves like playback:
         // lock screen, headphone pause, and survival with the screen off.
