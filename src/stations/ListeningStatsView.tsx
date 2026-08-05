@@ -53,10 +53,22 @@ const RANK_LABELS: Record<
   audiobook: { primary: 'Top authors', secondary: 'Top books', tertiary: 'Top chapters' },
 };
 
+/**
+ * The formats the split shows, in the order they appear.
+ *
+ * 'spoken-text' is a book or document read aloud by the synthesiser. It was added to MediaKind and
+ * to getFormatMinutes, and this list was not — so eight minutes of narration measured on the
+ * device produced a row that existed in the data and nowhere on screen. Extending a model without
+ * extending the view that enumerates it is the same shape of miss twice over now.
+ *
+ * "Read aloud" rather than "Narration": nobody performed it, and a listener who reads the word
+ * narration reasonably expects a narrator.
+ */
 const FORMAT_SPLIT: Array<{ kind: MediaKind; label: string }> = [
   { kind: 'music', label: 'Music' },
   { kind: 'podcast', label: 'Podcasts' },
   { kind: 'audiobook', label: 'Audiobooks' },
+  { kind: 'spoken-text', label: 'Read aloud' },
 ];
 
 function maxScore(items: RankedItem[]): number {
