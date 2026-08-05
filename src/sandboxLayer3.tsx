@@ -244,6 +244,7 @@ import {
 } from './shell/useShellDownloads';
 import { useShellNavConstruction } from './shell/useShellNavConstruction';
 import { useShellExoTransition } from './shell/useShellExoTransition';
+import { useShellPlaySessionEffects } from './shell/useShellPlaySessionEffects';
 import {
   useShellTvBackHandler,
   useShellStationSettingsSync,
@@ -482,17 +483,14 @@ import {
   computeSkipped,
   getMostPlayed,
   getRecentlyPlayed,
-  recordPlay,
   recordPlaySession,
   storedHitToEnvelope,
-  subscribePlayHistory,
   type StoredPlayHit,
 } from './playHistory';
-import { scrobbleNowPlaying, scrobbleTrack } from './scrobble';
+import { scrobbleTrack } from './scrobble';
 import {
   getTrackTasteFeedback,
   recordTasteFeedback,
-  subscribeTasteFeedback,
 } from './tasteFeedback';
 import {
   isStablePlaybackFsmState,
@@ -503,8 +501,6 @@ import {
   type RepeatMode,
 } from './queuePersistence';
 import {
-  formatMinutesHuman,
-  getListeningStats,
   type MediaKind,
 } from './listeningAnalytics';
 import { initNativeWakeAlarm } from './nativeWakeAlarm';
@@ -2601,74 +2597,16 @@ export default function SandboxShell() {
     sovereignUpNextPodcastCountRef,
   });
 
-  useEffect(() => {
-    if (audio.envelope) {
-      sessionEnvelopeRef.current = audio.envelope;
-    }
-  }, [audio.envelope?.envelopeId]);
-
-  useEffect(() => {
-    if (!audio.envelope) return;
-    sessionPeakSecondsRef.current = Math.max(
-      sessionPeakSecondsRef.current,
-      audio.currentTimeSeconds,
-    );
-  }, [audio.envelope?.envelopeId, audio.currentTimeSeconds]);
-
-  useEffect(() => {
-    const envelopeId = audio.envelope?.envelopeId;
-    return () => {
-      if (envelopeId) flushPlaySession(false);
-    };
-  }, [audio.envelope?.envelopeId, flushPlaySession]);
-
-  useEffect(() => {
-    return audio.subscribeEnded(() => {
-      const env = audioEnvelopeRef.current;
-      if (env) {
-        const peak = Math.max(
-          sessionPeakSecondsRef.current,
-          audioDurationRef.current || audioCurrentTimeRef.current,
-        );
-        sessionPeakSecondsRef.current = peak;
-        recordPlaySession(env, peak, true);
-        void scrobbleTrack(env, Math.floor(peak * 1000));
-        sessionPeakSecondsRef.current = 0;
-        sessionEnvelopeRef.current = env;
-        recordPlay(env);
-      }
-    });
-  }, [audio]);
-
-  useEffect(() => {
-    if (audio.state !== 'Playing' || !audio.envelope) return;
-    void scrobbleNowPlaying(audio.envelope);
-  }, [audio.state, audio.envelope?.envelopeId]);
-
-  const [listeningTick, setListeningTick] = useState(0);
-  useEffect(() => subscribePlayHistory(() => setListeningTick((t) => t + 1)), []);
-
-  useEffect(() => {
-    syncThumbsFromFeedback(audio.envelope?.envelopeId);
-  }, [audio.envelope?.envelopeId, syncThumbsFromFeedback]);
-
-  useEffect(
-    () =>
-      subscribeTasteFeedback(() => {
-        syncThumbsFromFeedback(audio.envelope?.envelopeId);
-      }),
-    [audio.envelope?.envelopeId, syncThumbsFromFeedback],
-  );
-
-  const homeListeningPreview = useMemo(() => {
-    void listeningTick;
-    const stats = getListeningStats('month');
-    return {
-      minutesLabel: formatMinutesHuman(stats.minutesListened),
-      topArtist: stats.topArtists[0]?.label,
-      sessionCount: stats.sessionCount,
-    };
-  }, [listeningTick]);
+  const { homeListeningPreview } = useShellPlaySessionEffects({
+    audio,
+    audioEnvelopeRef,
+    audioDurationRef,
+    audioCurrentTimeRef,
+    sessionEnvelopeRef,
+    sessionPeakSecondsRef,
+    flushPlaySession,
+    syncThumbsFromFeedback,
+  });
 
   const playbackResolveElapsed = usePlaybackResolveElapsed(
     audio.state,
