@@ -54,9 +54,6 @@ import MobileDockWithShell from './mobile/MobileDockWithShell';
 import { useNarrationPlayback } from './hooks/useNarrationPlayback';
 import { controlsForPillar, resolveMediaPillar } from './mediaPillar';
 import { seekIntervalsFor, seekTargetSeconds } from './spokenSeekIntervals';
-import { resolveChapterWindow, type ChapterMark } from './chapterScrubber';
-import { useAudiobookChapters } from './hooks/useAudiobookChapters';
-import { useBookChapterScan } from './hooks/useBookChapterScan';
 import { resumeAtSeconds } from './resumeRewind';
 import {
   clearNarrationPlayback,
@@ -97,7 +94,7 @@ import {
   type NavItemId,
   type StationId,
 } from './shell/shellNav';
-import { isAnyAudiobookEnvelopeId, usesIntervalSeekTransport } from './spokenWordPlayback';
+import { usesIntervalSeekTransport } from './spokenWordPlayback';
 import {
   audiobookBookKeyFromEnvelopeId,
   getAudiobookProgress,
@@ -156,7 +153,6 @@ import {
   playbackArtStabilizeScope,
   resolveLockerEntryAlbumArt,
   resolveLockerEntryId,
-  resolvePlaybackCoverArt,
   stabilizePlaybackArtSrc,
 } from './playerBarTrackMeta';
 import {
@@ -184,8 +180,7 @@ import {
   tryQueueInPlaceSeek,
 } from './play/playTapFastPath';
 import { startAutoSimilarRadioIfNeeded } from './play/standaloneSimilarRadio';
-import { ensureLockerPlayable, envelopeClaimsLocker, shouldRunLockerPlaybackGate } from './play/ensureLockerPlayable';
-import { attemptDeadLockerReacquire } from './lockerDeadTrackReacquire';
+import { ensureLockerPlayable, envelopeClaimsLocker } from './play/ensureLockerPlayable';
 import { findQueueIndexForExoTransition, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
 import { cacheUpcomingOnWifi, prefetchUpcomingOnWifi } from './wifiBackgroundPrefetch';
 import {
@@ -267,6 +262,11 @@ import {
 } from './shell/useShellQueuePersistence';
 import { useShellPlaybackHeal } from './shell/useShellPlaybackHeal';
 import { useShellLyricsResolve, useShellMediaSessionWiring } from './shell/useShellNowPlaying';
+import {
+  useShellNowPlayingDisplay,
+  useShellNowPlayingChapters,
+  useShellTogglePlay,
+} from './shell/useShellNowPlayingDisplay';
 import { usePlaybackQueue } from './shell/usePlaybackQueue';
 import { useShellPlayActions } from './shell/useShellPlayActions';
 import { useShellTvHome } from './shell/useShellTvHome';
@@ -332,21 +332,12 @@ import { loadOfflinePodcastEpisodes } from './podcastOfflineEpisodes';
 import { resolvePodcastEnvelopeForPlayback } from './podcastPlayback';
 import { tapHaptic } from './uiTapFeedback';
 import {
-  resolveNowPlayingDisplay,
   type PlaybackDisplayFields,
 } from './playbackSession';
 import {
-  applyNowPlayingAuthority,
-  isNowPlayingCommitCurrent,
-  nextHeldNowPlaying,
-  resolveAuthoritativeEnvelope,
-  resolveNowPlayingAuthority,
-  shouldCommitAudibleNowPlaying,
   type HeldNowPlaying,
 } from './nowPlayingAuthority';
 import {
-  getActiveChapter,
-  seekSecondsForNextChapter,
   seekSecondsForPreviousChapter,
   type PodcastChapter,
 } from './podcastChapters';
@@ -362,7 +353,6 @@ import { startPodcastSmartSpeed, type PodcastSmartSpeedController } from './podc
 import { LockerVaultProvider } from './LockerVaultContext';
 import { ConnectClient } from './tier34/peerSync';
 import { catalogTrackIdFromEnvelope } from './catalogTrackId';
-import { resolveCatalogAwareDuration } from './catalogPlaybackDuration';
 import {
   buildSyncState,
   queueSummaryToEnvelope,
@@ -3952,176 +3942,35 @@ export default function SandboxShell() {
     hasActivePlayback ||
     Boolean(audio.envelope?.envelopeId?.trim()) ||
     (!showMobileShell && !homeAwaitingUserResume && Boolean(lockerFeatured));
-  const liveNowPlayingDisplay = useMemo(
-    () =>
-      resolveNowPlayingDisplay({
-        audioEnvelope: audio.envelope,
-        audioTitle: audio.title,
-        audioArtist: audio.artist,
-        audioState: audio.state,
-        displaySeed: playbackDisplaySeed,
-        parallelArtworkUrl: artworkUrl,
-        lockerFeatured,
-        currentTimeSeconds: audio.currentTimeSeconds,
-        hasActivePlayback,
-      }),
-    [
-      audio.envelope,
-      audio.envelope?.envelopeId,
-      audio.envelope?.artworkUrl,
-      audio.title,
-      audio.artist,
-      audio.state,
-      audio.currentTimeSeconds,
-      playbackDisplaySeed,
-      artworkUrl,
-      lockerFeatured,
-      hasActivePlayback,
-    ],
-  );
-  /*
-   * Not memoized on purpose: startedInstantly is read from a ref that the fast paths write
-   * microseconds before the state change that would invalidate a memo, and a stale memo there
-   * would put a spinner on a track that is already playing.
-   */
-  const nowPlayingAuthority = resolveNowPlayingAuthority({
-    loadingEnvelopeId: audio.envelope?.envelopeId,
-    heldEnvelopeId: heldNowPlaying?.envelopeId,
-    // The snapshot is dropped when playback stops, so a surviving snapshot is a stream that is
-    // still on the speaker (or paused on it) and therefore still owns the screen.
-    heldStillAudible: Boolean(heldNowPlaying),
-    audioState: audio.state,
-    startedInstantly:
-      Boolean(audio.envelope?.envelopeId) &&
-      instantHandoffEnvelopeIdRef.current === audio.envelope.envelopeId,
-    loadElapsedMs: playbackResolveElapsed * 1000,
-  });
-  const authoritativeEnvelope = resolveAuthoritativeEnvelope(
+  const {
+    liveNowPlayingDisplay,
     nowPlayingAuthority,
-    audio.envelope,
-    heldNowPlaying,
-  );
-  /*
-   * Last position the audible track was seen at. Recorded only while its own metadata is on screen,
-   * so the hold below cannot overwrite it with the incoming track's clock and show the previous
-   * song scrubbed back to zero.
-   */
-  const heldPositionSecondsRef = useRef(0);
-  if (nowPlayingAuthority.source !== 'held') {
-    heldPositionSecondsRef.current = audio.currentTimeSeconds;
-  }
-  const heldPositionSeconds = heldPositionSecondsRef.current;
-  const nowPlayingDisplay = useMemo(
-    () =>
-      applyNowPlayingAuthority(nowPlayingAuthority, liveNowPlayingDisplay, heldNowPlaying, {
-        heldPositionSeconds,
-        livePositionSeconds: audio.currentTimeSeconds,
-      }),
-    [
-      nowPlayingAuthority.source,
-      nowPlayingAuthority.envelopeId,
-      liveNowPlayingDisplay,
-      heldNowPlaying,
-      heldPositionSeconds,
-      audio.currentTimeSeconds,
-    ],
-  );
-  nowPlayingDisplayRef.current = nowPlayingDisplay;
-  authoritativeEnvelopeRef.current = authoritativeEnvelope;
-  const homeTitle = nowPlayingDisplay.title;
-  const homeArtist = nowPlayingDisplay.artist;
-  const homeAlbum = nowPlayingDisplay.album;
-  const homeArtRaw = useMemo(() => {
-    const parallel = nowPlayingDisplay.artworkUrl?.trim() || artworkUrl?.trim() || '';
-    return resolvePlaybackCoverArt(parallel, authoritativeEnvelope);
-  }, [
-    nowPlayingDisplay.artworkUrl,
-    artworkUrl,
     authoritativeEnvelope,
-    authoritativeEnvelope?.envelopeId,
-    authoritativeEnvelope?.provider,
-    authoritativeEnvelope?.sourceId,
-    lockerEnvelopes,
-  ]);
-  const homeArt = proxiedArtworkUrl(homeArtRaw) ?? homeArtRaw;
-  const homeDisplayState: typeof audio.state =
-    audio.envelope || audio.state !== 'Idle'
-      ? audio.state
-      : lockerFeatured
-        ? 'Ready'
-        : 'Idle';
-
-  /*
-   * Take over the screen only once the stream is the one making sound.
-   *
-   * Five fast presses of next leave four earlier loads racing behind the fifth, and the identity
-   * check below discards any of them that lands late â€” committing a track the user has already
-   * skipped past is the original bug arriving from behind. The audio layer's own play tokens stop
-   * a stale load from ever attaching; this is the same guard at the display end, where a snapshot
-   * captured in one render must not be written after a later render has moved on.
-   */
-  useEffect(() => {
-    const env = audio.envelope;
-    const envelopeId = env?.envelopeId ?? '';
-    if (!shouldCommitAudibleNowPlaying(audio.state, envelopeId)) return;
-    if (
-      !isNowPlayingCommitCurrent(
-        { envelopeId, playToken: playGenerationRef.current },
-        {
-          envelopeId: audioEnvelopeRef.current?.envelopeId,
-          playToken: currentPlayGeneration(),
-        },
-      )
-    ) {
-      return;
-    }
-    setHeldNowPlaying((prev) =>
-      nextHeldNowPlaying(prev, { envelopeId, display: liveNowPlayingDisplay, envelope: env }),
-    );
-  }, [audio.state, audio.envelope, liveNowPlayingDisplay]);
-
-  /**
-   * One give-up per abandoned load. Without the key the toast would re-fire on every render for as
-   * long as the failed envelope stayed loaded.
-   */
-  const abandonedLoadKeyRef = useRef('');
-  useEffect(() => {
-    if (nowPlayingAuthority.reason !== 'hold-timed-out') return;
-    const key = `${audio.envelope?.envelopeId ?? ''}:${playGenerationRef.current}`;
-    if (abandonedLoadKeyRef.current === key) return;
-    abandonedLoadKeyRef.current = key;
-    /*
-     * The stream never arrived. This is the same cancellation the stuck-playback watchdog performs,
-     * taken 70 seconds sooner: the alternative is a spinner sitting on top of a track that was
-     * playing fine, for a minute and a half, which is the stranded-UI failure this fix is not
-     * allowed to introduce. The screen keeps the audible track's identity throughout; where the
-     * app's existing failure recovery cannot heal the stream it clears the player, which is its
-     * settled answer to "this will not play" and is at least never a lie.
-     */
-    bumpPlayGeneration();
-    playGenerationRef.current = currentPlayGeneration();
-    setMobilePlayerPending(false);
-    audio.failResolve();
-    const stillPlaying = heldNowPlaying?.display?.title?.trim();
-    showAppToast(
-      stillPlaying
-        ? t('player.skipResolveGaveUp', { title: stillPlaying })
-        : t('player.skipResolveGaveUpUnknown'),
-      5000,
-    );
-  }, [
-    nowPlayingAuthority.reason,
-    audio.envelope?.envelopeId,
+    nowPlayingDisplay,
+    homeTitle,
+    homeArtist,
+    homeAlbum,
+    homeArt,
+    homeDisplayState,
+  } = useShellNowPlayingDisplay({
     audio,
+    playbackDisplaySeed,
+    artworkUrl,
+    lockerFeatured,
+    hasActivePlayback,
     heldNowPlaying,
+    setHeldNowPlaying,
+    instantHandoffEnvelopeIdRef,
+    playbackResolveElapsed,
+    lockerEnvelopes,
+    playGenerationRef,
+    audioEnvelopeRef,
     showAppToast,
     t,
-  ]);
-
-  /** A stop leaves nothing on the speaker, so there is no longer an audible track to protect. */
-  useEffect(() => {
-    if (!audio.envelope && audio.state === 'Idle') setHeldNowPlaying(null);
-  }, [audio.envelope, audio.state]);
+    setMobilePlayerPending,
+  });
+  nowPlayingDisplayRef.current = nowPlayingDisplay;
+  authoritativeEnvelopeRef.current = authoritativeEnvelope;
 
   const playerDownloadEnabled =
     homeHasLoadedTrack &&
@@ -4217,200 +4066,40 @@ export default function SandboxShell() {
     }
   }, [mixRadioSession, station, t]);
 
-  const npCurrentTimeSeconds = serverStemMix.stemMixActive
-    ? serverStemMix.stemTimeSeconds
-    : isConnectRemote && remoteMirror
-      ? remoteMirror.currentTimeSeconds
-      : nowPlayingAuthority.source === 'held'
-        ? nowPlayingDisplay.positionSeconds
-        : audio.currentTimeSeconds;
-  const npDurationSeconds =
-    isConnectRemote && remoteMirror && remoteMirror.durationSeconds > 0
-      ? remoteMirror.durationSeconds
-      : nowPlayingAuthority.source === 'held'
-        ? // beginResolve has already adopted the resolving track's length; the scrubber has to keep
-          // describing the track you can hear, or a 3-minute song reads as a 9-minute one.
-          nowPlayingDisplay.durationSeconds || 0
-        : (() => {
-          const catalog =
-            audio.envelope?.durationSeconds ??
-            lockerFeatured?.durationSeconds ??
-            0;
-          const stream = audio.streamDurationSeconds;
-          if (stream > 0) {
-            return (
-              resolveCatalogAwareDuration(stream, catalog || audio.durationSeconds) ||
-              stream
-            );
-          }
-          return (
-            audio.durationSeconds ||
-            catalog ||
-            0
-          );
-        })();
-  const npIsPlaying = serverStemMix.stemMixActive
-    ? serverStemMix.stemPlaying
-    : isConnectRemote && remoteMirror
-      ? remoteMirror.isPlaying
-      : audio.state === 'Playing' || audio.nativeExoEffectivePlaying;
-  const npEnvelope = isConnectRemote ? lyricsEnvelope : authoritativeEnvelope;
-  const npIsPodcast = Boolean(
-    npEnvelope?.envelopeId && isPodcastEnvelopeId(npEnvelope.envelopeId),
-  );
-  const npIsBusy =
-    !isConnectRemote &&
-    !npIsPodcast &&
-    (audio.state === 'Resolving' || audio.state === 'Connecting');
-  const activePodcastChapter = useMemo(
-    () =>
-      npIsPodcast ? getActiveChapter(podcastChapters, npCurrentTimeSeconds) : null,
-    [npIsPodcast, podcastChapters, npCurrentTimeSeconds],
-  );
-  const canPodcastPrevChapter =
-    npIsPodcast && podcastChapters.length > 0 && npCurrentTimeSeconds > 1;
-  const canPodcastNextChapter =
-    npIsPodcast &&
-    seekSecondsForNextChapter(podcastChapters, npCurrentTimeSeconds) != null;
-
-  /*
-   * The chapter table inside the file, for a book that is one file.
-   *
-   * Read once per book and cached, since walking to an moov that sits behind the audio takes a few
-   * round trips and the bar asks about chapters several times a second.
-   */
-  const embeddedChapters = useAudiobookChapters({
-    envelopeId: npEnvelope?.envelopeId,
-    url: npEnvelope?.url,
-    mimeType: npEnvelope?.mimeType,
-    title: npEnvelope?.title,
-    // Only where a book is genuinely one file. A multi-file book plays a chapter per track and
-    // has nothing to gain from opening each of them.
-    enabled: isAnyAudiobookEnvelopeId(npEnvelope?.envelopeId) && playQueue.length < 2,
-  });
-
-  /*
-   * Chapters found by listening, for a book that states none.
-   *
-   * Offered only where the file itself has nothing to say â€” a book that carries a chapter table is
-   * telling the truth about itself, and inferring over the top of that would replace fact with
-   * guesswork. Never runs on its own: decoding thirty hours is minutes of work and real battery.
-   */
-  const scannedChapters = useBookChapterScan({
-    bookId: npEnvelope?.envelopeId,
-    uri: npEnvelope?.url,
-    enabled:
-      isAnyAudiobookEnvelopeId(npEnvelope?.envelopeId) &&
-      playQueue.length < 2 &&
-      embeddedChapters.length < 2,
-  });
-
-  /**
-   * The marks the bar should use: the book's own where it has them, otherwise what was heard.
-   *
-   * Ordered, not merged. A file that states its chapters is authoritative and a scan is inference,
-   * so the two are never mixed â€” mixing them would put a guessed mark between two stated ones and
-   * leave nothing on screen to say which was which.
-   */
-  const bookChapterMarks =
-    embeddedChapters.length > 1 ? embeddedChapters : scannedChapters.marks;
-
-  /**
-   * The chapter to scope the seek bar to, when there is one.
-   *
-   * Two shapes reach this, and they are genuinely different:
-   *
-   *   A podcast episode is one file with chapter offsets inside it, so the window is a real slice
-   *   of that file and a scrub inside it is a scrub inside the episode.
-   *
-   *   A book held as one file per chapter is already playing only the chapter, so its window
-   *   starts at zero and spans the track. Nothing about seeking changes; what it adds is knowing
-   *   this is chapter six of forty-one with eleven hours left, which the player never said.
-   *
-   *   A single M4B carries its chapter table inside the file, so it is the first case again: real
-   *   offsets, a real slice, a scrub that lands where it says. This is the shape the whole idea
-   *   was for â€” one file, fourteen hours â€” and until embeddedChapters existed it was the one shape
-   *   that could not be served, because nothing carried the parsed atoms to playback.
-   */
-  const nowPlayingChapterWindow = useMemo(() => {
-    if (npIsPodcast) {
-      return resolveChapterWindow({
-        positionSeconds: npCurrentTimeSeconds,
-        durationSeconds: npDurationSeconds,
-        chapters: podcastChapters as ChapterMark[],
-      });
-    }
-    // The book's own chapter table wins over anything derived from how its files are arranged.
-    if (bookChapterMarks.length > 1) {
-      const window = resolveChapterWindow({
-        positionSeconds: npCurrentTimeSeconds,
-        durationSeconds: npDurationSeconds,
-        chapters: bookChapterMarks,
-      });
-      if (window) return window;
-    }
-    if (!isAnyAudiobookEnvelopeId(npEnvelope?.envelopeId) || playQueue.length < 2) return null;
-    const trackLength = npDurationSeconds > 0 ? npDurationSeconds : 0;
-    if (trackLength <= 0) return null;
-    // Every chapter's length, so "how much of the book is left" is a sum and not a guess.
-    const lengths = playQueue.map((item, index) =>
-      index === queueIndex ? trackLength : Math.max(0, item.durationSeconds ?? 0),
-    );
-    const bookSeconds = lengths.reduce((sum, length) => sum + length, 0);
-    const before = lengths.slice(0, queueIndex).reduce((sum, length) => sum + length, 0);
-    const played = before + Math.min(trackLength, Math.max(0, npCurrentTimeSeconds));
-    return {
-      index: queueIndex,
-      count: playQueue.length,
-      title: '',
-      startSeconds: 0,
-      durationSeconds: trackLength,
-      positionSeconds: Math.min(trackLength, Math.max(0, npCurrentTimeSeconds)),
-      remainingSeconds: Math.max(0, trackLength - npCurrentTimeSeconds),
-      // Zero where a chapter reported no length, since a percentage of an unknown total is a
-      // number that looks true and is not.
-      overallPercent: bookSeconds > 0 ? Math.min(100, (played / bookSeconds) * 100) : 0,
-      overallRemainingSeconds: bookSeconds > 0 ? Math.max(0, bookSeconds - played) : 0,
-    };
-  }, [
-    npIsPodcast,
-    podcastChapters,
-    bookChapterMarks,
+  const {
     npCurrentTimeSeconds,
     npDurationSeconds,
+    npIsPlaying,
     npEnvelope,
+    npIsPodcast,
+    npIsBusy,
+    activePodcastChapter,
+    canPodcastPrevChapter,
+    canPodcastNextChapter,
+    embeddedChapters,
+    scannedChapters,
+    bookChapterMarks,
+    nowPlayingChapterWindow,
+    playerBarHeldNowPlaying,
+  } = useShellNowPlayingChapters({
+    serverStemMix,
+    isConnectRemote,
+    remoteMirror,
+    nowPlayingAuthority,
+    nowPlayingDisplay,
+    audio,
+    lockerFeatured,
+    lyricsEnvelope,
+    authoritativeEnvelope,
+    podcastChapters,
     playQueue,
     queueIndex,
-  ]);
+    homeTitle,
+    homeArtist,
+    homeAlbum,
+  });
 
   const displayArt = homeArt;
-  /**
-   * Only non-null while the screen is holding a still-audible track through another track's
-   * resolve. The bar derives identity from the audio layer otherwise, and the audio layer has
-   * already moved on.
-   */
-  const playerBarHeldNowPlaying = useMemo(
-    () =>
-      nowPlayingAuthority.source === 'held'
-        ? {
-            title: homeTitle,
-            artist: homeArtist,
-            album: homeAlbum,
-            envelope: authoritativeEnvelope,
-            positionSeconds: npCurrentTimeSeconds,
-            durationSeconds: npDurationSeconds,
-          }
-        : null,
-    [
-      nowPlayingAuthority.source,
-      homeTitle,
-      homeArtist,
-      homeAlbum,
-      authoritativeEnvelope,
-      npCurrentTimeSeconds,
-      npDurationSeconds,
-    ],
-  );
   const showTopSearchBase = !isTV && !isCarMode && station !== 'settings' && station !== 'dj';
   const showHomeIdleChrome =
     showTopSearchBase && !showMobileShell && station === 'home' && !homeHasLoadedTrack;
@@ -4451,65 +4140,16 @@ export default function SandboxShell() {
         }
       : null;
 
-  const togglePlay = useCallback(() => {
-    if (serverStemMix.stemMixActive) {
-      serverStemMix.toggleStemPlayback();
-      return;
-    }
-    if (isConnectRemoteRef.current) {
-      if (remoteMirror?.isPlaying) sendConnectCommand({ cmd: 'PAUSE' });
-      else if (remoteMirror?.currentTrackId) {
-        sendConnectCommand({ cmd: 'PLAY', envelopeId: remoteMirror.currentTrackId });
-      }
-      return;
-    }
-    if (audio.state === 'Playing' || audio.nativeExoEffectivePlaying) {
-      audio.pause();
-      return;
-    }
-    void (async () => {
-      const env = audio.envelope;
-      if (env && shouldRunLockerPlaybackGate(env)) {
-        const locker = await ensureLockerPlayable(env);
-        if (locker.kind === 'missing-audio') {
-          if (
-            env &&
-            (await attemptDeadLockerReacquire(env.title, env.artist, env.album))
-          ) {
-            showAppToast(
-              t('player.lockerAudioReacquiring', {
-                title: env.title,
-              }),
-              5000,
-            );
-            return;
-          }
-          showAppToast(
-            t('player.lockerAudioMissing', {
-              defaultValue:
-                'Offline audio is missing or corrupted on this device â€” open the track menu and download to Locker again',
-            }),
-            6000,
-          );
-          return;
-        }
-        if (locker.kind === 'playable') {
-          const playable = preserveTappedEnvelopeIdentity(env, locker.envelope);
-          persistLockerPlayRepair(env, playable);
-          if (
-            playable.url !== env.url?.trim() ||
-            playable.sourceId !== env.sourceId
-          ) {
-            audio.primePlaybackGesture();
-            audio.loadEnvelope(playable, { autoPlay: true, instant: true });
-            return;
-          }
-        }
-      }
-      audio.primePlaybackGesture();
-      await audio.play({ userGesture: true });
-    })();
-  }, [audio, remoteMirror, sendConnectCommand, serverStemMix, showAppToast, t]);
+  const { togglePlay } = useShellTogglePlay({
+    serverStemMix,
+    isConnectRemoteRef,
+    remoteMirror,
+    sendConnectCommand,
+    audio,
+    showAppToast,
+    t,
+    persistLockerPlayRepair,
+  });
 
   const handleEnterCarMode = useCallback(() => {
     if (isTV || isCarModeActive()) return;
