@@ -88,7 +88,7 @@ import {
 } from './audiobookProgress';
 import { installE2eLiveHandlers } from './e2eHandlerBootstrap';
 import { buildE2eLiveHandlers } from './shell/shellE2eLiveHandlers';
-import { logE2e, markE2ePlaybackHandlersLive, registerE2eHandlers } from './e2eDevAction';
+import { markE2ePlaybackHandlersLive, registerE2eHandlers } from './e2eDevAction';
 import {
   ensureNavPinTabsLayout,
   loadNavPinTabs,
@@ -146,16 +146,12 @@ import {
   computeNextQueueIndex,
 } from './play/queueAdvancePolicy';
 import {
-  shouldAdoptNativeExoTransition,
-} from './play/queueAdvanceGate';
-import {
   buildPodcastQueueForFeed,
   computeNextQueueIndexWithUpNext,
   loadSovereignUpNextSettings,
   mergeIntoUpNextQueue,
 } from './sovereignUpNext';
 import { envelopeClaimsLocker } from './play/ensureLockerPlayable';
-import { findQueueIndexForExoTransition, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
 import { cacheUpcomingOnWifi, prefetchUpcomingOnWifi } from './wifiBackgroundPrefetch';
 import {
   cacheEnvelopeForOffline,
@@ -247,6 +243,7 @@ import {
   useShellDownloadCurrentTrack,
 } from './shell/useShellDownloads';
 import { useShellNavConstruction } from './shell/useShellNavConstruction';
+import { useShellExoTransition } from './shell/useShellExoTransition';
 import {
   useShellTvBackHandler,
   useShellStationSettingsSync,
@@ -386,10 +383,7 @@ import { hasActiveMobileResolvers, getLastMobileResolveError, ensureYtDlpMobileR
 import { usePlaybackResolveElapsed } from './hooks/usePlaybackResolveElapsed';
 import { useStableEnvelopeId } from './hooks/useStableEnvelopeId';
 import { resolvePlaybackFidelityLabel } from './trackFidelityLabel';
-import {
-  lastJsInitiatedNativeNav,
-  subscribeNativeExoStatus,
-} from './androidNativePlayback';
+import { subscribeNativeExoStatus } from './androidNativePlayback';
 import { isNativeExoAudible, clearLastPlayIntent } from './lastPlayIntent';
 import { getYtDlpMobileStatus, waitForYtDlpInit } from './ytDlpMobile';
 import {
@@ -2295,85 +2289,19 @@ export default function SandboxShell() {
   shuffleOnRef.current = shuffleOn;
   mixRadioSessionRef.current = mixRadioSession;
 
-  useEffect(() => {
-    const onExoTransition = (event: Event) => {
-      const detail = (event as CustomEvent).detail;
-      if (!isExoMediaItemTransitionEvent(detail)) return;
-      void (async () => {
-        const queue = playQueueRef.current;
-        /*
-         * mediaId first, URL as fallback â€” the remaining half of #36, now landed.
-         *
-         * This was deliberately left on URL matching because mediaId resolved skip echoes too and
-         * caused a visible double-advance. shouldAdoptNativeExoTransition below is the real fix
-         * for that: playUrl records what JS navigated to and echoes are ignored however they were
-         * matched, so URL matching was only ever suppressing the race by accident.
-         *
-         * What forced the change: URL matching misses whenever the stream cache serves a track,
-         * because the queue holds an https URL and the transition reports content://â€¦stream-cache.
-         * On a cached LibriVox book that meant JS adopted nothing â€” native advanced two chapters
-         * while envelopeId stayed frozen on the first, so the queue index never moved.
-         *
-         * Verified on device, which is what it was waiting for: queue-skip-probe across chapter
-         * boundaries on a 22-chapter book, index advancing by exactly one with no stray indexes.
-         */
-        const idx = await findQueueIndexForExoTransition(queue, {
-          mediaId: detail.mediaId,
-          url: detail.url,
-        });
-        if (idx < 0) return;
-        const track = queue[idx];
-        if (!track) return;
-        const jsNav = lastJsInitiatedNativeNav();
-        const adopt = shouldAdoptNativeExoTransition({
-          transitionEnvelopeId: track.envelopeId,
-          activeEnvelopeId: audioEnvelopeRef.current?.envelopeId,
-          pendingJsNavEnvelopeId: jsNav.envelopeId,
-          pendingJsNavAtMs: jsNav.atMs,
-          reason: typeof detail.reason === 'number' ? detail.reason : undefined,
-        });
-        /*
-         * Both sides of the R-018 race, in one line each. The probe can say the index overshot but
-         * not why: an adopted echo and a second JS advance land identically. This prints the gate's
-         * inputs at the moment it decides, so a failing run shows which one moved the index.
-         */
-        logE2e(
-          'exo-transition',
-          adopt,
-          `idx=${idx} from=${queueIndexRef.current} reason=${detail.reason ?? 'none'} adopt=${adopt} sinceJsNavMs=${Date.now() - (jsNav.atMs || 0)} jsNavEnv=${jsNav.envelopeId ?? 'none'} transitionEnv=${track.envelopeId} activeEnv=${audioEnvelopeRef.current?.envelopeId ?? 'none'}`,
-        );
-        if (!adopt) {
-          return;
-        }
-        exoGaplessTransitionAtRef.current = Date.now();
-        setQueueIndex(idx);
-        syncThumbsFromFeedback(track.envelopeId);
-        void adoptInPlaceQueueTrack(track, 0);
-        // Do NOT force trackReachedPlayingRef true here â€” a native transition is not proof this
-        // track is actually audible yet (an erroneous/corrupted transition would "prove" it
-        // instantly, defeating trackPlaybackMatureForAdvance's minimum-play-time guard and
-        // letting a bad transition cascade into rapid-fire track skipping). Let the dedicated
-        // state-driven effect confirm real playback before this flag flips.
-        void primeLockerNativeQueueFrom(queue, idx);
-        prefetchUpcomingQueueTracks({
-          playQueue: playQueueRef.current,
-          queueIndex: idx,
-          repeatMode: repeatModeRef.current,
-          findCandidates: findHitCandidates,
-          onResolvedUrl: (url, envelope) =>
-            audio.prebufferUrl(url, {
-              title: envelope.title,
-              artist: envelope.artist,
-              album: envelope.album,
-              artworkUrl: envelope.artworkUrl,
-              envelopeId: envelope.envelopeId,
-            }),
-        });
-      })();
-    };
-    window.addEventListener('sandbox-exo-media-transition', onExoTransition);
-    return () => window.removeEventListener('sandbox-exo-media-transition', onExoTransition);
-  }, [audio, syncThumbsFromFeedback, findHitCandidates, adoptInPlaceQueueTrack, primeLockerNativeQueueFrom]);
+  useShellExoTransition({
+    audio,
+    playQueueRef,
+    audioEnvelopeRef,
+    queueIndexRef,
+    repeatModeRef,
+    exoGaplessTransitionAtRef,
+    setQueueIndex,
+    syncThumbsFromFeedback,
+    findHitCandidates,
+    adoptInPlaceQueueTrack,
+    primeLockerNativeQueueFrom,
+  });
 
   const { queuePersistReady, queueRestorePendingRef } = useShellQueueRestore({
     audio,
