@@ -36,27 +36,13 @@ import MobileNavMoreSheet from './components/MobileNavMoreSheet';
 import UniversalSearchPanel from './components/UniversalSearchPanel';
 import type { UniversalFormat, UniversalHit } from './universalSearch';
 import { loadAudiobookSeeds } from './audiobookLibrary';
-import OnboardingWizard from './components/OnboardingWizard';
-import ServerSetup from './components/ServerSetup';
 import PodcastChapterSheet from './components/podcasts/PodcastChapterSheet';
 import MobileDockWithShell from './mobile/MobileDockWithShell';
 import { useNarrationPlayback } from './hooks/useNarrationPlayback';
-import { controlsForPillar, resolveMediaPillar } from './mediaPillar';
 import { resumeAtSeconds } from './resumeRewind';
 import {
-  clearNarrationPlayback,
-  getNarrationPlayback,
   subscribeNarrationPlayerOpen,
 } from './narrationPlayback';
-import { endNarrationSession } from './narrationMediaSession';
-import PlayerBar from './components/PlayerBar';
-import {
-  hasMobilePlaybackShell,
-  mobileShellUsesPlayerPadding,
-  shouldShowMobileInfoStrip,
-  shouldShowMobileMiniBar,
-  shouldUseAndroidInlinePlayerDock,
-} from './mobile/mobilePlayerShellLogic';
 import { useMobileShell } from './hooks/useMobileShell';
 import { isNativeCapacitorNonTv, isTabletViewport } from './hooks/mobileShellLayout';
 import {
@@ -67,7 +53,8 @@ import {
   SEARCH_RESULTS_SCROLL_KEY,
   searchArtistScrollKey,
 } from './scrollRestore';
-import SystemLogin from './shell/SystemLogin';
+import { renderShellEntryGates } from './shell/ShellEntryGates';
+import { useShellPlayerDockFlags } from './shell/useShellPlayerDockFlags';
 import {
   readAudiobooksEnabled,
   readDiscoverStationEnabled,
@@ -116,17 +103,14 @@ import {
   findLockerEntryForTrackIncludingHollow,
   getLockerArtBlob,
   getLockerEntriesSnapshot,
-  lockerTitleMatches,
   refreshLockerEntryPlayUrl,
   removeLockerEntry,
   resolveLockerEnvelopeForPlayback,
   buildLockerGroupArtMap,
   resolveLockerEntryGroupArtFromMap,
   subscribeLockerCache,
-  tracksForAlbumGroup,
   type LockerEntry,
 } from './lockerStorage';
-import { sortLockerTracks } from './lockerTrackOrder';
 import { LOCKER_USER_DELETE_CONFIRMED } from './lockerDeleteGuard';
 import {
   playbackArtStabilizeScope,
@@ -152,8 +136,6 @@ import {
 } from './streamCache';
 import {
   prefetchUpcomingQueueTracks,
-  primeLockerNativeQueue,
-  isLockerVaultPlayQueue,
   stageUpcomingQueueOnTier34,
 } from './trackPrefetch';
 import {
@@ -238,6 +220,7 @@ import { useShellHomeArtStyle } from './shell/useShellHomeArtStyle';
 import { useShellArtworkResolution } from './shell/useShellArtworkResolution';
 import { useShellConnectivityBanners } from './shell/useShellConnectivityBanners';
 import { useShellPlaybackChrome } from './shell/useShellPlaybackChrome';
+import { useShellQueuePlaybackFoundation } from './shell/useShellQueuePlaybackFoundation';
 import { useShellExoTransition } from './shell/useShellExoTransition';
 import { useShellPlaySessionEffects } from './shell/useShellPlaySessionEffects';
 import {
@@ -381,12 +364,10 @@ import { isNativeExoAudible, clearLastPlayIntent } from './lastPlayIntent';
 import { getYtDlpMobileStatus } from './ytDlpMobile';
 import {
   bumpPlayGeneration,
-  currentPlayGeneration,
   formatMobilePlaybackError,
 } from './playIntent';
 import {
   displayTransportLabel,
-  proxiedArtworkUrl,
 } from './displaySanitize';
 import {
   retryTrackInDownloadJob,
@@ -408,7 +389,6 @@ import LyricsDrawer from './components/LyricsDrawer';
 import SleepTimerPanel from './components/SleepTimerPanel';
 import TVHomeView, { type TVRowId } from './stations/TVHomeView';
 import TVPlaybackView from './stations/TVPlaybackView';
-import CarModeView from './stations/CarModeView';
 import { detectTVPlatform } from './tvDetection';
 import {
   isAndroidNative,
@@ -466,14 +446,11 @@ import {
   type DownloadTierPreference,
 } from './downloadQueue';
 import {
-  computeSkipped,
   getMostPlayed,
   getRecentlyPlayed,
-  recordPlaySession,
   storedHitToEnvelope,
   type StoredPlayHit,
 } from './playHistory';
-import { scrobbleTrack } from './scrobble';
 import {
   getTrackTasteFeedback,
   recordTasteFeedback,
@@ -1606,154 +1583,40 @@ export default function SandboxShell() {
     sendConnectCommand,
   } = useShellConnect();
 
-  const playGenerationRef = useRef(0);
-  playGenerationRef.current = currentPlayGeneration();
-  const primeLockerNativeQueueFrom = useCallback(
-    (tracks: MediaEnvelope[], fromIndex: number) => {
-      if (!isAndroid() || !isLockerVaultPlayQueue(tracks) || fromIndex >= tracks.length - 1) {
-        return Promise.resolve();
-      }
-      return primeLockerNativeQueue(
-        tracks,
-        fromIndex,
-        (url, envelope) =>
-          audio.prebufferUrl(url, {
-            title: envelope.title,
-            artist: envelope.artist,
-            album: envelope.album,
-            artworkUrl: envelope.artworkUrl,
-            envelopeId: envelope.envelopeId,
-          }),
-        audio.flushNativeExoEnqueueChain,
-      );
-    },
-    [audio.prebufferUrl, audio.flushNativeExoEnqueueChain],
-  );
-
-  const seedLockerAlbumPlayQueue = useCallback(
-    (
-      entries: LockerEntry[],
-      albumTitle: string,
-      artistName: string,
-      selectedSourceId?: string,
-      selectedTitle?: string,
-    ): { envs: MediaEnvelope[]; index: number } | null => {
-      const sorted = sortLockerTracks(tracksForAlbumGroup(entries, albumTitle, artistName));
-      if (sorted.length < 2) return null;
-      const envs = sorted.map((entry) => lockerEntryToEnvelope(entry));
-      let index = -1;
-      const sourceId = selectedSourceId?.trim();
-      if (sourceId) {
-        index = envs.findIndex((env) => env.sourceId === sourceId);
-      }
-      if (index < 0 && selectedTitle?.trim()) {
-        index = envs.findIndex((env) => lockerTitleMatches(env.title, selectedTitle));
-      }
-      if (index < 0) return null;
-      setPlayQueue(envs);
-      setQueueIndex(index);
-      playQueueRef.current = envs;
-      queueIndexRef.current = index;
-      setShuffleOn(false);
-      setRepeatMode('none');
-      setMixRadioSession(null);
-      autoSimilarRadioSeedRef.current = null;
-      return { envs, index };
-    },
-    [],
-  );
-
-  const logLockerQueueInstrumentation = useCallback(
-    (
-      phase: string,
-      selectedSourceId: string | undefined,
-      selectedIndex: number,
-      envs: MediaEnvelope[],
-    ) => {
-      if (!import.meta.env.DEV) return;
-      console.warn(
-        `[locker-queue] ${phase} ${JSON.stringify({
-          selectedTrackId: selectedSourceId ?? envs[selectedIndex]?.sourceId ?? 'unknown',
-          selectedIndex,
-          jsQueueIds: envs.map((env) => env.sourceId ?? env.envelopeId),
-          trackTitles: envs.map((env) => env.title),
-        })}`,
-      );
-    },
-    [],
-  );
-
-  /**
-   * What the screen currently says, for consumers that run outside render (the E2E playback probe).
-   * Reading audio.envelope there reported the track being resolved, which is exactly the drift the
-   * probe was built to detect.
-   */
-  const nowPlayingDisplayRef = useRef<PlaybackDisplayFields | null>(null);
-  const authoritativeEnvelopeRef = useRef<MediaEnvelope | null>(null);
-  const audioEnvelopeRef = useRef(audio.envelope);
-  const audioStateRef = useRef(audio.state);
-  audioEnvelopeRef.current = audio.envelope;
-  audioStateRef.current = audio.state;
-  const audioVolumeRef = useRef(audio.volume);
-  audioVolumeRef.current = audio.volume;
-  const audioCurrentTimeRef = useRef(audio.currentTimeSeconds);
-  audioCurrentTimeRef.current = audio.currentTimeSeconds;
-  const audioDurationRef = useRef(audio.durationSeconds);
-  audioDurationRef.current = audio.durationSeconds;
-  const audioStreamDurationRef = useRef(audio.streamDurationSeconds);
-  audioStreamDurationRef.current = audio.streamDurationSeconds;
-  /** True once the current track reaches Playing â€” gates gapless auto-advance. */
-  const trackReachedPlayingRef = useRef(false);
-  /** Wall-clock ms timestamp of the false->true edge above â€” see trackPlaybackMatureForAdvance. */
-  const trackReachedPlayingAtRef = useRef(0);
-  /** Native Exo gapless queue advanced â€” suppress duplicate JS resolve/advance. */
-  const exoGaplessTransitionAtRef = useRef(0);
-  /**
-   * Envelope handed to the audio layer as an already-playable stream (tryInstantPlayable, sync
-   * cache, locker hit). Those tracks start with no silent gap, so their metadata must swap at once
-   * â€” holding the previous track's identity there would invent the very delay the fast path
-   * removes.
-   */
-  const instantHandoffEnvelopeIdRef = useRef('');
-
-  const sessionPeakSecondsRef = useRef(0);
-
-  const flushPlaySession = useCallback((completed = false) => {
-    const env = sessionEnvelopeRef.current;
-    const peak = sessionPeakSecondsRef.current;
-    if (env && peak >= 5) {
-      const listenedMs = Math.floor(peak * 1000);
-      const durationMs =
-        env.durationSeconds != null && env.durationSeconds > 0
-          ? Math.round(env.durationSeconds * 1000)
-          : 0;
-      const skipped =
-        !completed && computeSkipped(listenedMs, durationMs, false);
-      // Derive listening context so taste weighting can tell an album listen from a single tap.
-      const queueNow = playQueueRef.current;
-      const playContext: 'album' | 'single' | 'radio' | 'playlist' = mixRadioSessionRef.current
-        ? 'radio'
-        : queueNow.length > 1 && queueNow.some((tr) => tr.envelopeId === env.envelopeId)
-          ? 'album'
-          : 'single';
-      recordPlaySession(env, peak, completed, skipped, playContext);
-      if (completed || !skipped) {
-        void scrobbleTrack(env, listenedMs);
-      }
-    }
-    sessionPeakSecondsRef.current = 0;
-    if (!completed) sessionEnvelopeRef.current = null;
-  }, []);
-
-  const findHitCandidates = useCallback(
-    (env: MediaEnvelope): CandidateSource[] | undefined => {
-      const hit = searchHitsRef.current.find(
-        (h) => h.primaryEnvelope.envelopeId === env.envelopeId,
-      );
-      return hit?.sources;
-    },
-    [],
-  );
+  const {
+    playGenerationRef,
+    primeLockerNativeQueueFrom,
+    seedLockerAlbumPlayQueue,
+    logLockerQueueInstrumentation,
+    nowPlayingDisplayRef,
+    authoritativeEnvelopeRef,
+    audioEnvelopeRef,
+    audioStateRef,
+    audioVolumeRef,
+    audioCurrentTimeRef,
+    audioDurationRef,
+    audioStreamDurationRef,
+    trackReachedPlayingRef,
+    trackReachedPlayingAtRef,
+    exoGaplessTransitionAtRef,
+    instantHandoffEnvelopeIdRef,
+    sessionPeakSecondsRef,
+    flushPlaySession,
+    findHitCandidates,
+  } = useShellQueuePlaybackFoundation({
+    audio,
+    playQueueRef,
+    queueIndexRef,
+    setPlayQueue,
+    setQueueIndex,
+    setShuffleOn,
+    setRepeatMode,
+    setMixRadioSession,
+    mixRadioSessionRef,
+    autoSimilarRadioSeedRef,
+    sessionEnvelopeRef,
+    searchHitsRef,
+  });
 
   const { handlePlayEnvelope, adoptInPlaceQueueTrack, persistLockerPlayRepair } = usePlayEnvelope({
     audio,
@@ -2774,186 +2637,61 @@ export default function SandboxShell() {
     loadCarModeAutoOffer() &&
     !carOfferDismissed;
 
-  if (isCarMode && !isTV) {
-    const carArt =
-      proxiedArtworkUrl(artworkUrl || audio.envelope?.artworkUrl) ??
-      (artworkUrl || audio.envelope?.artworkUrl || '');
-    return (
-      <LockerVaultProvider>
-        <div className="shell-root shell-root--car h-dvh w-full min-w-0 flex flex-col relative z-[1]">
-          <CarModeView
-            title={homeTitle}
-            artist={homeArtist}
-            albumArt={carArt}
-            state={homeDisplayState}
-            isPlaying={audio.state === 'Playing' || audio.nativeExoEffectivePlaying}
-            volume={audio.volume}
-            isMuted={audio.isMuted}
-            connectRemote={effectiveConnectRole === 'remote'}
-            remoteMirror={remoteMirror}
-            onTogglePlay={togglePlay}
-            onSkipBack={skipBack}
-            onSkipForward={skipForward}
-            onSetVolume={(level) => {
-              if (isConnectRemoteRef.current) {
-                sendConnectCommand({ cmd: 'SET_VOLUME', volume: level });
-              } else {
-                audio.setVolume(level);
-              }
-            }}
-            onToggleMute={() => {
-              if (isConnectRemoteRef.current) {
-                const v = remoteMirror?.volume ?? 0;
-                sendConnectCommand({ cmd: 'SET_VOLUME', volume: v > 0 ? 0 : 1 });
-              } else {
-                audio.toggleMute();
-              }
-            }}
-            onExit={handleExitCarMode}
-          />
-        </div>
-      </LockerVaultProvider>
-    );
-  }
-
-  if (showOnboarding) {
-    return (
-      <OnboardingWizard
-        onComplete={() => setOnboardingComplete(true)}
-        enterAs={profile.enterAs}
-      />
-    );
-  }
-
-  if (showServerSetup) {
-    return (
-      <ServerSetup
-        onComplete={() => setServerSetupDismissed(true)}
-      />
-    );
-  }
-
-  if (profile.requiresSystemLogin) {
-    return (
-      <SystemLogin
-        profiles={profile.profiles}
-        onEnter={profile.enterAs}
-        onSelect={profile.selectProfile}
-      />
-    );
-  }
-
-  const showBottomPlayer =
-    !isTV &&
-    !(showMobileShell && station === 'home') &&
-    (hasActivePlayback ||
-      narrationPlayback !== null ||
-      (showMobileShell && mobilePlayerPending) ||
-      queueDrawerOpen ||
-      (!showMobileShell && (lyricsDrawerOpen || sleepTimerPanelOpen)));
-
-  /*
-   * Narration counts as playback for the player chrome only.
-   *
-   * hasActivePlayback is derived from the audio state machine and is threaded through queueing,
-   * scrobbling and resume, none of which a spoken document should touch. This narrower flag says
-   * one thing: something is playing, so the player should be on screen.
-   */
-  const playbackChromeActive = hasActivePlayback || narrationPlayback !== null;
-  /*
-   * What is playing decides which controls exist, rather than the player offering everything and
-   * each medium quietly ignoring what does not apply to it. Shuffling a novel is not an unused
-   * button, it is a destroyed book.
-   */
-  /*
-   * Music starting ends the reading.
-   *
-   * Narration deliberately survives navigating away, so a book keeps being read while you browse.
-   * It must not survive something else starting to play: two things cannot make sound at once, and
-   * the session was still overriding the player, which left a track showing the book's cover.
-   *
-   * Keyed on the envelope id rather than a play/pause flag, so pausing a book to look at your
-   * library does not silently end it.
-   */
-  const audibleEnvelopeId = audio.envelope?.envelopeId ?? null;
-  useEffect(() => {
-    if (!audibleEnvelopeId) return;
-    const reading = getNarrationPlayback();
-    if (!reading) return;
-    reading.controls.stop();
-    clearNarrationPlayback(reading.sourceId);
-    /*
-     * Release the media session too, not just the store.
-     *
-     * beginNarrationSession wrote the book into the native session, and stopping the reader does
-     * not take it back out -- only 'finished' released it. So a track played afterwards kept the
-     * book's title and cover on the bar and the lock screen, because the audio layer reads that
-     * metadata back.
-     */
-    void endNarrationSession();
-  }, [audibleEnvelopeId]);
-
-  /*
-   * Narration may only drive the player while nothing else is loaded.
-   *
-   * Ownership used to follow the narration store alone, so a session that failed to clear kept the
-   * book's title on a music track and, worse, kept play/pause wired to the reader -- the buttons
-   * appeared to do nothing because they were controlling something that was no longer playing.
-   * A loaded envelope is the audio layer's own statement that it owns the output.
-   */
-  const narrationForPlayer = audibleEnvelopeId ? null : narrationPlayback;
-
-  /**
-   * Stop everything and empty the player.
-   *
-   * Pause leaves the track loaded, the queue intact and the lock screen occupied, so there was
-   * no way to say "I am finished" short of force-closing the app. Everything that can be making
-   * sound is stopped here rather than only the one the screen happens to be showing: audio and
-   * narration are separate engines, and stopping one while the other keeps talking is the bug
-   * this is meant to prevent.
-   */
-  const handleClearPlayer = useCallback(async () => {
-    const reading = getNarrationPlayback();
-    if (reading) {
-      reading.controls.stop();
-      clearNarrationPlayback(reading.sourceId);
-    }
-    // Releases the foreground notification, which otherwise outlives the thing that raised it.
-    await endNarrationSession();
-    await prepareCleanPlaybackStop(() => audio.stop());
-    setPlayQueue([]);
-    setQueueIndex(0);
-    setMobileNowPlayingOpen(false);
-    setQueueDrawerOpen(false);
-    setLyricsDrawerOpen(false);
-  }, [audio]);
-  const nowPlayingPillar = resolveMediaPillar({
-    envelopeId: audio.envelope?.envelopeId,
-    narrating: narrationForPlayer !== null,
+  const entryGate = renderShellEntryGates({
+    isCarMode,
+    isTV,
+    showOnboarding,
+    showServerSetup,
+    profile,
+    setOnboardingComplete,
+    setServerSetupDismissed,
+    audio,
+    artworkUrl,
+    homeTitle,
+    homeArtist,
+    homeDisplayState,
+    effectiveConnectRole,
+    remoteMirror,
+    isConnectRemoteRef,
+    togglePlay,
+    skipBack,
+    skipForward,
+    sendConnectCommand,
+    handleExitCarMode,
   });
-  const nowPlayingControls = controlsForPillar(nowPlayingPillar);
-  const mobilePlaybackShellActive = showMobileShell
-    ? hasMobilePlaybackShell(playbackChromeActive, mobilePlayerPending)
-    : false;
-  const mobileUsesPlayerPadding = showMobileShell
-    ? mobileShellUsesPlayerPadding(
-        station,
-        mobilePlaybackShellActive,
-        mobileSearchOpen,
-        isAndroid(),
-        mobileNowPlayingOpen,
-      )
-    : false;
-  const showMobileDockBar =
-    mobilePlaybackShellActive &&
-    (shouldShowMobileMiniBar(
-      station,
-      true,
-      mobileSearchOpen,
-      mobileNowPlayingOpen,
-    ) ||
-      shouldShowMobileInfoStrip(station, true, mobileNowPlayingOpen));
-  const hideHomePlaybackChrome = showMobileShell && mobileSearchOpen;
+  if (entryGate) return entryGate;
+
+  // Same position as the former inline dock/narration block (after entry gates).
+  const {
+    showBottomPlayer,
+    playbackChromeActive,
+    narrationForPlayer,
+    handleClearPlayer,
+    nowPlayingPillar,
+    nowPlayingControls,
+    mobilePlaybackShellActive,
+    mobileUsesPlayerPadding,
+    showMobileDockBar,
+    hideHomePlaybackChrome,
+  } = useShellPlayerDockFlags({
+    isTV,
+    showMobileShell,
+    station,
+    hasActivePlayback,
+    narrationPlayback,
+    mobilePlayerPending,
+    queueDrawerOpen,
+    lyricsDrawerOpen,
+    sleepTimerPanelOpen,
+    audio,
+    setPlayQueue,
+    setQueueIndex,
+    setMobileNowPlayingOpen,
+    setQueueDrawerOpen,
+    setLyricsDrawerOpen,
+    mobileSearchOpen,
+    mobileNowPlayingOpen,
+  });
 
   return (
     <ShellChrome
