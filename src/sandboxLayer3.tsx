@@ -124,7 +124,6 @@ import {
   resolveLockerEntryGroupArt,
   buildLockerGroupArtMap,
   resolveLockerEntryGroupArtFromMap,
-  adoptPlaybackLockerArtwork,
   subscribeLockerCache,
   tracksForAlbumGroup,
   type LockerEntry,
@@ -133,9 +132,6 @@ import { sortLockerTracks } from './lockerTrackOrder';
 import { LOCKER_USER_DELETE_CONFIRMED } from './lockerDeleteGuard';
 import {
   playbackArtStabilizeScope,
-  resolveLockerEntryAlbumArt,
-  resolveLockerEntryId,
-  stabilizePlaybackArtSrc,
 } from './playerBarTrackMeta';
 import {
   buildHealAttemptKey,
@@ -165,7 +161,6 @@ import {
 import {
   engineSearch,
   engineExploreSearch,
-  fetchTrackMetadata,
   searchFeedback,
   type ResolvedSearchHit,
 } from './sandboxLayer2';
@@ -242,6 +237,7 @@ import { useShellNavConstruction } from './shell/useShellNavConstruction';
 import { useShellMobileNavActions } from './shell/useShellMobileNavActions';
 import { useShellCarModeAndSleepTimer } from './shell/useShellCarModeAndSleepTimer';
 import { useShellHomeArtStyle } from './shell/useShellHomeArtStyle';
+import { useShellArtworkResolution } from './shell/useShellArtworkResolution';
 import { useShellExoTransition } from './shell/useShellExoTransition';
 import { useShellPlaySessionEffects } from './shell/useShellPlaySessionEffects';
 import {
@@ -392,7 +388,6 @@ import {
   formatMobilePlaybackError,
 } from './playIntent';
 import {
-  coalesceArtworkUrl,
   displayTransportLabel,
   proxiedArtworkUrl,
 } from './displaySanitize';
@@ -2521,44 +2516,12 @@ export default function SandboxShell() {
     queueIndexRef,
   });
 
-  useEffect(() => {
-    if (!audio.title || !audio.artist || artworkUrl) return;
-    if (audio.envelope?.envelopeId && isPodcastEnvelopeId(audio.envelope.envelopeId)) return;
-    void fetchTrackMetadata(audio.artist, audio.title).then((meta) => {
-      const fetched = coalesceArtworkUrl(meta.albumArt, audio.envelope?.artworkUrl);
-      if (fetched) {
-        setArtworkUrl((prev) => proxiedArtworkUrl(fetched) ?? fetched ?? prev);
-      }
-    });
-  }, [audio.title, audio.artist, audio.envelope?.envelopeId, audio.envelope?.artworkUrl, artworkUrl]);
-
-  useEffect(() => {
-    const env = audio.envelope;
-    if (!env?.envelopeId) return;
-    void (async () => {
-      try {
-        let raw = env.artworkUrl?.trim();
-        if (!raw) {
-          raw = resolveLockerEntryAlbumArt(env)?.trim() ?? '';
-        }
-        if (!raw) {
-          const id = resolveLockerEntryId(env);
-          if (id) raw = (await adoptPlaybackLockerArtwork(id)) ?? '';
-        }
-        if (!raw) return;
-        const next = proxiedArtworkUrl(raw) ?? raw;
-        setArtworkUrl((prev) => stabilizePlaybackArtSrc(prev, next, env.envelopeId) || next);
-      } catch (err) {
-        console.warn('[sandboxLayer3] artwork backfill failed:', err);
-      }
-    })();
-  }, [
-    audio.envelope?.envelopeId,
-    audio.envelope?.artworkUrl,
-    audio.envelope?.provider,
-    audio.envelope?.sourceId,
+  useShellArtworkResolution({
+    audio,
+    artworkUrl,
+    setArtworkUrl,
     lockerEnvelopes,
-  ]);
+  });
 
   const isConnectRemote = effectiveConnectRole === 'remote';
 
