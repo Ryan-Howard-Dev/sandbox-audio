@@ -57,6 +57,17 @@ public class AudioScanPlugin extends Plugin {
     private static final int MAX_CONSECUTIVE_STALLS = 500;
 
     /**
+     * Measure one audio frame in four.
+     *
+     * Chosen to make a thirty hour book scannable rather than for any acoustic reason: the first
+     * version measured every sample and ran at 8x realtime, which is nearly four hours for that
+     * book. A tenth-of-a-second RMS is the same number to well under a decibel whether it averages
+     * every sample or a quarter of them, and the decision it feeds sits at -45 dB with twenty
+     * decibels of headroom either side.
+     */
+    private static final int SAMPLE_STRIDE = 4;
+
+    /**
      * A frame size from JavaScript.
      *
      * getDouble, never getLong or getFloat. JavaScript has one number type and Capacitor
@@ -137,6 +148,12 @@ public class AudioScanPlugin extends Plugin {
 
                     double sumOfSquares = 0;
                     int filled = 0;
+                    /** Samples actually included in the current frame's RMS. */
+                    int measured = 0;
+                    /** Position in the decimation cycle, carried across decoder buffers. */
+                    int measurePhase = 0;
+                    /** Reused so a scan does not allocate a buffer per decoded chunk. */
+                    short[] scratch = null;
                     long samplesDone = 0;
                     int lastProgress = -1;
                     int stalls = 0;
@@ -181,29 +198,58 @@ public class AudioScanPlugin extends Plugin {
                             out.limit(info.offset + info.size);
                             ShortBuffer pcm = out.asShortBuffer();
 
-                            while (pcm.hasRemaining()) {
-                                /*
-                                 * Channels summed to mono. A pause is silent on every channel, and
-                                 * measuring them apart would need a rule for what to do when they
-                                 * disagree — which only happens for material that is not a pause.
-                                 */
-                                double mixed = 0;
-                                int taken = 0;
-                                for (int c = 0; c < channels && pcm.hasRemaining(); c++) {
-                                    mixed += pcm.get() / 32768.0;
-                                    taken++;
-                                }
-                                if (taken == 0) break;
-                                mixed /= taken;
+                            /*
+                             * Bulk read rather than a call per sample. The first version pulled
+                             * every sample through ShortBuffer.get() with a float divide each
+                             * time, and on the device that measured 8x realtime — which is three
+                             * hours and forty minutes for a thirty hour book, on battery, to find
+                             * chapter marks. Correct and useless.
+                             */
+                            int remaining = pcm.remaining();
+                            if (scratch == null || scratch.length < remaining) {
+                                scratch = new short[Math.max(remaining, 8192)];
+                            }
+                            pcm.get(scratch, 0, remaining);
 
-                                sumOfSquares += mixed * mixed;
+                            for (int i = 0; i + channels <= remaining; i += channels) {
+                                /*
+                                 * Only every SAMPLE_STRIDE-th audio frame is measured.
+                                 *
+                                 * This is an energy measurement feeding a decision taken at -45 dB.
+                                 * Root mean square over a tenth of a second is the same number
+                                 * whether it averages four thousand eight hundred samples or twelve
+                                 * hundred of them — the difference is far below a decibel, and the
+                                 * decision has twenty decibels of headroom either side. What would
+                                 * genuinely need every sample is the keyword spotter, and that
+                                 * reads its audio through decodeRange, which does not decimate.
+                                 *
+                                 * Timing is unaffected: filled counts every frame that went past,
+                                 * not every frame that was measured, so a frame boundary still
+                                 * lands where it always did.
+                                 */
+                                if (measurePhase == 0) {
+                                    /*
+                                     * Channels summed to mono, as integers. A pause is silent on
+                                     * every channel, and measuring them apart would need a rule for
+                                     * what to do when they disagree — which only happens for
+                                     * material that is not a pause.
+                                     */
+                                    int sum = 0;
+                                    for (int c = 0; c < channels; c++) sum += scratch[i + c];
+                                    double mixed = sum / (channels * 32768.0);
+                                    sumOfSquares += mixed * mixed;
+                                    measured++;
+                                }
+                                if (++measurePhase >= SAMPLE_STRIDE) measurePhase = 0;
+
                                 filled++;
                                 samplesDone++;
 
                                 if (filled >= frameSamples) {
-                                    frames.write(frameDb(sumOfSquares, filled));
+                                    frames.write(frameDb(sumOfSquares, measured));
                                     sumOfSquares = 0;
                                     filled = 0;
+                                    measured = 0;
                                 }
                             }
                         }
@@ -225,7 +271,7 @@ public class AudioScanPlugin extends Plugin {
 
                     // A part-filled frame at the end still counts: a book ending in silence ends in
                     // a real one, and it is the span most likely to be the final break.
-                    if (filled > 0) frames.write(frameDb(sumOfSquares, filled));
+                    if (filled > 0) frames.write(frameDb(sumOfSquares, measured));
 
                     byte[] bytes = frames.toByteArray();
                     JSObject ret = new JSObject();
