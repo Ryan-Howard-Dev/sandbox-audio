@@ -33,7 +33,6 @@ import {
   subscribeBatterySaver,
 } from './batterySaverSettings';
 import MobileNavMoreSheet from './components/MobileNavMoreSheet';
-import MusicSegmentBar, { type MusicSegmentId } from './components/MusicSegmentBar';
 import UniversalSearchPanel from './components/UniversalSearchPanel';
 import type { UniversalFormat, UniversalHit } from './universalSearch';
 import { loadAudiobookSeeds } from './audiobookLibrary';
@@ -243,6 +242,7 @@ import {
   useShellDownloadCurrentTrack,
 } from './shell/useShellDownloads';
 import { useShellNavConstruction } from './shell/useShellNavConstruction';
+import { useShellMobileNavActions } from './shell/useShellMobileNavActions';
 import { useShellExoTransition } from './shell/useShellExoTransition';
 import { useShellPlaySessionEffects } from './shell/useShellPlaySessionEffects';
 import {
@@ -1134,147 +1134,36 @@ export default function SandboxShell() {
     });
   }, []);
 
-  const openSettings = useCallback((tab?: SettingsTab) => {
-    if (station !== 'settings') {
-      settingsReturnStationRef.current = station;
-    }
-    setSettingsInitialTab(tab);
-    setMobileNowPlayingOpen(false);
-    setStation('settings');
-    setNavOpen(false);
-  }, [station]);
-
-  const openSettingsAddons = useCallback(() => {
-    openSettings('addons');
-  }, [openSettings]);
-
-  const goToLockerHome = useCallback(() => {
-    closeMobileSearch();
-    setMobileNowPlayingOpen(false);
-    setNavOpen(false);
-    setLockerSection('artists');
-    if (station === 'locker') {
-      setLockerHomeResetKey((key) => key + 1);
-    }
-    setStation('locker');
-  }, [station, closeMobileSearch]);
-
-  const handleMobileTabNavigate = useCallback((id: MobileTabId) => {
-    if (Date.now() < mobileSearchCommitGuardUntilRef.current) return;
-    if (id === 'mobile-menu') {
-      setMobileMenuOpen(true);
-      return;
-    }
-    if (id === 'mobile-search') {
-      openMobileSearch();
-      return;
-    }
-    if (id === 'podcasts' && !podcastsEnabled) {
-      closeMobileSearch();
-      setMobileNowPlayingOpen(false);
-      setNavOpen(false);
-      showAppToast(t('nav.podcastsEnablePrompt'));
-      openSettingsAddons();
-      return;
-    }
-    if (id === 'audiobooks' && !audiobooksEnabled) {
-      closeMobileSearch();
-      setMobileNowPlayingOpen(false);
-      setNavOpen(false);
-      showAppToast(t('nav.audiobooksEnablePrompt'));
-      openSettingsAddons();
-      return;
-    }
-    if (id === 'home') {
-      closeMobileSearch();
-      setMobileNowPlayingOpen(false);
-      setStation('home');
-      setNavOpen(false);
-      return;
-    }
-    if (id === 'locker') {
-      goToLockerHome();
-      return;
-    }
-    closeMobileSearch();
-    setMobileNowPlayingOpen(false);
-    if (id === 'settings' && station !== 'settings') {
-      settingsReturnStationRef.current = station;
-    }
-    setStation(id);
-    setNavOpen(false);
-  }, [station, podcastsEnabled, audiobooksEnabled, openMobileSearch, closeMobileSearch, goToLockerHome, showAppToast, t, openSettingsAddons]);
-
-  const handleMobileMenuSelect = useCallback(
-    (id: string) => {
-      closeMobileSearch();
-      setMobileNowPlayingOpen(false);
-      if (id === 'discover-feed') {
-        setDiscoverDrillFromTab(null);
-        setDiscoverTab('feed');
-        setStation('discover');
-        setNavOpen(false);
-        return;
-      }
-      if (id === 'discover-explore') {
-        setDiscoverDrillFromTab(null);
-        setDiscoverTab('explore');
-        setStation('discover');
-        setNavOpen(false);
-        return;
-      }
-      if (id === 'discover-playlists') {
-        setDiscoverDrillFromTab('feed');
-        setDiscoverTab('playlists');
-        setStation('discover');
-        setNavOpen(false);
-        return;
-      }
-      if (id === 'settings') {
-        openSettings();
-        return;
-      }
-      handleMobileTabNavigate(id as MobileTabId);
-    },
-    [closeMobileSearch, openSettings, handleMobileTabNavigate],
-  );
-
-  // Music tab = Locker + Discover behind one segment switcher.
-  const musicSegment: MusicSegmentId =
-    station === 'discover'
-      ? 'discover'
-      : lockerSection === 'genres'
-        ? 'genres'
-        : lockerSection === 'playlists'
-          ? 'playlists'
-          : 'library';
-
-  const handleMusicSegment = useCallback(
-    (segment: MusicSegmentId) => {
-      closeMobileSearch();
-      setMobileNowPlayingOpen(false);
-      // Segments have very different content heights, so without this the scroll position
-      // carried over and the page appeared to expand/jump when switching. Always land at
-      // the top so every segment opens the same way.
-      shellMainRef.current?.scrollTo({ top: 0 });
-      if (segment === 'discover') {
-        setDiscoverDrillFromTab(null);
-        setDiscoverTab('feed');
-        setStation('discover');
-        return;
-      }
-      setDiscoverDrillFromTab(null);
-      setLockerSection(
-        segment === 'genres' ? 'genres' : segment === 'playlists' ? 'playlists' : 'artists',
-      );
-      setStation('locker');
-    },
-    [closeMobileSearch],
-  );
-
-  const musicSegmentBar = showMobileShell ? (
-    <MusicSegmentBar active={musicSegment} onSelect={handleMusicSegment} />
-  ) : undefined;
+  const {
+    openSettings,
+    openSettingsAddons,
+    goToLockerHome,
+    handleMobileTabNavigate,
+    handleMobileMenuSelect,
+    musicSegmentBar,
+  } = useShellMobileNavActions({
+    station,
+    lockerSection,
+    showMobileShell,
+    podcastsEnabled,
+    audiobooksEnabled,
+    t,
+    showAppToast,
+    closeMobileSearch,
+    openMobileSearch,
+    shellMainRef,
+    mobileSearchCommitGuardUntilRef,
+    settingsReturnStationRef,
+    setSettingsInitialTab,
+    setMobileNowPlayingOpen,
+    setStation,
+    setNavOpen,
+    setLockerSection,
+    setLockerHomeResetKey,
+    setMobileMenuOpen,
+    setDiscoverDrillFromTab,
+    setDiscoverTab,
+  });
 
   useEffect(() => {
     setIsTV(detectTVPlatform());
