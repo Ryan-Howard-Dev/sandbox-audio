@@ -6,13 +6,9 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import {
   Home,
   HardDrive,
-  Settings,
-  Search,
   Play,
   Pause,
   Loader2,
-  User,
-  Sliders,
   SkipBack,
   SkipForward,
   Shuffle,
@@ -24,17 +20,11 @@ import {
   VolumeX,
   ListOrdered,
   ScrollText,
-  Podcast,
   BookOpen,
-  BookAudio,
   Music as MusicIcon,
   X,
   Cast,
-  Radio,
-  Activity,
-  Server,
   ListMusic,
-  Menu,
 } from 'lucide-react';
 import CollapsibleStationNav from './components/CollapsibleStationNav';
 import { queueStemAnalyzeForLockerTrack } from './analyzeStemsAction';
@@ -42,7 +32,7 @@ import {
   loadBatterySaverEnabled,
   subscribeBatterySaver,
 } from './batterySaverSettings';
-import MobileNavMoreSheet, { type MobileNavMoreItem } from './components/MobileNavMoreSheet';
+import MobileNavMoreSheet from './components/MobileNavMoreSheet';
 import MusicSegmentBar, { type MusicSegmentId } from './components/MusicSegmentBar';
 import UniversalSearchPanel from './components/UniversalSearchPanel';
 import type { UniversalFormat, UniversalHit } from './universalSearch';
@@ -68,7 +58,6 @@ import {
   shouldShowMobileMiniBar,
   shouldUseAndroidInlinePlayerDock,
 } from './mobile/mobilePlayerShellLogic';
-import { resolveMobileTabActiveId } from './mobile/mobileTabActiveLogic';
 import { useMobileShell } from './hooks/useMobileShell';
 import { isNativeCapacitorNonTv, isTabletViewport } from './hooks/mobileShellLayout';
 import {
@@ -81,8 +70,6 @@ import {
 } from './scrollRestore';
 import SystemLogin from './shell/SystemLogin';
 import {
-  BASE_NAV,
-  NAV_PIN_META,
   readAudiobooksEnabled,
   readDiscoverStationEnabled,
   readLibraryStationEnabled,
@@ -109,7 +96,6 @@ import {
   navPinTabIdSet,
   type NavPinTabId,
 } from './navPinTabs';
-import { mobilePinTabIdsFromNavPins } from './mobile/buildMobileTabItems';
 import { useShellDiscoverBadge } from './hooks/useShellDiscoverBadge';
 import { useShellPodcastBadge } from './hooks/useShellPodcastBadge';
 import { usePlayerHomeNavigation } from './hooks/usePlayerHomeNavigation';
@@ -256,11 +242,11 @@ import { usePlaybackQueue } from './shell/usePlaybackQueue';
 import { useShellPlayActions } from './shell/useShellPlayActions';
 import { useShellTvHome } from './shell/useShellTvHome';
 import {
-  useShellDownloadQueueBadge,
   useShellDownloadHandlers,
   useShellDownloadMix,
   useShellDownloadCurrentTrack,
 } from './shell/useShellDownloads';
+import { useShellNavConstruction } from './shell/useShellNavConstruction';
 import {
   useShellTvBackHandler,
   useShellStationSettingsSync,
@@ -424,12 +410,9 @@ import {
 import { filterTracksNeedingDownload } from './downloadLockerPrecheck';
 import { primeDownloadBatteryMonitor } from './downloadBatteryGate';
 import DownloadErrorToast from './components/DownloadErrorToast';
-import DownloadActivitySheet, {
-  countDownloadSheetBadge,
-} from './components/DownloadActivitySheet';
+import DownloadActivitySheet from './components/DownloadActivitySheet';
 import AcquireProgressToast from './components/AcquireProgressToast';
 import ConfirmDialog from './components/ConfirmDialog';
-import { getDownloadJobs } from './downloadQueue';
 import { acquireAndPlayHit } from './acquireAndPlay';
 import CastPicker from './components/CastPicker';
 import QueueDrawer from './components/QueueDrawer';
@@ -920,7 +903,6 @@ export default function SandboxShell() {
     title: string;
   } | null>(null);
   const [lockerRemoveBusy, setLockerRemoveBusy] = useState(false);
-  const [downloadQueueRevision, setDownloadQueueRevision] = useState(0);
   const [navPinTabs, setNavPinTabsState] = useState<NavPinTabId[]>(() => ensureNavPinTabsLayout());
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab | undefined>();
   const [sleepTimerPanelOpen, setSleepTimerPanelOpen] = useState(false);
@@ -1091,144 +1073,32 @@ export default function SandboxShell() {
     return () => window.removeEventListener(NAV_PINS_CHANGE_EVENT, syncPins);
   }, []);
 
-  const mobilePinTabIds = useMemo(
-    () => new Set(mobilePinTabIdsFromNavPins(navPinTabs)),
-    [navPinTabs],
-  );
-
-  const mobileTabItems = useMemo(() => {
-    const pinIds = mobilePinTabIdsFromNavPins(navPinTabs);
-    const items: Array<{
-      id: MobileTabId;
-      label: string;
-      shortLabel?: string;
-      icon: React.ElementType;
-    }> = pinIds.map((tabId) => {
-      const pin = tabId === 'mobile-search' ? 'search' : tabId;
-      const meta = NAV_PIN_META[pin as NavPinTabId];
-      return {
-        id: tabId as MobileTabId,
-        label: t(meta.labelKey),
-        shortLabel: meta.shortLabelKey ? t(meta.shortLabelKey) : undefined,
-        icon: meta.icon,
-      };
-    });
-    items.push({ id: 'mobile-menu', label: t('nav.menu'), icon: Menu });
-    return items;
-  }, [navPinTabs, t]);
-
-  const navItems = useMemo(() => {
-    const items: Array<{ id: NavItemId; label: string; icon: React.ElementType }> = BASE_NAV.filter(
-      (n) =>
-        (n.id !== 'discover' || discoverStationEnabled) &&
-        (n.id !== 'sonic-locker' || sonicLockerEnabled),
-    ).map((n) => ({
-      id: n.id,
-      label:
-        n.id === 'locker' && navPinTabs.includes('locker') ? t('nav.music') : t(n.labelKey),
-      icon: n.icon,
-    }));
-    items.push({ id: 'search', label: t('nav.search'), icon: Search });
-    if (podcastsEnabled) {
-      items.push({ id: 'podcasts', label: t('nav.podcasts'), icon: Podcast });
-    }
-    if (audiobooksEnabled) {
-      items.push({ id: 'audiobooks', label: t('nav.audiobooks'), icon: BookAudio });
-    }
-    if (libraryStationEnabled) {
-      items.push({ id: 'library', label: t('nav.serverLibrary'), icon: Server });
-    }
-    if (proAudio) {
-      items.push({ id: 'dj', label: t('nav.djConsole'), icon: Sliders });
-    }
-    items.push({ id: 'settings', label: t('nav.settings'), icon: Settings });
-    items.push({
-      id: 'profile',
-      label: t('shell.profile', { name: profile.activeProfile?.displayName ?? 'Operator' }),
-      icon: User,
-    });
-    return items;
-  }, [proAudio, podcastsEnabled, audiobooksEnabled, libraryStationEnabled, discoverStationEnabled, sonicLockerEnabled, navPinTabs, profile.activeProfile?.displayName, t]);
-
-  const mobileMenuItems = useMemo((): MobileNavMoreItem[] => {
-    // Discover now lives inside the Music tab's segment bar (Library / Genres /
-    // Playlists / Discover), so it is no longer a separate menu destination.
-    const items: MobileNavMoreItem[] = [];
-    if (sonicLockerEnabled) {
-      items.push({
-        id: 'sonic-locker',
-        label: t('nav.sonicLocker'),
-        subtitle: t('nav.browseSonicLockerHint'),
-        icon: Radio,
-        tone: 'accent',
-      });
-    }
-    items.push(
-      {
-        id: 'insights',
-        label: t('nav.insights'),
-        subtitle: t('nav.browseInsightsHint'),
-        icon: Activity,
-        tone: 'accent-bright',
-      },
-      {
-        id: 'settings',
-        label: t('nav.settings'),
-        subtitle: t('nav.browseSettingsHint'),
-        icon: Settings,
-        tone: 'accent-deep',
-      },
-    );
-    return items;
-  }, [audiobooksEnabled, discoverReleaseBadge, discoverStationEnabled, sonicLockerEnabled, t]);
-
-  const mobileMenuActiveId = useMemo(() => {
-    if (station === 'sonic-locker') return 'sonic-locker';
-    if (station === 'audiobooks') return 'audiobooks';
-    if (station === 'insights') return 'insights';
-    if (station === 'settings') return 'settings';
-    return undefined;
-  }, [station]);
-
-  const mobileTabActiveId = useMemo((): MobileTabId => {
-    // Discover is a segment of the Music tab, so it keeps the Music (locker) pin lit.
-    if (station === 'discover') return 'locker';
-    return resolveMobileTabActiveId({
-      station,
-      discoverTab,
-      mobileSearchOpen,
-      pinnedTabIds: mobilePinTabIds,
-      navPinTabs,
-    }) as MobileTabId;
-  }, [mobilePinTabIds, mobileSearchOpen, navPinTabs, station, discoverTab]);
-
-  const mobileNavBadges = useMemo((): Partial<Record<MobileTabId, number>> | undefined => {
-    const badges: Partial<Record<MobileTabId, number>> = {};
-    const downloadErrors = countDownloadSheetBadge(getDownloadJobs(), 'music');
-    if (downloadErrors > 0) {
-      badges.locker = downloadErrors;
-    }
-    if (discoverStationEnabled && discoverReleaseBadge > 0) {
-      badges['mobile-menu'] = discoverReleaseBadge;
-    }
-    if (podcastsEnabled && podcastEpisodeBadge > 0 && mobilePinTabIds.has('podcasts')) {
-      badges.podcasts = podcastEpisodeBadge;
-    }
-    return Object.keys(badges).length > 0 ? badges : undefined;
-  }, [
+  const {
+    mobileTabItems,
+    navItems,
+    mobileMenuItems,
+    mobileMenuActiveId,
+    mobileTabActiveId,
+    mobileNavBadges,
+    mobileDownloadBadge,
+    podcastDownloadBadge,
+    audiobookDownloadBadge,
+  } = useShellNavConstruction({
+    navPinTabs,
+    t,
     discoverStationEnabled,
+    sonicLockerEnabled,
+    podcastsEnabled,
+    audiobooksEnabled,
+    libraryStationEnabled,
+    proAudio,
+    profileDisplayName: profile.activeProfile?.displayName,
+    station,
+    discoverTab,
+    mobileSearchOpen,
     discoverReleaseBadge,
     podcastEpisodeBadge,
-    podcastsEnabled,
-    mobilePinTabIds,
-    downloadQueueRevision,
-  ]);
-
-  useShellDownloadQueueBadge({ setDownloadQueueRevision });
-
-  const mobileDownloadBadge = countDownloadSheetBadge(getDownloadJobs(), 'music');
-  const podcastDownloadBadge = countDownloadSheetBadge(getDownloadJobs(), 'podcast');
-  const audiobookDownloadBadge = countDownloadSheetBadge(getDownloadJobs(), 'audiobook');
+  });
 
   /** Dismiss search overlay immediately (X, backdrop, hardware back). */
   const closeMobileSearchOverlayNow = useCallback(() => {
