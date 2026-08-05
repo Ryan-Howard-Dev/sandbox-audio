@@ -53,7 +53,6 @@ import PodcastChapterSheet from './components/podcasts/PodcastChapterSheet';
 import MobileDockWithShell from './mobile/MobileDockWithShell';
 import { useNarrationPlayback } from './hooks/useNarrationPlayback';
 import { controlsForPillar, resolveMediaPillar } from './mediaPillar';
-import { seekIntervalsFor, seekTargetSeconds } from './spokenSeekIntervals';
 import { resumeAtSeconds } from './resumeRewind';
 import {
   clearNarrationPlayback,
@@ -94,7 +93,6 @@ import {
   type NavItemId,
   type StationId,
 } from './shell/shellNav';
-import { usesIntervalSeekTransport } from './spokenWordPlayback';
 import {
   audiobookBookKeyFromEnvelopeId,
   getAudiobookProgress,
@@ -160,7 +158,6 @@ import {
 } from './play/playbackHealPolicy';
 import {
   computeNextQueueIndex,
-  computeSkipBackIndex,
 } from './play/queueAdvancePolicy';
 import {
   shouldAdoptNativeExoTransition,
@@ -171,9 +168,6 @@ import {
   loadSovereignUpNextSettings,
   mergeIntoUpNextQueue,
 } from './sovereignUpNext';
-import {
-  tryQueueInPlaceSeek,
-} from './play/playTapFastPath';
 import { startAutoSimilarRadioIfNeeded } from './play/standaloneSimilarRadio';
 import { ensureLockerPlayable, envelopeClaimsLocker } from './play/ensureLockerPlayable';
 import { findQueueIndexForExoTransition, isExoMediaItemTransitionEvent } from './play/exoQueueSync';
@@ -188,10 +182,6 @@ import {
   isLockerVaultPlayQueue,
   stageUpcomingQueueOnTier34,
 } from './trackPrefetch';
-import {
-  resolveQueueTrackSeekTarget,
-  shouldSeekQueueTrackInPlace,
-} from './queueNavigation';
 import {
   engineSearch,
   engineExploreSearch,
@@ -261,6 +251,7 @@ import {
 } from './shell/useShellNowPlayingDisplay';
 import { buildE2eSearchHandlers } from './shell/shellE2eSearchHandlers';
 import { useShellQueueAdvanceOnEnded } from './shell/useShellQueueAdvanceOnEnded';
+import { useShellSkipControls } from './shell/useShellSkipControls';
 import { usePlaybackQueue } from './shell/usePlaybackQueue';
 import { useShellPlayActions } from './shell/useShellPlayActions';
 import { useShellTvHome } from './shell/useShellTvHome';
@@ -284,7 +275,6 @@ import { loadSonicLockerStationEnabled } from './sonicLockerStationSettings';
 import {
   cyclePodcastPlaybackSpeed,
   loadPodcastPlaybackSpeed,
-  loadPodcastSeekIntervalSeconds,
   loadPodcastsEnabled,
   loadPodcastSmartSpeedEnabled,
   loadPodcastSkipAdChaptersEnabled,
@@ -2980,176 +2970,21 @@ export default function SandboxShell() {
     setRepeatMode((m) => (m === 'none' ? 'one' : m === 'one' ? 'all' : 'none'));
   }, []);
 
-  const skipBack = useCallback(() => {
-    if (isConnectRemoteRef.current) {
-      sendConnectCommand({ cmd: 'SKIP_PREV' });
-      return;
-    }
-    // Audiobooks included: a twelve-hour book had music's transport, so this button jumped a
-    // whole chapter instead of stepping back a few seconds. See spokenWordPlayback.
-    //
-    // Back is deliberately shorter than forward. Pressing it means a name or a clause went past
-    // while you were doing something else, and the shortest jump that recovers it is the right
-    // one; the same thirty seconds that usefully clears a sponsor read puts you back into a
-    // minute you already understood. See spokenSeekIntervals.
-    if (audio.envelope && usesIntervalSeekTransport(audio.envelope.envelopeId)) {
-      const { back } = seekIntervalsFor(
-        resolveMediaPillar({ envelopeId: audio.envelope.envelopeId }),
-        loadPodcastSeekIntervalSeconds(),
-      );
-      audio.seek(
-        seekTargetSeconds({
-          currentSeconds: audio.currentTimeSeconds,
-          deltaSeconds: -back,
-          durationSeconds:
-            audio.streamDurationSeconds ||
-            audio.durationSeconds ||
-            audio.envelope.durationSeconds ||
-            0,
-        }),
-      );
-      return;
-    }
-    const back = computeSkipBackIndex({
-      queueIndex,
-      queueLength: playQueue.length,
-      currentTimeSeconds: audio.currentTimeSeconds,
-    });
-    if (back === 'seek-start') {
-      audio.seek(
-        playQueue.length > 0
-          ? resolveQueueTrackSeekTarget(playQueue, queueIndex)
-          : 0,
-      );
-      return;
-    }
-    const prev = back;
-    const track = playQueue[prev];
-    if (!track) return;
-    const currentUrl = audio.envelope?.url?.trim() ?? '';
-    const inPlaceSeek = tryQueueInPlaceSeek({
-      playQueue,
-      queueIndex,
-      targetQueueIdx: prev,
-      currentUrl,
-      streamDurationSeconds: audio.streamDurationSeconds,
-      envelopeDurationSeconds: audio.envelope?.durationSeconds ?? 0,
-    });
-    if (currentUrl && inPlaceSeek != null) {
-      setQueueIndex(prev);
-      syncThumbsFromFeedback(track.envelopeId);
-      void adoptInPlaceQueueTrack(track, inPlaceSeek);
-      return;
-    }
-    setQueueIndex(prev);
-    void handlePlayEnvelope(track, findHitCandidates(track));
-  }, [
-    audio,
-    playQueue,
-    queueIndex,
-    handlePlayEnvelope,
-    findHitCandidates,
+  const { skipBack, skipForward, lastSkipOutcomeRef } = useShellSkipControls({
+    isConnectRemoteRef,
     sendConnectCommand,
-    syncThumbsFromFeedback,
-    adoptInPlaceQueueTrack,
-  ]);
-
-  /*
-   * Why the last skip did what it did. A skip that Up Next declines ('none') and a skip the queue
-   * loses look identical from outside â€” both leave the index where it was â€” so the probe could
-   * only ever report "did not advance". Recorded here so it can report which.
-   */
-  const lastSkipOutcomeRef = useRef<
-    '' | 'remote' | 'seek' | 'none' | 'no-track' | 'in-place' | 'advance'
-  >('');
-
-  const skipForward = useCallback(() => {
-    lastSkipOutcomeRef.current = '';
-    if (isConnectRemoteRef.current) {
-      lastSkipOutcomeRef.current = 'remote';
-      sendConnectCommand({ cmd: 'SKIP_NEXT' });
-      return;
-    }
-    if (audio.envelope && usesIntervalSeekTransport(audio.envelope.envelopeId)) {
-      // Forward keeps the configured interval: that setting was always really about how much
-      // sponsor read or theme music one press should clear.
-      const { forward } = seekIntervalsFor(
-        resolveMediaPillar({ envelopeId: audio.envelope.envelopeId }),
-        loadPodcastSeekIntervalSeconds(),
-      );
-      lastSkipOutcomeRef.current = 'seek';
-      audio.seek(
-        seekTargetSeconds({
-          currentSeconds: audio.currentTimeSeconds,
-          deltaSeconds: forward,
-          durationSeconds:
-            audio.streamDurationSeconds ||
-            audio.durationSeconds ||
-            audio.envelope.durationSeconds ||
-            0,
-        }),
-      );
-      return;
-    }
-    const upNextSettings = loadSovereignUpNextSettings();
-    const advance = computeNextQueueIndexWithUpNext({
-      queueIndex,
-      queueLength: playQueue.length,
-      repeatMode: repeatMode === 'one' ? 'none' : repeatMode,
-      shuffleOn,
-      queue: playQueue,
-      settings: upNextSettings,
-    });
-    if (advance.action === 'none') {
-      lastSkipOutcomeRef.current = 'none';
-      return;
-    }
-    const next =
-      advance.action === 'repeat-one'
-        ? queueIndex
-        : advance.action === 'wrap' || advance.action === 'advance'
-          ? advance.index
-          : queueIndex;
-    const track = playQueue[next];
-    if (!track) {
-      lastSkipOutcomeRef.current = 'no-track';
-      return;
-    }
-    if (!isPodcastEnvelopeId(track.envelopeId)) {
-      sovereignUpNextPodcastCountRef.current = 0;
-    }
-    const currentUrl = audio.envelope?.url?.trim() ?? '';
-    const inPlaceSeek = tryQueueInPlaceSeek({
-      playQueue,
-      queueIndex,
-      targetQueueIdx: next,
-      currentUrl,
-      streamDurationSeconds: audio.streamDurationSeconds,
-      envelopeDurationSeconds: audio.envelope?.durationSeconds ?? 0,
-    });
-    if (currentUrl && inPlaceSeek != null && !(inPlaceSeek < 0.25 && next > 0)) {
-      setQueueIndex(next);
-      syncThumbsFromFeedback(track.envelopeId);
-      lastSkipOutcomeRef.current = 'in-place';
-      void adoptInPlaceQueueTrack(track, inPlaceSeek);
-      return;
-    }
-    lastSkipOutcomeRef.current = 'advance';
-    logE2e('js-skip', true, `from=${queueIndex} to=${next} env=${track.envelopeId}`);
-    setQueueIndex(next);
-    void handlePlayEnvelope(track, findHitCandidates(track), { preservePlayQueue: true });
-  }, [
     audio,
-    playQueue,
     queueIndex,
+    setQueueIndex,
+    playQueue,
     repeatMode,
     shuffleOn,
-    handlePlayEnvelope,
-    findHitCandidates,
-    sendConnectCommand,
     syncThumbsFromFeedback,
     adoptInPlaceQueueTrack,
-  ]);
+    handlePlayEnvelope,
+    findHitCandidates,
+    sovereignUpNextPodcastCountRef,
+  });
 
   useEffect(() => {
     if (audio.envelope) {
