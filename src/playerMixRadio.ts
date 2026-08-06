@@ -9,7 +9,7 @@ import {
   initJobTracks,
   type DownloadTierPreference,
 } from './downloadQueue';
-import { getLockerEntriesSnapshot } from './lockerStorage';
+import { albumPrimaryArtist, getLockerEntriesSnapshot } from './lockerStorage';
 import type { LockerEntry } from './lockerStorage';
 import type { MediaEnvelope } from './sandboxLayer1';
 import {
@@ -223,8 +223,21 @@ export async function buildTrackRadio(seed: MediaEnvelope): Promise<MediaEnvelop
   const artist = seed.artist?.trim();
   if (!artist) return seed.url?.trim() ? [seed] : [];
 
+  /*
+   * The name to go looking under, which is not always the name on the track.
+   *
+   * A track credited "Armani White & Denzel Curry" has an artist field that is a credit line, not
+   * an artist. Asking a catalog for that string finds nobody, and a track radio that finds nobody
+   * builds nothing — which is how a single played from Discover reached the end and simply stopped.
+   * The billed artist is the one with a back catalogue.
+   */
+  const primaryArtist = albumPrimaryArtist(artist) || artist;
+
   const entries = getLockerEntriesSnapshot() ?? [];
-  const localArtist = lockerArtistTracks(artist, entries);
+  const localArtist = dedupeEnvelopes([
+    ...lockerArtistTracks(artist, entries),
+    ...(primaryArtist !== artist ? lockerArtistTracks(primaryArtist, entries) : []),
+  ]);
 
   const seedEntry = entries.find(
     (e) =>

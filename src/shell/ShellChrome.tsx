@@ -1461,7 +1461,12 @@ export function ShellChrome(p: Record<string, any>) {
       {appToast ? (
         <div
           role="status"
-          className={`app-toast fixed left-1/2 -translate-x-1/2 z-[80] max-w-md w-[calc(100%-2rem)] px-4 py-3 rounded-xl border shadow-2xl font-mono text-xs font-semibold bg-accent-soft border-accent/30 text-accent${
+          /*
+            The background is in index.css, not here. It used to be bg-accent-soft, which is the
+            accent at twelve percent alpha — near enough transparent that genre chips and card
+            titles read straight through the words on top of them.
+          */
+          className={`app-toast fixed left-1/2 -translate-x-1/2 z-[80] max-w-md w-[calc(100%-2rem)] px-4 py-3 rounded-xl border shadow-2xl font-mono text-xs font-semibold border-accent/30 text-accent${
             showMobileShell ? ' app-toast--mobile-shell' : ' bottom-24'
           }`}
         >

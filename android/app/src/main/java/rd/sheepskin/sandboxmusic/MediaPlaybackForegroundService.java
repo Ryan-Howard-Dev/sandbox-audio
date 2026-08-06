@@ -128,7 +128,23 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
         title = nextTitle != null ? nextTitle : "";
         artist = nextArtist != null ? nextArtist : "";
         album = nextAlbum != null ? nextAlbum : "";
-        if (nextArtworkUrl == null || !nextArtworkUrl.equals(artworkUrl)) {
+        /*
+         * Only drop the artwork when the next track genuinely has none.
+         *
+         * This used to null the bitmap on every change of URL, which is every track change. The
+         * replacement is fetched asynchronously on artworkExecutor, so between the two there was a
+         * window with no art at all on the lock screen and in the notification — and if that fetch
+         * failed or the URL would not decode, nothing ever put art back and the track played out
+         * with a grey placeholder. Two screenshots of the same album, seconds apart, one with the
+         * cover and one without, is exactly that window.
+         *
+         * Holding the previous cover for the moment it takes to decode the new one is the lesser
+         * wrong by a distance: briefly stale art reads as art, no art reads as broken. maybeLoadArtwork
+         * still refetches, because it compares against lastLoadedArtworkUrl, and refreshSession swaps
+         * the bitmap the instant the new one lands.
+         */
+        boolean nextHasArtwork = nextArtworkUrl != null && !nextArtworkUrl.trim().isEmpty();
+        if (!nextHasArtwork) {
             artworkBitmap = null;
             lastLoadedArtworkUrl = null;
         }

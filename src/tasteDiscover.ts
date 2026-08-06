@@ -37,15 +37,43 @@ export function seedWindowForKind(
   seeds: string[],
   kind: TasteShelfKind,
   now = Date.now(),
+  exclude?: readonly string[],
 ): string[] {
-  if (seeds.length === 0) return [];
+  /*
+   * Weekly draws from what Daily left, not from the same handful.
+   *
+   * Both shelves used the same seed list, and `take` is clamped to its length: with three taste
+   * artists, Daily took min(3,3) and Weekly took min(5,3), both starting at index zero, because
+   * `(bucket * take) % seeds.length` is always zero when take equals the length. Two shelves, one
+   * list, permanently — not on some days, every day. "A wider sweep across your taste" printed
+   * directly underneath the same three covers.
+   *
+   * Removing Daily's picks first is what makes the sweep actually wider. When that leaves nothing,
+   * the caller draws no shelf at all, which is the honest outcome: a library with three artists in
+   * it cannot support two different recommendations, and showing the same one twice does not make
+   * it two.
+   */
+  const pool = exclude?.length
+    ? seeds.filter((seed) => !exclude.some((skip) => skip === seed))
+    : seeds;
+  if (pool.length === 0) return [];
   const period = kind === 'daily' ? 86_400_000 : 7 * 86_400_000;
   const bucket = Math.floor(now / period);
-  const take = Math.min(kind === 'daily' ? 3 : 5, seeds.length);
-  const start = (bucket * take) % seeds.length;
+  const take = Math.min(kind === 'daily' ? 3 : 5, pool.length);
+  /*
+   * Step by one when the window is the whole pool, by the window size otherwise.
+   *
+   * `(bucket * take) % pool.length` is the same arithmetic that froze the two shelves together: it
+   * is always zero when take divides the length, so the window never moves. Stepping by the window
+   * size is what keeps consecutive periods from overlapping when there is room, and that is worth
+   * keeping — but where there is no room, moving by one at least rotates the order rather than
+   * printing the identical shelf until the taste profile grows.
+   */
+  const stride = take % pool.length === 0 ? 1 : take;
+  const start = (bucket * stride) % pool.length;
   const out: string[] = [];
   for (let i = 0; i < take; i += 1) {
-    out.push(seeds[(start + i) % seeds.length]!);
+    out.push(pool[(start + i) % pool.length]!);
   }
   return out;
 }
@@ -108,7 +136,16 @@ export async function buildTasteDiscoverShelf(
   kind: TasteShelfKind,
   limit = 12,
 ): Promise<MediaEnvelope[]> {
-  const seeds = seedWindowForKind(topTasteArtists(), kind);
+  /*
+   * Weekly reaches further down the affinity list than Daily does, and skips whatever Daily is
+   * showing today. Same top eight for both was half the reason the two shelves matched; the other
+   * half was the window arithmetic above.
+   */
+  const allSeeds = topTasteArtists(kind === 'weekly' ? 24 : 8);
+  const seeds =
+    kind === 'weekly'
+      ? seedWindowForKind(allSeeds, 'weekly', Date.now(), seedWindowForKind(topTasteArtists(8), 'daily'))
+      : seedWindowForKind(allSeeds, 'daily');
   if (seeds.length === 0) return [];
 
   const owned = lockerArtistKeys();

@@ -423,6 +423,7 @@
       "sourceDiscoveryStation": "Discovery Station",
       "sourceDiscoveryMix": "Made for you · {title}"
     },
+    "radioNoContinuation": "Nothing to follow this one. Try playing an album or a playlist.",
     "repeat": "Repeat",
     "resolveTimedOut": "Stream resolve timed out — player cleared",
     "resolving": "Resolving stream…",

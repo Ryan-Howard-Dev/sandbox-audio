@@ -55,7 +55,12 @@ export const MY_MIX_GRADUAL_SWAP_RATIO = 0.08;
 export const DAILY_REFRESH_HOUR_LOCAL = 6;
 
 const WEEKLY_GENRE_KEY = 'sandbox_weekly_mix_genre_v1';
-const MIX_CACHE_KEY = 'sandbox_discovery_mixes_v2';
+/*
+ * v3: v2 rows hold Weekly Discover lists that are byte-identical to Daily Discovery, written
+ * before the two were kept apart. They are cached per period, so without a new key an affected
+ * device would keep drawing the duplicate until the following Monday.
+ */
+const MIX_CACHE_KEY = 'sandbox_discovery_mixes_v3';
 
 type CachedMyMixSlot = {
   slot: number;
@@ -329,7 +334,29 @@ export async function buildDailyDiscovery(): Promise<DiscoveryMix> {
   };
 }
 
-export async function buildWeeklyDiscover(genreChip?: string | null): Promise<DiscoveryMix> {
+/**
+ * The wider sweep, and it has to actually be wider.
+ *
+ * Weekly was drawing the same tracks as Daily in the same order, which is what "a wider sweep
+ * across your taste" looked like on a phone: two shelves, one list. Two separate causes, both
+ * needed:
+ *
+ *   The ungenred fallback below ran the same composer over the same pool with the same scorer, and
+ *   nothing told it what Daily had already taken. The jitter in the scorer is six hundredths of a
+ *   point, far too small to reorder anything, so the two came out identical rather than merely
+ *   similar.
+ *
+ *   Even with an exclusion it would have raced. loadMadeForYouBundle built both inside one
+ *   Promise.all, so on the first build of a period Weekly read the cache before Daily had written
+ *   to it and excluded nothing. Daily is now awaited first and hands its picks over directly.
+ *
+ * When the library is too small to fill thirty from what Daily left, the remainder is topped up
+ * from the overlap — at the tail, never the head, so the two shelves always open differently.
+ */
+export async function buildWeeklyDiscover(
+  genreChip?: string | null,
+  excludeEnvelopeIds?: readonly string[],
+): Promise<DiscoveryMix> {
   const period = weeklyDiscoverPeriodKey();
   const genre =
     genreChip?.trim() || loadWeeklyMixGenre() || getWeeklyMixGenreChips(1)[0] || 'Indie';
@@ -356,9 +383,29 @@ export async function buildWeeklyDiscover(genreChip?: string | null): Promise<Di
     }
   }
 
-  let tracks = composeDiscoveryMixTracks(pool, WEEKLY_DISCOVER_SIZE, { genreFilter: genre });
+  /*
+   * The explicit list when the caller has one, the cache when it does not — a genre chip re-roll
+   * comes straight here with no bundle around it, and it must not undo the separation either.
+   */
+  const dailyIds = new Set(excludeEnvelopeIds ?? cache.dailyEnvelopeIds ?? []);
+  const ownPool = pool.filter((track) => !dailyIds.has(track.envelopeId));
+
+  let tracks = composeDiscoveryMixTracks(ownPool, WEEKLY_DISCOVER_SIZE, { genreFilter: genre });
   if (tracks.length < 8) {
-    tracks = composeDiscoveryMixTracks(pool, WEEKLY_DISCOVER_SIZE);
+    tracks = composeDiscoveryMixTracks(ownPool, WEEKLY_DISCOVER_SIZE);
+  }
+  if (tracks.length < 8 && ownPool.length < pool.length) {
+    /*
+     * Not enough material outside Daily's picks to fill a shelf. Top up from the overlap rather
+     * than show eleven tracks, but only behind what is already here, so the two shelves still open
+     * on different covers. A listener with a small library gets some repetition; they do not get
+     * the same shelf printed twice.
+     */
+    const taken = new Set(tracks.map((track) => track.envelopeId));
+    const filler = composeDiscoveryMixTracks(pool, WEEKLY_DISCOVER_SIZE).filter(
+      (track) => !taken.has(track.envelopeId),
+    );
+    tracks = [...tracks, ...filler].slice(0, WEEKLY_DISCOVER_SIZE);
   }
 
   writeCache({
@@ -523,11 +570,19 @@ export async function loadMadeForYouBundle(
     return cachedBundle;
   }
 
-  const [daily, weekly, myMixes] = await Promise.all([
-    buildDailyDiscovery(),
-    buildWeeklyDiscover(),
-    buildMyMixSlots(),
-  ]);
+  /*
+   * Daily first, then Weekly with Daily's picks in hand.
+   *
+   * These used to be built together in one Promise.all. Weekly's whole job is to not repeat Daily,
+   * and running them concurrently meant it read the cache before Daily had written to it, so on
+   * the first build of every period it excluded nothing and reproduced Daily exactly. My Mix has
+   * no such dependency and still runs alongside.
+   */
+  const [daily, myMixes] = await Promise.all([buildDailyDiscovery(), buildMyMixSlots()]);
+  const weekly = await buildWeeklyDiscover(
+    null,
+    daily.tracks.map((track) => track.envelopeId),
+  );
   const releaseRadar = buildReleaseRadar(releases);
 
   cachedBundle = {

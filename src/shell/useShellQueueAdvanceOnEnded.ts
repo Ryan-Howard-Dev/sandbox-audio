@@ -226,7 +226,17 @@ export function useShellQueueAdvanceOnEnded({
               persistRadioPlaylist: true,
             },
           ).then((result) => {
-            if (!result.started) return;
+            if (!result.started) {
+              /*
+               * Say so. This is the most-asked-for behaviour in the app and its failure mode was
+               * complete silence: the track ended, the bar sat at its own duration, and nothing
+               * distinguished "could not find anything to play next" from "this was never built".
+               * Both producers can legitimately come back empty — an artist the catalog does not
+               * know, a locker with no playable rows — and that is worth one line on screen.
+               */
+              showAppToast(t('player.radioNoContinuation'), 4200);
+              return;
+            }
             autoSimilarRadioSeedRef.current = ended.envelopeId;
             const q2 = result.queue;
             const nextIdx = q2.findIndex((tr) => tr.envelopeId === ended.envelopeId);

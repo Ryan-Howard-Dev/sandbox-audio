@@ -19276,6 +19276,25 @@ body:has([data-testid="mobile-home-vinyl-settings-sheet"]) .home-hero-stage,
   );
 }
 
+/*
+ * A toast has to be readable over whatever it lands on.
+ *
+ * This was bg-accent-soft, the accent at twelve percent alpha, which is transparent for all
+ * practical purposes. On the Discover screen it landed on the genre chips and the two sets of
+ * words drew on top of each other. An opaque base with the accent tint over it keeps the colour
+ * the design wants and none of the show-through; the blur is there for the rounded corners, where
+ * the base cannot quite cover the edge.
+ */
+.app-toast {
+  background-color: var(--bg-elevated, #17181c);
+  background-image: linear-gradient(
+    hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.14),
+    hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.14)
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
 .app-toast--mobile-shell {
   top: auto;
   bottom: calc(
