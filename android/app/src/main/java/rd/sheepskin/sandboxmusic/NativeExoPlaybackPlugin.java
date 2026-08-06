@@ -144,10 +144,38 @@ public class NativeExoPlaybackPlugin extends Plugin {
     }
 
     private void applyTrackMetaForUrl(@Nullable String url) {
-        if (url == null || url.trim().isEmpty()) return;
-        String key = urlToMetaKey.get(url.trim());
+        applyTrackMetaFor(null, url);
+    }
+
+    /**
+     * Adopt the metadata of the item now playing, by its stable id where there is one.
+     *
+     * mediaItemFor stamps every queue item with mediaId = "env:<envelopeId>", which is character
+     * for character the key trackMetaKey builds. The item has therefore been carrying its own
+     * lookup key the whole time, and this matched on the URL instead — through a map that is only
+     * populated when JS supplied both a URL and an id, and against whatever URI ExoPlayer chooses
+     * to report back, which is not reliably the string that went in.
+     *
+     * That miss is not cosmetic. It clears lastArtworkUrl and lastEnvelopeId below, and both
+     * lock-screen faults follow from it: the cover vanishes on the first skip, and every skip after
+     * that does nothing at all, because JS reconciles the player by envelope id and there is no
+     * longer one to reconcile against. Two separate bug reports, one lookup.
+     *
+     * This is R-004, and the comment below has described the durable fix — key off MediaItem.mediaId
+     * — since before it was written down as a risk. The URL map stays as the fallback for items
+     * queued without an id.
+     */
+    private void applyTrackMetaFor(@Nullable String mediaId, @Nullable String url) {
+        String key = null;
+        if (mediaId != null && !mediaId.trim().isEmpty() && trackMetaByKey.containsKey(mediaId.trim())) {
+            key = mediaId.trim();
+        }
         if (key == null) {
-            key = "url:" + url.trim();
+            if (url == null || url.trim().isEmpty()) return;
+            key = urlToMetaKey.get(url.trim());
+            if (key == null) {
+                key = "url:" + url.trim();
+            }
         }
         TrackMeta meta = trackMetaByKey.get(key);
         if (meta == null) {
@@ -165,9 +193,26 @@ public class NativeExoPlaybackPlugin extends Plugin {
              */
             android.util.Log.w(
                 "NativeExo",
-                "no track meta for key=" + key + " — clearing artwork to avoid showing the previous track's cover"
+                "no track meta for key=" + key + " — clearing id, holding artwork for JS to replace"
             );
-            lastArtworkUrl = "";
+            /*
+             * The artwork is deliberately NOT cleared here any more, and that is a reversal worth
+             * explaining.
+             *
+             * Clearing it was the right call when a miss meant the whole row went stale: the lock
+             * screen kept the old title AND the old cover, and a wrong cover under a wrong title is
+             * worse than none. But the id below is cleared in the same breath, and JS reconciles the
+             * player against that id and pushes correct metadata the moment it sees it missing —
+             * measured at about a quarter of a second on this device.
+             *
+             * So the choice is really between a quarter second of the previous cover and a grey
+             * placeholder for the entire track, because nothing else ever fills it back in. A miss
+             * happens on every transition after a resetQueue load, which wipes trackMetaByKey while
+             * the ExoPlayer queue keeps playing, so this was not an edge case — it was most of them.
+             *
+             * The durable fix is for the queue reset to stop discarding metadata for items that are
+             * still queued. This stops the visible damage in the meantime.
+             */
             // Same reasoning as the artwork: an id we know is wrong is worse than none, because
             // JS matches on it and will confidently resolve the previous track's metadata.
             lastEnvelopeId = "";
@@ -563,14 +608,24 @@ public class NativeExoPlaybackPlugin extends Plugin {
                             if (mediaItem != null && mediaItem.mediaId != null && !mediaItem.mediaId.isEmpty()) {
                                 evt.put("mediaId", mediaItem.mediaId);
                             }
+                            /*
+                             * Outside the localConfiguration guard on purpose. An item that reports
+                             * no local config still carries its mediaId, and the old shape skipped
+                             * the metadata adoption entirely in that case — leaving the session on
+                             * the previous track's id with no way back.
+                             */
+                            String transitionUrl = null;
                             if (mediaItem != null && mediaItem.localConfiguration != null) {
                                 Uri uri = mediaItem.localConfiguration.uri;
                                 if (uri != null) {
-                                    String url = uri.toString();
-                                    evt.put("url", url);
-                                    applyTrackMetaForUrl(url);
-                                    syncForegroundMetadata(p, p.isPlaying());
+                                    transitionUrl = uri.toString();
+                                    evt.put("url", transitionUrl);
                                 }
+                            }
+                            if (mediaItem != null) {
+                                // The id first, the URL only if the item never carried one.
+                                applyTrackMetaFor(mediaItem.mediaId, transitionUrl);
+                                syncForegroundMetadata(p, p.isPlaying());
                             }
                             notifyListeners("playbackEvent", evt);
                         }

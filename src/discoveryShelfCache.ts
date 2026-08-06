@@ -9,7 +9,13 @@
 import { prefsGetItem, prefsSetItem } from './prefsStorage';
 import type { MediaEnvelope } from './sandboxLayer1';
 
-const STORE_KEY = 'sandbox_discovery_shelf_cache_v1';
+/*
+ * v2: v1 rows hold the daily and weekly taste shelves as identical lists, written before the two
+ * seed windows were separated. Rows are served synchronously on first paint and only rebuilt once
+ * six hours old, so fixing the builder changed nothing on a device that already had them — the
+ * screen kept drawing the duplicate out of storage. Bumping the key is what makes the fix visible.
+ */
+const STORE_KEY = 'sandbox_discovery_shelf_cache_v2';
 /** Refresh in the background when the cached rows are older than this. */
 export const SHELF_STALE_MS = 6 * 60 * 60 * 1000;
 const MAX_SHELVES = 40;
