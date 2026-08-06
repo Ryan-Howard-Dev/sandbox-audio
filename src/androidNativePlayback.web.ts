@@ -17,6 +17,11 @@ export class NativeExoPlaybackWeb extends WebPlugin implements NativeExoPlayback
     return { ok: false, message: 'Native ExoPlayer playback is Android-only.' };
   }
 
+  /** No audio passes through this build, so there is nothing to have measured. */
+  async getWaveform(): Promise<{ available: boolean }> {
+    return { available: false };
+  }
+
   async localStreamProxyUrl(options: { url: string }): Promise<{ url: string }> {
     return { url: options.url };
   }

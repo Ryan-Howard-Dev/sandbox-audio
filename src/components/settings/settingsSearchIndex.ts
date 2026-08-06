@@ -251,6 +251,18 @@ export function buildSettingsSearchIndex(t: Translate): SettingsSearchItem[] {
       keywords: ['import', 'folder', 'ingestion', 'watch'],
       anchorId: SETTINGS_SEARCH_ANCHORS.vaultWatchFolder,
     }),
+    /*
+     * The anchor for this existed, was rendered, and was pointed at by a jump elsewhere in
+     * settings — and it was the one anchor in the file that nothing ever indexed, so the section
+     * could be linked to but never found by name. It is also the single most consequential choice
+     * in the app: where everything you own lives.
+     */
+    item('everything', 'vault-library-folder', t('settings.libraryFolder.title'), {
+      sectionLabel: t('settings.vault.title'),
+      subtitle: t('settings.libraryFolder.subtitle'),
+      keywords: ['library', 'folder', 'root', 'storage', 'location', 'path', 'saf'],
+      anchorId: SETTINGS_SEARCH_ANCHORS.vaultLibraryFolder,
+    }),
     item('music', 'vault-metadata-repair', 'Metadata repair', {
       sectionLabel: t('settings.vault.title'),
       subtitle: 'Fix missing or incorrect track metadata in your locker',
@@ -305,6 +317,16 @@ export function buildSettingsSearchIndex(t: Translate): SettingsSearchItem[] {
     item('music', 'architect-hero-display', t('settings.architect.heroDisplayTitle'), {
       subtitle: t('settings.architect.heroDisplayHint'),
       keywords: ['vinyl', 'album cover', 'home', 'hero'],
+      anchorId: SETTINGS_SEARCH_ANCHORS.architectHero,
+    }),
+    /*
+     * Shares the hero anchor, because it is the same section and the same decision: what the full
+     * player looks like behind the controls. Indexed rather than left out — a setting that exists
+     * and cannot be found by name is one nobody knows they have.
+     */
+    item('music', 'architect-waveform-visual', t('settings.architect.waveformVisual'), {
+      subtitle: t('settings.architect.waveformVisualHint'),
+      keywords: ['waveform', 'visualiser', 'visualizer', 'lines', 'spectrum', 'animation'],
       anchorId: SETTINGS_SEARCH_ANCHORS.architectHero,
     }),
     item('music', 'architect-card-scale', t('settings.architect.albumCardSize'), {

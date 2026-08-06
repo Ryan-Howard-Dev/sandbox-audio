@@ -131,6 +131,8 @@ import {
   loadCrossfadeEnabled,
   loadDeviceCapacity,
   loadFidelityPolicy,
+  loadWaveformVisualEnabled,
+  saveWaveformVisualEnabled,
   loadGaplessEnabled,
   loadNetworkSyncEnabled,
   loadConnectDeviceName,
@@ -1329,6 +1331,7 @@ export default function SettingsView({
 
   const [searchSortOrder, setSearchSortOrder] = useState<SearchSortOrder>(loadSearchSortOrder);
   const [heroDisplay, setHeroDisplay] = useState<HeroDisplayMode>(loadHeroDisplayMode);
+  const [waveformVisual, setWaveformVisual] = useState<boolean>(loadWaveformVisualEnabled);
   const [vinylVisuals, setVinylVisuals] = useState<VinylVisualSettings>(loadVinylVisualSettings);
   const [vinylDisplayMode, setVinylDisplayMode] = useState<VinylDisplayMode>(loadVinylDisplayMode);
   const [communityPacks, setCommunityPacks] = useState<RecordPlayerAddon[]>(() => {
@@ -3673,6 +3676,35 @@ export default function SettingsView({
                     </button>
                   ))}
                 </div>
+
+                {/*
+                  Lives with the hero display because it is the same decision: what the full player
+                  looks like behind the controls. Android only, since the levels come from the
+                  native audio chain and there is nothing to read on the other platforms.
+                */}
+                {isAndroid() ? (
+                  <div className="flex items-center justify-between gap-4 pt-2">
+                    <div>
+                      <span className="font-mono text-xs uppercase" style={{ color: C.textMid }}>
+                        {t('settings.architect.waveformVisual')}
+                      </span>
+                      <p className="ui-hint text-[10px]">
+                        {t('settings.architect.waveformVisualHint')}
+                      </p>
+                    </div>
+                    <SandboxSwitch
+                      checked={waveformVisual}
+                      onChange={(enabled) => {
+                        setWaveformVisual(enabled);
+                        saveWaveformVisualEnabled(enabled);
+                        // The player is usually already mounted behind this screen; the event is
+                        // how it learns without being remounted.
+                        window.dispatchEvent(new Event('sandbox-settings-change'));
+                      }}
+                      aria-label={t('settings.architect.waveformVisual')}
+                    />
+                  </div>
+                ) : null}
               </div>
 
               <div className="settings-anchor-section border-t pt-6 space-y-4" style={{ borderColor: C.border }}>

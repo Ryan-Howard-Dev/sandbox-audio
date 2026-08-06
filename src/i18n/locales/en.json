@@ -759,6 +759,8 @@
       "heroDisplayAlbumCoverDesc": "Show artwork when available.",
       "heroDisplayVinylShades": "Vinyl shades",
       "heroDisplayVinylShadesDesc": "Colored record gradient that changes per track.",
+      "waveformVisual": "PLAYING WAVEFORM",
+      "waveformVisualHint": "Lines that move with the music, drawn behind the full player. Measured from audio this app is already playing, never the microphone. Costs battery while the player is open.",
       "albumCardSize": "ALBUM CARD SIZE",
       "albumCardHint": "Scale album and playlist cards. Larger = fewer per row, more detail.",
       "vinylVisualsTitle": "VINYL VISUALS",

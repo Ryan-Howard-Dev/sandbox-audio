@@ -17569,6 +17569,55 @@ body:has(#root > .onboarding-root) {
   pointer-events: auto;
 }
 
+/*
+ * The audio, drawn behind the player.
+ *
+ * Absolutely positioned over the whole sheet and pinned under everything else, because it is
+ * atmosphere rather than information: a line moving across the title and transport would cost more
+ * legibility than it buys. pointer-events is off here as well as on the canvas, so no tap meant for
+ * a control can ever be swallowed by the layer sitting over it.
+ */
+.mobile-np-waveform {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  /* Strongest across the middle of the screen, gone at the edges, so it never fights the chrome. */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.55) 22%,
+    rgba(0, 0, 0, 0.9) 50%,
+    rgba(0, 0, 0, 0.55) 78%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.55) 22%,
+    rgba(0, 0, 0, 0.9) 50%,
+    rgba(0, 0, 0, 0.55) 78%,
+    transparent 100%
+  );
+}
+
+/* Everything the listener actually reads or touches sits above the drawing. */
+.mobile-now-playing--unified > .mobile-np-drag-zone {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Honoured rather than ignored. This is continuous motion across most of the screen, which is
+   * exactly what that preference exists to ask for less of, and the player works without it.
+   */
+  .mobile-np-waveform {
+    display: none;
+  }
+}
+
 /* Full-screen now playing — Tidal layout, sandbox colours (grid override lives after .mobile-np-header). */
 
 .mobile-np-header-actions {

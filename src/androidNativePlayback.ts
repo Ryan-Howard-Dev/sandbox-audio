@@ -60,6 +60,14 @@ export interface NativeExoPlaybackStatus {
 
 export interface NativeExoPlaybackPlugin {
   getStatus(): Promise<NativeExoPlaybackStatus>;
+  /**
+   * Recent playback levels, 0 to 255, oldest first, for the visualiser.
+   *
+   * Polled rather than pushed: an event per audio buffer would be hundreds of bridge crossings a
+   * second to feed something that redraws sixty times at most. `available` is false when nothing
+   * has played yet, which is different from silence and is drawn differently.
+   */
+  getWaveform(): Promise<{ available: boolean; levels?: number[] }>;
   /** Android localhost proxy — CORS-safe URL for WebView Web Audio graphs. */
   localStreamProxyUrl(options: { url: string }): Promise<{ url: string }>;
   prepare(): Promise<{ ok: boolean; message: string }>;

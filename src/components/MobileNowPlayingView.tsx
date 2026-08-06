@@ -18,7 +18,9 @@ import { displayTransportLabel } from '../displaySanitize';
 import { resolvePlaybackCoverArt } from '../playerBarTrackMeta';
 import { useDismissableOverlay } from '../hooks/useDismissableOverlay';
 import { useTranslation } from '../i18n';
-import { loadFidelityPolicy } from '../sandboxSettings';
+import { loadFidelityPolicy, loadWaveformVisualEnabled } from '../sandboxSettings';
+import { WaveformCanvas } from './WaveformCanvas';
+import { useWaveformLevels } from '../hooks/useWaveformLevels';
 import { isAndroid } from '../platformEnv';
 import { hasActiveMobileResolvers, preferFreshMobileResolve } from '../mobileResolverRegistry';
 import { usePlaybackResolveElapsed } from '../hooks/usePlaybackResolveElapsed';
@@ -319,6 +321,21 @@ export default function MobileNowPlayingView({
     return () => window.removeEventListener('sandbox-settings-change', sync);
   }, []);
 
+  /*
+   * The visualiser, and the setting that decides whether it costs anything.
+   *
+   * Read into state and kept in step with the settings event, because the toggle lives on another
+   * screen and this one is often already open behind it. Polling is gated on the sheet actually
+   * being open as well as on the setting: a full player that has been swiped away should not still
+   * be asking the audio thread how loud it is.
+   */
+  const [waveformEnabled, setWaveformEnabled] = useState(() => loadWaveformVisualEnabled());
+  useEffect(() => {
+    const sync = () => setWaveformEnabled(loadWaveformVisualEnabled());
+    window.addEventListener('sandbox-settings-change', sync);
+    return () => window.removeEventListener('sandbox-settings-change', sync);
+  }, []);
+
   const handleShare = async () => {
     const text = artist ? `${title} — ${artist}` : title;
     try {
@@ -344,6 +361,13 @@ export default function MobileNowPlayingView({
   const dragOffset = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLButtonElement>(null);
+
+  /*
+   * Declared after sheetActive because it depends on it, and hook order here is load-bearing.
+   * Gated on the sheet being open as well as on the setting: a player that has been swiped away
+   * should not still be asking the audio thread how loud it is.
+   */
+  const waveShape = useWaveformLevels({ enabled: waveformEnabled && sheetActive });
 
   const resetSheetTransform = useCallback(() => {
     if (sheetRef.current) {
@@ -451,6 +475,18 @@ export default function MobileNowPlayingView({
         aria-label={t('nowPlaying.title')}
         data-genre-bucket={genreBucket ?? undefined}
       >
+        {/*
+          The audio itself, drawn full bleed behind everything.
+
+          Sits under the content rather than over it: it is atmosphere, not information, and a
+          moving line across the title and transport would cost more legibility than it adds. It
+          takes no pointer events, so nothing here changes what a tap does.
+        */}
+        {waveformEnabled ? (
+          <div className="mobile-np-waveform" aria-hidden>
+            <WaveformCanvas shape={waveShape} />
+          </div>
+        ) : null}
         <div
           className="mobile-np-drag-zone"
           onTouchStart={onSheetDragStart}

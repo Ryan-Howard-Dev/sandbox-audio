@@ -614,6 +614,26 @@ export function saveTvCoverageBannerDismissed(dismissed: boolean): void {
   prefsSetItem(TV_COVERAGE_BANNER_DISMISSED_KEY, String(dismissed));
 }
 
+const WAVEFORM_VISUAL_KEY = 'sandbox_waveform_visual';
+
+/**
+ * Draw the playing audio behind the player.
+ *
+ * Off by default, and that is not timidity: it polls and redraws for as long as the full player is
+ * open, which is a real and continuous cost on a phone. Something that spends battery whenever you
+ * look at it should be a thing you asked for.
+ *
+ * The measurement behind it never leaves the device and never touches the microphone — it is a tap
+ * on audio this app is already decoding, not a recording of the room.
+ */
+export function loadWaveformVisualEnabled(): boolean {
+  return loadBool(WAVEFORM_VISUAL_KEY, false);
+}
+
+export function saveWaveformVisualEnabled(enabled: boolean): void {
+  prefsSetItem(WAVEFORM_VISUAL_KEY, String(enabled));
+}
+
 /**
  * First launch — Tauri desktop, native phone/tablet APK (incl. sw600dp tablets on desktop shell),
  * PWA ≤767px, or dev `?mobile=1`.

@@ -20,6 +20,7 @@ import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -506,6 +507,32 @@ public class NativeExoPlaybackPlugin extends Plugin {
                         java.util.ArrayList<androidx.media3.exoplayer.Renderer> out) {
                         // Intentionally add nothing — audio-only.
                     }
+
+                    /**
+                     * The audio sink, with a tap on the way to the speakers.
+                     *
+                     * TeeAudioProcessor hands each buffer to WaveformTap and passes it through
+                     * unchanged, so the visualiser reads the real signal without standing in its
+                     * path. Built here rather than with the Visualizer API because that one wants
+                     * RECORD_AUDIO, and asking for the microphone to draw a line on a screen is not
+                     * a trade this app makes.
+                     */
+                    @Override
+                    protected androidx.media3.exoplayer.audio.AudioSink buildAudioSink(
+                        Context context,
+                        boolean enableFloatOutput,
+                        boolean enableAudioTrackPlaybackParams) {
+                        return new androidx.media3.exoplayer.audio.DefaultAudioSink.Builder(context)
+                            .setEnableFloatOutput(enableFloatOutput)
+                            .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                            .setAudioProcessors(
+                                new androidx.media3.common.audio.AudioProcessor[] {
+                                    new androidx.media3.exoplayer.audio.TeeAudioProcessor(
+                                        new WaveformTap()
+                                    )
+                                })
+                            .build();
+                    }
                 };
 
             player =
@@ -952,6 +979,46 @@ public class NativeExoPlaybackPlugin extends Plugin {
     @PluginMethod
     public void getStatus(PluginCall call) {
         runOnMain(call, () -> call.resolve(buildStatus()));
+    }
+
+    /**
+     * Recent playback levels for the visualiser.
+     *
+     * Polled rather than pushed. An event per audio buffer would be hundreds of bridge crossings a
+     * second to feed something that redraws sixty times at most, and the drawing side already has a
+     * clock — its own animation frame. Answering from a plain array read costs nothing, so a caller
+     * that stops asking costs nothing either, which is the property a screen that is not on screen
+     * needs to have.
+     *
+     * `levels` is absent, not empty, when nothing has played yet. Empty would read as silence.
+     */
+    @PluginMethod
+    public void getWaveform(PluginCall call) {
+        int[] snapshot = WaveformTap.snapshot();
+        JSObject ret = new JSObject();
+        if (snapshot == null) {
+            ret.put("available", false);
+            call.resolve(ret);
+            return;
+        }
+        JSArray levels = new JSArray();
+        for (int value : snapshot) levels.put(value);
+        ret.put("available", true);
+        ret.put("levels", levels);
+        /*
+         * Deliberately does not ask the player anything.
+         *
+         * The first version answered `playing` from p.isPlaying(), which reads ExoPlayer state from
+         * whatever thread the bridge happens to use — 'CapacitorPlugins' here, not 'main'. media3
+         * throws IllegalStateException for that, and an uncaught throw out of a plugin method kills
+         * the process. It did: the whole app went down on the first poll, thirty times a second
+         * away from being permanent.
+         *
+         * Routing through runOnMain would fix the thread and put a main-thread hop in a call made
+         * thirty times a second for a value nobody needs. The levels already say it: audio flowing
+         * moves them, and audio stopped lets them fall to the floor.
+         */
+        call.resolve(ret);
     }
 
     /** Localhost CORS-safe proxy for WebView Web Audio (podcast Smart Speed / Voice Boost). */
