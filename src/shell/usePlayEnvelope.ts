@@ -549,7 +549,31 @@ export function usePlayEnvelope({
         }
       }
 
+      /**
+       * Whether the cellular data notice is on screen and this attempt owns taking it down.
+       *
+       * Declared up here rather than beside the line that raises it, because every way out of this
+       * function has to clear it. It says a download is about to start, and it sat on screen for
+       * its full four and a half seconds regardless of what happened next — including the paths
+       * that give up without playing anything and without a word. A stale "streaming 2.7 MB on
+       * cellular" over a track that never started is not a cosmetic problem: it is the only thing
+       * the listener is told, and it says the opposite of what happened.
+       */
+      let cellularNoticeRaised = false;
+      const clearCellularNotice = (): void => {
+        if (!cellularNoticeRaised) return;
+        cellularNoticeRaised = false;
+        showAppToast('');
+      };
+
       const failResolve = (showToast = true): boolean => {
+        /*
+         * Unconditionally, and before the staleness check. A superseded attempt returns from here
+         * without saying anything, and a silent give-up says nothing by design — either way the
+         * notice has to come down, or it is the last word on a track that never played. Where a
+         * message does follow, it simply replaces this.
+         */
+        clearCellularNotice();
         if (isStale()) return false;
         if (showToast) {
           const base = getTier34BaseUrl().trim();
@@ -1087,6 +1111,13 @@ export function usePlayEnvelope({
               playable.durationSeconds ? playable : seedEnvelope,
             );
             showAppToast(formatCellularDownloadNotice(mb), 4500);
+            /*
+             * Taken down again the moment the track is loaded, below. This notice describes a
+             * resolve that is about to happen; once it has, the words are stale and were sitting
+             * over the Discover shelves for the rest of their four and a half seconds, which is
+             * where they were photographed lying across the genre chips.
+             */
+            cellularNoticeRaised = true;
           }
           playable = await Promise.race([
             executeTrack(executePayload, candidates),
@@ -1168,6 +1199,8 @@ export function usePlayEnvelope({
         const syncedPlayable = preserveTappedEnvelopeIdentity(seedEnvelope, playable);
         persistLockerPlayRepair(seedEnvelope, syncedPlayable);
         audio.loadEnvelope(syncedPlayable, envelopeLoadOpts({ seamless: true, instant: true }));
+        // The resolve it warned about is done. Leaving it up put stale words over the shelves.
+        clearCellularNotice();
         logPlayTiming('loadEnvelope-called', { autoPlay: loadOptions.autoPlay });
         void runDeferredPlaySideEffects({
           seedEnvelope,

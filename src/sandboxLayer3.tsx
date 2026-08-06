@@ -910,9 +910,21 @@ export default function SandboxShell() {
     tvScreen,
   });
 
+  /**
+   * Show a toast, or take one down.
+   *
+   * An empty message dismisses immediately rather than drawing an empty bar. Some notices describe
+   * something that is about to happen — "streaming N MB on cellular" — and once it has happened
+   * they are stale text sitting over the screen for the rest of their duration. The caller that
+   * raised one is the only thing that knows when it stopped being true.
+   */
   const showAppToast = useCallback((msg: string, durationMs = 3200) => {
-    setAppToast(msg);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    if (!msg) {
+      setAppToast(null);
+      return;
+    }
+    setAppToast(msg);
     toastTimerRef.current = window.setTimeout(() => setAppToast(null), durationMs);
   }, []);
 

@@ -308,7 +308,7 @@ export async function buildDailyDiscovery(): Promise<DiscoveryMix> {
         id: 'daily-discovery',
         kind: 'daily-discovery',
         title: 'Daily Discovery',
-        subtitle: `Refreshes daily 6am · ${tracks.length} tracks · 70% taste / 30% new artists`,
+        subtitle: `Refreshes daily 6am · 70% taste / 30% new artists`,
         tracks,
         generatedAt: cache.dailyGeneratedAt,
       };
@@ -328,7 +328,7 @@ export async function buildDailyDiscovery(): Promise<DiscoveryMix> {
     id: 'daily-discovery',
     kind: 'daily-discovery',
     title: 'Daily Discovery',
-    subtitle: `Refreshes daily 6am · ${tracks.length} tracks · 70% taste / 30% new artists`,
+    subtitle: `Refreshes daily 6am · 70% taste / 30% new artists`,
     tracks,
     generatedAt: Date.now(),
   };

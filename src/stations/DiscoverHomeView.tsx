@@ -87,22 +87,31 @@ export default function DiscoverHomeView({
         />
       </div>
 
-      {/* Personalised discovery belongs on For You, not Browse: these are built from the
-          local taste profile (artists similar to the ones you actually play, minus what
-          you already own). Each renders nothing until there is a taste signal. */}
+      {/*
+        Personalised discovery belongs on For You, not Browse: these are built from the local taste
+        profile (artists similar to the ones you actually play, minus what you already own). Each
+        renders nothing until there is a taste signal.
+
+        Named for what they are, which is not what they were called. MadeForYouShelf above already
+        draws "Daily Discovery" and "Weekly Discover", so these two sat underneath it as "Daily
+        Discover" and "Weekly Discover" — one page, four shelves, two of the names differing by a
+        single letter and one not differing at all. They are a different thing entirely: everything
+        here is by an artist the locker does not have, which is the one claim neither mix above
+        makes.
+      */}
       {onPlayTrack ? (
         <>
           <TasteDiscoverShelf
             kind="daily"
-            title="Daily Discover"
-            subtitle="Fresh picks from artists like the ones you play"
+            title={t('discover.newToYouDaily')}
+            subtitle={t('discover.newToYouDailySub')}
             onPlay={onPlayTrack}
             limit={10}
           />
           <TasteDiscoverShelf
             kind="weekly"
-            title="Weekly Discover"
-            subtitle="A wider sweep across your taste, refreshed weekly"
+            title={t('discover.newToYouWeekly')}
+            subtitle={t('discover.newToYouWeeklySub')}
             onPlay={onPlayTrack}
             limit={10}
           />

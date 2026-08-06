@@ -1397,6 +1397,10 @@
   "discover": {
     "title": "Discover",
     "tabsAria": "Discover sections",
+    "newToYouDaily": "New to you today",
+    "newToYouDailySub": "Artists like the ones you play, that your locker does not have yet",
+    "newToYouWeekly": "New to you this week",
+    "newToYouWeeklySub": "A wider sweep across your taste, refreshed every Monday",
     "notForMe": "Not for me",
     "snooze30": "Snooze 30 days",
     "lessLikeThis": "Less like this",
