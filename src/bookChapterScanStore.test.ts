@@ -5,6 +5,7 @@ import {
   forgetScan,
   loadScan,
   rememberScan,
+  scanKeyFor,
 } from './bookChapterScanStore';
 import type { ChapterScanOutcome } from './bookChapterScan';
 
@@ -85,5 +86,36 @@ describe('what it refuses to remember', () => {
   it('ignores an empty id rather than storing one', () => {
     expect(rememberScan('', FOUND)).toBe(false);
     expect(loadScan('')).toBeNull();
+  });
+});
+
+describe('one book, one finding', () => {
+  it('files the shelf and the player under the same key', () => {
+    /*
+     * The shelf knows a book by the id of the file, the player by its envelope id. Two keys for
+     * one book would mean scanning from the shelf and then opening the player decodes the same
+     * thirty hours a second time to reach the answer already on disk.
+     */
+    rememberScan('42', FOUND);
+    expect(loadScan('audiobook:42')!.marks.map((m) => m.startSeconds)).toEqual([0, 600]);
+  });
+
+  it('reaches the shelf when the scan was started from the player', () => {
+    rememberScan('audiobook:42', FOUND);
+    expect(loadScan('42')).not.toBeNull();
+  });
+
+  it('forgets the book whichever name it is given', () => {
+    rememberScan('audiobook:42', FOUND);
+    forgetScan('42');
+    expect(loadScan('audiobook:42')).toBeNull();
+  });
+
+  it('leaves the catalog namespace alone, since nothing on the shelf names one bare', () => {
+    // A free catalog entry is not a file on this device, and its ids are not MediaStore ids.
+    expect(scanKeyFor('audiobook-catalog:librivox/dune')).toBe('audiobook-catalog:librivox/dune');
+    expect(scanKeyFor('audiobook:42')).toBe('42');
+    expect(scanKeyFor('  audiobook:42  ')).toBe('42');
+    expect(scanKeyFor(null)).toBe('');
   });
 });

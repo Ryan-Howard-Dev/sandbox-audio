@@ -530,6 +530,13 @@ export default function AudiobooksView({
                 }
               }}
               label={t('audiobooks.chaptersLabel')}
+              /*
+                And where the file states nothing, offer to find them by listening. This is the
+                only place in the app that reaches the chapter scanner: the book is open, the
+                listener asked for it, and the cost of decoding a long recording is theirs to
+                agree to rather than something that happens quietly in the background.
+              */
+              allowScan
             />
           ) : null}
 

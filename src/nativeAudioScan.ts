@@ -163,10 +163,18 @@ export async function spotChapterKeywords(
   }
 }
 
-/** Deps for scanBookChapters, wired to this device. */
-export function deviceChapterScanDeps() {
+/**
+ * Deps for scanBookChapters, wired to this device.
+ *
+ * The progress callback is the decode's, not the whole scan's, because the decode is all of the
+ * time: the keyword pass listens at a few hundred short windows and finishes in seconds. Passing it
+ * through matters more here than it looks — at twenty times realtime the thirty hour book this
+ * feature exists for takes an hour and a half, and a button that says "scanning" for ninety minutes
+ * with nothing moving is indistinguishable from one that has hung.
+ */
+export function deviceChapterScanDeps(onProgress?: (percent: number) => void) {
   return {
-    scanSilences: (uri: string) => scanSilences(uri),
+    scanSilences: (uri: string) => scanSilences(uri, {}, onProgress),
     spotKeywords: (
       uri: string,
       windows: Array<{ startSeconds: number; endSeconds: number }>,

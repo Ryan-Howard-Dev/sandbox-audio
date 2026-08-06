@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { scanBookChapters, type ChapterScanOutcome } from '../bookChapterScan';
 import { loadScan, rememberScan } from '../bookChapterScanStore';
 import { deviceChapterScanDeps, isAudioScanAvailable } from '../nativeAudioScan';
@@ -15,6 +15,15 @@ export interface BookChapterScan {
   scan: () => Promise<void>;
   /** The last conclusion, so a caller can say why nothing came back. */
   outcome: ChapterScanOutcome | null;
+  /**
+   * True once this book has an answer, from this session or a previous one.
+   *
+   * Separate from `outcome`, which only ever describes a scan run just now. A book scanned last
+   * week that announces nothing comes back with no marks and no outcome, and without this the shelf
+   * could not tell that from a book nobody has ever looked at — so it would draw nothing where it
+   * should say the book was listened to and has no chapters to find.
+   */
+  scanned: boolean;
 }
 
 /**
@@ -48,6 +57,12 @@ export function useBookChapterScan(input: {
   const [known, setKnown] = useState<boolean | null>(null);
 
   const id = bookId?.trim() ?? '';
+  /*
+   * Which book the progress ticks belong to. The decode reports from native on its own schedule and
+   * a listener can leave a thirty hour scan and open something else, at which point those ticks
+   * would drive a bar under the wrong book's title.
+   */
+  const scanningId = useRef('');
 
   useEffect(() => {
     // Cleared per book, or one book's findings would sit under another book's title.
@@ -69,8 +84,15 @@ export function useBookChapterScan(input: {
     if (!enabled || !id || !target || scanning) return;
     setScanning(true);
     setPercent(0);
+    scanningId.current = id;
     try {
-      const result = await scanBookChapters(target, deviceChapterScanDeps());
+      const result = await scanBookChapters(
+        target,
+        deviceChapterScanDeps((p) => {
+          if (scanningId.current !== id) return;
+          setPercent(Math.max(0, Math.min(100, Math.round(p))));
+        }),
+      );
       setOutcome(result);
       /*
        * Only adopt what came back if this is still the book on screen. A thirty hour decode
@@ -84,6 +106,7 @@ export function useBookChapterScan(input: {
     } catch {
       setOutcome({ status: 'unavailable', reason: 'decode-failed' });
     } finally {
+      scanningId.current = '';
       setScanning(false);
       setPercent(0);
     }
@@ -95,12 +118,21 @@ export function useBookChapterScan(input: {
     percent,
     /*
      * Offered only where it could actually do something: a device with the scanner, a book with no
-     * chapter table, and nothing already known about it. A button that reports "unavailable" the
-     * moment it is pressed is worse than no button.
+     * chapter table, nothing already known about it, and somewhere for the decoder to read from. A
+     * button that reports "unavailable" the moment it is pressed is worse than no button.
+     *
+     * The uri is the one that is easy to forget. `scan` returns immediately without it, so on a
+     * book held only as a locker entry the offer appeared and pressing it did nothing at all.
      */
-    offered: enabled && isAudioScanAvailable() && known === false && !scanning,
+    offered:
+      enabled &&
+      isAudioScanAvailable() &&
+      known === false &&
+      !scanning &&
+      Boolean(uri?.trim()),
     scan,
     outcome,
+    scanned: known === true,
   };
 }
 

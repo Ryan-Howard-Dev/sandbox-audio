@@ -29,6 +29,21 @@ export interface StoredScan {
 
 type Store = Record<string, StoredScan>;
 
+/**
+ * The key a book's finding is filed under.
+ *
+ * The player knows a book by its envelope id — `audiobook:42` — and the shelf knows the same book
+ * by the id of the file itself, `42`. Filing under whichever string happened to arrive would mean a
+ * scan started from the shelf was invisible to the player and the book got decoded a second time to
+ * learn exactly what was already known, which on the thirty hour book is an hour and a half of it.
+ *
+ * `audiobook-catalog:` is deliberately left alone. It is a different namespace — a free catalog
+ * entry, not a file on this device — and nothing on the shelf ever names one by its bare id.
+ */
+export function scanKeyFor(bookId: string | null | undefined): string {
+  return (bookId?.trim() ?? '').replace(/^audiobook:/, '');
+}
+
 function readStore(): Store {
   try {
     const raw = prefsGetItem(STORE_KEY);
@@ -65,7 +80,7 @@ function writeStore(store: Store): void {
  * returned as such rather than as null, which is what stops it being scanned again forever.
  */
 export function loadScan(bookId: string): StoredScan | null {
-  const id = bookId?.trim();
+  const id = scanKeyFor(bookId);
   if (!id) return null;
   const row = readStore()[id];
   if (!row || row.version !== SCAN_RESULT_VERSION) return null;
@@ -83,7 +98,7 @@ export function rememberScan(
   outcome: ChapterScanOutcome,
   now: number = Date.now(),
 ): boolean {
-  const id = bookId?.trim();
+  const id = scanKeyFor(bookId);
   if (!id) return false;
   if (isScanRetryable(outcome)) return false;
   /*
@@ -102,7 +117,7 @@ export function rememberScan(
 }
 
 export function forgetScan(bookId: string): void {
-  const id = bookId?.trim();
+  const id = scanKeyFor(bookId);
   if (!id) return;
   const store = readStore();
   if (!(id in store)) return;
