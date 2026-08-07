@@ -101,6 +101,32 @@
         </service>
 
         <!--
+          The playing waveform, as a live wallpaper.
+
+          Android gives no app any way to draw on the lock screen — it belongs to the system, and
+          the media card on it is a notification rather than a surface. A live wallpaper is the one
+          surface that renders full-screen behind that card, so this is the only honest route to
+          the waveform covering the lock screen.
+
+          exported and with BIND_WALLPAPER because the system's wallpaper host binds it; that
+          permission is what stops anything other than the system doing so.
+        -->
+        <service
+            android:name=".WaveformWallpaperService"
+            android:exported="true"
+            android:label="@string/waveform_wallpaper_label"
+            android:permission="android.permission.BIND_WALLPAPER"
+        >
+            <intent-filter>
+                <action android:name="android.service.wallpaper.WallpaperService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.wallpaper"
+                android:resource="@xml/waveform_wallpaper"
+            />
+        </service>
+
+        <!--
           Alternative launcher icons.
 
           Android has no API for changing an app icon directly. The only way is to declare one

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Descriptor for the live wallpaper picker.
+
+    No settingsActivity: everything about it is decided by what is playing, and a wallpaper that
+    opens a configuration screen for a single line colour would be a worse experience than none.
+-->
+<wallpaper xmlns:android="http://schemas.android.com/apk/res/android"
+    android:thumbnail="@mipmap/ic_launcher"
+    android:description="@string/waveform_wallpaper_description"
+    android:author="@string/app_name" />

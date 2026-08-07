@@ -470,6 +470,7 @@ import {
   nativeExoSetBitPerfectEnabled,
   type NativeExoPlaybackStatus,
 } from '../androidNativePlayback';
+import { NativeExoPlayback } from '../nativePluginHandles';
 import {
   loadAndroidNativePlaybackEnabled,
   saveAndroidNativePlaybackEnabled,
@@ -1332,6 +1333,8 @@ export default function SettingsView({
   const [searchSortOrder, setSearchSortOrder] = useState<SearchSortOrder>(loadSearchSortOrder);
   const [heroDisplay, setHeroDisplay] = useState<HeroDisplayMode>(loadHeroDisplayMode);
   const [waveformVisual, setWaveformVisual] = useState<boolean>(loadWaveformVisualEnabled);
+  /** Shown only when the wallpaper picker needs explaining; see the button below. */
+  const [wallpaperNotice, setWallpaperNotice] = useState<string | null>(null);
   const [vinylVisuals, setVinylVisuals] = useState<VinylVisualSettings>(loadVinylVisualSettings);
   const [vinylDisplayMode, setVinylDisplayMode] = useState<VinylDisplayMode>(loadVinylDisplayMode);
   const [communityPacks, setCommunityPacks] = useState<RecordPlayerAddon[]>(() => {
@@ -3703,6 +3706,57 @@ export default function SettingsView({
                       }}
                       aria-label={t('settings.architect.waveformVisual')}
                     />
+                  </div>
+                ) : null}
+
+                {/*
+                  The lock screen version, which Android will only let the listener install.
+
+                  No app can draw on the lock screen — it belongs to the system. A live wallpaper is
+                  the one surface that renders full-screen behind the clock and the media card, and
+                  it has to be chosen in the system picker. So this is a button that opens that
+                  picker, not a toggle that pretends to do it for them.
+                */}
+                {isAndroid() ? (
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      className="btn-accent touch-manipulation h-10 px-4 rounded-lg font-mono text-[10px] uppercase tracking-wider"
+                      onClick={() => {
+                        setWallpaperNotice(null);
+                        void NativeExoPlayback.openWaveformWallpaperPicker()
+                          .then((res) => {
+                            /*
+                             * Only says anything when the listener needs telling. The direct
+                             * preview is self-explanatory — it is our wallpaper with a confirm
+                             * button — but the fallback chooser is a list of everything on the
+                             * device, and landing there with no instruction is a dead end.
+                             */
+                            if (res.opened === 'chooser') {
+                              setWallpaperNotice(t('settings.architect.waveformWallpaperPick'));
+                            } else if (res.opened === 'none') {
+                              setWallpaperNotice(
+                                t('settings.architect.waveformWallpaperUnavailable'),
+                              );
+                            }
+                          })
+                          .catch(() => {
+                            setWallpaperNotice(
+                              t('settings.architect.waveformWallpaperUnavailable'),
+                            );
+                          });
+                      }}
+                    >
+                      {t('settings.architect.waveformWallpaper')}
+                    </button>
+                    <p className="ui-hint text-[10px] mt-2">
+                      {t('settings.architect.waveformWallpaperHint')}
+                    </p>
+                    {wallpaperNotice ? (
+                      <p className="ui-hint text-[10px] mt-1" style={accentStyle}>
+                        {wallpaperNotice}
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
               </div>

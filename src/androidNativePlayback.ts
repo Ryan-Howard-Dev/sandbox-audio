@@ -56,6 +56,20 @@ export interface NativeExoPlaybackStatus {
   artist?: string;
   album?: string;
   artworkUrl?: string;
+  /**
+   * Bitrate of the format actually being decoded, in kbps.
+   *
+   * The decoder's own figure, from the container or the manifest. Absent when the format does not
+   * state one, which is different from zero — the badge shows nothing rather than "0 kbps".
+   *
+   * This exists because the quality badge fell back to naming the transport ("HTTP") for anything
+   * streamed: bitrate is measured at import for locker tracks and nowhere at all for a stream, so
+   * the one screen a listener checks to see how good something sounds was answering with which
+   * code path fetched the bytes.
+   */
+  bitrateKbps?: number;
+  /** Codec of the decoded stream, when the format names one. */
+  audioMimeType?: string;
 }
 
 export interface NativeExoPlaybackPlugin {
@@ -68,6 +82,15 @@ export interface NativeExoPlaybackPlugin {
    * has played yet, which is different from silence and is drawn differently.
    */
   getWaveform(): Promise<{ available: boolean; levels?: number[] }>;
+  /**
+   * Open the system picker for the waveform live wallpaper.
+   *
+   * There is no way to set a wallpaper without the listener confirming it, and there should not be.
+   * `opened` says which surface they are actually looking at: 'preview' is our wallpaper with a
+   * confirm button, 'chooser' is the generic list on devices whose shell refuses the direct intent,
+   * and the caller tells them what to pick.
+   */
+  openWaveformWallpaperPicker(): Promise<{ opened: 'preview' | 'chooser' | 'none' }>;
   /** Android localhost proxy — CORS-safe URL for WebView Web Audio graphs. */
   localStreamProxyUrl(options: { url: string }): Promise<{ url: string }>;
   prepare(): Promise<{ ok: boolean; message: string }>;

@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
+import androidx.media3.common.Format;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
@@ -870,6 +871,34 @@ public class NativeExoPlaybackPlugin extends Plugin {
             "bitPerfectActive",
             ExoUsbBitPerfectHelper.shouldBypassAppVolume(getContext(), bitPerfectEnabled)
         );
+        /*
+         * The bitrate of what is actually being decoded.
+         *
+         * The badge under the title falls back to naming the transport — "HTTP" — whenever it has
+         * no bitrate, which is every streamed track, because nothing measures one for a stream. The
+         * decoder has known all along: this is the selected format's own figure, read from the
+         * container or the manifest, not an estimate from file size and duration.
+         *
+         * `bitrate` where the format states it, `averageBitrate` otherwise; some containers set
+         * only one. Left absent rather than zeroed when neither is known, so the caller can tell
+         * "no figure" from "a figure that happens to be low".
+         */
+        try {
+            androidx.media3.common.Format audioFormat = p.getAudioFormat();
+            if (audioFormat != null) {
+                int bps = audioFormat.bitrate != Format.NO_VALUE
+                    ? audioFormat.bitrate
+                    : audioFormat.averageBitrate;
+                if (bps != Format.NO_VALUE && bps > 0) {
+                    ret.put("bitrateKbps", Math.round(bps / 1000.0));
+                }
+                if (audioFormat.sampleMimeType != null) {
+                    ret.put("audioMimeType", audioFormat.sampleMimeType);
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // Format is not available in every state; a missing badge figure is not worth a throw.
+        }
         String url = currentMediaUri();
         if (url != null) ret.put("currentUrl", url);
         if (lastError != null) ret.put("error", lastError);
@@ -979,6 +1008,53 @@ public class NativeExoPlaybackPlugin extends Plugin {
     @PluginMethod
     public void getStatus(PluginCall call) {
         runOnMain(call, () -> call.resolve(buildStatus()));
+    }
+
+    /**
+     * Open the system picker for the waveform live wallpaper.
+     *
+     * Setting a wallpaper is the listener's decision to make, not the app's: Android has no API to
+     * install one silently, and there should not be one. This opens the preview for our own service
+     * with the confirm button the system owns.
+     *
+     * Falls back to the generic live wallpaper chooser on devices whose OEM shell rejects the
+     * direct preview intent, which some do. Returns which happened rather than pretending, so the
+     * caller can say "pick Sandbox waveform from the list" when that is what the listener is
+     * looking at.
+     */
+    @PluginMethod
+    public void openWaveformWallpaperPicker(PluginCall call) {
+        JSObject ret = new JSObject();
+        android.content.ComponentName component =
+            new android.content.ComponentName(getContext(), WaveformWallpaperService.class);
+        try {
+            android.content.Intent intent =
+                new android.content.Intent(
+                    android.app.WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER
+                );
+            intent.putExtra(
+                android.app.WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                component
+            );
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            ret.put("opened", "preview");
+            call.resolve(ret);
+            return;
+        } catch (RuntimeException direct) {
+            android.util.Log.w("NativeExo", "live wallpaper preview refused, falling back", direct);
+        }
+        try {
+            android.content.Intent chooser =
+                new android.content.Intent(android.content.Intent.ACTION_SET_WALLPAPER);
+            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(chooser);
+            ret.put("opened", "chooser");
+            call.resolve(ret);
+        } catch (RuntimeException none) {
+            ret.put("opened", "none");
+            call.resolve(ret);
+        }
     }
 
     /**

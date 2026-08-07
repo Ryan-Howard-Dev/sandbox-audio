@@ -6,7 +6,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioAttributes;
@@ -24,6 +26,7 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.media.app.NotificationCompat.MediaStyle;
 import androidx.media.session.MediaButtonReceiver;
 import java.io.ByteArrayOutputStream;
@@ -423,7 +426,93 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
             wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SovereignMusicConsole:Playback");
             wakeLock.setReferenceCounted(false);
         }
+
+        registerBecomingNoisyReceiver();
     }
+
+    /*
+     * Headphones out means stop, and this is the only place that can hear it.
+     *
+     * ACTION_AUDIO_BECOMING_NOISY was registered by MainActivity in onResume and unregistered in
+     * onPause, so it was listening exactly when it was not needed. Unplugging headphones happens
+     * with the app in the background and the screen off — at which point the Activity had already
+     * torn the receiver down and the music simply carried on out of the phone speaker, which is the
+     * one thing this broadcast exists to prevent.
+     *
+     * The foreground service is alive for the whole of playback by definition. That makes it the
+     * only correct owner.
+     */
+    private void registerBecomingNoisyReceiver() {
+        if (becomingNoisyRegistered) return;
+        IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+        try {
+            ContextCompat.registerReceiver(
+                this,
+                becomingNoisyReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            );
+            becomingNoisyRegistered = true;
+        } catch (RuntimeException e) {
+            android.util.Log.w("MediaPlaybackFGS", "could not register becoming-noisy receiver", e);
+        }
+    }
+
+    private void unregisterBecomingNoisyReceiver() {
+        if (!becomingNoisyRegistered) return;
+        becomingNoisyRegistered = false;
+        mainHandler.removeCallbacks(becomingNoisyPauseRunnable);
+        try {
+            unregisterReceiver(becomingNoisyReceiver);
+        } catch (IllegalArgumentException ignored) {
+            // Already gone.
+        }
+    }
+
+    private boolean becomingNoisyRegistered = false;
+
+    private final BroadcastReceiver becomingNoisyReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent == null || !AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+                return;
+            }
+            android.util.Log.i("MediaPlaybackFGS", "audio becoming noisy — output route left the headphones");
+            /*
+             * The wired-DAC grace period, carried over from the Activity that used to own this.
+             * Some USB DACs briefly drop and re-present themselves, and pausing instantly on that
+             * flicker stops the music for no reason. Wait, look again, and only pause if the wired
+             * route really is gone.
+             */
+            if (WiredDacStabilityPrefs.isEnabled(context)) {
+                mainHandler.removeCallbacks(becomingNoisyPauseRunnable);
+                String routeNow = AndroidAudioSessionHelper.detectOutputRoute(context);
+                if (!AndroidAudioSessionHelper.ROUTE_WIRED.equals(routeNow)) {
+                    AndroidAudioSessionHelper.emitPauseFromBecomingNoisy(context);
+                    return;
+                }
+                mainHandler.postDelayed(becomingNoisyPauseRunnable, 380);
+                return;
+            }
+            AndroidAudioSessionHelper.emitPauseFromBecomingNoisy(context);
+        }
+    };
+
+    private final Runnable becomingNoisyPauseRunnable = new Runnable() {
+        @Override
+        public void run() {
+            Context context = getApplicationContext();
+            String route = AndroidAudioSessionHelper.detectOutputRoute(context);
+            if (AndroidAudioSessionHelper.ROUTE_WIRED.equals(route)) {
+                BackgroundMediaPlugin plugin = BackgroundMediaPlugin.getInstance();
+                if (plugin != null) {
+                    plugin.emitAudioRouteChange(route, "becomingNoisyRecovered");
+                }
+                return;
+            }
+            AndroidAudioSessionHelper.emitPauseFromBecomingNoisy(context);
+        }
+    };
 
     private void ensureMediaSession() {
         if (mediaSession != null) {
@@ -1209,6 +1298,7 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
             }
         }
         stopping = true;
+        unregisterBecomingNoisyReceiver();
         mainHandler.removeCallbacks(pauseGraceStopRunnable);
         pauseGraceScheduled = false;
         artworkExecutor.shutdownNow();

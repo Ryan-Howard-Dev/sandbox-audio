@@ -22,6 +22,11 @@ export class NativeExoPlaybackWeb extends WebPlugin implements NativeExoPlayback
     return { available: false };
   }
 
+  /** Live wallpapers are an Android concept; there is nothing to open here. */
+  async openWaveformWallpaperPicker(): Promise<{ opened: 'preview' | 'chooser' | 'none' }> {
+    return { opened: 'none' };
+  }
+
   async localStreamProxyUrl(options: { url: string }): Promise<{ url: string }> {
     return { url: options.url };
   }

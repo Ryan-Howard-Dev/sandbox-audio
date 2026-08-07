@@ -21,6 +21,7 @@ import { useTranslation } from '../i18n';
 import { loadFidelityPolicy, loadWaveformVisualEnabled } from '../sandboxSettings';
 import { WaveformCanvas } from './WaveformCanvas';
 import { useWaveformLevels } from '../hooks/useWaveformLevels';
+import { useDecodedStreamBitrate } from '../hooks/useDecodedStreamBitrate';
 import { isAndroid } from '../platformEnv';
 import { hasActiveMobileResolvers, preferFreshMobileResolve } from '../mobileResolverRegistry';
 import { usePlaybackResolveElapsed } from '../hooks/usePlaybackResolveElapsed';
@@ -303,13 +304,29 @@ export default function MobileNowPlayingView({
    * decoding materialises the whole track as float PCM. See useTrackDynamicRange.
    */
   const dynamicRange = useTrackDynamicRange(envelope, loadLockerTrackBytes);
+  /*
+   * What the decoder says, for a stream that carries no bitrate of its own.
+   *
+   * Only asked when the envelope has nothing: a figure measured from the file at import is a
+   * better answer than the container's claim, so it is never overridden.
+   */
+  const decodedBitrate = useDecodedStreamBitrate({
+    envelopeId: envelope?.envelopeId,
+    enabled: Boolean(envelope) && !(envelope?.bitrateKbps && envelope.bitrateKbps > 0),
+  });
   const qualityLabel =
-    resolvePlaybackFidelityLabel(envelope, {
-      streamLabel,
-      t,
-      policy: loadFidelityPolicy(),
-      dynamicRange: dynamicRange.record?.dr ?? null,
-    }) ?? undefined;
+    resolvePlaybackFidelityLabel(
+      // Only ever adds a figure where there was none; nothing here replaces a measured one.
+      envelope && decodedBitrate && !(envelope.bitrateKbps && envelope.bitrateKbps > 0)
+        ? { ...envelope, bitrateKbps: decodedBitrate }
+        : envelope,
+      {
+        streamLabel,
+        t,
+        policy: loadFidelityPolicy(),
+        dynamicRange: dynamicRange.record?.dr ?? null,
+      },
+    ) ?? undefined;
   /** First character of the profile name — falls back to the generic glyph when unusable. */
   const profileInitial = profileName?.trim().charAt(0).toUpperCase() ?? '';
 
