@@ -968,6 +968,12 @@ public class NativeExoPlaybackPlugin extends Plugin {
             revisionOverride > 0L
                 ? revisionOverride
                 : MediaPlaybackForegroundService.allocateMetadataRevision();
+        /*
+         * Hand over the file being played, so the service can read the cover out of it when the
+         * WebView has not supplied one. With the screen off the WebView is frozen and never will,
+         * which is why the lock screen lost its art on every track change.
+         */
+        MediaPlaybackForegroundService.setCurrentAudioUri(currentMediaUri());
         MediaPlaybackForegroundService.updateMetadata(
             lastTitle,
             lastArtist != null ? lastArtist : "",

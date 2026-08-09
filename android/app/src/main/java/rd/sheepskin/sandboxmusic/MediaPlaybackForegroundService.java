@@ -702,10 +702,33 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
         pauseGraceScheduled = false;
     }
 
+    /**
+     * The audio file currently open, so its cover can be read without the WebView.
+     *
+     * Set by the playback plugin on every transition. See loadArtworkFromAudioFile.
+     */
+    private static volatile String currentAudioUri = null;
+
+    public static void setCurrentAudioUri(@Nullable String uri) {
+        currentAudioUri = uri != null && !uri.trim().isEmpty() ? uri.trim() : null;
+    }
+
     private void maybeLoadArtwork() {
         if (artworkUrl == null || artworkUrl.isEmpty()) {
-            artworkBitmap = null;
-            lastLoadedArtworkUrl = null;
+            /*
+             * Nothing came from the WebView, so read the cover out of the audio file itself.
+             *
+             * This is why the lock screen went bare on every track change with the screen off.
+             * Artwork only ever reached the session as a data: URL pushed over the JS bridge, and
+             * the WebView is frozen while the screen is off — so the track that was playing when
+             * you locked kept its cover and every track after it had none, permanently, because
+             * nothing was ever going to arrive.
+             *
+             * The file has had the picture the whole time. MediaMetadataRetriever reads the
+             * embedded APIC/covr frame straight off the content:// URI ExoPlayer is already
+             * playing, on this executor, with no bridge and no permission involved.
+             */
+            loadArtworkFromAudioFile();
             return;
         }
         if (artworkUrl.equals(lastLoadedArtworkUrl)) {
@@ -803,6 +826,67 @@ public class MediaPlaybackForegroundService extends Service implements AudioMana
     }
 
     @Nullable
+    /** Which audio file the currently held cover was extracted from, so it is read once. */
+    private String lastEmbeddedArtUri = null;
+
+    /**
+     * Read the embedded cover out of the audio file being played.
+     *
+     * Only reached when the WebView supplied nothing, which with the screen off is every track
+     * after the first. Deliberately clears the previous cover when this file genuinely has none:
+     * carrying one track's art onto another is worse than a placeholder, because it is confidently
+     * wrong rather than plainly absent.
+     */
+    private void loadArtworkFromAudioFile() {
+        final String source = currentAudioUri;
+        if (source == null) {
+            artworkBitmap = null;
+            lastLoadedArtworkUrl = null;
+            lastEmbeddedArtUri = null;
+            return;
+        }
+        if (source.equals(lastEmbeddedArtUri)) return;
+        lastEmbeddedArtUri = source;
+
+        artworkExecutor.execute(() -> {
+            Bitmap bitmap = null;
+            android.media.MediaMetadataRetriever retriever =
+                new android.media.MediaMetadataRetriever();
+            try {
+                retriever.setDataSource(getApplicationContext(), Uri.parse(source));
+                byte[] picture = retriever.getEmbeddedPicture();
+                if (picture != null && picture.length > 0) {
+                    bitmap = android.graphics.BitmapFactory.decodeByteArray(
+                        picture, 0, picture.length
+                    );
+                }
+            } catch (RuntimeException e) {
+                android.util.Log.w("MediaPlaybackFGS", "no embedded art in " + summarizeArtUrl(source), e);
+            } finally {
+                try {
+                    retriever.release();
+                } catch (java.io.IOException | RuntimeException ignored) {
+                    /* nothing useful to do */
+                }
+            }
+
+            // Only adopt it if this is still the file playing; a slow read outlives a skip.
+            if (!source.equals(currentAudioUri)) return;
+            if (bitmap != null) {
+                android.util.Log.d(
+                    "MediaPlaybackFGS",
+                    "ART from file " + bitmap.getWidth() + "x" + bitmap.getHeight()
+                );
+                artworkBitmap = bitmap;
+                // Not recycling the previous bitmap, for the reason documented in maybeLoadArtwork.
+            } else {
+                artworkBitmap = null;
+            }
+            lastLoadedArtworkUrl = null;
+            mainHandler.post(this::refreshSession);
+        });
+    }
+
     private Bitmap fetchBitmap(String urlString) {
         if (urlString == null || urlString.isEmpty()) {
             return null;

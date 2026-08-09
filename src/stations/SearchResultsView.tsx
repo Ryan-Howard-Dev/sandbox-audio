@@ -945,6 +945,20 @@ export default function SearchResultsView({
     );
   }, [isAlbumView, displayHits, albumTracks, albumContext?.title, albumContext?.trackCount]);
 
+  /**
+   * How many tracks the header has promised that the list has not drawn yet.
+   *
+   * Zero once they all arrive, and zero for an album whose metadata never stated a count, so
+   * nothing is claimed to be pending on the strength of a number nobody gave us.
+   */
+  const albumPendingTrackCount = useMemo(() => {
+    if (!isAlbumView) return 0;
+    const promised = albumContext?.trackCount ?? 0;
+    if (promised <= 0) return 0;
+    const drawn = albumRenderRows?.filter((row) => row.kind === 'track').length ?? 0;
+    return Math.max(0, promised - drawn);
+  }, [isAlbumView, albumContext?.trackCount, albumRenderRows]);
+
   const albumTrackCount = useMemo(() => {
     if (!isAlbumView) return displayHits.length;
     const meta = albumContext?.trackCount ?? 0;
@@ -1639,6 +1653,17 @@ export default function SearchResultsView({
             role="group"
             aria-label={t('searchResults.editionPickerAria')}
           >
+            {/*
+              Say what these are.
+
+              The group carried an aria-label and nothing visible, so a screen reader was told this
+              was an edition picker and everybody else saw two album-shaped pills stacked inside an
+              album with no explanation — which reads as albums nested inside albums rather than as
+              a way to switch between the standard and deluxe cuts of the one you are looking at.
+            */}
+            <p className="search-results-section-label search-results-edition-label">
+              {t('searchResults.editionPickerLabel')}
+            </p>
             {albumEditionVariants.map((variant) => {
               const active =
                 variant.collectionId != null &&
@@ -1866,18 +1891,6 @@ export default function SearchResultsView({
           </ul>
         </section>
       )}
-
-      {/*
-        Everyone who played on the record, after the record. These were in the header, between the
-        album and its own play buttons, which pushed the track list off screen on a phone. Credits
-        are something you look up once you already know what you are looking at.
-      */}
-      {isAlbumView && albumArtistCredits.length > 0 ? (
-        <AlbumArtistCreditsSection
-          artistCredits={albumArtistCredits}
-          onGoToArtist={onGoToArtistByName}
-        />
-      ) : null}
 
       {loading && hits.length === 0 && podcastHits.length === 0 && podcastCatalogHits.length === 0 && !unified?.tracks.length && (
         <div className="flex items-center gap-2 font-mono text-xs text-accent py-8">
@@ -2293,6 +2306,47 @@ export default function SearchResultsView({
           );
         })}
       </ul>
+
+      {/*
+        Say that the rest is still coming.
+
+        The header knows the track count from catalog metadata the instant the page opens, and the
+        tracks themselves are fetched separately — so a thirty-two track album draws "32 TRACKS"
+        immediately and then sits with an empty or one-row list while the rest arrive. The spinner
+        above cannot cover this: it only shows when nothing at all has loaded, and one resolved
+        track is enough to suppress it.
+
+        So the page looked broken rather than busy. This does not make the fetch faster; it stops
+        it looking like it has failed, which is the part that reads as "takes forever to open".
+      */}
+      {isAlbumView && albumPendingTrackCount > 0 ? (
+        <div
+          className="flex items-center gap-2 font-mono text-[10px] text-[var(--text-dim)] py-3"
+          role="status"
+        >
+          <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
+          {t('searchResults.albumTracksLoading', { count: albumPendingTrackCount })}
+        </div>
+      ) : null}
+
+      {/*
+        Everyone who played on the record, below the record.
+
+        This has been moved twice now. It started in the header, between the album and its own play
+        buttons; it was moved out of there for pushing the track list off screen, and landed above
+        the track list, which pushes the track list off screen. On a record with nine credited
+        artists that is most of a phone before track one — which is the whole reason anybody opened
+        the page.
+
+        Credits are something you look up once you already know what you are looking at, so they go
+        after the thing you came for, not in front of it.
+      */}
+      {isAlbumView && albumArtistCredits.length > 0 ? (
+        <AlbumArtistCreditsSection
+          artistCredits={albumArtistCredits}
+          onGoToArtist={onGoToArtistByName}
+        />
+      ) : null}
 
       <MobileTrackActionSheet
         open={Boolean(trackSheetHit)}
