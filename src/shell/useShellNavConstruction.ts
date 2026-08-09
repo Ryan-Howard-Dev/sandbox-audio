@@ -11,7 +11,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Activity, BookAudio, Menu, Podcast, Radio, Search, Server, Settings, Sliders, User } from 'lucide-react';
+import { Activity, ArrowDownCircle, BookAudio, Menu, Podcast, Radio, Search, Server, Settings, Sliders, User } from 'lucide-react';
 import type { MobileNavMoreItem } from '../components/MobileNavMoreSheet';
 import { countDownloadSheetBadge } from '../components/DownloadActivitySheet';
 import { getDownloadJobs } from '../downloadQueue';
@@ -63,6 +63,20 @@ export function useShellNavConstruction({
 }: UseShellNavConstructionArgs) {
   const [downloadQueueRevision, setDownloadQueueRevision] = useState(0);
   useShellDownloadQueueBadge({ setDownloadQueueRevision });
+
+  /*
+   * Everything wanting attention, across every station, for the Downloads entry in More.
+   * Recomputed on each queue revision — that state exists precisely to drive these counts.
+   */
+  const downloadAttentionBadge = useMemo(() => {
+    const jobs = getDownloadJobs();
+    return (
+      countDownloadSheetBadge(jobs, 'music') +
+      countDownloadSheetBadge(jobs, 'podcast') +
+      countDownloadSheetBadge(jobs, 'audiobook')
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [downloadQueueRevision]);
 
   const mobilePinTabIds = useMemo(
     () => new Set(mobilePinTabIdsFromNavPins(navPinTabs)),
@@ -137,6 +151,25 @@ export function useShellNavConstruction({
       });
     }
     items.push(
+      /*
+       * Downloads belongs here, not buried in Music.
+       *
+       * It is not a music feature — podcasts, audiobooks and documents all queue through the same
+       * runner, and the foreground notification that reports "13 of 52 tracks" is app-wide. Living
+       * under one station meant there was no place to look at the queue from the other three, and
+       * no obvious place to look at it from anywhere.
+       *
+       * The badge is the count wanting attention (queued or failed), so a stalled download is
+       * visible from the nav bar rather than only from the pull-down shade.
+       */
+      {
+        id: 'downloads',
+        label: t('nav.downloads'),
+        subtitle: t('nav.browseDownloadsHint'),
+        icon: ArrowDownCircle,
+        tone: 'accent',
+        badge: downloadAttentionBadge > 0 ? downloadAttentionBadge : undefined,
+      },
       {
         id: 'insights',
         label: t('nav.insights'),
@@ -153,7 +186,14 @@ export function useShellNavConstruction({
       },
     );
     return items;
-  }, [audiobooksEnabled, discoverReleaseBadge, discoverStationEnabled, sonicLockerEnabled, t]);
+  }, [
+    audiobooksEnabled,
+    discoverReleaseBadge,
+    discoverStationEnabled,
+    downloadAttentionBadge,
+    sonicLockerEnabled,
+    t,
+  ]);
 
   const mobileMenuActiveId = useMemo(() => {
     if (station === 'sonic-locker') return 'sonic-locker';

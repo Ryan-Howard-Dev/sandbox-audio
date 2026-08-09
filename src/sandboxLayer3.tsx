@@ -840,9 +840,17 @@ export default function SandboxShell() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileDownloadSheetOpen, setMobileDownloadSheetOpen] = useState(false);
-  const [mobileDownloadSheetKind, setMobileDownloadSheetKind] = useState<MediaKind>('music');
+  /** Undefined means every kind — the queue as it actually is, rather than one station's slice. */
+  const [mobileDownloadSheetKind, setMobileDownloadSheetKind] = useState<MediaKind | undefined>(
+    'music',
+  );
   const openStationDownloads = useCallback((kind: MediaKind) => {
     setMobileDownloadSheetKind(kind);
+    setMobileDownloadSheetOpen(true);
+  }, []);
+  /** From More: one runner serves every station, so this opens the whole queue. */
+  const openAllDownloads = useCallback(() => {
+    setMobileDownloadSheetKind(undefined);
     setMobileDownloadSheetOpen(true);
   }, []);
   const [lockerRemoveConfirm, setLockerRemoveConfirm] = useState<{
@@ -1076,6 +1084,7 @@ export default function SandboxShell() {
     setMobileMenuOpen,
     setDiscoverDrillFromTab,
     setDiscoverTab,
+    openDownloads: openAllDownloads,
   });
 
   useEffect(() => {

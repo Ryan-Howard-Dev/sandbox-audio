@@ -38,6 +38,8 @@ export type UseShellMobileNavActionsArgs = {
   setMobileMenuOpen: Dispatch<SetStateAction<boolean>>;
   setDiscoverDrillFromTab: Dispatch<SetStateAction<DiscoverTabId | null>>;
   setDiscoverTab: Dispatch<SetStateAction<DiscoverTabId>>;
+  /** Opens the download queue with no station filter. */
+  openDownloads: () => void;
 };
 
 export function useShellMobileNavActions({
@@ -62,6 +64,7 @@ export function useShellMobileNavActions({
   setMobileMenuOpen,
   setDiscoverDrillFromTab,
   setDiscoverTab,
+  openDownloads,
 }: UseShellMobileNavActionsArgs) {
   const openSettings = useCallback((tab?: SettingsTab) => {
     if (station !== 'settings') {
@@ -163,9 +166,19 @@ export function useShellMobileNavActions({
         openSettings();
         return;
       }
+      if (id === 'downloads') {
+        /*
+         * Opened without a station filter, because the queue is not a station's. One runner feeds
+         * music, podcasts, audiobooks and documents alike, and the thing being asked here is
+         * "what is downloading", not "what is downloading in Music".
+         */
+        setNavOpen(false);
+        openDownloads();
+        return;
+      }
       handleMobileTabNavigate(id as MobileTabId);
     },
-    [closeMobileSearch, openSettings, handleMobileTabNavigate],
+    [closeMobileSearch, openSettings, openDownloads, setNavOpen, handleMobileTabNavigate],
   );
 
   // Music tab = Locker + Discover behind one segment switcher.

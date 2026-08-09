@@ -42,9 +42,11 @@
     "browsePodcastsHint": "Shows & episodes",
     "browseAudiobooksHint": "Books on this device",
     "browseSonicLockerHint": "Sonic analysis lab",
+    "browseDownloadsHint": "Queue across every station",
     "browseInsightsHint": "Listening stats",
     "browseSettingsHint": "Playback, vault & addons",
     "browseClose": "Close",
+    "downloads": "Downloads",
     "insights": "Insights",
     "serverLibrary": "Server Library",
     "stations": "Stations",
@@ -98,6 +100,7 @@
   "download": {
     "activity": {
       "eyebrow": "Locker",
+      "eyebrowAll": "All stations",
       "title": "Downloads",
       "empty": "No active or failed downloads.",
       "inProgress": "In progress",

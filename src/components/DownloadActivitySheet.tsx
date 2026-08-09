@@ -169,7 +169,16 @@ export default function DownloadActivitySheet({
         <div className="download-activity-sheet-handle" aria-hidden />
         <header className="download-activity-sheet-head">
           <div className="min-w-0">
-            <p className="download-activity-sheet-eyebrow">{t('download.activity.eyebrow')}</p>
+            {/*
+              "Locker" only when this is the locker's slice of the queue.
+
+              Opened from More it carries no kind and lists music, podcasts and audiobooks
+              together, so labelling that "Locker" contradicts the card that opened it and
+              misdescribes half of what is on screen.
+            */}
+            <p className="download-activity-sheet-eyebrow">
+              {kind ? t('download.activity.eyebrow') : t('download.activity.eyebrowAll')}
+            </p>
             <h2 id="download-activity-sheet-title" className="download-activity-sheet-title">
               {t('download.activity.title')}
             </h2>

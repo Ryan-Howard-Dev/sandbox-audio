@@ -201,6 +201,15 @@ export default function PodcastsView({
       setEpisodeFilter('unplayed');
       setError('');
     });
+    /*
+     * Clear the count here, on the press, rather than leaving it to the idle pass below.
+     *
+     * Pressing the bell while already on Library set every piece of state to what it already was,
+     * so nothing moved and nothing cleared — a button that visibly did nothing. Acknowledging the
+     * episodes is the one thing pressing a notification badge is actually for, and it is now what
+     * the press does, whatever screen it happens on.
+     */
+    markPodcastEpisodesSeen();
   }, []);
 
   const refreshMirrorStatus = useCallback(async () => {
