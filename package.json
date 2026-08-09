@@ -48,6 +48,7 @@
     "check:attributions": "node scripts/generate-attributions.mjs --check"
   },
   "dependencies": {
+    "@capacitor-mlkit/barcode-scanning": "^8.1.0",
     "@capacitor/android": "^8.4.0",
     "@capacitor/app": "^8.1.0",
     "@capacitor/cli": "^8.4.0",
