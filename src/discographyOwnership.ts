@@ -67,11 +67,29 @@ export interface DiscographyEntry {
  * keeps "Live"; a live album is not the studio album, and collapsing them would report an album
  * owned that is not.
  */
+/**
+ * Bracketed words that mean this is a different recording, not a different pressing.
+ *
+ * Everything else in brackets — remaster, deluxe, anniversary, a year — describes the same
+ * performance packaged differently, and stripping it is what lets a sleeve match a catalogue. These
+ * do not. "Animals (Live)" is not "Animals", and collapsing them tells a collector they own a
+ * studio album when what is on the shelf is the live one, which is precisely the confident wrong
+ * answer this file exists to avoid. The unbracketed case was already handled; brackets were the
+ * hole, and a physical shelf is full of them.
+ */
+const DIFFERENT_RECORDING_RE =
+  /\b(live|demos?|acoustic|instrumental|karaoke|a cappella|acapella|radio edit|rehearsals?|sessions?)\b/i;
+
 export function normaliseReleaseTitle(title: string): string {
   return (title ?? '')
     .toLowerCase()
-    // Bracketed and parenthesised qualifiers, wherever they sit.
-    .replace(/[[(][^\])]*[\])]/g, ' ')
+    /*
+     * Bracketed and parenthesised qualifiers, wherever they sit — unless the bracket says this is
+     * a different recording, in which case the words stay and the two titles stop matching.
+     */
+    .replace(/[[(][^\])]*[\])]/g, (match) =>
+      DIFFERENT_RECORDING_RE.test(match) ? ` ${match.replace(/[[\]()]/g, ' ')} ` : ' ',
+    )
     // Trailing edition words a shop appends without brackets.
     .replace(/\b(remaster(ed)?|deluxe|expanded|anniversary|edition|version|mono|stereo)\b/g, ' ')
     .replace(/^\s*(the|a|an)\s+/, '')
