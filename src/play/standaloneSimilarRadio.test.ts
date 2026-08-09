@@ -149,3 +149,50 @@ describe('standaloneSimilarRadio', () => {
     expect(merged.queue.map((t) => t.envelopeId)).toEqual(['seed', 'next']);
   });
 });
+
+describe('the album that replaced itself', () => {
+  /*
+   * The regression this guards, in the shape it actually shipped in.
+   *
+   * The end-of-queue caller hardcoded seedSearchQueue: true, which switches off the guard that
+   * refuses to build radio around a track already sitting in a real queue. Reaching the end of a
+   * twenty track album therefore replaced the album with a radio queue. Nobody noticed because
+   * buildTrackRadio was usually coming back empty, so the replacement never actually happened —
+   * until it started finding tracks, and the album began jumping around mid listen.
+   */
+  const track = (id: string) => ({ envelopeId: id, title: id, url: `https://x/${id}` }) as never;
+
+  it('does not rebuild the queue around a track that is still in it', () => {
+    const queue = [track('a'), track('b'), track('c')];
+    expect(
+      shouldAutoStartSimilarRadio({
+        envelope: track('c'),
+        playQueue: queue,
+        searchHits: [],
+        seedSearchQueue: false,
+      }),
+    ).toBe(false);
+  });
+
+  it('still continues a lone single, which is the whole point of the feature', () => {
+    expect(
+      shouldAutoStartSimilarRadio({
+        envelope: track('a'),
+        playQueue: [track('a')],
+        searchHits: [],
+        seedSearchQueue: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('continues a track that is not part of the queue it just finished', () => {
+    expect(
+      shouldAutoStartSimilarRadio({
+        envelope: track('z'),
+        playQueue: [track('a'), track('b')],
+        searchHits: [],
+        seedSearchQueue: true,
+      }),
+    ).toBe(true);
+  });
+});

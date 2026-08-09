@@ -206,13 +206,29 @@ export function useShellQueueAdvanceOnEnded({
         // Lone single dead-end: build Track radio playlist + continue into next song.
         const ended = audioEnvelopeRef.current;
         if (ended && !isPodcastEnvelopeId(ended.envelopeId)) {
+          /*
+           * A lone single, or a queue that genuinely has nowhere left to go.
+           *
+           * These two flags used to be hardcoded true/false, which switched off every guard in
+           * shouldAutoStartSimilarRadio — including the one that refuses to build a radio queue
+           * around a track that is already sitting in a real queue. At the end of a twenty track
+           * album that meant the album was replaced by a radio queue.
+           *
+           * It went unnoticed because buildTrackRadio almost always came back with nothing to put
+           * in that queue, so the replacement never happened. Teaching it to look up the billed
+           * artist made it succeed — and turned a dormant bug into tracks jumping around mid
+           * listen. The guards were right; passing them the truth is all that was needed.
+           */
+          const endedInQueue = playQueueRef.current.some(
+            (track) => track.envelopeId === ended.envelopeId,
+          );
           void startAutoSimilarRadioIfNeeded(
             {
               envelope: ended,
               playQueue: playQueueRef.current,
               searchHits: searchHitsRef.current,
-              seedSearchQueue: true,
-              hasMixRadioSession: false,
+              seedSearchQueue: playQueueRef.current.length <= 1 || !endedInQueue,
+              hasMixRadioSession: Boolean(mixRadioSessionRef.current),
             },
             {
               setPlayQueue,
