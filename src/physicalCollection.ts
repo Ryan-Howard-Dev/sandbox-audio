@@ -49,6 +49,13 @@ export interface PhysicalCopy {
   notes?: string;
   /** When it was added to the collection, not when the record was released. */
   addedAt: number;
+  /**
+   * When it was last edited, for cross-device merge.
+   *
+   * Optional so rows written before sync existed still load. mergePhysicalCollection falls back to
+   * addedAt rather than treating them as infinitely old and losing every merge.
+   */
+  updatedAt?: number;
 }
 
 /** What a listener has of one release, counting both the disk and the room. */

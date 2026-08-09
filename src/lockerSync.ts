@@ -32,6 +32,19 @@ import {
   type TrackTombstone,
 } from './lockerTrackTombstones';
 import {
+  loadCopyTombstones,
+  loadPhysicalCopies,
+  replacePhysicalCopies,
+  writeTombstones,
+} from './physicalCollectionStore';
+import {
+  mergeCopyTombstones,
+  mergePhysicalCollection,
+  pruneCopyTombstones,
+  type PhysicalCopyTombstone,
+} from './physicalCollectionSync';
+import type { PhysicalCopy } from './physicalCollection';
+import {
   clearLockerSyncConflict,
   loadLockerSyncConflicts,
   maybeQueueMetadataConflict,
@@ -130,6 +143,17 @@ export type LockerSyncManifest = {
   playlistTombstones?: PlaylistTombstone[];
   /** Deleted locker track ids propagate across devices (deletedAt epoch ms). */
   trackTombstones?: TrackTombstone[];
+  /**
+   * The physical shelf — records owned rather than files held.
+   *
+   * Rides this manifest rather than getting a transport of its own, so whatever the listener
+   * already trusts to move their library moves their collection too and nothing new needs a
+   * server. Scanning is a phone job and curating two hundred entries is a desktop job; this is
+   * what carries the shelf between them.
+   */
+  physicalCopies?: PhysicalCopy[];
+  /** Removed copies, so a deletion on one device is not undone by the other. */
+  physicalCopyTombstones?: PhysicalCopyTombstone[];
 };
 
 const DEVICE_ID_KEY = 'sandbox_locker_sync_device_id';
@@ -553,6 +577,8 @@ export async function buildLockerSyncManifest(): Promise<LockerSyncManifest> {
     playlists: playlistsForManifest(),
     playlistTombstones: loadPlaylistTombstones(),
     trackTombstones: loadTrackTombstones(),
+    physicalCopies: loadPhysicalCopies(),
+    physicalCopyTombstones: pruneCopyTombstones(loadCopyTombstones()),
   };
 }
 
@@ -628,6 +654,24 @@ export async function importLockerManifest(
   }
 
   localStorage.setItem(IMPORTED_MANIFEST_KEY, JSON.stringify(manifest));
+
+  /*
+   * The shelf merges on pull, per copy, newest edit wins — and a tombstone removes a copy unless
+   * that copy was edited after the deletion, which is a re-add and survives. Done before the
+   * playlist merge only because it needs nothing from the locker; the two are independent.
+   */
+  if (manifest.physicalCopies?.length || manifest.physicalCopyTombstones?.length) {
+    const tombstones = pruneCopyTombstones(
+      mergeCopyTombstones(loadCopyTombstones(), manifest.physicalCopyTombstones ?? []),
+    );
+    const merged = mergePhysicalCollection(
+      loadPhysicalCopies(),
+      manifest.physicalCopies ?? [],
+      tombstones,
+    );
+    writeTombstones(tombstones);
+    replacePhysicalCopies(merged.copies);
+  }
 
   const freshEntries = await getLockerEntries();
   const playlistStats =
