@@ -285,6 +285,48 @@ export async function acquireTracksOnMobile(
     patchDownloadJob(options.jobId, { status: 'resolving', totalTracks: total });
   }
 
+  /*
+   * Resolve ahead, save one at a time.
+   *
+   * Every track used to pay a full network resolve and only then start saving, strictly one after
+   * another, so a fifty-five track album spent most of its life waiting on round trips it could
+   * have overlapped. That is the hours.
+   *
+   * Only the resolve is overlapped. The saves stay exactly as serial as they were, so no source
+   * ever sees more than one transfer from us at a time — which is the part worth being careful
+   * about, and the reason this is a look-ahead rather than a worker pool over the whole album.
+   *
+   * Two ahead, not ten. The win is in covering the latency of the save that is running now, and
+   * beyond a couple in flight there is nothing left to hide behind.
+   */
+  const RESOLVE_LOOKAHEAD = 2;
+  /** In-flight resolves by track index. Settled entries are consumed and deleted by the loop. */
+  const resolveAhead = new Map<number, Promise<Awaited<ReturnType<typeof resolveTrackAudioSource>>>>();
+
+  /**
+   * Which tracks will actually be fetched, decided before anything is resolved.
+   *
+   * Without this the look-ahead would resolve tracks that the loop then skips because the locker
+   * already has them — turning a resume from "no work" into a burst of pointless round trips,
+   * which is the opposite of the point.
+   */
+  const willFetch: boolean[] = [];
+  for (const track of tracks) {
+    willFetch.push(
+      Boolean(forceReplaceEntryId) || !(await lockerHasTrack(track.title, track.artist, albumName)),
+    );
+  }
+
+  const primeResolve = (index: number): void => {
+    if (index >= tracks.length || resolveAhead.has(index) || !willFetch[index]) return;
+    const track = tracks[index]!;
+    // The rejection is captured by the awaiting loop below; this only stops Node/WebView treating
+    // a look-ahead failure as an unhandled rejection before the loop reaches that index.
+    const pending = resolveTrackAudioSource(track, albumName);
+    pending.catch(() => undefined);
+    resolveAhead.set(index, pending);
+  };
+
   for (let i = 0; i < tracks.length; i++) {
     const track = tracks[i]!;
     await yieldToMain();
@@ -309,7 +351,7 @@ export async function acquireTracksOnMobile(
       patchTrackDownload(options.jobId, track.id, { status: 'resolving', percent: 5 });
     }
 
-    if (!forceReplaceEntryId && (await lockerHasTrack(track.title, track.artist, albumName))) {
+    if (!willFetch[i]) {
       skipped += 1;
       if (options.jobId) {
         patchTrackDownload(options.jobId, track.id, { status: 'skipped', percent: 100 });
@@ -325,7 +367,11 @@ export async function acquireTracksOnMobile(
       if (options.jobId) {
         patchTrackDownload(options.jobId, track.id, { status: 'downloading', percent: 20 });
       }
-      const source = await resolveTrackAudioSource(track, albumName);
+      // This track's resolve, plus the next couple started now so they run under this one's save.
+      primeResolve(i);
+      for (let ahead = 1; ahead <= RESOLVE_LOOKAHEAD; ahead += 1) primeResolve(i + ahead);
+      const source = await resolveAhead.get(i)!;
+      resolveAhead.delete(i);
       await yieldToMain();
       if (options.jobId) {
         patchTrackDownload(options.jobId, track.id, { status: 'downloading', percent: 85 });
@@ -376,6 +422,9 @@ export async function acquireTracksOnMobile(
         `[SandboxE2E] AREA=download-track RESULT=PASS title=${track.title} artist=${track.artist} album=${albumName ?? 'single'} bytes=${byteCount} native=${source.kind === 'file'}`,
       );
     } catch (err) {
+      // Drop the look-ahead entry so a retry of this index resolves afresh rather than replaying
+      // the same rejected promise forever.
+      resolveAhead.delete(i);
       failed += 1;
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`${track.title}: ${msg}`);

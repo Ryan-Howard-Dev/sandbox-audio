@@ -145,4 +145,77 @@ describe('mobileAcquisition', () => {
     expect(saveLockerBlobFromNativeFile).not.toHaveBeenCalled();
     expect(downloadViaYtDlpMobile).not.toHaveBeenCalled();
   });
+  /*
+   * The whole point of the look-ahead: overlap the waiting, not the writing.
+   *
+   * A fifty-five track album used to resolve, save, resolve, save, strictly in turn, so it spent
+   * most of its life on round trips it could have run underneath the save already in progress.
+   * What must NOT be overlapped is the save — one transfer at a time is what keeps a source from
+   * seeing a burst from us, and it is the reason this is a look-ahead and not a worker pool.
+   */
+  /*
+   * The whole point of the look-ahead: overlap the waiting, not the writing.
+   *
+   * A fifty-five track album used to resolve, save, resolve, save, strictly in turn, so it spent
+   * most of its life on round trips it could have run underneath the save already in progress.
+   * What must NOT be overlapped is the save — one transfer at a time is what keeps a source from
+   * seeing a burst from us, and it is the reason this is a look-ahead and not a worker pool.
+   */
+  it('resolves ahead while saving one track at a time', async () => {
+    /*
+     * mockResolvedValueOnce from an earlier test survives clearAllMocks — that clears call records,
+     * not queued one-shot implementations — and a leaked live-candidate fixture here fails the
+     * first identity check, which then poisons the negative cache for every later track.
+     */
+    vi.mocked(searchYtDlpMobile).mockReset();
+    vi.mocked(saveLockerBlobFromNativeFile).mockReset();
+
+    const titles = ['Alpha', 'Bravo', 'Charlie', 'Delta'];
+    const tracks = titles.map((title, i) => ({
+      kind: 'track' as const,
+      id: `t${i}`,
+      title,
+      artist: 'Kanye West',
+      durationSeconds: 200,
+    }));
+
+    let searchesInFlight = 0;
+    let peakSearchesInFlight = 0;
+    vi.mocked(searchYtDlpMobile).mockImplementation(async (query: string) => {
+      searchesInFlight += 1;
+      peakSearchesInFlight = Math.max(peakSearchesInFlight, searchesInFlight);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      searchesInFlight -= 1;
+      // Answer with the track that was actually asked for, so the identity check passes and what
+      // is being measured is the scheduling rather than the matcher.
+      const asked = titles.find((t) => query.includes(t)) ?? titles[0]!;
+      return [
+        {
+          id: `yt-${asked}`,
+          title: `Kanye West - ${asked} (Official Audio)`,
+          artist: 'YouTube',
+          watchUrl: `https://www.youtube.com/watch?v=${asked}`,
+          durationSeconds: 198,
+        },
+      ];
+    });
+
+    let savesInFlight = 0;
+    let peakSavesInFlight = 0;
+    vi.mocked(saveLockerBlobFromNativeFile).mockImplementation(async () => {
+      savesInFlight += 1;
+      peakSavesInFlight = Math.max(peakSavesInFlight, savesInFlight);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      savesInFlight -= 1;
+      return { entry: { id: 'e1' }, bytes: 3 } as never;
+    });
+
+    const result = await acquireTracksOnMobile(tracks, { mode: 'tracks' });
+
+    expect(result.saved).toBe(4);
+    // Overlapped: the point of the change.
+    expect(peakSearchesInFlight).toBeGreaterThan(1);
+    // Never overlapped: the constraint the change had to respect.
+    expect(peakSavesInFlight).toBe(1);
+  });
 });
