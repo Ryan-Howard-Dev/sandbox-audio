@@ -131,6 +131,17 @@ export function useShellNavConstruction({
     if (proAudio) {
       items.push({ id: 'dj', label: t('nav.djConsole'), icon: Sliders });
     }
+    /*
+     * The desktop needs its own way in.
+     *
+     * Collection reached the More menu, which mobile has and the desktop side nav does not, so
+     * turning it on did nothing at all on desktop -- the station existed, held the copies that
+     * synced across, and had no door. Cataloguing a shelf of records is desk work more than phone
+     * work, so this is the side that mattered most.
+     */
+    if (collectionStationEnabled) {
+      items.push({ id: 'collection', label: t('nav.collection'), icon: Disc3 });
+    }
     items.push({ id: 'settings', label: t('nav.settings'), icon: Settings });
     items.push({
       id: 'profile',
@@ -138,7 +149,7 @@ export function useShellNavConstruction({
       icon: User,
     });
     return items;
-  }, [proAudio, podcastsEnabled, audiobooksEnabled, libraryStationEnabled, discoverStationEnabled, sonicLockerEnabled, navPinTabs, profileDisplayName, t]);
+  }, [proAudio, podcastsEnabled, audiobooksEnabled, libraryStationEnabled, discoverStationEnabled, sonicLockerEnabled, collectionStationEnabled, navPinTabs, profileDisplayName, t]);
 
   const mobileMenuItems = useMemo((): MobileNavMoreItem[] => {
     // Discover now lives inside the Music tab's segment bar (Library / Genres /

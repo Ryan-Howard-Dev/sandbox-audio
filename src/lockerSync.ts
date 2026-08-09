@@ -539,21 +539,38 @@ function syncAlbumKeysFromFlags(): string[] {
     .map(([key]) => key);
 }
 
-export async function buildLockerSyncManifest(): Promise<LockerSyncManifest> {
+/**
+ * Build the manifest that describes this device's locker.
+ *
+ * hashContents reads every track's bytes to fingerprint it, sequentially, and that is as slow as
+ * it sounds — a few hundred tracks on a phone is minutes at best, and each read gets a 120 second
+ * timeout of its own before it gives up. Only a provider that moves blobs around needs those
+ * fingerprints, because they are how the far end asks for a file it does not have.
+ *
+ * A file export moves no blobs. It is a list, written to disk, read by another copy of the app
+ * that already has its own files. Hashing for it bought nothing and cost the entire export: the
+ * button sat on "Exporting..." until you gave up, so the feature simply did not exist for anybody
+ * with a real library. Rows carry the meta- sentinel instead, which every reader already skips.
+ */
+export async function buildLockerSyncManifest(
+  { hashContents = true }: { hashContents?: boolean } = {},
+): Promise<LockerSyncManifest> {
   const entries = await getLockerEntries();
   const tombIds = new Set(loadTrackTombstones().map((t) => t.id));
   const manifestEntries: LockerSyncManifestEntry[] = [];
 
   for (const e of entries) {
     if (tombIds.has(e.id)) continue;
-    let contentHash = '';
-    try {
-      const res = await fetchWithTimeout(e.url, undefined, 120_000);
-      if (res.ok) {
-        contentHash = await sha256Hex(await res.arrayBuffer());
+    let contentHash = hashContents ? '' : `meta-${e.id}`;
+    if (hashContents) {
+      try {
+        const res = await fetchWithTimeout(e.url, undefined, 120_000);
+        if (res.ok) {
+          contentHash = await sha256Hex(await res.arrayBuffer());
+        }
+      } catch {
+        contentHash = `meta-${e.id}`;
       }
-    } catch {
-      contentHash = `meta-${e.id}`;
     }
     manifestEntries.push({
       id: e.id,
@@ -593,8 +610,23 @@ export function downloadManifestJson(manifest: LockerSyncManifest, filename?: st
 }
 
 export async function exportLockerManifest(): Promise<LockerSyncManifest> {
-  const manifest = await buildLockerSyncManifest();
-  downloadManifestJson(manifest);
+  const manifest = await buildLockerSyncManifest({ hashContents: false });
+  /*
+   * Native write first, browser download second.
+   *
+   * downloadManifestJson builds a blob, makes an anchor and clicks it. That writes a file in a
+   * browser and does nothing at all in a WebView — no error, no file, a button that looked like it
+   * worked and never produced anything. Anybody exporting their library from the phone got silence.
+   *
+   * On Android the file goes into the granted library folder, which is somewhere a person can
+   * actually open afterwards. Everywhere else the download is right and stays.
+   */
+  const { writeLibraryTextFile } = await import('./libraryFolderGrant');
+  const written = await writeLibraryTextFile(
+    'sandbox-locker-manifest.json',
+    JSON.stringify(manifest, null, 2),
+  );
+  if (!written) downloadManifestJson(manifest);
   recordLockerSyncResult(true);
   return manifest;
 }

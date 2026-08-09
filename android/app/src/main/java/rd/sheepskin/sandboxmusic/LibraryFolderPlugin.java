@@ -194,6 +194,77 @@ public class LibraryFolderPlugin extends Plugin {
         call.resolve(out);
     }
 
+    /**
+     * Write a text file into the granted library folder.
+     *
+     * Exporting the library manifest used to be a browser download: build a blob, make an anchor,
+     * click it. That writes a file in a browser and does precisely nothing in a WebView — no error,
+     * no file, a button that looked like it worked and never once produced anything. Anybody trying
+     * to move their library off an Android device by that button got silence.
+     *
+     * SAF is the only way an app writes somewhere a person can actually find afterwards, and the
+     * library folder is already granted for exactly this kind of access.
+     */
+    @PluginMethod
+    public void writeTextFile(PluginCall call) {
+        String name = call.getString("name");
+        String contents = call.getString("contents");
+        if (name == null || name.trim().isEmpty() || contents == null) {
+            call.reject("name and contents are required");
+            return;
+        }
+        Uri tree = persistedTree();
+        if (tree == null) {
+            /*
+             * No grant, so fall back to the public Downloads folder.
+             *
+             * An export must not require a library folder. Somebody streaming everything has no
+             * folder to grant and still owns their listening history, their playlists and their
+             * physical collection, and asking them to point at a music directory they do not have
+             * before they can get any of it out is a wall for no reason.
+             *
+             * MediaStore reaches Downloads without any permission on Q and up, and Downloads is
+             * somewhere a person can actually find afterwards from any file manager or from a
+             * cable.
+             */
+            writeToDownloads(call, name, contents);
+            return;
+        }
+        DocumentFile root = DocumentFile.fromTreeUri(getContext(), tree);
+        DocumentFile sandbox = root == null ? null : root.findFile(ROOT_DIR);
+        if (sandbox == null || !sandbox.isDirectory()) {
+            sandbox = root == null ? null : root.createDirectory(ROOT_DIR);
+        }
+        if (sandbox == null) {
+            call.reject("Could not open the library folder");
+            return;
+        }
+        try {
+            // Replace rather than accumulate: an export is the current state, not a new one each
+            // time, and a folder of forty timestamped manifests helps nobody.
+            DocumentFile existing = sandbox.findFile(name);
+            if (existing != null) existing.delete();
+            DocumentFile file = sandbox.createFile("application/json", name);
+            if (file == null) {
+                call.reject("Could not create the file");
+                return;
+            }
+            try (java.io.OutputStream out = getContext().getContentResolver().openOutputStream(file.getUri())) {
+                if (out == null) {
+                    call.reject("Could not open the file for writing");
+                    return;
+                }
+                out.write(contents.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+            JSObject ret = new JSObject();
+            ret.put("uri", file.getUri().toString());
+            ret.put("name", name);
+            call.resolve(ret);
+        } catch (java.io.IOException | RuntimeException e) {
+            call.reject("Write failed: " + e.getMessage());
+        }
+    }
+
     /** Forget the grant. The files stay where they are; only our access to them ends. */
     @PluginMethod
     public void releaseFolder(PluginCall call) {
@@ -220,5 +291,76 @@ public class LibraryFolderPlugin extends Plugin {
         DocumentFile existing = parent.findFile(name);
         if (existing != null && existing.isDirectory()) return existing;
         return parent.createDirectory(name);
+    }
+
+    /**
+     * Write into the public Downloads collection, replacing any file of the same name.
+     *
+     * Pre-Q has no MediaStore Downloads collection, so it writes the legacy path directly; the app
+     * holds WRITE_EXTERNAL_STORAGE there, and on Q and up that permission is ignored anyway.
+     */
+    private void writeToDownloads(PluginCall call, String name, String contents) {
+        byte[] bytes = contents.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        try {
+            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+                java.io.File dir = android.os.Environment.getExternalStoragePublicDirectory(
+                        android.os.Environment.DIRECTORY_DOWNLOADS);
+                java.io.File out = new java.io.File(dir, name);
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) {
+                    fos.write(bytes);
+                }
+                JSObject ret = new JSObject();
+                ret.put("uri", Uri.fromFile(out).toString());
+                ret.put("name", name);
+                call.resolve(ret);
+                return;
+            }
+
+            android.content.ContentResolver resolver = getContext().getContentResolver();
+            Uri collection = android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+
+            // Replace rather than accumulate — an export is the current state, not a new one each
+            // time. Without this, MediaStore renames to "name (1)" and the desktop side has to
+            // guess which of them is current.
+            try (android.database.Cursor c = resolver.query(
+                    collection,
+                    new String[] { android.provider.MediaStore.MediaColumns._ID },
+                    android.provider.MediaStore.MediaColumns.DISPLAY_NAME + " = ?",
+                    new String[] { name },
+                    null)) {
+                while (c != null && c.moveToNext()) {
+                    Uri old = android.content.ContentUris.withAppendedId(collection, c.getLong(0));
+                    try {
+                        resolver.delete(old, null, null);
+                    } catch (Exception ignored) {
+                        // Another app owns it; the insert below will land beside it.
+                    }
+                }
+            }
+
+            android.content.ContentValues values = new android.content.ContentValues();
+            values.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name);
+            values.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/json");
+            values.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH,
+                    android.os.Environment.DIRECTORY_DOWNLOADS + "/Sandbox");
+            Uri item = resolver.insert(collection, values);
+            if (item == null) {
+                call.reject("Could not create the file in Downloads");
+                return;
+            }
+            try (java.io.OutputStream out = resolver.openOutputStream(item, "w")) {
+                if (out == null) {
+                    call.reject("Could not open the file for writing");
+                    return;
+                }
+                out.write(bytes);
+            }
+            JSObject ret = new JSObject();
+            ret.put("uri", item.toString());
+            ret.put("name", name);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Could not write to Downloads: " + e.getMessage());
+        }
     }
 }

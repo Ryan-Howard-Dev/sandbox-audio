@@ -2664,31 +2664,18 @@ export default function SandboxShell() {
     loadCarModeAutoOffer() &&
     !carOfferDismissed;
 
-  const entryGate = renderShellEntryGates({
-    isCarMode,
-    isTV,
-    showOnboarding,
-    showServerSetup,
-    profile,
-    setOnboardingComplete,
-    setServerSetupDismissed,
-    audio,
-    artworkUrl,
-    homeTitle,
-    homeArtist,
-    homeDisplayState,
-    effectiveConnectRole,
-    remoteMirror,
-    isConnectRemoteRef,
-    togglePlay,
-    skipBack,
-    skipForward,
-    sendConnectCommand,
-    handleExitCarMode,
-  });
-  if (entryGate) return entryGate;
-
-  // Same position as the former inline dock/narration block (after entry gates).
+  /*
+   * Above the entry gates, because it is a hook and they return early.
+   *
+   * The gates replace the whole shell -- login, onboarding, server setup, car mode -- so anything
+   * below the return is skipped on those renders. Putting hook calls under them meant the first
+   * render ran a short list and the render right after (signing in, finishing onboarding, leaving
+   * car mode) ran a longer one, which is React error #310: the shell died at the moment it should
+   * have appeared, and only ever on the transition, so a device with a profile already saved never
+   * showed it.
+   *
+   * Nothing here depends on the gates. It reads state that exists either way.
+   */
   const {
     showBottomPlayer,
     playbackChromeActive,
@@ -2719,6 +2706,31 @@ export default function SandboxShell() {
     mobileSearchOpen,
     mobileNowPlayingOpen,
   });
+
+  const entryGate = renderShellEntryGates({
+    isCarMode,
+    isTV,
+    showOnboarding,
+    showServerSetup,
+    profile,
+    setOnboardingComplete,
+    setServerSetupDismissed,
+    audio,
+    artworkUrl,
+    homeTitle,
+    homeArtist,
+    homeDisplayState,
+    effectiveConnectRole,
+    remoteMirror,
+    isConnectRemoteRef,
+    togglePlay,
+    skipBack,
+    skipForward,
+    sendConnectCommand,
+    handleExitCarMode,
+  });
+  if (entryGate) return entryGate;
+
 
   return (
     <ShellChrome
