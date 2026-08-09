@@ -204,8 +204,8 @@ export function useShellNavConstruction({
   }, [station]);
 
   const mobileTabActiveId = useMemo((): MobileTabId => {
-    // Discover is a segment of the Music tab, so it keeps the Music (locker) pin lit.
-    if (station === 'discover') return 'locker';
+    // Discover and Shelf are segments of the Music tab, so they keep the Music (locker) pin lit.
+    if (station === 'discover' || station === 'shelf') return 'locker';
     return resolveMobileTabActiveId({
       station,
       discoverTab,

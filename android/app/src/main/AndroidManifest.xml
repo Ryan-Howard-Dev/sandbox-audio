@@ -231,6 +231,21 @@
 
     <!-- Permissions -->
 
+    <!--
+      Camera, for reading the barcode on a record sleeve and nothing else.
+
+      ML Kit decodes on the device: no frame is uploaded, no image is stored, and the only thing
+      that leaves as a result is the thirteen digits printed on the packaging, sent to MusicBrainz
+      when a lookup is asked for. The permission is requested when the shelf scanner is opened and
+      never on launch, so an install that never touches the shelf is never asked.
+
+      The plugin does not declare this itself — it expects the app to — so without this line the
+      scanner asks for a permission that cannot be granted and fails at runtime.
+    -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Not required: a device with no camera still installs, and typing the barcode still works. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />

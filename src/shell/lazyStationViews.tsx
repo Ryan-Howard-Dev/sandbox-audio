@@ -8,6 +8,12 @@ export { StationChunkFallback };
 export const LazyDiscoverStationView = lazy(
   () => import('../stations/DiscoverStationView'),
 );
+/*
+ * Lazy like the rest, and it matters more here: this chunk is the only thing that reaches
+ * @capacitor-mlkit/barcode-scanning, so ML Kit stays out of every session that never opens the
+ * shelf.
+ */
+export const LazyShelfView = lazy(() => import('../stations/ShelfView'));
 export const LazySettingsView = lazy(() => import('../stations/SettingsView'));
 export const LazySearchResultsView = lazy(
   () => import('../stations/SearchResultsView'),

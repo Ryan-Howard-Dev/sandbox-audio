@@ -34,6 +34,7 @@
       "library": "Library",
       "genres": "Genres",
       "playlists": "Playlists",
+      "shelf": "Shelf",
       "discover": "Discover"
     },
     "browseSheetTitle": "Your collections",
@@ -506,6 +507,34 @@
     "promptPlaylist": "Prompt playlist",
     "promptPlaylistCta": "Describe a vibe → playlist",
     "promptPlaylistHint": "Locker + taste · optional Gemini rank"
+  },
+  "shelf": {
+    "title": "Shelf",
+    "lead": "The records you own. Scan a barcode and it fills itself in; nothing about your collection leaves this device.",
+    "scan": "SCAN A BARCODE",
+    "add": "Add",
+    "remove": "Remove {title}",
+    "barcodePlaceholder": "Or type the barcode",
+    "added": "Added {title}",
+    "empty": "Nothing on the shelf yet. Scan the back of a record or a CD case to start.",
+    "barcodeInvalid": "That is not a barcode. Try scanning it again.",
+    "barcodeUnknown": "No record found for that barcode. You can add it by hand instead.",
+    "barcodeUnavailable": "Could not reach the catalogue. Try again when you have a connection.",
+    "barcodeAlready": "{title} is already on the shelf.",
+    "cameraDenied": "The camera was not allowed, so scanning is off. Typing the barcode still works.",
+    "cameraUnavailable": "No scanner on this device. Type the barcode instead.",
+    "statCopies": "Copies",
+    "statVinyl": "Vinyl",
+    "statCd": "CD",
+    "statToRip": "Not ripped",
+    "unmatched": "{count, plural, one {# copy not in this discography} other {# copies not in this discography}}",
+    "format": {
+      "vinyl": "Vinyl",
+      "cd": "CD",
+      "cassette": "Cassette",
+      "digital-purchase": "Bought digital",
+      "other": "Other"
+    }
   },
   "settings": {
     "controlPanel": "System Control Panel",

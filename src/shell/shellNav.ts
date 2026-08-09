@@ -20,6 +20,12 @@ import { loadSonicLockerStationEnabled } from '../sonicLockerStationSettings';
 export type StationId =
   | 'home'
   | 'discover'
+  /*
+   * The records you own that the locker cannot see. A station internally, a Music segment on
+   * screen — exactly how 'discover' works, and for the same reason: it is a view onto the music
+   * library rather than a peer of Music and Podcasts.
+   */
+  | 'shelf'
   | 'library'
   | 'sonic-locker'
   | 'search'

@@ -185,11 +185,13 @@ export function useShellMobileNavActions({
   const musicSegment: MusicSegmentId =
     station === 'discover'
       ? 'discover'
-      : lockerSection === 'genres'
-        ? 'genres'
-        : lockerSection === 'playlists'
-          ? 'playlists'
-          : 'library';
+      : station === 'shelf'
+        ? 'shelf'
+        : lockerSection === 'genres'
+          ? 'genres'
+          : lockerSection === 'playlists'
+            ? 'playlists'
+            : 'library';
 
   const handleMusicSegment = useCallback(
     (segment: MusicSegmentId) => {
@@ -203,6 +205,13 @@ export function useShellMobileNavActions({
         setDiscoverDrillFromTab(null);
         setDiscoverTab('feed');
         setStation('discover');
+        return;
+      }
+      if (segment === 'shelf') {
+        // Its own station, like Discover, so it keeps its own scroll and back behaviour rather
+        // than pretending to be a tab of the locker list it is comparing against.
+        setDiscoverDrillFromTab(null);
+        setStation('shelf');
         return;
       }
       setDiscoverDrillFromTab(null);

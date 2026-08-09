@@ -23499,3 +23499,149 @@ input.shell-search:focus-visible {
   background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
   color: var(--text);
 }
+
+/*
+ * The shelf — physical copies, inside the Music tab.
+ *
+ * Deliberately plain. It is a list of things you own; the app's job here is to be legible and
+ * quick to scan down, not to decorate somebody's record collection back at them.
+ */
+.shelf-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0 0.25rem 1rem;
+}
+
+.shelf-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--text);
+}
+
+.shelf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shelf-manual {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: 1 1 12rem;
+}
+
+.shelf-manual-input {
+  flex: 1;
+  min-width: 0;
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+}
+
+.shelf-manual-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  color: var(--text-mid);
+}
+
+.shelf-manual-add:disabled {
+  opacity: 0.4;
+}
+
+.shelf-notice {
+  color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  line-height: 1.4;
+}
+
+/* Four across on a phone: the numbers are short and a vertical list of them reads as a form. */
+.shelf-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.shelf-stat {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  text-align: center;
+}
+
+.shelf-stat-label {
+  font-family: ui-monospace, monospace;
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.shelf-stat-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.shelf-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.shelf-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.shelf-row-icon {
+  color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  flex-shrink: 0;
+}
+
+.shelf-row-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.shelf-row-title {
+  color: var(--text);
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shelf-row-meta {
+  font-family: ui-monospace, monospace;
+  font-size: 0.625rem;
+  color: var(--text-dim);
+}
+
+.shelf-row-remove {
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.shelf-empty,
+.shelf-strays {
+  padding: 0.5rem 0.25rem;
+}
