@@ -1,19 +1,12 @@
 import React from 'react';
 import { useTranslation } from '../i18n';
 
-export type MusicSegmentId = 'library' | 'genres' | 'playlists' | 'shelf' | 'discover';
+export type MusicSegmentId = 'library' | 'genres' | 'playlists' | 'discover';
 
-/*
- * Shelf sits between what you have and where you find more, because that is what it is: the
- * records you own that the library cannot see. Every question it answers — what should I rip, what
- * am I missing — is a question about this library, which is why it is a segment of Music rather
- * than a station of its own.
- */
 export const MUSIC_SEGMENTS: MusicSegmentId[] = [
   'library',
   'genres',
   'playlists',
-  'shelf',
   'discover',
 ];
 

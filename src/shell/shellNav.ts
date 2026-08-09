@@ -12,6 +12,7 @@ import { BookAudio, Compass, Home, Music as MusicIcon, Podcast, Radio, Search, S
 import type { NavPinTabId } from '../navPinTabs';
 import { prefsGetItem } from '../prefsStorage';
 import { loadAudiobooksEnabled } from '../audiobooksSettings';
+import { loadCollectionStationEnabled } from '../collectionStationSettings';
 import { loadDiscoverStationEnabled } from '../discoverStationSettings';
 import { loadLibraryStationEnabled } from '../libraryStationSettings';
 import { loadPodcastsEnabled } from '../podcastSettings';
@@ -21,11 +22,11 @@ export type StationId =
   | 'home'
   | 'discover'
   /*
-   * The records you own that the locker cannot see. A station internally, a Music segment on
-   * screen — exactly how 'discover' works, and for the same reason: it is a view onto the music
-   * library rather than a peer of Music and Podcasts.
+   * The records you own that the locker cannot see. Reached from More alongside Downloads and
+   * Insights, because it is a tool rather than a way of browsing music, and because the Music
+   * segment bar was already five wide on a phone.
    */
-  | 'shelf'
+  | 'collection'
   | 'library'
   | 'sonic-locker'
   | 'search'
@@ -87,6 +88,10 @@ export function readAudiobooksEnabled(): boolean {
 
 export function readDiscoverStationEnabled(): boolean {
   return loadDiscoverStationEnabled();
+}
+
+export function readCollectionStationEnabled(): boolean {
+  return loadCollectionStationEnabled();
 }
 
 export function readSonicLockerStationEnabled(): boolean {

@@ -324,6 +324,12 @@ export function buildSettingsSearchIndex(t: Translate): SettingsSearchItem[] {
      * player looks like behind the controls. Indexed rather than left out — a setting that exists
      * and cannot be found by name is one nobody knows they have.
      */
+    item('music', 'addons-collection-station', t('settings.addons.collectionStation'), {
+      sectionLabel: t('settings.categories.addons'),
+      subtitle: t('settings.addons.collectionStationHint'),
+      keywords: ['collection', 'physical', 'vinyl', 'cd', 'records', 'barcode', 'scan', 'shelf'],
+      anchorId: SETTINGS_SEARCH_ANCHORS.addonsBuiltin,
+    }),
     item('music', 'architect-waveform-visual', t('settings.architect.waveformVisual'), {
       subtitle: t('settings.architect.waveformVisualHint'),
       keywords: ['waveform', 'visualiser', 'visualizer', 'lines', 'spectrum', 'animation'],

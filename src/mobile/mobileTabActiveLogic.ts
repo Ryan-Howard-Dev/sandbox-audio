@@ -46,15 +46,6 @@ export function resolveMobileTabActiveId(input: ResolveMobileTabActiveIdInput): 
     return 'mobile-menu';
   }
 
-  /*
-   * Shelf is a Music segment, so it keeps the Music pin lit — exactly as Discover does. Without
-   * this it fell through to the default and lit Home, so the tab bar disagreed with the segment
-   * bar directly above it about which tab you were on.
-   */
-  if (station === 'shelf') {
-    return pinnedTabIds.has('locker') ? 'locker' : 'mobile-menu';
-  }
-
   if (station === 'podcasts' && pinnedTabIds.has('podcasts')) return 'podcasts';
   if (station === 'audiobooks' && pinnedTabIds.has('audiobooks')) return 'audiobooks';
 

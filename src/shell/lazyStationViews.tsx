@@ -13,7 +13,9 @@ export const LazyDiscoverStationView = lazy(
  * @capacitor-mlkit/barcode-scanning, so ML Kit stays out of every session that never opens the
  * shelf.
  */
-export const LazyShelfView = lazy(() => import('../stations/ShelfView'));
+export const LazyPhysicalCollectionView = lazy(
+  () => import('../stations/PhysicalCollectionView'),
+);
 export const LazySettingsView = lazy(() => import('../stations/SettingsView'));
 export const LazySearchResultsView = lazy(
   () => import('../stations/SearchResultsView'),

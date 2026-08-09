@@ -50,6 +50,7 @@ import type { ResolvedSearchHit } from '../sandboxLayer2';
 import type { CatalogArtist } from '../searchCatalog';
 import {
   readAudiobooksEnabled,
+  readCollectionStationEnabled,
   readDiscoverStationEnabled,
   readPodcastsEnabled,
   readProAudio,
@@ -129,6 +130,7 @@ export type ShellStationSettingsSyncArgs = {
   setPodcastsEnabled: Setter<boolean>;
   setAudiobooksEnabled: Setter<boolean>;
   setDiscoverStationEnabled: Setter<boolean>;
+  setCollectionStationEnabled: Setter<boolean>;
   setSonicLockerEnabled: Setter<boolean>;
   audiobooksReturnStationRef: MutableRefObject<StationId>;
 };
@@ -139,6 +141,7 @@ export function useShellStationSettingsSync({
   setPodcastsEnabled,
   setAudiobooksEnabled,
   setDiscoverStationEnabled,
+  setCollectionStationEnabled,
   setSonicLockerEnabled,
   audiobooksReturnStationRef,
 }: ShellStationSettingsSyncArgs) {
@@ -148,6 +151,7 @@ export function useShellStationSettingsSync({
       setPodcastsEnabled(readPodcastsEnabled());
       setAudiobooksEnabled(readAudiobooksEnabled());
       setDiscoverStationEnabled(readDiscoverStationEnabled());
+      setCollectionStationEnabled(readCollectionStationEnabled());
       setSonicLockerEnabled(readSonicLockerStationEnabled());
     };
     window.addEventListener('storage', sync);

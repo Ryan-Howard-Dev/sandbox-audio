@@ -32,7 +32,7 @@ import { lookupBarcode } from '../barcodeRelease';
 import { isBarcodeScanningAvailable, scanMusicBarcode } from '../barcodeScanner';
 import { resolveDiscography, type CatalogueRelease } from '../discographyOwnership';
 
-export interface ShelfViewProps {
+export interface PhysicalCollectionViewProps {
   /**
    * The artist discography to compare against, when one is open. Empty is the normal case: the
    * shelf stands on its own and only gains ownership state when there is a catalogue to compare to.
@@ -42,7 +42,7 @@ export interface ShelfViewProps {
   heldReleases?: Array<{ key: string; title: string; trackCount: number }>;
 }
 
-export default function ShelfView({ catalogue = [], heldReleases = [] }: ShelfViewProps) {
+export default function PhysicalCollectionView({ catalogue = [], heldReleases = [] }: PhysicalCollectionViewProps) {
   const { t } = useTranslation();
   const [copies, setCopies] = useState<PhysicalCopy[]>(() => loadPhysicalCopies());
   const [busy, setBusy] = useState(false);
@@ -71,13 +71,13 @@ export default function ShelfView({ catalogue = [], heldReleases = [] }: ShelfVi
   const addByBarcode = useCallback(
     async (raw: string) => {
       if (!isPlausibleBarcode(raw)) {
-        setNotice(t('shelf.barcodeInvalid'));
+        setNotice(t('collection.barcodeInvalid'));
         return;
       }
       const already = findCopyByBarcode(loadPhysicalCopies(), raw);
       if (already) {
         // Scanning a stack, it is easy to scan one twice. Say so rather than silently duplicating.
-        setNotice(t('shelf.barcodeAlready', { title: already.title }));
+        setNotice(t('collection.barcodeAlready', { title: already.title }));
         return;
       }
       setBusy(true);
@@ -92,16 +92,16 @@ export default function ShelfView({ catalogue = [], heldReleases = [] }: ShelfVi
             format: formatFromMedia(result.release.media),
             barcode: result.release.barcode,
           });
-          setNotice(t('shelf.added', { title: result.release.title }));
+          setNotice(t('collection.added', { title: result.release.title }));
           setManualBarcode('');
           return;
         }
         setNotice(
           result.status === 'invalid'
-            ? t('shelf.barcodeInvalid')
+            ? t('collection.barcodeInvalid')
             : result.status === 'unknown'
-              ? t('shelf.barcodeUnknown')
-              : t('shelf.barcodeUnavailable'),
+              ? t('collection.barcodeUnknown')
+              : t('collection.barcodeUnavailable'),
         );
       } finally {
         setBusy(false);
@@ -118,18 +118,18 @@ export default function ShelfView({ catalogue = [], heldReleases = [] }: ShelfVi
       return;
     }
     // A closed camera is not a failure and gets no message.
-    if (outcome.status === 'denied') setNotice(t('shelf.cameraDenied'));
-    if (outcome.status === 'unavailable') setNotice(t('shelf.cameraUnavailable'));
+    if (outcome.status === 'denied') setNotice(t('collection.cameraDenied'));
+    if (outcome.status === 'unavailable') setNotice(t('collection.cameraUnavailable'));
   }, [addByBarcode, t]);
 
   return (
-    <section className="shelf-view" aria-label={t('shelf.title')}>
-      <header className="shelf-head">
-        <h1 className="shelf-title">{t('shelf.title')}</h1>
-        <p className="ui-hint">{t('shelf.lead')}</p>
+    <section className="collection-view" aria-label={t('collection.title')}>
+      <header className="collection-head">
+        <h1 className="collection-title">{t('collection.title')}</h1>
+        <p className="ui-hint">{t('collection.lead')}</p>
       </header>
 
-      <div className="shelf-actions">
+      <div className="collection-actions">
         {isBarcodeScanningAvailable() ? (
           <button
             type="button"
@@ -142,14 +142,14 @@ export default function ShelfView({ catalogue = [], heldReleases = [] }: ShelfVi
             ) : (
               <Barcode className="w-3.5 h-3.5" aria-hidden />
             )}
-            {t('shelf.scan')}
+            {t('collection.scan')}
           </button>
         ) : null}
 
         {/* Typing the number does exactly what scanning it does — the lookup takes digits from
             anywhere, so the feature works with no camera and on every platform. */}
         <form
-          className="shelf-manual"
+          className="collection-manual"
           onSubmit={(e) => {
             e.preventDefault();
             void addByBarcode(manualBarcode);
@@ -158,17 +158,17 @@ export default function ShelfView({ catalogue = [], heldReleases = [] }: ShelfVi
           <input
             type="text"
             inputMode="numeric"
-            className="shelf-manual-input"
-            placeholder={t('shelf.barcodePlaceholder')}
+            className="collection-manual-input"
+            placeholder={t('collection.barcodePlaceholder')}
             value={manualBarcode}
             onChange={(e) => setManualBarcode(e.target.value)}
-            aria-label={t('shelf.barcodePlaceholder')}
+            aria-label={t('collection.barcodePlaceholder')}
           />
           <button
             type="submit"
-            className="shelf-manual-add touch-manipulation"
+            className="collection-manual-add touch-manipulation"
             disabled={busy || !manualBarcode.trim()}
-            aria-label={t('shelf.add')}
+            aria-label={t('collection.add')}
           >
             <Plus className="w-4 h-4" aria-hidden />
           </button>
@@ -176,40 +176,40 @@ export default function ShelfView({ catalogue = [], heldReleases = [] }: ShelfVi
       </div>
 
       {notice ? (
-        <p className="shelf-notice font-mono text-[10px]" role="status">
+        <p className="collection-notice font-mono text-[10px]" role="status">
           {notice}
         </p>
       ) : null}
 
       {copies.length === 0 ? (
-        <p className="ui-hint shelf-empty">{t('shelf.empty')}</p>
+        <p className="ui-hint shelf-empty">{t('collection.empty')}</p>
       ) : (
         <>
-          <dl className="shelf-summary">
-            <Stat label={t('shelf.statCopies')} value={summary.copies} />
-            <Stat label={t('shelf.statVinyl')} value={summary.byFormat.vinyl} />
-            <Stat label={t('shelf.statCd')} value={summary.byFormat.cd} />
+          <dl className="collection-summary">
+            <Stat label={t('collection.statCopies')} value={summary.copies} />
+            <Stat label={t('collection.statVinyl')} value={summary.byFormat.vinyl} />
+            <Stat label={t('collection.statCd')} value={summary.byFormat.cd} />
             {/* The two answers nothing else in the app can give. */}
-            <Stat label={t('shelf.statToRip')} value={summary.physicalOnly} />
+            <Stat label={t('collection.statToRip')} value={summary.physicalOnly} />
           </dl>
 
-          <ul className="shelf-list">
+          <ul className="collection-list">
             {copies.map((copy) => (
-              <li key={copy.id} className="shelf-row">
-                <span className="shelf-row-icon" aria-hidden>
+              <li key={copy.id} className="collection-row">
+                <span className="collection-row-icon" aria-hidden>
                   <Disc3 className="w-4 h-4" />
                 </span>
-                <span className="shelf-row-copy">
-                  <span className="shelf-row-title">{copy.title}</span>
-                  <span className="shelf-row-meta">
-                    {[copy.artist, t(`shelf.format.${copy.format}`)].filter(Boolean).join(' · ')}
+                <span className="collection-row-copy">
+                  <span className="collection-row-title">{copy.title}</span>
+                  <span className="collection-row-meta">
+                    {[copy.artist, t(`collection.format.${copy.format}`)].filter(Boolean).join(' · ')}
                   </span>
                 </span>
                 <button
                   type="button"
-                  className="shelf-row-remove touch-manipulation"
+                  className="collection-row-remove touch-manipulation"
                   onClick={() => removePhysicalCopy(copy.id)}
-                  aria-label={t('shelf.remove', { title: copy.title })}
+                  aria-label={t('collection.remove', { title: copy.title })}
                 >
                   <Trash2 className="w-4 h-4" aria-hidden />
                 </button>
@@ -224,7 +224,7 @@ export default function ShelfView({ catalogue = [], heldReleases = [] }: ShelfVi
              * their own view of them.
              */
             <p className="ui-hint shelf-strays">
-              {t('shelf.unmatched', { count: strays.length })}
+              {t('collection.unmatched', { count: strays.length })}
             </p>
           ) : null}
         </>
@@ -235,9 +235,9 @@ export default function ShelfView({ catalogue = [], heldReleases = [] }: ShelfVi
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="shelf-stat">
-      <dt className="shelf-stat-label">{label}</dt>
-      <dd className="shelf-stat-value font-mono tabular-nums">{value}</dd>
+    <div className="collection-stat">
+      <dt className="collection-stat-label">{label}</dt>
+      <dd className="collection-stat-value font-mono tabular-nums">{value}</dd>
     </div>
   );
 }

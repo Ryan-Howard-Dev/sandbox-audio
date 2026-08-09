@@ -11,7 +11,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Activity, ArrowDownCircle, BookAudio, Menu, Podcast, Radio, Search, Server, Settings, Sliders, User } from 'lucide-react';
+import { Activity, ArrowDownCircle, BookAudio, Disc3, Menu, Podcast, Radio, Search, Server, Settings, Sliders, User } from 'lucide-react';
 import type { MobileNavMoreItem } from '../components/MobileNavMoreSheet';
 import { countDownloadSheetBadge } from '../components/DownloadActivitySheet';
 import { getDownloadJobs } from '../downloadQueue';
@@ -43,6 +43,8 @@ export type UseShellNavConstructionArgs = {
   mobileSearchOpen: boolean;
   discoverReleaseBadge: number;
   podcastEpisodeBadge: number;
+  /** Physical collection is opt-in; off by default, so it is absent rather than empty. */
+  collectionStationEnabled: boolean;
 };
 
 export function useShellNavConstruction({
@@ -60,6 +62,7 @@ export function useShellNavConstruction({
   mobileSearchOpen,
   discoverReleaseBadge,
   podcastEpisodeBadge,
+  collectionStationEnabled,
 }: UseShellNavConstructionArgs) {
   const [downloadQueueRevision, setDownloadQueueRevision] = useState(0);
   useShellDownloadQueueBadge({ setDownloadQueueRevision });
@@ -170,6 +173,22 @@ export function useShellNavConstruction({
         tone: 'accent',
         badge: downloadAttentionBadge > 0 ? downloadAttentionBadge : undefined,
       },
+      ...(collectionStationEnabled
+        ? [
+            {
+              /*
+               * The records you own, as opposed to the files you hold. A tool rather than a way of
+               * browsing music, which is why it sits with Downloads and Insights instead of taking
+               * a fifth slot in the Music segment bar.
+               */
+              id: 'collection',
+              label: t('nav.collection'),
+              subtitle: t('nav.browseCollectionHint'),
+              icon: Disc3,
+              tone: 'accent' as const,
+            },
+          ]
+        : []),
       {
         id: 'insights',
         label: t('nav.insights'),
@@ -188,6 +207,7 @@ export function useShellNavConstruction({
     return items;
   }, [
     audiobooksEnabled,
+    collectionStationEnabled,
     discoverReleaseBadge,
     discoverStationEnabled,
     downloadAttentionBadge,
@@ -198,14 +218,15 @@ export function useShellNavConstruction({
   const mobileMenuActiveId = useMemo(() => {
     if (station === 'sonic-locker') return 'sonic-locker';
     if (station === 'audiobooks') return 'audiobooks';
+    if (station === 'collection') return 'collection';
     if (station === 'insights') return 'insights';
     if (station === 'settings') return 'settings';
     return undefined;
   }, [station]);
 
   const mobileTabActiveId = useMemo((): MobileTabId => {
-    // Discover and Shelf are segments of the Music tab, so they keep the Music (locker) pin lit.
-    if (station === 'discover' || station === 'shelf') return 'locker';
+    // Discover is a segment of the Music tab, so it keeps the Music (locker) pin lit.
+    if (station === 'discover') return 'locker';
     return resolveMobileTabActiveId({
       station,
       discoverTab,

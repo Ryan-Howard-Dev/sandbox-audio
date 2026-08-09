@@ -23506,14 +23506,14 @@ input.shell-search:focus-visible {
  * Deliberately plain. It is a list of things you own; the app's job here is to be legible and
  * quick to scan down, not to decorate somebody's record collection back at them.
  */
-.shelf-view {
+.collection-view {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   padding: 0 0.25rem 1rem;
 }
 
-.shelf-title {
+.collection-title {
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -23521,21 +23521,21 @@ input.shell-search:focus-visible {
   color: var(--text);
 }
 
-.shelf-actions {
+.collection-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
 }
 
-.shelf-manual {
+.collection-manual {
   display: flex;
   align-items: center;
   gap: 0.375rem;
   flex: 1 1 12rem;
 }
 
-.shelf-manual-input {
+.collection-manual-input {
   flex: 1;
   min-width: 0;
   height: 2.5rem;
@@ -23548,7 +23548,7 @@ input.shell-search:focus-visible {
   font-size: 0.75rem;
 }
 
-.shelf-manual-add {
+.collection-manual-add {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -23559,23 +23559,23 @@ input.shell-search:focus-visible {
   color: var(--text-mid);
 }
 
-.shelf-manual-add:disabled {
+.collection-manual-add:disabled {
   opacity: 0.4;
 }
 
-.shelf-notice {
+.collection-notice {
   color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
   line-height: 1.4;
 }
 
 /* Four across on a phone: the numbers are short and a vertical list of them reads as a form. */
-.shelf-summary {
+.collection-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
-.shelf-stat {
+.collection-stat {
   padding: 0.5rem;
   border-radius: 0.5rem;
   border: 1px solid var(--border);
@@ -23583,7 +23583,7 @@ input.shell-search:focus-visible {
   text-align: center;
 }
 
-.shelf-stat-label {
+.collection-stat-label {
   font-family: ui-monospace, monospace;
   font-size: 0.5625rem;
   text-transform: uppercase;
@@ -23591,18 +23591,18 @@ input.shell-search:focus-visible {
   color: var(--text-dim);
 }
 
-.shelf-stat-value {
+.collection-stat-value {
   font-size: 1.125rem;
   font-weight: 700;
   color: var(--text);
 }
 
-.shelf-list {
+.collection-list {
   display: flex;
   flex-direction: column;
 }
 
-.shelf-row {
+.collection-row {
   display: flex;
   align-items: center;
   gap: 0.625rem;
@@ -23610,19 +23610,19 @@ input.shell-search:focus-visible {
   border-bottom: 1px solid var(--border);
 }
 
-.shelf-row-icon {
+.collection-row-icon {
   color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
   flex-shrink: 0;
 }
 
-.shelf-row-copy {
+.collection-row-copy {
   display: flex;
   flex-direction: column;
   min-width: 0;
   flex: 1;
 }
 
-.shelf-row-title {
+.collection-row-title {
   color: var(--text);
   font-size: 0.875rem;
   overflow: hidden;
@@ -23630,18 +23630,18 @@ input.shell-search:focus-visible {
   white-space: nowrap;
 }
 
-.shelf-row-meta {
+.collection-row-meta {
   font-family: ui-monospace, monospace;
   font-size: 0.625rem;
   color: var(--text-dim);
 }
 
-.shelf-row-remove {
+.collection-row-remove {
   color: var(--text-dim);
   flex-shrink: 0;
 }
 
-.shelf-empty,
-.shelf-strays {
+.collection-empty,
+.collection-strays {
   padding: 0.5rem 0.25rem;
 }

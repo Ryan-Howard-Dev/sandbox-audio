@@ -166,6 +166,11 @@ export function useShellMobileNavActions({
         openSettings();
         return;
       }
+      if (id === 'collection') {
+        setNavOpen(false);
+        setStation('collection');
+        return;
+      }
       if (id === 'downloads') {
         /*
          * Opened without a station filter, because the queue is not a station's. One runner feeds
@@ -185,13 +190,11 @@ export function useShellMobileNavActions({
   const musicSegment: MusicSegmentId =
     station === 'discover'
       ? 'discover'
-      : station === 'shelf'
-        ? 'shelf'
-        : lockerSection === 'genres'
-          ? 'genres'
-          : lockerSection === 'playlists'
-            ? 'playlists'
-            : 'library';
+      : lockerSection === 'genres'
+        ? 'genres'
+        : lockerSection === 'playlists'
+          ? 'playlists'
+          : 'library';
 
   const handleMusicSegment = useCallback(
     (segment: MusicSegmentId) => {
@@ -205,13 +208,6 @@ export function useShellMobileNavActions({
         setDiscoverDrillFromTab(null);
         setDiscoverTab('feed');
         setStation('discover');
-        return;
-      }
-      if (segment === 'shelf') {
-        // Its own station, like Discover, so it keeps its own scroll and back behaviour rather
-        // than pretending to be a tab of the locker list it is comparing against.
-        setDiscoverDrillFromTab(null);
-        setStation('shelf');
         return;
       }
       setDiscoverDrillFromTab(null);

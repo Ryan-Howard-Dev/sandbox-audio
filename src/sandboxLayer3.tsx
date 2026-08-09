@@ -57,6 +57,7 @@ import { renderShellEntryGates } from './shell/ShellEntryGates';
 import { useShellPlayerDockFlags } from './shell/useShellPlayerDockFlags';
 import {
   readAudiobooksEnabled,
+  readCollectionStationEnabled,
   readDiscoverStationEnabled,
   readLibraryStationEnabled,
   readPodcastsEnabled,
@@ -782,6 +783,9 @@ export default function SandboxShell() {
   const [audiobooksEnabled, setAudiobooksEnabled] = useState(readAudiobooksEnabled);
   const [libraryStationEnabled, setLibraryStationEnabled] = useState(readLibraryStationEnabled);
   const [discoverStationEnabled, setDiscoverStationEnabled] = useState(readDiscoverStationEnabled);
+  const [collectionStationEnabled, setCollectionStationEnabled] = useState(
+    readCollectionStationEnabled,
+  );
   const [sonicLockerEnabled, setSonicLockerEnabled] = useState(readSonicLockerStationEnabled);
   const [discoverTab, setDiscoverTab] = useState<DiscoverTabId>('feed');
   const [discoverDrillFromTab, setDiscoverDrillFromTab] = useState<DiscoverTabId | null>(null);
@@ -1005,6 +1009,7 @@ export default function SandboxShell() {
     navPinTabs,
     t,
     discoverStationEnabled,
+    collectionStationEnabled,
     sonicLockerEnabled,
     podcastsEnabled,
     audiobooksEnabled,
@@ -1170,6 +1175,7 @@ export default function SandboxShell() {
     setPodcastsEnabled,
     setAudiobooksEnabled,
     setDiscoverStationEnabled,
+    setCollectionStationEnabled,
     setSonicLockerEnabled,
     audiobooksReturnStationRef,
   });

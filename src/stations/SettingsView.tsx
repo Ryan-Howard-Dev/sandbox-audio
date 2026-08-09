@@ -472,6 +472,10 @@ import {
 } from '../androidNativePlayback';
 import { NativeExoPlayback } from '../nativePluginHandles';
 import {
+  loadCollectionStationEnabled,
+  saveCollectionStationEnabled,
+} from '../collectionStationSettings';
+import {
   loadAndroidNativePlaybackEnabled,
   saveAndroidNativePlaybackEnabled,
   loadAndroidWebViewCrossfadeEnabled,
@@ -1333,6 +1337,9 @@ export default function SettingsView({
   const [searchSortOrder, setSearchSortOrder] = useState<SearchSortOrder>(loadSearchSortOrder);
   const [heroDisplay, setHeroDisplay] = useState<HeroDisplayMode>(loadHeroDisplayMode);
   const [waveformVisual, setWaveformVisual] = useState<boolean>(loadWaveformVisualEnabled);
+  const [collectionStationEnabled, setCollectionStationEnabled] = useState<boolean>(
+    loadCollectionStationEnabled,
+  );
   /** Shown only when the wallpaper picker needs explaining; see the button below. */
   const [wallpaperNotice, setWallpaperNotice] = useState<string | null>(null);
   const [vinylVisuals, setVinylVisuals] = useState<VinylVisualSettings>(loadVinylVisualSettings);
@@ -3325,6 +3332,33 @@ export default function SettingsView({
                       onDiscoverChange?.(checked);
                     }}
                     aria-label={t('settings.addons.discoverStation')}
+                  />
+                </div>
+                {/*
+                  Sits with the other station switches because it is one: a destination that can be
+                  turned off entirely rather than a preference about how one behaves. Off by
+                  default, unlike its neighbours — they predate their switches and were already in
+                  the nav, so defaulting them off would have removed something nobody asked to lose.
+                */}
+                <div
+                  className="flex items-center justify-between p-4 border rounded-xl"
+                  style={{ ...cardStyle, borderColor: 'rgba(232,80,10,0.35)' }}
+                >
+                  <div>
+                    <p className="font-mono text-sm font-semibold text-[var(--text)]">
+                      {t('settings.addons.collectionStation')}
+                    </p>
+                    <p className="ui-hint ui-hint--desc mt-1">
+                      {t('settings.addons.collectionStationHint')}
+                    </p>
+                  </div>
+                  <SandboxSwitch
+                    checked={collectionStationEnabled}
+                    onChange={(checked) => {
+                      setCollectionStationEnabled(checked);
+                      saveCollectionStationEnabled(checked);
+                    }}
+                    aria-label={t('settings.addons.collectionStation')}
                   />
                 </div>
                 <div
