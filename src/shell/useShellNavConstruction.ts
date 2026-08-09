@@ -238,12 +238,22 @@ export function useShellNavConstruction({
 
   const mobileNavBadges = useMemo((): Partial<Record<MobileTabId, number>> | undefined => {
     const badges: Partial<Record<MobileTabId, number>> = {};
-    const downloadErrors = countDownloadSheetBadge(getDownloadJobs(), 'music');
-    if (downloadErrors > 0) {
-      badges.locker = downloadErrors;
-    }
-    if (discoverStationEnabled && discoverReleaseBadge > 0) {
-      badges['mobile-menu'] = discoverReleaseBadge;
+    /*
+     * The download count badges More, not Music.
+     *
+     * It used to sit on Music and count only music downloads, which was already a dead end: the
+     * number told you something wanted attention and Music gave you nothing to act on. Moving
+     * Downloads into More made it a wrong answer as well as a useless one — it pointed at a tab
+     * that no longer holds the thing it is counting.
+     *
+     * It counts every kind now, matching the Downloads card it leads to. A badge whose number does
+     * not match the screen it opens is worse than no badge.
+     */
+    const menuBadge =
+      downloadAttentionBadge +
+      (discoverStationEnabled && discoverReleaseBadge > 0 ? discoverReleaseBadge : 0);
+    if (menuBadge > 0) {
+      badges['mobile-menu'] = menuBadge;
     }
     if (podcastsEnabled && podcastEpisodeBadge > 0 && mobilePinTabIds.has('podcasts')) {
       badges.podcasts = podcastEpisodeBadge;
