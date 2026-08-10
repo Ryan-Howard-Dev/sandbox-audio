@@ -53,7 +53,9 @@
     "serverLibrary": "Server Library",
     "stations": "Stations",
     "closeStations": "Close stations",
-    "allStations": "All stations"
+    "allStations": "All stations",
+    "health": "Health",
+    "browseHealthHint": "What needs fixing in your library"
   },
   "shell": {
     "searchPlaceholder": {
@@ -536,6 +538,21 @@
       "digital-purchase": "Bought digital",
       "other": "Other"
     }
+  },
+  "health": {
+    "title": "Library health",
+    "lead": "What is wrong across music, podcasts, books and documents. Nothing here changes a file; it only reports.",
+    "recheck": "CHECK AGAIN",
+    "checking": "Reading your library…",
+    "allClear": "Nothing to fix. Every item has its file, its tags and its artwork.",
+    "noScan": "No folder scan on this device, so files on disk are not checked — only what the library already knows about.",
+    "scanned": "Checked against {count} files on disk.",
+    "andMore": "and {count} more",
+    "stationMusic": "Music",
+    "stationPodcasts": "Podcasts",
+    "stationAudiobooks": "Audiobooks",
+    "stationDocuments": "Documents",
+    "stationCollection": "Collection"
   },
   "settings": {
     "controlPanel": "System Control Panel",

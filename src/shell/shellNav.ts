@@ -27,6 +27,12 @@ export type StationId =
    * segment bar was already five wide on a phone.
    */
   | 'collection'
+  /*
+   * What is wrong with the library, across every station. A tool like Insights rather than a way of
+   * browsing, so it sits with Insights in More rather than taking a nav slot, and it is read-only,
+   * so unlike a content station there is nothing to turn off.
+   */
+  | 'health'
   | 'library'
   | 'sonic-locker'
   | 'search'

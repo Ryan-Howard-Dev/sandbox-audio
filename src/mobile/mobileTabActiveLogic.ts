@@ -30,6 +30,7 @@ const MOBILE_MENU_STATIONS = new Set([
   'sonic-locker',
   'audiobooks',
   'collection',
+  'health',
   'insights',
   'settings',
 ]);

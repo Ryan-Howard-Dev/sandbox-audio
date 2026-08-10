@@ -11,7 +11,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Activity, ArrowDownCircle, BookAudio, Disc3, Menu, Podcast, Radio, Search, Server, Settings, Sliders, User } from 'lucide-react';
+import { Activity, ArrowDownCircle, BookAudio, Disc3, Menu, Podcast, Radio, Search, Server, Settings, Sliders, Stethoscope, User } from 'lucide-react';
 import type { MobileNavMoreItem } from '../components/MobileNavMoreSheet';
 import { countDownloadSheetBadge } from '../components/DownloadActivitySheet';
 import { getDownloadJobs } from '../downloadQueue';
@@ -142,6 +142,8 @@ export function useShellNavConstruction({
     if (collectionStationEnabled) {
       items.push({ id: 'collection', label: t('nav.collection'), icon: Disc3 });
     }
+    // Read-only and diagnostic, so it is always here — there is no content to switch off.
+    items.push({ id: 'health', label: t('nav.health'), icon: Stethoscope });
     items.push({ id: 'settings', label: t('nav.settings'), icon: Settings });
     items.push({
       id: 'profile',
@@ -201,6 +203,17 @@ export function useShellNavConstruction({
           ]
         : []),
       {
+        /*
+         * Beside Insights because they are the same kind of thing: one tells you what you listened
+         * to, the other what is wrong with what you listened to it from. Neither plays anything.
+         */
+        id: 'health',
+        label: t('nav.health'),
+        subtitle: t('nav.browseHealthHint'),
+        icon: Stethoscope,
+        tone: 'accent',
+      },
+      {
         id: 'insights',
         label: t('nav.insights'),
         subtitle: t('nav.browseInsightsHint'),
@@ -230,6 +243,7 @@ export function useShellNavConstruction({
     if (station === 'sonic-locker') return 'sonic-locker';
     if (station === 'audiobooks') return 'audiobooks';
     if (station === 'collection') return 'collection';
+    if (station === 'health') return 'health';
     if (station === 'insights') return 'insights';
     if (station === 'settings') return 'settings';
     return undefined;
