@@ -25,6 +25,8 @@
     <string name="download_notification_channel_desc">Shows progress while albums and tracks save to your locker in the background.</string>
     <string name="download_service_description">Keeps locker downloads running while the app is in the background.</string>
     <string name="download_notification_title">Downloading to locker</string>
+    <string name="download_timeout_title">Downloads paused</string>
+    <string name="download_timeout_text">Android limits background downloading to six hours a day. Open Sandbox Audio to carry on where it stopped.</string>
     <string name="download_notification_active">Saving tracks to locker…</string>
     <string name="download_notification_progress">Downloading %1$d of %2$d tracks…</string>
     <string name="download_notification_queue">%1$d albums in queue</string>

@@ -96,6 +96,7 @@ import {
 import ModalOverlay from './ModalOverlay';
 import type { LockerMenuAction } from '../components/LockerMoreMenu';
 import AddToPlaylistPicker from '../components/AddToPlaylistPicker';
+import ReleaseMatchPanel from '../components/ReleaseMatchPanel';
 import EditLockerInfoModal, {
   type EditLockerInfoValues,
 } from '../components/EditLockerInfoModal';
@@ -493,6 +494,7 @@ export default function LocalView({
     | { mode: 'album'; album: AlbumGroup; focusField?: 'albumArtist' }
     | null
   >(null);
+  const [matchTarget, setMatchTarget] = useState<AlbumGroup | null>(null);
   const [creditsTarget, setCreditsTarget] = useState<AlbumGroup | null>(null);
   const [toast, setToast] = useState('');
   const [syncAlbumFlags, setSyncAlbumFlags] = useState(() => loadSyncAlbumFlags());
@@ -2505,6 +2507,16 @@ export default function LocalView({
         onClick: () => setEditTarget({ mode: 'album', album }),
       },
       {
+        /*
+         * Beside Edit album because it is the same intent reached a different way: typing what is
+         * right, versus finding what is right. The automatic fix elsewhere is for a whole library;
+         * this is for the one album it got wrong.
+         */
+        id: 'match-release',
+        label: t('locker.menu.matchRelease'),
+        onClick: () => setMatchTarget(album),
+      },
+      {
         id: 'share',
         label: t('locker.menu.share'),
         onClick: () => {
@@ -3913,6 +3925,27 @@ export default function LocalView({
         tracks={playlistTracks ?? []}
         onDone={(msg) => setToast(msg)}
         onOpenPlaylists={onGoToPlaylists}
+      />
+
+      <ReleaseMatchPanel
+        open={matchTarget !== null}
+        onClose={() => setMatchTarget(null)}
+        rows={(matchTarget?.tracks ?? []).map((track) => ({
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          albumName: track.albumName,
+          albumArtist: track.albumArtist,
+          releaseYear: track.releaseYear,
+          trackNumber: track.trackNumber,
+          discNumber: track.discNumber,
+          genre: track.genre,
+          albumArt: track.albumArt,
+          userMetadataLocked: track.userMetadataLocked,
+        }))}
+        albumName={matchTarget?.displayName}
+        artist={matchTarget?.artist}
+        onDone={(msg) => setToast(msg)}
       />
 
       <EditLockerInfoModal

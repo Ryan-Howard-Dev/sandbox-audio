@@ -554,6 +554,40 @@
     "stationDocuments": "Documents",
     "stationCollection": "Collection"
   },
+  "releaseMatch": {
+    "title": "Match from catalogue",
+    "lead": "Find the right release, see exactly what would change, then apply it. Nothing is written until you say so.",
+    "albumPlaceholder": "Album",
+    "artistPlaceholder": "Artist (optional)",
+    "search": "SEARCH",
+    "noneFound": "Nothing in the catalogue matched. Try a shorter album name, or drop the artist.",
+    "needAlbum": "Type an album name to search for.",
+    "unavailable": "Could not reach the catalogue. Try again when you are back online.",
+    "trackCount": "{count} tracks",
+    "summary": "Would change {rows} tracks, {fields} fields.",
+    "summarySkipped": "{count} left alone.",
+    "overwrite": "Replace values that are already filled in",
+    "blank": "(empty)",
+    "back": "Pick another",
+    "apply": "APPLY TO {count}",
+    "applied": "Updated {count} tracks",
+    "skip": {
+      "locked": "Locked — edited by hand",
+      "unmatched": "No matching track on this release",
+      "alreadyCorrect": "Already correct"
+    },
+    "field": {
+      "title": "Title",
+      "artist": "Artist",
+      "albumName": "Album",
+      "albumArtist": "Album artist",
+      "releaseYear": "Year",
+      "trackNumber": "Track",
+      "discNumber": "Disc",
+      "genre": "Genre",
+      "albumArt": "Artwork"
+    }
+  },
   "settings": {
     "controlPanel": "System Control Panel",
     "title": "Settings",
@@ -1812,7 +1846,8 @@
       "unpin": "Unpin",
       "searchCoverOnline": "Update artwork",
       "searchingCover": "Searching…",
-      "updateInfo": "Update info"
+      "updateInfo": "Update info",
+      "matchRelease": "Match from catalogue"
     },
     "confirm": {
       "removeTrackTitle": "Delete track",

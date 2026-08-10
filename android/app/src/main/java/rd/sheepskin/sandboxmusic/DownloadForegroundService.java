@@ -27,6 +27,8 @@ public class DownloadForegroundService extends Service {
 
     private static final String CHANNEL_ID = "sovereign_downloads";
     private static final int NOTIFICATION_ID = 88002;
+    /** Its own id, so the notice outlives the progress notification it replaces. */
+    private static final int TIMEOUT_NOTIFICATION_ID = 88003;
 
     private static volatile DownloadForegroundService runningInstance;
     private static volatile boolean serviceStartInFlight = false;
@@ -128,6 +130,69 @@ public class DownloadForegroundService extends Service {
         serviceStartInFlight = false;
         acquireWakeLock();
         startWebViewKeepAlive();
+    }
+
+    /**
+     * The OS calling time on a long download.
+     *
+     * A dataSync foreground service gets a cumulative six hours out of every twenty four from
+     * Android 15 onwards, and this app targets well past that. When the budget runs out the system
+     * calls here and gives a few seconds to stand down; an app that does not is killed with
+     * ForegroundServiceDidNotStopInTimeException, which is a crash rather than a stop.
+     *
+     * That is not a hypothetical for this app. The wake lock below asks for twelve hours, which is
+     * exactly twice the budget, and a first sync of a large locker has taken hours in practice. So
+     * this ends the run deliberately, and leaves a notification saying so -- a download queue that
+     * silently stops at some unpredictable point looks identical to one that is broken, and there
+     * would be nothing on screen to explain why the phone stopped part way.
+     *
+     * Whatever is left in the queue resumes the next time the app is opened; the queue itself is
+     * persisted, and this only ends the process that was working through it.
+     */
+    @Override
+    public void onTimeout(int startId, int fgsType) {
+        postTimeoutNotice();
+        stopForegroundService();
+    }
+
+    /** Older signature, kept because API 35 shipped it before the two-argument form. */
+    @Override
+    public void onTimeout(int startId) {
+        onTimeout(startId, 0);
+    }
+
+    /**
+     * Replace the progress notification with one that explains the stop.
+     *
+     * Posted after stopForeground has released the progress notification, under its own id, so it
+     * survives the service ending rather than being torn down with it.
+     */
+    private void postTimeoutNotice() {
+        try {
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                this,
+                4,
+                new Intent(this, MainActivity.class)
+                    .setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            Notification notice = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                .setContentTitle(getString(R.string.download_timeout_title))
+                .setContentText(getString(R.string.download_timeout_text))
+                .setStyle(new NotificationCompat.BigTextStyle()
+                    .bigText(getString(R.string.download_timeout_text)))
+                .setContentIntent(contentIntent)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
+                .build();
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager != null) {
+                manager.notify(TIMEOUT_NOTIFICATION_ID, notice);
+            }
+        } catch (Exception ignored) {
+            // A missing notice must never be the thing that stops the service standing down.
+        }
     }
 
     @Override

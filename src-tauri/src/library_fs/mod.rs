@@ -309,7 +309,20 @@ pub fn library_apply(
             continue;
         }
 
-        let result = apply_one(change, &allowed);
+        /*
+         * Each operation is isolated, so one going wrong cannot take the record of the others
+         * with it.
+         *
+         * The undo log is written after this loop. Without the catch, a panic part way through
+         * leaves files already moved and no log saying where they came from -- the one state this
+         * layer must never produce, since undo is the answer to a rule that turned out wrong.
+         * Tauri would surface the panic as a failed call rather than corrupting anything, but the
+         * moved files would still be unrecoverable by any means the app offers.
+         */
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            apply_one(change, &allowed)
+        }))
+        .unwrap_or_else(|_| Err("That operation failed unexpectedly".to_string()));
         match result {
             Ok(()) => {
                 applied += 1;
