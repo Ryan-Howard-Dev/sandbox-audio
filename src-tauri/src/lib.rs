@@ -1,6 +1,7 @@
 mod audio;
 mod commands;
 mod identity;
+mod library_fs;
 mod infrastructure;
 mod cast_browser_server;
 mod local_server;
@@ -29,6 +30,7 @@ pub fn run() {
         })
         .manage(local_server::LocalServerState::new())
         .manage(cast_browser_server::CastBrowserServerState::new())
+        .manage(library_fs::LibraryFsState::new())
         .invoke_handler(tauri::generate_handler![
             commands::list_audio_output_devices,
             commands::get_audiophile_settings,
@@ -46,6 +48,14 @@ pub fn run() {
             commands::ensure_cast_browser_server,
             commands::open_cast_in_browser,
             commands::fetch_identity,
+            library_fs::library_roots_list,
+            library_fs::library_root_add,
+            library_fs::library_root_remove,
+            library_fs::library_scan,
+            library_fs::library_stat,
+            library_fs::library_plan,
+            library_fs::library_apply,
+            library_fs::library_undo_last,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
