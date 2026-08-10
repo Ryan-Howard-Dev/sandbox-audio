@@ -8,6 +8,20 @@ import path from 'node:path';
 import { createReadStream } from 'node:fs';
 import { LOCKER_BLOBS_DIR, LOCKER_STORAGE_ROOT, blobPathForHash } from './lockerPaths.js';
 import { syncManifestEntry, upsertHash } from './mediaGraph.js';
+/*
+ * The clients' own merge, imported rather than reimplemented.
+ *
+ * A second copy of a last-write-wins-plus-tombstones rule is a copy that drifts, and the drift
+ * shows up as a record that deletes on the phone and comes back from the server. These are pure
+ * functions over arrays with no browser globals, so node runs them as-is.
+ */
+import type { PhysicalCopy } from '../../src/physicalCollection.ts';
+import {
+  mergeCopyTombstones,
+  mergePhysicalCollection,
+  pruneCopyTombstones,
+  type PhysicalCopyTombstone,
+} from '../../src/physicalCollectionSync.ts';
 import { scheduleReindex } from './meilisearchIndexer.js';
 
 const MANIFEST_PATH = path.join(LOCKER_STORAGE_ROOT, 'manifest.json');
@@ -59,6 +73,17 @@ export type LockerSyncManifest = {
   playlists?: LockerSyncManifestPlaylist[];
   playlistTombstones?: PlaylistTombstone[];
   trackTombstones?: TrackTombstone[];
+  /*
+   * Carried, not understood — but carried is the whole job.
+   *
+   * These were absent from the type, so the merge below built its result without them and
+   * saveMasterManifest wrote that back. A phone syncing through the server lost its entire
+   * physical collection, and the album sync flags with it, on the first push. Nothing reported a
+   * problem: the fields simply were not in the object any more.
+   */
+  syncAlbums?: string[];
+  physicalCopies?: PhysicalCopy[];
+  physicalCopyTombstones?: PhysicalCopyTombstone[];
 };
 
 const EMPTY_MANIFEST: LockerSyncManifest = {
@@ -232,6 +257,19 @@ export function mergeManifest(incoming: LockerSyncManifest): LockerSyncManifest 
     }
   }
 
+  const copyTombstones = pruneCopyTombstones(
+    mergeCopyTombstones(master.physicalCopyTombstones ?? [], incoming.physicalCopyTombstones ?? []),
+  );
+  const physicalCopies = mergePhysicalCollection(
+    master.physicalCopies ?? [],
+    incoming.physicalCopies ?? [],
+    copyTombstones,
+  ).copies;
+
+  // Union, because these are per-album opt-ins and a device that has never seen an album must not
+  // be read as having opted out of it.
+  const syncAlbums = [...new Set([...(master.syncAlbums ?? []), ...(incoming.syncAlbums ?? [])])];
+
   const merged: LockerSyncManifest = {
     deviceId: incoming.deviceId || master.deviceId || 'tier34-server',
     updatedAt: Date.now(),
@@ -239,6 +277,9 @@ export function mergeManifest(incoming: LockerSyncManifest): LockerSyncManifest 
     playlists: playlistById.size > 0 ? [...playlistById.values()] : masterPlaylists,
     playlistTombstones: tombstones.length > 0 ? tombstones : master.playlistTombstones,
     trackTombstones: trackTombstones.length > 0 ? trackTombstones : master.trackTombstones,
+    syncAlbums,
+    physicalCopies,
+    physicalCopyTombstones: copyTombstones,
   };
   saveMasterManifest(merged);
   for (const row of incoming.entries ?? []) {
