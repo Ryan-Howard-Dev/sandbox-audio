@@ -24157,3 +24157,71 @@ input.shell-search:focus-visible {
   font-size: 0.75rem;
   color: var(--text-dim);
 }
+
+/* ----------------------------------------------------------------- side by side reader
+   Two columns that share a row, so a passage and its translation stay level however differently
+   the two languages set. Collapsing to one column on a narrow screen keeps the pairing by
+   stacking each passage directly above its own translation. */
+.sbs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.sbs-notice {
+  margin: 0;
+  color: var(--text-dim);
+}
+
+.sbs-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sbs-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1.25rem;
+  padding: 0.5rem 0.25rem;
+  border-top: 1px solid var(--border);
+  min-width: 0;
+}
+
+@media (max-width: 44rem) {
+  .sbs-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
+
+/* The passage being read, marked on the edge rather than by tinting the text: a highlight behind
+   prose is harder to read than the prose was without it. */
+.sbs-row--here {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.5rem;
+}
+
+.sbs-source,
+.sbs-target {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.sbs-source {
+  color: var(--text);
+}
+
+.sbs-target {
+  color: var(--text-dim);
+}
+
+.sbs-waiting {
+  display: inline-flex;
+  color: var(--text-dim);
+}

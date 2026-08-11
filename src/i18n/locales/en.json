@@ -2297,5 +2297,8 @@
     "yourBooks": "Your audiobooks",
     "yourBooksUploaded": "Your uploaded books",
     "yourDocuments": "Your documents"
+  },
+  "reader": {
+    "sideBySide": "Original and translation"
   }
 }
