@@ -24225,3 +24225,145 @@ input.shell-search:focus-visible {
   display: inline-flex;
   color: var(--text-dim);
 }
+
+/* ----------------------------------------------------------------- reading
+   A measured column, because prose set the full width of a desktop window is unreadable however
+   good the typography is. */
+.reading-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0 0.25rem 1rem;
+  min-height: 0;
+}
+
+.reading-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--text);
+}
+
+.reading-shelf {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.reading-book {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.reading-book-title {
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.reading-book-author {
+  font-size: 0.6875rem;
+}
+
+.reading-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.reading-back,
+.reading-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: none;
+  color: var(--text-dim);
+  font-family: ui-monospace, monospace;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.reading-open-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.reading-translate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--text-dim);
+}
+
+.reading-target {
+  padding: 0.3125rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+.reading-passages {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  /* Around 70 characters a line, which is where prose stops being tiring to read. */
+  max-width: 38rem;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.reading-passage {
+  padding: 0.375rem 0.5rem;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text);
+  border-left: 3px solid transparent;
+  cursor: default;
+  overflow-wrap: anywhere;
+}
+
+.reading-passage--here {
+  border-left-color: var(--accent);
+}
+
+.reading-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.reading-progress {
+  font-family: ui-monospace, monospace;
+  font-size: 0.625rem;
+}

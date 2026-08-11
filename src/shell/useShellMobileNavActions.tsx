@@ -181,6 +181,11 @@ export function useShellMobileNavActions({
         setStation('files');
         return;
       }
+      if (id === 'reading') {
+        setNavOpen(false);
+        setStation('reading');
+        return;
+      }
       if (id === 'downloads') {
         /*
          * Opened without a station filter, because the queue is not a station's. One runner feeds

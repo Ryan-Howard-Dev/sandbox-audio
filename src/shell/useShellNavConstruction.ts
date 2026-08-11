@@ -11,7 +11,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Activity, ArrowDownCircle, BookAudio, Disc3, Menu, Podcast, Radio, Search, Server, FolderTree, Settings, Sliders, Stethoscope, User } from 'lucide-react';
+import { Activity, ArrowDownCircle, BookAudio, BookOpen, Disc3, Menu, Podcast, Radio, Search, Server, FolderTree, Settings, Sliders, Stethoscope, User } from 'lucide-react';
 import type { MobileNavMoreItem } from '../components/MobileNavMoreSheet';
 import { countDownloadSheetBadge } from '../components/DownloadActivitySheet';
 import { getDownloadJobs } from '../downloadQueue';
@@ -143,6 +143,8 @@ export function useShellNavConstruction({
     if (collectionStationEnabled) {
       items.push({ id: 'collection', label: t('nav.collection'), icon: Disc3 });
     }
+    // Reading is an activity of its own, not a way of browsing, so it is always offered.
+    items.push({ id: 'reading', label: t('nav.reading'), icon: BookOpen });
     // Read-only and diagnostic, so it is always here — there is no content to switch off.
     items.push({ id: 'health', label: t('nav.health'), icon: Stethoscope });
     /*
@@ -211,6 +213,14 @@ export function useShellNavConstruction({
           ]
         : []),
       {
+        // Reading is its own activity, not a way of browsing, so it sits with the tools.
+        id: 'reading',
+        label: t('nav.reading'),
+        subtitle: t('nav.browseReadingHint'),
+        icon: BookOpen,
+        tone: 'accent',
+      },
+      {
         /*
          * Beside Insights because they are the same kind of thing: one tells you what you listened
          * to, the other what is wrong with what you listened to it from. Neither plays anything.
@@ -253,6 +263,7 @@ export function useShellNavConstruction({
     if (station === 'collection') return 'collection';
     if (station === 'health') return 'health';
     if (station === 'files') return 'files';
+    if (station === 'reading') return 'reading';
     if (station === 'insights') return 'insights';
     if (station === 'settings') return 'settings';
     return undefined;

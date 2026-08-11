@@ -32,6 +32,7 @@ const MOBILE_MENU_STATIONS = new Set([
   'collection',
   'health',
   'files',
+  'reading',
   'insights',
   'settings',
 ]);

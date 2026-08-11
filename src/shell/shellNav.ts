@@ -39,6 +39,12 @@ export type StationId =
    * grant and has nothing to browse.
    */
   | 'files'
+  /*
+   * Reading a document, as opposed to having one read to you. Its own station because it is its
+   * own activity: a book in a language you are learning is read at a fraction of listening speed,
+   * and the translation pane only makes sense with your eyes on the page.
+   */
+  | 'reading'
   | 'library'
   | 'sonic-locker'
   | 'search'

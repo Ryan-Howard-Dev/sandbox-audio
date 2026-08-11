@@ -57,7 +57,9 @@
     "health": "Health",
     "browseHealthHint": "What needs fixing in your library",
     "files": "Files",
-    "browseFilesHint": "Browse and organise what is on disk"
+    "browseFilesHint": "Browse and organise what is on disk",
+    "reading": "Reading",
+    "browseReadingHint": "Read your books and documents"
   },
   "shell": {
     "searchPlaceholder": {
@@ -2300,5 +2302,17 @@
   },
   "reader": {
     "sideBySide": "Original and translation"
+  },
+  "reading": {
+    "title": "Reading",
+    "lead": "Your imported books and documents, to read rather than listen to.",
+    "empty": "Nothing imported yet. Add an EPUB or a document and it appears here.",
+    "shelf": "Shelf",
+    "opening": "Opening…",
+    "translateTo": "Show a translation",
+    "noTranslation": "No translation",
+    "previous": "Previous passage",
+    "next": "Next passage",
+    "progress": "{index} of {total}"
   }
 }
