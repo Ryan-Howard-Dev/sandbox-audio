@@ -39,7 +39,7 @@ export interface ScanResult {
 
 export type LibraryOperation =
   | { kind: 'rename'; path: string; toName: string }
-  | { kind: 'move'; path: string; toDir: string }
+  | { kind: 'move'; path: string; toDir: string; toName?: string }
   | { kind: 'delete'; path: string }
   | { kind: 'createDir'; path: string };
 

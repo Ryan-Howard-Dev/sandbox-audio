@@ -7,7 +7,7 @@
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:3002",
-    "beforeBuildCommand": "npm run build:client && npm run build:tier34",
+    "beforeBuildCommand": "npm run build:client:tauri && npm run build:tier34",
     "frontendDist": "../dist"
   },
   "app": {
@@ -47,9 +47,9 @@
       "icons/icon.ico"
     ],
     "category": "Music",
-    "shortDescription": "Sandbox Music — self-hosted music console",
-    "longDescription": "Sandbox Music — offline-first music locker, catalog discovery, and DJ console shell.",
-    "copyright": "Copyright © 2026 Sandbox Music Contributors",
+    "shortDescription": "Sandbox Music \u2014 self-hosted music console",
+    "longDescription": "Sandbox Music \u2014 offline-first music locker, catalog discovery, and DJ console shell.",
+    "copyright": "Copyright \u00a9 2026 Sandbox Music Contributors",
     "linux": {
       "deb": {
         "depends": []

@@ -33,6 +33,12 @@ export type StationId =
    * so unlike a content station there is nothing to turn off.
    */
   | 'health'
+  /*
+   * The files on the disk, as opposed to the library that describes them. Desktop only, because it
+   * is the only platform with a filesystem layer -- the phone reaches its files through a folder
+   * grant and has nothing to browse.
+   */
+  | 'files'
   | 'library'
   | 'sonic-locker'
   | 'search'

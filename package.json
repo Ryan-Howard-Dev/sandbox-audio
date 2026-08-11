@@ -21,7 +21,7 @@
     "start:tier34": "tsx tier34-server/index.ts",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "node scripts/check-platform.mjs tauri && npm run build:client && node scripts/tauri-build.mjs",
+    "tauri:build": "node scripts/check-platform.mjs tauri && npm run build:client:tauri && node scripts/tauri-build.mjs",
     "tauri:icon": "tauri icon public/icon-desktop.svg",
     "build:desktop": "npm run tauri:build",
     "build:tauri": "npm run prebuild:desktop:assets && npm run tauri:build",
@@ -45,7 +45,8 @@
     "prebuild:desktop": "npm run prebuild:desktop:assets",
     "build:piper": "node scripts/build-sherpa-onnx.mjs",
     "build:attributions": "node scripts/generate-attributions.mjs",
-    "check:attributions": "node scripts/generate-attributions.mjs --check"
+    "check:attributions": "node scripts/generate-attributions.mjs --check",
+    "build:client:tauri": "npm run check:platform && node scripts/vite-tauri-build.mjs"
   },
   "dependencies": {
     "@capacitor-mlkit/barcode-scanning": "^8.1.0",

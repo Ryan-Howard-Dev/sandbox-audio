@@ -11,6 +11,18 @@ export default defineConfig(() => {
   // with zero setup. Read-only endpoints (getSimilar) need only a key — no user OAuth. Set
   // SANDBOX_LASTFM_API_KEY=<key> when building; leave empty to require a per-user key instead.
   const lastfmAppApiKey = process.env.SANDBOX_LASTFM_API_KEY?.trim() ?? '';
+  /*
+   * No service worker inside a packaged app.
+   *
+   * A worker exists to serve a web page offline. Android and the desktop already carry every asset
+   * locally, so it caches files that were never going to be fetched and gains nothing — while
+   * costing something real: the desktop app was found serving a bundle that no longer existed on
+   * disk, so a rebuilt app showed the previous version's interface and every change looked like it
+   * had silently failed to ship.
+   */
+  const packaged =
+    process.env.SANDBOX_BUILD_TARGET === 'android' ||
+    process.env.SANDBOX_BUILD_TARGET === 'tauri';
   return {
     define: {
       __SANDBOX_ANDROID_E2E__: androidDebugE2e,
@@ -21,6 +33,17 @@ export default defineConfig(() => {
       react(),
       tailwindcss(),
       VitePWA({
+        /*
+         * Self-destroying rather than absent, because absent cannot reach the installs that
+         * already have one.
+         *
+         * A registered worker outlives the build that registered it and keeps serving its cache,
+         * including the index.html that would have loaded the code to remove it. Simply not
+         * shipping a worker leaves those installs stuck on whatever they cached, permanently.
+         * This ships a worker whose only job is to unregister itself and drop its caches, which is
+         * the one thing the old worker will accept as an update.
+         */
+        selfDestroying: packaged,
         registerType: 'autoUpdate',
         injectRegister: 'auto',
         includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png'],

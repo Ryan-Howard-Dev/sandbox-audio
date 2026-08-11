@@ -14,15 +14,32 @@ nothing to route through.
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-use super::roots::{confine_existing, confine_target, ConfineError};
+use super::roots::{confine_existing, confine_new_path, confine_target, ConfineError};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", tag = "kind")]
+/*
+ * rename_all renames the variants; rename_all_fields renames what is inside them.
+ *
+ * Without the second, the tag arrives as "move" exactly as the client sends it and the field it
+ * carries is expected as to_dir while the client sends toDir, so every move and rename is rejected
+ * at the boundary with a message about a missing field. Nothing in Rust caught it: the tests build
+ * these values directly and never go through serde at all.
+ */
+#[serde(rename_all = "camelCase", rename_all_fields = "camelCase", tag = "kind")]
 pub enum Operation {
     /// Change a file or folder's name, leaving it where it is.
     Rename { path: PathBuf, to_name: String },
-    /// Move a file or folder into another directory, keeping its name.
-    Move { path: PathBuf, to_dir: PathBuf },
+    /// Move a file or folder into another directory, optionally under a new name.
+    ///
+    /// The name belongs here rather than in a following rename. Organising changes the folder and
+    /// the file name together, and as two operations the rename can never be planned: its source
+    /// does not exist until the move it depends on has already run.
+    Move {
+        path: PathBuf,
+        to_dir: PathBuf,
+        #[serde(default)]
+        to_name: Option<String>,
+    },
     /// Send to the recycle bin.
     Delete { path: PathBuf },
     /// Create a directory, including any missing parents inside the root.
@@ -122,13 +139,35 @@ fn confine_outcome(err: ConfineError) -> Outcome {
 pub fn plan_operations(operations: Vec<Operation>, roots: &[PathBuf]) -> Plan {
     let mut changes = Vec::with_capacity(operations.len());
 
+    /*
+     * Folders this plan will create, treated as existing by the operations that follow.
+     *
+     * A plan is checked against the disk as it is now, and organising means creating a folder and
+     * then moving into it — so without this the move is measured against a disk where its
+     * destination does not exist yet and every single one is refused. That is not an edge case, it
+     * is what filing a library into artist and album folders looks like.
+     *
+     * Only folders the plan itself confined and accepted count, so this widens what can be
+     * planned without widening what can be reached.
+     */
+    let mut will_exist: Vec<PathBuf> = Vec::new();
+
     for operation in operations {
         let change = match &operation {
             Operation::Rename { path, to_name } => plan_rename(&operation, path, to_name, roots),
-            Operation::Move { path, to_dir } => plan_move(&operation, path, to_dir, roots),
+            Operation::Move { path, to_dir, to_name } => {
+                plan_move(&operation, path, to_dir, to_name.as_deref(), roots, &will_exist)
+            }
             Operation::Delete { path } => plan_delete(&operation, path, roots),
             Operation::CreateDir { path } => plan_create_dir(&operation, path, roots),
         };
+        if matches!(operation, Operation::CreateDir { .. })
+            && !change.outcome.blocks()
+        {
+            if let Some(to) = &change.to {
+                will_exist.push(to.clone());
+            }
+        }
         changes.push(change);
     }
 
@@ -204,7 +243,9 @@ fn plan_move(
     operation: &Operation,
     path: &PathBuf,
     to_dir: &PathBuf,
+    to_name: Option<&str>,
     roots: &[PathBuf],
+    will_exist: &[PathBuf],
 ) -> PlannedChange {
     let from = match confine_existing(path, roots) {
         Ok(p) => p,
@@ -212,11 +253,26 @@ fn plan_move(
     };
     let dir = match confine_existing(to_dir, roots) {
         Ok(p) => p,
-        Err(e) => return blocked_change(operation, from, None, confine_outcome(e)),
+        Err(e) => {
+            // Not there yet, but this plan is about to make it. Matched against what an earlier
+            // createDir resolved to, so the destination is still one confinement already approved.
+            match confine_new_path(to_dir, roots) {
+                Ok(target) if will_exist.iter().any(|d| d == &target) => target,
+                _ => return blocked_change(operation, from, None, confine_outcome(e)),
+            }
+        }
     };
-    let name = match from.file_name() {
-        Some(n) => n.to_os_string(),
-        None => return blocked_change(operation, from, None, Outcome::InvalidName),
+    let name = match to_name {
+        Some(requested) => {
+            if let Some(outcome) = name_outcome(requested) {
+                return blocked_change(operation, from, None, outcome);
+            }
+            std::ffi::OsString::from(requested.trim())
+        }
+        None => match from.file_name() {
+            Some(n) => n.to_os_string(),
+            None => return blocked_change(operation, from, None, Outcome::InvalidName),
+        },
     };
     let to = dir.join(&name);
     if to == from {
@@ -290,7 +346,7 @@ fn plan_create_dir(operation: &Operation, path: &PathBuf, roots: &[PathBuf]) -> 
             return blocked_change(operation, path.clone(), None, outcome);
         }
     }
-    match confine_target(path, roots) {
+    match confine_new_path(path, roots) {
         Ok(to) => {
             let outcome = if to.exists() { Outcome::NoChange } else { Outcome::Ok };
             PlannedChange {
@@ -363,6 +419,34 @@ mod tests {
         let root = tmp.0.join("library");
         fs::create_dir_all(&root).unwrap();
         (tmp, root)
+    }
+
+    /*
+     * The wire format, pinned against what the TypeScript client actually sends.
+     *
+     * Every other test in this file builds an Operation in Rust and never touches serde, which is
+     * how a camelCase mismatch survived: the planner was correct and the boundary rejected every
+     * move before reaching it.
+     */
+    #[test]
+    fn deserializes_the_json_the_client_sends() {
+        let move_op: Operation =
+            serde_json::from_str(r#"{"kind":"move","path":"C:/a.flac","toDir":"C:/b"}"#)
+                .expect("move");
+        assert!(matches!(move_op, Operation::Move { .. }));
+
+        let rename_op: Operation =
+            serde_json::from_str(r#"{"kind":"rename","path":"C:/a.flac","toName":"b.flac"}"#)
+                .expect("rename");
+        assert!(matches!(rename_op, Operation::Rename { .. }));
+
+        let delete_op: Operation =
+            serde_json::from_str(r#"{"kind":"delete","path":"C:/a.flac"}"#).expect("delete");
+        assert!(matches!(delete_op, Operation::Delete { .. }));
+
+        let create_op: Operation =
+            serde_json::from_str(r#"{"kind":"createDir","path":"C:/b"}"#).expect("createDir");
+        assert!(matches!(create_op, Operation::CreateDir { .. }));
     }
 
     #[test]
@@ -480,6 +564,46 @@ mod tests {
     }
 
     #[test]
+    fn a_move_into_a_folder_this_plan_creates_is_allowed() {
+        /*
+         * The whole shape of organising: make the artist/album folder, then move the track into it.
+         * Planned against the disk as it is, the destination does not exist yet, and refusing on
+         * that basis refuses every file being filed.
+         */
+        let (_t, root) = library("createthenmove");
+        let file = root.join("track.flac");
+        fs::write(&file, b"x").unwrap();
+        let album = root.join("Radiohead").join("OK Computer");
+
+        let plan = plan_operations(
+            vec![
+                Operation::CreateDir { path: album.clone() },
+                Operation::Move { path: file, to_dir: album, to_name: None },
+            ],
+            &[root],
+        );
+
+        assert_eq!(plan.changes[0].outcome, Outcome::Ok);
+        assert_eq!(plan.changes[1].outcome, Outcome::Ok, "{:?}", plan.changes[1]);
+        assert_eq!(plan.blocked, 0);
+    }
+
+    #[test]
+    fn a_move_into_a_folder_nobody_is_creating_is_still_refused() {
+        // The allowance is only for folders this plan confined and accepted, not for any path that
+        // happens to be absent.
+        let (_t, root) = library("movenowhere");
+        let file = root.join("track.flac");
+        fs::write(&file, b"x").unwrap();
+
+        let plan = plan_operations(
+            vec![Operation::Move { path: file, to_dir: root.join("Nowhere"), to_name: None }],
+            &[root],
+        );
+        assert!(plan.changes[0].outcome.blocks());
+    }
+
+    #[test]
     fn a_move_outside_the_roots_is_refused() {
         let (t, root) = library("moveout");
         let outside = t.0.join("elsewhere");
@@ -488,10 +612,7 @@ mod tests {
         fs::write(&file, b"x").unwrap();
 
         let plan = plan_operations(
-            vec![Operation::Move {
-                path: file,
-                to_dir: outside,
-            }],
+            vec![Operation::Move { path: file, to_dir: outside, to_name: None }],
             &[root],
         );
         assert_eq!(plan.changes[0].outcome, Outcome::OutsideRoots);
@@ -505,10 +626,7 @@ mod tests {
         fs::create_dir_all(&inner).unwrap();
 
         let plan = plan_operations(
-            vec![Operation::Move {
-                path: album,
-                to_dir: inner,
-            }],
+            vec![Operation::Move { path: album, to_dir: inner, to_name: None }],
             &[root],
         );
         assert_eq!(plan.changes[0].outcome, Outcome::InvalidName);

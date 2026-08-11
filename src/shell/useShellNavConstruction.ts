@@ -11,7 +11,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Activity, ArrowDownCircle, BookAudio, Disc3, Menu, Podcast, Radio, Search, Server, Settings, Sliders, Stethoscope, User } from 'lucide-react';
+import { Activity, ArrowDownCircle, BookAudio, Disc3, Menu, Podcast, Radio, Search, Server, FolderTree, Settings, Sliders, Stethoscope, User } from 'lucide-react';
 import type { MobileNavMoreItem } from '../components/MobileNavMoreSheet';
 import { countDownloadSheetBadge } from '../components/DownloadActivitySheet';
 import { getDownloadJobs } from '../downloadQueue';
@@ -27,6 +27,7 @@ import {
 } from './shellNav';
 import type { NavPinTabId } from '../navPinTabs';
 import type { DiscoverTabId } from '../stations/DiscoverStationView';
+import { isLibraryFsAvailable } from '../libraryFs';
 
 export type UseShellNavConstructionArgs = {
   navPinTabs: NavPinTabId[];
@@ -144,6 +145,13 @@ export function useShellNavConstruction({
     }
     // Read-only and diagnostic, so it is always here — there is no content to switch off.
     items.push({ id: 'health', label: t('nav.health'), icon: Stethoscope });
+    /*
+     * Desktop only, and gated on the platform rather than a setting: the phone has no filesystem
+     * layer to browse, so an entry there would open a screen that can only apologise.
+     */
+    if (isLibraryFsAvailable()) {
+      items.push({ id: 'files', label: t('nav.files'), icon: FolderTree });
+    }
     items.push({ id: 'settings', label: t('nav.settings'), icon: Settings });
     items.push({
       id: 'profile',
@@ -244,6 +252,7 @@ export function useShellNavConstruction({
     if (station === 'audiobooks') return 'audiobooks';
     if (station === 'collection') return 'collection';
     if (station === 'health') return 'health';
+    if (station === 'files') return 'files';
     if (station === 'insights') return 'insights';
     if (station === 'settings') return 'settings';
     return undefined;

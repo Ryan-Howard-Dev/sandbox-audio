@@ -6,6 +6,7 @@ import AppErrorBoundary from './components/AppErrorBoundary';
 import WindowsTitleBar from './components/WindowsTitleBar';
 import { isCinemaCastView } from './cinemaCast';
 import { isVinylWidgetView } from './vinylWidget';
+import { retirePackagedServiceWorker } from './retirePackagedServiceWorker';
 import { installAirGapFetchGuard } from './airGapMode';
 import { initEngineTheme } from './engineTheme';
 import { preloadLocale } from './i18n';
@@ -90,6 +91,9 @@ if (!rootEl) {
   document.body.innerHTML =
     '<p style="font-family:system-ui;padding:2rem;color:#f87171">Sandbox Music: missing #root element.</p>';
 } else {
+  // Before the tree mounts, so a stale precache is gone rather than half applied mid-render.
+  void retirePackagedServiceWorker();
+
   createRoot(rootEl).render(
     <StrictMode>
       <AppErrorBoundary label="app root">

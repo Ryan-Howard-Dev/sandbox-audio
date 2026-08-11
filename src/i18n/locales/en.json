@@ -55,7 +55,9 @@
     "closeStations": "Close stations",
     "allStations": "All stations",
     "health": "Health",
-    "browseHealthHint": "What needs fixing in your library"
+    "browseHealthHint": "What needs fixing in your library",
+    "files": "Files",
+    "browseFilesHint": "Browse and organise what is on disk"
   },
   "shell": {
     "searchPlaceholder": {
@@ -553,6 +555,30 @@
     "stationAudiobooks": "Audiobooks",
     "stationDocuments": "Documents",
     "stationCollection": "Collection"
+  },
+  "files": {
+    "title": "Files",
+    "lead": "What is actually on the disk. Play it, then file it. Nothing moves until you have seen exactly what would move.",
+    "desktopOnly": "Only the desktop app can reach the filesystem. On a phone your files are read through a folder grant instead.",
+    "noRoots": "No library folder yet. Point the app at one to browse what is on disk.",
+    "rootsLabel": "Library folders",
+    "schemeLabel": "Naming scheme",
+    "preview": "PREVIEW",
+    "apply": "MOVE {count}",
+    "undo": "UNDO LAST",
+    "scanning": "Reading the folder…",
+    "count": "{count} audio files",
+    "truncated": "Showing the first {count} — the folder is larger than one scan returns.",
+    "play": "Play {name}",
+    "pause": "Pause {name}",
+    "cannotPlay": "That file could not be played.",
+    "planSummary": "{moving} would move, {blocked} blocked, {unchanged} already right.",
+    "alreadyRight": "Already in the right place",
+    "blockedNote": "{count} changes cannot run and will be skipped.",
+    "andMore": "and {count} more",
+    "applied": "Moved {applied}, failed {failed}.",
+    "undone": "Put {count} files back.",
+    "addRoot": "ADD FOLDER"
   },
   "releaseMatch": {
     "title": "Match from catalogue",

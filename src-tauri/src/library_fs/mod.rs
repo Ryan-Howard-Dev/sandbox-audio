@@ -140,7 +140,7 @@ fn entry_from_path(path: &std::path::Path) -> Option<FileEntry> {
         extension: path
             .extension()
             .map(|e| e.to_string_lossy().to_ascii_lowercase()),
-        path: path.to_path_buf(),
+        path: roots::tidy_display(path),
     })
 }
 
@@ -181,7 +181,8 @@ pub fn library_root_add(app: AppHandle, path: String, kind: RootKind) -> Result<
 
     let root = LibraryRoot {
         id: format!("root-{}-{}", now_ms(), store.roots.len()),
-        path: resolved,
+        // Tidied before storing, so every path derived from it afterwards is readable too.
+        path: roots::tidy_display(&resolved),
         kind,
         added_at: now_ms(),
     };
@@ -381,14 +382,21 @@ fn apply_one(change: &plan::PlannedChange, allowed: &[PathBuf]) -> Result<(), St
         }
         Operation::CreateDir { .. } => {
             let to = change.to.as_ref().ok_or("No destination")?;
-            roots::confine_target(to, allowed).map_err(|e| e.message().to_string())?;
+            // Nested-aware, because filing a track creates Artist and Album together and the
+            // artist folder is as absent as the album folder.
+            roots::confine_new_path(to, allowed).map_err(|e| e.message().to_string())?;
             std::fs::create_dir_all(to).map_err(|e| e.to_string())
         }
         Operation::Rename { .. } | Operation::Move { .. } => {
             let from = roots::confine_existing(&change.from, allowed)
                 .map_err(|e| e.message().to_string())?;
             let to = change.to.as_ref().ok_or("No destination")?;
-            let to = roots::confine_target(to, allowed).map_err(|e| e.message().to_string())?;
+            let to = roots::confine_new_path(to, allowed).map_err(|e| e.message().to_string())?;
+            if let Some(parent) = to.parent() {
+                // The folder was planned earlier in this run; make sure it is really there before
+                // renaming into it, rather than failing on ordering the plan already resolved.
+                let _ = std::fs::create_dir_all(parent);
+            }
             // Re-checked here rather than trusted from the plan: something else may have created
             // this in between, and rename would overwrite it without a word.
             if to.exists() {
@@ -621,10 +629,7 @@ mod tests {
 
         let allowed = vec![root.clone()];
         let plan = plan_operations(
-            vec![Operation::Move {
-                path: file.clone(),
-                to_dir: album.clone(),
-            }],
+            vec![Operation::Move { path: file.clone(), to_dir: album.clone(), to_name: None }],
             &allowed,
         );
         let (applied, _) = apply_plan_directly(&plan, &allowed);

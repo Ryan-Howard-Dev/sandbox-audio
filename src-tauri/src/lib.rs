@@ -1,7 +1,7 @@
 mod audio;
 mod commands;
 mod identity;
-mod library_fs;
+pub mod library_fs;
 mod infrastructure;
 mod cast_browser_server;
 mod local_server;

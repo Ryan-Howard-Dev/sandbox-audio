@@ -12,6 +12,7 @@ import {
   LazyAudiobooksView,
   LazyCollectionView,
   LazyDiscoverStationView,
+  LazyLibraryFilesView,
   LazyLibraryHealthView,
   LazyPhysicalCollectionView,
   LazyDJStationView,
@@ -171,6 +172,12 @@ export function ShellStationRouter(p: Record<string, any>) {
               onSaveMix={handleSonicLockerSaveMix}
               onStartDiscoveryStation={handleSonicLockerDiscoveryStation}
             />,
+          )}
+        {station === 'files' &&
+          withStationSuspense(
+            <div className="flex flex-col min-h-0 flex-1">
+              <LazyLibraryFilesView />
+            </div>,
           )}
         {station === 'health' &&
           withStationSuspense(

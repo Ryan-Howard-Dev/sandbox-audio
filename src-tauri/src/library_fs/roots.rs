@@ -96,6 +96,21 @@ impl ConfineError {
     }
 }
 
+/// Strip Windows' verbatim prefix, which canonicalize adds and nobody wants to read.
+///
+/// The prefix names the same folder and is what canonicalize returns. Left alone it reaches the
+/// screen, gets stored in the roots file, and is then prefixed onto every path the manager shows.
+/// Only stripped for a plain drive path: it is load-bearing for UNC shares and for paths past the
+/// old length limit, and removing it there would break them.
+pub fn tidy_display(path: &Path) -> PathBuf {
+    let text = path.to_string_lossy();
+    let verbatim = concat!(r"\", r"\", "?", r"\");
+    match text.strip_prefix(verbatim) {
+        Some(rest) if !rest.starts_with("UNC") && rest.len() > 2 => PathBuf::from(rest),
+        _ => path.to_path_buf(),
+    }
+}
+
 /// Resolve a path that must already exist, and prove it sits inside a root.
 pub fn confine_existing(path: &Path, roots: &[PathBuf]) -> Result<PathBuf, ConfineError> {
     if roots.is_empty() {
@@ -124,6 +139,46 @@ pub fn confine_target(path: &Path, roots: &[PathBuf]) -> Result<PathBuf, Confine
     }
     let resolved_parent = confine_existing(parent, roots)?;
     Ok(resolved_parent.join(name))
+}
+
+/// Resolve a path whose parents may not exist yet either.
+///
+/// confine_target resolves exactly one missing level, which is enough for a rename and not enough
+/// for organising: filing a track creates `Artist/Album` in one go, and the artist folder is as
+/// absent as the album folder. This walks up to the deepest ancestor that does exist, confines
+/// that, and rebuilds the rest on top of it — so the confinement is still decided by a real
+/// resolved directory, and the parts that do not exist cannot smuggle in a `..`.
+pub fn confine_new_path(path: &Path, roots: &[PathBuf]) -> Result<PathBuf, ConfineError> {
+    if roots.is_empty() {
+        return Err(ConfineError::NoRoots);
+    }
+
+    let mut trailing: Vec<std::ffi::OsString> = Vec::new();
+    let mut cursor = path.to_path_buf();
+
+    loop {
+        if cursor.exists() {
+            let base = confine_existing(&cursor, roots)?;
+            let mut out = base;
+            for segment in trailing.iter().rev() {
+                out.push(segment);
+            }
+            return Ok(out);
+        }
+        let name = match cursor.file_name() {
+            Some(name) => name.to_os_string(),
+            // Ran out of path without finding anything real — a bare drive or an empty string.
+            None => return Err(ConfineError::Unresolvable),
+        };
+        if name == std::ffi::OsStr::new("..") || name == std::ffi::OsStr::new(".") {
+            return Err(ConfineError::Unresolvable);
+        }
+        trailing.push(name);
+        match cursor.parent() {
+            Some(parent) => cursor = parent.to_path_buf(),
+            None => return Err(ConfineError::Unresolvable),
+        }
+    }
 }
 
 /// True when `path` is the root itself or sits beneath it.
