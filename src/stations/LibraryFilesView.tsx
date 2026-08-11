@@ -47,6 +47,7 @@ import {
 import { getLockerEntries } from '../lockerStorage';
 import { filePathFromUrl } from '../libraryHealthSources';
 import { isAudioFile } from '../libraryHealth';
+import { useSelection } from '../hooks/useSelection';
 
 type Phase = 'idle' | 'scanning' | 'planning' | 'applying';
 
@@ -137,6 +138,16 @@ export default function LibraryFilesView() {
     [files],
   );
 
+  /*
+   * Selection is over the scanned audio files, keyed by path.
+   *
+   * Ids are the paths themselves, so a rescan that finds the same files keeps the selection and one
+   * that moved them drops it — which is exactly right after an organise run has just relocated the
+   * things that were selected.
+   */
+  const fileIds = useMemo(() => audioFiles.map((file) => file.path), [audioFiles]);
+  const selection = useSelection(fileIds);
+
   const togglePlay = useCallback(
     async (path: string) => {
       if (!audio) return;
@@ -185,7 +196,18 @@ export default function LibraryFilesView() {
         if (path) byPath.set(path.replace(/\\/g, '/').toLowerCase(), entry);
       }
 
-      const tracks: OrganiseTrack[] = audioFiles.map((file) => {
+      /*
+       * A selection narrows the run; no selection means everything scanned.
+       *
+       * Organising a whole folder is the common case and should not need a select-all first, but
+       * fixing one album out of forty thousand files is the case that makes the preview readable.
+       */
+      const subject =
+        selection.count > 0
+          ? audioFiles.filter((file) => selection.isSelected(file.path))
+          : audioFiles;
+
+      const tracks: OrganiseTrack[] = subject.map((file) => {
         const known = byPath.get(file.path.replace(/\\/g, '/').toLowerCase());
         return {
           path: file.path,
@@ -214,7 +236,7 @@ export default function LibraryFilesView() {
     } finally {
       setPhase('idle');
     }
-  }, [roots, activeRoot, audioFiles, scheme]);
+  }, [roots, activeRoot, audioFiles, scheme, selection]);
 
   const apply = useCallback(async () => {
     if (!plan) return;
@@ -332,7 +354,9 @@ export default function LibraryFilesView() {
               ) : (
                 <Wand2 className="w-3.5 h-3.5" aria-hidden />
               )}
-              {t('files.preview')}
+              {selection.count > 0
+                ? t('files.previewSelected', { count: selection.count })
+                : t('files.preview')}
             </button>
             <button
               type="button"
@@ -412,28 +436,82 @@ export default function LibraryFilesView() {
               </button>
             </div>
           ) : (
-            <ul className="files-list">
-              {audioFiles.slice(0, 300).map((file) => (
-                <li className="files-row" key={file.path}>
+            <>
+              <div className="files-selectbar">
+                <label className="files-selectall">
+                  <input
+                    type="checkbox"
+                    checked={selection.headerState === 'all'}
+                    /* Three states, not two: partly chosen is neither ticked nor empty. */
+                    ref={(el) => {
+                      if (el) el.indeterminate = selection.headerState === 'some';
+                    }}
+                    onChange={selection.toggleAll}
+                    aria-label={t('files.selectAll')}
+                  />
+                  <span className="ui-hint">
+                    {selection.count > 0
+                      ? t('files.selectedCount', { count: selection.count })
+                      : t('files.selectNone')}
+                  </span>
+                </label>
+                {selection.count > 0 ? (
                   <button
                     type="button"
-                    className="files-play touch-manipulation"
-                    onClick={() => void togglePlay(file.path)}
-                    aria-label={t(playing === file.path ? 'files.pause' : 'files.play', {
-                      name: file.name,
-                    })}
+                    className="files-clearsel touch-manipulation"
+                    onClick={selection.clear}
                   >
-                    {playing === file.path ? (
-                      <Pause className="w-3.5 h-3.5" aria-hidden />
-                    ) : (
-                      <Play className="w-3.5 h-3.5" aria-hidden />
-                    )}
+                    {t('files.clearSelection')}
                   </button>
-                  <span className="files-name">{file.name}</span>
-                  <span className="ui-hint files-path">{file.path}</span>
-                </li>
-              ))}
-            </ul>
+                ) : null}
+              </div>
+
+              {/* Arrow keys and ctrl-A reach the list itself, so a keyboard can drive it without
+                  tabbing through every row. */}
+              <ul
+                className="files-list"
+                tabIndex={0}
+                role="listbox"
+                aria-multiselectable
+                aria-label={t('files.title')}
+                onKeyDown={selection.onKeyDown}
+              >
+                {audioFiles.slice(0, 300).map((file) => {
+                  const chosen = selection.isSelected(file.path);
+                  return (
+                    <li
+                      className={`files-row${chosen ? ' files-row--on' : ''}`}
+                      key={file.path}
+                      role="option"
+                      aria-selected={chosen}
+                      onClick={(e) => selection.onRowClick(file.path, e)}
+                    >
+                      <button
+                        type="button"
+                        className="files-play touch-manipulation"
+                        /* Playing is not selecting: hearing a file to decide about it must not
+                           throw away the selection being decided. */
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void togglePlay(file.path);
+                        }}
+                        aria-label={t(playing === file.path ? 'files.pause' : 'files.play', {
+                          name: file.name,
+                        })}
+                      >
+                        {playing === file.path ? (
+                          <Pause className="w-3.5 h-3.5" aria-hidden />
+                        ) : (
+                          <Play className="w-3.5 h-3.5" aria-hidden />
+                        )}
+                      </button>
+                      <span className="files-name">{file.name}</span>
+                      <span className="ui-hint files-path">{file.path}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </>
       )}

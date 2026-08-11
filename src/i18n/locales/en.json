@@ -580,7 +580,12 @@
     "andMore": "and {count} more",
     "applied": "Moved {applied}, failed {failed}.",
     "undone": "Put {count} files back.",
-    "addRoot": "ADD FOLDER"
+    "addRoot": "ADD FOLDER",
+    "selectAll": "Select all",
+    "selectNone": "Click to select, shift-click for a range",
+    "selectedCount": "{count} selected",
+    "clearSelection": "CLEAR",
+    "previewSelected": "PREVIEW {count}"
   },
   "releaseMatch": {
     "title": "Match from catalogue",
