@@ -436,6 +436,7 @@ import {
   shouldShowServerSetup,
 } from './sandboxSettings';
 import { maybeAutoStartLocalSandboxServer } from './sandboxServerBridge';
+import { useShellLockerSync } from './shell/useShellLockerSync';
 import { prefsGetItem } from './prefsStorage';
 import {
   enqueueDownloadJob,
@@ -2647,6 +2648,12 @@ export default function SandboxShell() {
     sleepTimerTick,
     setSleepTimerTick,
   });
+
+  /*
+   * Above the entry gates like the rest of the hooks, and unconditional: a device left on the
+   * login screen is still a device whose library should be up to date when somebody signs in.
+   */
+  useShellLockerSync();
 
   useAndroidShellBridges({
     playQueue,

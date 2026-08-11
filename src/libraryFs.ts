@@ -167,3 +167,22 @@ export async function applyLibraryPlan(planId: string): Promise<ApplyResult> {
 export async function undoLastLibraryRun(): Promise<ApplyResult> {
   return invokeFs<ApplyResult>('library_undo_last');
 }
+
+/**
+ * A url an audio element can actually play this file from.
+ *
+ * A WebView will not load a file:// path, and granting it the asset protocol would grant it the
+ * whole disk. Rust serves the bytes over loopback instead, with byte ranges so seeking works, and
+ * only ever opens paths already confined to a library root.
+ *
+ * Returns null off the desktop rather than throwing: Android reaches its files through the Storage
+ * Access Framework and needs none of this, so a caller can ask without knowing the platform.
+ */
+export async function libraryMediaUrl(path: string): Promise<string | null> {
+  if (!isLibraryFsAvailable()) return null;
+  try {
+    return await invokeFs<string>('library_media_url', { path });
+  } catch {
+    return null;
+  }
+}

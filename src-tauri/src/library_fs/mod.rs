@@ -11,6 +11,7 @@ first. The three rules the whole manager rests on:
   - Deletes go to the recycle bin, and every applied move is written to an undo log.
 */
 
+pub mod media_server;
 pub mod plan;
 pub mod roots;
 
@@ -18,6 +19,7 @@ use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tauri::{AppHandle, Manager, State};
 use walkdir::WalkDir;
 
@@ -395,6 +397,39 @@ fn apply_one(change: &plan::PlannedChange, allowed: &[PathBuf]) -> Result<(), St
             std::fs::rename(&from, &to).map_err(|e| e.to_string())
         }
     }
+}
+
+/**
+ * A url the player can stream this file from.
+ *
+ * The WebView cannot open a path, and handing it the asset protocol would hand it the whole disk.
+ * So Rust serves the bytes over loopback, with byte ranges, and the player treats the library as
+ * an ordinary HTTP source it already knows how to buffer and seek.
+ *
+ * The path is confined before a url is minted as well as on every request that follows. Failing
+ * here means the caller learns immediately, rather than getting a url that will only ever 403.
+ */
+#[tauri::command]
+pub fn library_media_url(
+    app: AppHandle,
+    state: State<'_, media_server::MediaServerState>,
+    path: String,
+) -> Result<String, String> {
+    let store = load_roots(&app);
+    let allowed = root_paths(&store);
+    let resolved = roots::confine_existing(&PathBuf::from(&path), &allowed)
+        .map_err(|e| e.message().to_string())?;
+
+    let handle = app.clone();
+    let roots_fn: Arc<dyn Fn() -> Vec<PathBuf> + Send + Sync> =
+        Arc::new(move || root_paths(&load_roots(&handle)));
+
+    let (port, token) = media_server::ensure_running(&state, roots_fn)?;
+    Ok(format!(
+        "http://127.0.0.1:{port}/media?t={}&p={}",
+        media_server::percent_encode(&token),
+        media_server::percent_encode(&resolved.to_string_lossy()),
+    ))
 }
 
 /// Reverse the most recent applied run, where the files are still where it left them.
