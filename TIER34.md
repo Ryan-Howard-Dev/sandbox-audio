@@ -15,6 +15,19 @@ npm run dev:all
 
 In **Settings → Playback Engine** → **Sovereign System Status**, set **YT-DLP BACKEND URL** to your tier34 host (default `http://localhost:3001` on desktop). On phones, use the LAN IP (e.g. `http://192.168.1.10:3001`), not `localhost`.
 
+## Background services (opt-in)
+
+Heavy background work is **off by default** so an idle household host does not run chokidar, SSDP, or podcast schedulers. Enable only what you need:
+
+| Env flag | Default | Effect |
+|----------|---------|--------|
+| `TIER34_INGEST_WATCHER=1` | OFF | Start filesystem ingest watcher (`TIER34_WATCH_PATH` or API path) |
+| `TIER34_DLNA=1` | OFF | DLNA/SSDP MediaServer announcements (`DLNA_MEDIASERVER=1` still accepted) |
+| `PODCAST_MIRROR_ENABLED=1` | OFF | Podcast mirror pull scheduler |
+| `PODCAST_WHISPER_ENABLED=1` | OFF | Local Whisper transcript scheduler |
+
+Boot logs one line per service: `background …: ON` or `OFF`.
+
 ## What runs on 3001
 
 | Feature | Endpoint |

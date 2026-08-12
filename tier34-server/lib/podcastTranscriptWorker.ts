@@ -37,9 +37,9 @@ export function isPodcastTranscriptRunning(): boolean {
 }
 
 export function isPodcastWhisperEnabled(): boolean {
+  // Opt-in: Whisper batch work is heavy; off unless explicitly enabled.
   const raw = process.env.PODCAST_WHISPER_ENABLED?.trim().toLowerCase();
-  if (raw === '0' || raw === 'false' || raw === 'off') return false;
-  return true;
+  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
 }
 
 export function whisperMaxJobsPerRun(): number {

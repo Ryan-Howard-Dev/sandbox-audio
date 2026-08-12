@@ -132,7 +132,7 @@ export function startIngestionWatcher(watchPath?: string): { ok: boolean; error?
 
   saveWatchConfig();
   void import('./ingestFileWorker.js').then((m) => m.initIngestPump());
-  console.log(`[tier34] ingestion watcher active: ${target}`);
+  console.log(`[tier34] background ingest-watcher: ON (${target})`);
   return { ok: true };
 }
 
@@ -162,12 +162,28 @@ export function setWatchConfig(input: {
   return getWatchStatus();
 }
 
-/** Called on tier34 boot — start when env or saved config has a path. */
+/** Opt-in chokidar folder watch (depth-99). Default off for idle cost. */
+export function isIngestWatcherEnvEnabled(): boolean {
+  const raw = process.env.TIER34_INGEST_WATCHER?.trim().toLowerCase();
+  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+}
+
+/** Called on tier34 boot — only when TIER34_INGEST_WATCHER=1 and a path is set. */
 export function bootIngestionWatcher(): void {
   loadWatchConfig();
   const envPath = process.env.TIER34_WATCH_PATH?.trim();
   if (envPath && !config.path) {
     config.path = envPath;
+  }
+  if (!isIngestWatcherEnvEnabled()) {
+    if (config.enabled || envPath) {
+      console.log(
+        '[tier34] background ingest-watcher: OFF (set TIER34_INGEST_WATCHER=1; path via TIER34_WATCH_PATH or API)',
+      );
+    } else {
+      console.log('[tier34] background ingest-watcher: OFF (set TIER34_INGEST_WATCHER=1)');
+    }
+    return;
   }
   if (config.enabled && config.path) {
     const result = startIngestionWatcher(config.path);
@@ -180,6 +196,10 @@ export function bootIngestionWatcher(): void {
     if (!result.ok) {
       console.warn('[tier34] TIER34_WATCH_PATH watcher failed:', result.error);
     }
+  } else {
+    console.log(
+      '[tier34] background ingest-watcher: ON flag set but no path (set TIER34_WATCH_PATH or enable via API)',
+    );
   }
 }
 

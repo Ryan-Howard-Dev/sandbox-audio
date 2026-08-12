@@ -17,12 +17,12 @@ export function initPodcastMirrorScheduler(): void {
   if (booted) return;
   booted = true;
   if (!isPodcastMirrorEnabled()) {
-    console.log('[tier34] podcast mirror disabled (PODCAST_MIRROR_ENABLED=0)');
+    console.log('[tier34] background podcast-mirror: OFF (set PODCAST_MIRROR_ENABLED=1)');
     return;
   }
   const intervalMs = mirrorPullIntervalMs();
   console.log(
-    `[tier34] podcast mirror scheduler every ${Math.round(intervalMs / 60_000)} min — LAN clients can play from NAS cache`,
+    `[tier34] background podcast-mirror: ON (every ${Math.round(intervalMs / 60_000)} min)`,
   );
   const run = () => {
     void pullAllMirrorFeeds().then((results) => {

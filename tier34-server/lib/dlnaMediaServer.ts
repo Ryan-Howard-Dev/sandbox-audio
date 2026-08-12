@@ -423,9 +423,14 @@ export function browseContentDirectory(
   return browseObject(objectId || DLNA_ROOT_ID, startingIndex, requestedCount, baseUrl);
 }
 
+function envFlagOn(raw: string | undefined): boolean {
+  const v = raw?.trim().toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes' || v === 'on';
+}
+
+/** Opt-in SSDP/DLNA advertise. Prefer TIER34_DLNA; DLNA_MEDIASERVER still accepted. */
 export function isDlnaEnvEnabled(): boolean {
-  const raw = process.env.DLNA_MEDIASERVER?.trim().toLowerCase();
-  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+  return envFlagOn(process.env.TIER34_DLNA) || envFlagOn(process.env.DLNA_MEDIASERVER);
 }
 
 export function getDlnaRuntimeOverride(): boolean | undefined {

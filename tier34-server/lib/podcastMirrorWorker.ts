@@ -206,7 +206,7 @@ export async function pullAllMirrorFeeds(): Promise<PodcastMirrorPullResult[]> {
 }
 
 export function isPodcastMirrorEnabled(): boolean {
+  // Opt-in: idle hosts must not pull/mirror by default.
   const raw = process.env.PODCAST_MIRROR_ENABLED?.trim().toLowerCase();
-  if (raw === '0' || raw === 'false' || raw === 'off') return false;
-  return true;
+  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
 }

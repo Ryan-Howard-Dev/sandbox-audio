@@ -17,12 +17,12 @@ export function initPodcastTranscriptScheduler(): void {
   if (booted) return;
   booted = true;
   if (!isPodcastWhisperEnabled()) {
-    console.log('[tier34] podcast whisper disabled (PODCAST_WHISPER_ENABLED=0)');
+    console.log('[tier34] background podcast-whisper: OFF (set PODCAST_WHISPER_ENABLED=1)');
     return;
   }
   const intervalMs = whisperIntervalMs();
   console.log(
-    `[tier34] podcast whisper scheduler every ${Math.round(intervalMs / 60_000)} min — local transcripts on NAS`,
+    `[tier34] background podcast-whisper: ON (every ${Math.round(intervalMs / 60_000)} min)`,
   );
   const run = () => {
     void runPodcastTranscriptBatch().then((results) => {

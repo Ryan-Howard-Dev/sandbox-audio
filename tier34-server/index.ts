@@ -87,7 +87,6 @@ import { enqueueHealBlobJob } from './lib/jobQueue.js';
 import { meilisearchAvailable, reindexTracks, searchTracks } from './lib/meilisearchIndexer.js';
 import {
   bootIngestionWatcher,
-  getWatchStatus,
   loadWatchConfig,
   setWatchConfig,
 } from './lib/ingestionWatcher.js';
@@ -1641,7 +1640,9 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`[tier34] Sandbox Tier 3/4 backend http://localhost:${PORT}`);
   console.log(`[tier34] WebSocket peer sync ws://localhost:${PORT}/peer-sync`);
   if (dlnaEnabled) {
-    console.log(`[tier34] DLNA MediaServer enabled — browse locker from TVs/receivers on LAN`);
+    console.log('[tier34] background dlna-ssdp: ON');
+  } else {
+    console.log('[tier34] background dlna-ssdp: OFF (set TIER34_DLNA=1)');
   }
   if (subsonicEnabled) {
     console.log(`[tier34] OpenSubsonic read-only API at /rest/*`);
@@ -1676,10 +1677,6 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   try {
     initIngestPump();
     bootIngestionWatcher();
-    const watch = getWatchStatus();
-    if (watch.watching) {
-      console.log(`[tier34] ingestion watching ${watch.path}`);
-    }
   } catch (e) {
     console.warn('[tier34] ingestion watcher boot skipped', e);
   }
