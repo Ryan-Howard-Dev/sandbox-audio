@@ -22,6 +22,7 @@ import { useTranslation } from '../i18n';
 import {
   analyseLibraryHealth,
   describeGroup,
+  SEVERITY_BY_KIND,
   type HealthGroup,
   type HealthItem,
   type HealthReport,
@@ -39,6 +40,7 @@ import { loadOfflinePodcastEpisodes } from '../podcastOfflineEpisodes';
 import { listDocuments } from '../documentLibrary';
 import { loadPhysicalCopies } from '../physicalCollectionStore';
 import { useSelection } from '../hooks/useSelection';
+import DesktopFrame, { Inspector } from '../components/DesktopFrame';
 import type { PhysicalCopy } from '../physicalCollection';
 
 type LoadState = 'idle' | 'working' | 'done' | 'failed';
@@ -108,6 +110,52 @@ export default function LibraryHealthView() {
 
   const selection = useSelection(visibleFindingIds);
 
+  /*
+   * What the selection is, in the terms this station thinks in.
+   *
+   * Files describes a selection by size and format because that is what a file is. A finding is
+   * not a file — it is a problem — so this counts problems and where they are, which is what
+   * decides whether a batch fix is worth running.
+   */
+  const inspectorRows = useMemo(() => {
+    if (!report || selection.count === 0) return [];
+    const chosenIds = new Set(selection.selected);
+    const chosen = report.groups
+      .flatMap((group) => group.examples)
+      .filter((f) => chosenIds.has(`${f.kind}:${f.refs[0]}`));
+    if (chosen.length === 0) return [];
+
+    const kinds = [...new Set(chosen.map((f) => f.kind))];
+    const stations = [...new Set(chosen.map((f) => f.station))];
+    const rows = [
+      {
+        label: t('health.inspectorProblems'),
+        value: kinds
+          .map((kind) => {
+            const count = chosen.filter((f) => f.kind === kind).length;
+            return describeGroup({
+              kind,
+              severity: SEVERITY_BY_KIND[kind],
+              count,
+              examples: [],
+            });
+          })
+          .join(', '),
+      },
+      { label: t('health.inspectorWhere'), value: stations.join(', ') },
+    ];
+    /*
+     * One finding names the thing it is about. A batch does not: forty labels is the list again,
+     * and the useful fact about forty is how many and of what.
+     */
+    if (chosen.length === 1) {
+      rows.push({ label: t('health.inspectorItem'), value: chosen[0].detail ?? chosen[0].label });
+    }
+    return rows;
+  }, [report, selection, t]);
+
+  const [inspectorOpen, setInspectorOpen] = useState(true);
+
   const stationRows = useMemo(() => {
     if (!report) return [];
     return (
@@ -123,7 +171,7 @@ export default function LibraryHealthView() {
       .filter((row) => row.count > 0);
   }, [report, t]);
 
-  return (
+  const body = (
     <section className="health-view" aria-label={t('health.title')}>
       <header className="health-head">
         <h1 className="health-title">{t('health.title')}</h1>
@@ -224,6 +272,24 @@ export default function LibraryHealthView() {
         </>
       ) : null}
     </section>
+  );
+
+  return (
+    <DesktopFrame
+      inspectorOpen={inspectorOpen}
+      onToggleInspector={() => setInspectorOpen((v) => !v)}
+      inspector={
+        selection.count > 0 ? (
+          <Inspector
+            title={t('health.inspectorTitle')}
+            count={selection.count}
+            rows={inspectorRows}
+          />
+        ) : undefined
+      }
+    >
+      {body}
+    </DesktopFrame>
   );
 }
 

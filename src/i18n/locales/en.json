@@ -557,7 +557,11 @@
     "stationAudiobooks": "Audiobooks",
     "stationDocuments": "Documents",
     "stationCollection": "Collection",
-    "selectedCount": "{count} selected"
+    "selectedCount": "{count} selected",
+    "inspectorTitle": "Selected findings",
+    "inspectorProblems": "Problems",
+    "inspectorWhere": "Where",
+    "inspectorItem": "Item"
   },
   "files": {
     "title": "Files",
