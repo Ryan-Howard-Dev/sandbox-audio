@@ -586,7 +586,11 @@
     "selectNone": "Click to select, shift-click for a range",
     "selectedCount": "{count} selected",
     "clearSelection": "CLEAR",
-    "previewSelected": "PREVIEW {count}"
+    "previewSelected": "PREVIEW {count}",
+    "inspectorTitle": "Selection",
+    "inspectorSize": "Total size",
+    "inspectorKinds": "Formats",
+    "inspectorPath": "Full path"
   },
   "releaseMatch": {
     "title": "Match from catalogue",
@@ -2320,5 +2324,9 @@
     "previous": "Previous passage",
     "next": "Next passage",
     "progress": "{index} of {total}"
+  },
+  "inspector": {
+    "one": "1 item selected",
+    "many": "{count} items selected"
   }
 }

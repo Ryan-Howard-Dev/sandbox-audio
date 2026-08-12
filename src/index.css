@@ -24454,3 +24454,131 @@ input.shell-search:focus-visible {
   border-left-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
+
+/* ----------------------------------------------------------------- desktop frame
+   Station and inspector side by side, player across the bottom of both. A grid rather than flex
+   so the inspector can be a fixed readable width while the station takes what is left — an
+   inspector that grows with the window becomes a column of whitespace. */
+.dframe {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: 'main' 'player';
+  height: 100%;
+  min-height: 0;
+  position: relative;
+}
+
+.dframe--inspector {
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  grid-template-areas: 'main inspector' 'player player';
+}
+
+/* Below this the two columns fight; the inspector goes away rather than squeezing the station. */
+@media (max-width: 62rem) {
+  .dframe--inspector {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'main' 'player';
+  }
+
+  .dframe-inspector {
+    display: none;
+  }
+}
+
+.dframe-main {
+  grid-area: main;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.dframe-inspector {
+  grid-area: inspector;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+  padding: 0.75rem;
+}
+
+/* Player spans the full width, because it belongs to the window rather than to the station. */
+.dframe-player {
+  grid-area: player;
+  border-top: 1px solid var(--border);
+  min-width: 0;
+}
+
+.dframe-inspector-toggle {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg-card);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.inspector-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  margin: 0;
+}
+
+.inspector-count,
+.inspector-rows {
+  margin: 0;
+}
+
+.inspector-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inspector-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.inspector-label {
+  font-family: ui-monospace, monospace;
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.inspector-value {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.inspector-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}

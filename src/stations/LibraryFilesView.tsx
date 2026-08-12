@@ -48,6 +48,7 @@ import { getLockerEntries } from '../lockerStorage';
 import { filePathFromUrl } from '../libraryHealthSources';
 import { isAudioFile } from '../libraryHealth';
 import { useSelection } from '../hooks/useSelection';
+import DesktopFrame, { Inspector } from '../components/DesktopFrame';
 
 type Phase = 'idle' | 'scanning' | 'planning' | 'applying';
 
@@ -272,6 +273,32 @@ export default function LibraryFilesView() {
     }
   }, [scan, t]);
 
+  /*
+   * What the inspector says about the selection.
+   *
+   * Facts the list cannot show without becoming a spreadsheet: how much disk this is, what it is
+   * made of, and the whole path of a single file rather than a truncated one. Worked out here
+   * because this station owns the selection; the inspector itself knows nothing about files.
+   */
+  const inspectorRows = useMemo(() => {
+    const chosen = audioFiles.filter((file) => selection.isSelected(file.path));
+    if (chosen.length === 0) return [];
+
+    const bytes = chosen.reduce((sum, file) => sum + file.size, 0);
+    const kinds = [...new Set(chosen.map((f) => (f.extension ?? '?').toUpperCase()))].sort();
+    const rows = [
+      { label: t('files.inspectorSize'), value: formatBytes(bytes) },
+      { label: t('files.inspectorKinds'), value: kinds.join(', ') },
+    ];
+    // One file gets its full path; forty do not, and a list of forty paths is the list again.
+    if (chosen.length === 1) {
+      rows.push({ label: t('files.inspectorPath'), value: chosen[0].path });
+    }
+    return rows;
+  }, [audioFiles, selection, t]);
+
+  const [inspectorOpen, setInspectorOpen] = useState(true);
+
   if (!supported) {
     return (
       <section className="files-view" aria-label={t('files.title')}>
@@ -281,7 +308,7 @@ export default function LibraryFilesView() {
     );
   }
 
-  return (
+  const body = (
     <section className="files-view" aria-label={t('files.title')}>
       <header className="files-head">
         <h1 className="files-title">{t('files.title')}</h1>
@@ -517,4 +544,51 @@ export default function LibraryFilesView() {
       )}
     </section>
   );
+
+  /*
+   * The frame only where there is room for it. A phone renders the station alone; the inspector is
+   * a desktop affordance and squeezing it onto a narrow window would take the width the list needs
+   * to show a path.
+   */
+  return (
+    <DesktopFrame
+      inspectorOpen={inspectorOpen}
+      onToggleInspector={() => setInspectorOpen((v) => !v)}
+      inspector={
+        selection.count > 0 ? (
+          <Inspector
+            title={t('files.inspectorTitle')}
+            count={selection.count}
+            rows={inspectorRows}
+            actions={
+              <button
+                type="button"
+                className="btn-accent files-preview touch-manipulation"
+                onClick={() => void preview()}
+                disabled={phase !== 'idle'}
+              >
+                <Wand2 className="w-3.5 h-3.5" aria-hidden />
+                {t('files.previewSelected', { count: selection.count })}
+              </button>
+            }
+          />
+        ) : undefined
+      }
+    >
+      {body}
+    </DesktopFrame>
+  );
+}
+
+/** Bytes as somebody would say them, not as a computer stores them. */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value < 10 ? value.toFixed(1) : Math.round(value)} ${units[unit]}`;
 }
