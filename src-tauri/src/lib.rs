@@ -58,6 +58,8 @@ pub fn run() {
             library_fs::library_apply,
             library_fs::library_undo_last,
             library_fs::library_media_url,
+            library_fs::library_tags_plan,
+            library_fs::library_tags_write,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

@@ -186,3 +186,63 @@ export async function libraryMediaUrl(path: string): Promise<string | null> {
     return null;
   }
 }
+
+/**
+ * Tags in the files themselves, rather than only in the locker.
+ *
+ * The catalogue matcher writes to the locker database, which makes a corrected title correct in
+ * this app and nowhere else — another player shows the old value, and a re-import reads the old
+ * value straight back off the disk. These reach the file.
+ */
+export interface TagPatch {
+  title?: string;
+  artist?: string;
+  album?: string;
+  albumArtist?: string;
+  year?: string;
+  trackNumber?: number;
+  discNumber?: number;
+  genre?: string;
+}
+
+export interface TagWriteRequest {
+  path: string;
+  patch: TagPatch;
+}
+
+export interface TagFieldChange {
+  field: string;
+  before?: string | null;
+  after: string;
+}
+
+export interface TagPlanRow {
+  path: string;
+  changes: TagFieldChange[];
+  /** A sentence when the row cannot proceed; absent when it can. */
+  blocked?: string | null;
+}
+
+export interface TagWriteResult {
+  path: string;
+  ok: boolean;
+  error?: string | null;
+  /** What the fields held before, which is the only route back — there is no recycle bin for a tag. */
+  previous: TagPatch;
+}
+
+/** What writing these would change, per file and per field. Writes nothing. */
+export async function planTagWrites(requests: TagWriteRequest[]): Promise<TagPlanRow[]> {
+  if (!isLibraryFsAvailable()) return [];
+  return invokeFs<TagPlanRow[]>('library_tags_plan', { requests });
+}
+
+export async function writeTags(requests: TagWriteRequest[]): Promise<TagWriteResult[]> {
+  if (!isLibraryFsAvailable()) return [];
+  return invokeFs<TagWriteResult[]>('library_tags_write', { requests });
+}
+
+/** True where tags can reach the file at all — desktop only, since it needs the filesystem layer. */
+export function canWriteTagsToFiles(): boolean {
+  return isLibraryFsAvailable();
+}

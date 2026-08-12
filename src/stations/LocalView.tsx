@@ -97,6 +97,7 @@ import ModalOverlay from './ModalOverlay';
 import type { LockerMenuAction } from '../components/LockerMoreMenu';
 import AddToPlaylistPicker from '../components/AddToPlaylistPicker';
 import ReleaseMatchPanel from '../components/ReleaseMatchPanel';
+import { filePathFromUrl } from '../libraryHealthSources';
 import EditLockerInfoModal, {
   type EditLockerInfoValues,
 } from '../components/EditLockerInfoModal';
@@ -3943,6 +3944,10 @@ export default function LocalView({
           albumArt: track.albumArt,
           userMetadataLocked: track.userMetadataLocked,
         }))}
+        /* Where each track's bytes are, so a match can reach the file and not only the row. */
+        pathsById={Object.fromEntries(
+          (matchTarget?.tracks ?? []).map((track) => [track.id, filePathFromUrl(track.url)]),
+        )}
         albumName={matchTarget?.displayName}
         artist={matchTarget?.artist}
         onDone={(msg) => setToast(msg)}

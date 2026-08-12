@@ -14,6 +14,7 @@ first. The three rules the whole manager rests on:
 pub mod media_server;
 pub mod plan;
 pub mod roots;
+pub mod tags;
 
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
@@ -438,6 +439,47 @@ pub fn library_media_url(
         media_server::percent_encode(&token),
         media_server::percent_encode(&resolved.to_string_lossy()),
     ))
+}
+
+/// What writing these tags would change, per file and per field. Writes nothing.
+#[tauri::command]
+pub fn library_tags_plan(
+    app: AppHandle,
+    requests: Vec<tags::TagWriteRequest>,
+) -> Vec<tags::TagPlanRow> {
+    let store = load_roots(&app);
+    tags::plan_tag_writes(&requests, &root_paths(&store))
+}
+
+/**
+ * Write tags into the files themselves.
+ *
+ * The previous values come back with each result so a caller can put them back. A tag write has no
+ * recycle bin to recover from -- the file is still there, its metadata is simply different -- so
+ * the only route back is the values recorded on the way in.
+ */
+#[tauri::command]
+pub fn library_tags_write(
+    app: AppHandle,
+    requests: Vec<tags::TagWriteRequest>,
+) -> Vec<tags::TagWriteResult> {
+    let store = load_roots(&app);
+    let allowed = root_paths(&store);
+    requests
+        .iter()
+        .map(|request| {
+            // Isolated per file, so one unwritable file does not abandon the rest of a batch.
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                tags::write_tags(&request.path, &request.patch, &allowed)
+            }))
+            .unwrap_or_else(|_| tags::TagWriteResult {
+                path: request.path.clone(),
+                ok: false,
+                error: Some("That file could not be written".into()),
+                previous: tags::TagPatch::default(),
+            })
+        })
+        .collect()
 }
 
 /// Reverse the most recent applied run, where the files are still where it left them.

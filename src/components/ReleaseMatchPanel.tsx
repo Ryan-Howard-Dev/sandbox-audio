@@ -25,12 +25,16 @@ import {
   type ReleaseCandidate,
 } from '../metadataEdit';
 import { updateLockerEntryMetadata } from '../lockerStorage';
+import { canWriteTagsToFiles, writeTags, type TagWriteRequest } from '../libraryFs';
+import { filePathFromUrl } from '../libraryHealthSources';
 
 export interface ReleaseMatchPanelProps {
   open: boolean;
   onClose: () => void;
   /** The rows about to be matched — an album's tracks, normally. */
   rows: EditableRow[];
+  /** Where each row's file is, keyed by row id, so a match can reach the file and not just the row. */
+  pathsById?: Record<string, string | undefined>;
   albumName?: string;
   artist?: string;
   onDone?: (message: string) => void;
@@ -42,6 +46,7 @@ export default function ReleaseMatchPanel({
   open,
   onClose,
   rows,
+  pathsById,
   albumName,
   artist,
   onDone,
@@ -54,6 +59,8 @@ export default function ReleaseMatchPanel({
   const [chosen, setChosen] = useState<ReleaseCandidate | null>(null);
   const [overwrite, setOverwrite] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // Default on where it is possible: a fix that does not reach the file is half a fix.
+  const [writeToFiles, setWriteToFiles] = useState(true);
 
   const proposal: EditProposal | null = useMemo(
     () => (chosen ? proposeEdits(rows, chosen, { overwriteExisting: overwrite }) : null),
@@ -105,11 +112,51 @@ export default function ReleaseMatchPanel({
         // One row failing must not abandon the rest; the count reported is what actually landed.
       }
     }
-    onDone?.(t('releaseMatch.applied', { count: written }));
+    /*
+     * The same values into the files, where there are files to write to.
+     *
+     * Without this a corrected title is correct in this app and nowhere else: another player shows
+     * the old one, and re-importing reads the old one straight back off the disk. Done after the
+     * locker write rather than instead of it, because the locker is what this app reads and a file
+     * write that fails should not leave the app showing the wrong thing too.
+     */
+    let toFiles = 0;
+    if (writeToFiles && canWriteTagsToFiles()) {
+      const requests: TagWriteRequest[] = [];
+      for (const edit of proposal.edits) {
+        if (edit.changes.length === 0) continue;
+        const path = pathsById?.[edit.rowId];
+        if (!path) continue;
+        const patch = patchForEdit(edit);
+        requests.push({
+          path,
+          patch: {
+            title: typeof patch.title === 'string' ? patch.title : undefined,
+            artist: typeof patch.artist === 'string' ? patch.artist : undefined,
+            album: typeof patch.albumName === 'string' ? patch.albumName : undefined,
+            albumArtist: typeof patch.albumArtist === 'string' ? patch.albumArtist : undefined,
+            year: typeof patch.releaseYear === 'string' ? patch.releaseYear : undefined,
+            genre: typeof patch.genre === 'string' ? patch.genre : undefined,
+            trackNumber: typeof patch.trackNumber === 'number' ? patch.trackNumber : undefined,
+            discNumber: typeof patch.discNumber === 'number' ? patch.discNumber : undefined,
+          },
+        });
+      }
+      if (requests.length > 0) {
+        const results = await writeTags(requests);
+        toFiles = results.filter((r) => r.ok).length;
+      }
+    }
+
+    onDone?.(
+      toFiles > 0
+        ? t('releaseMatch.appliedWithFiles', { count: written, files: toFiles })
+        : t('releaseMatch.applied', { count: written }),
+    );
     onClose();
     setPhase('search');
     setChosen(null);
-  }, [proposal, onDone, onClose, t]);
+  }, [proposal, onDone, onClose, t, writeToFiles, pathsById]);
 
   if (!open) return null;
 
@@ -210,6 +257,17 @@ export default function ReleaseMatchPanel({
               />
               <span>{t('releaseMatch.overwrite')}</span>
             </label>
+
+            {canWriteTagsToFiles() ? (
+              <label className="release-match-toggle">
+                <input
+                  type="checkbox"
+                  checked={writeToFiles}
+                  onChange={(e) => setWriteToFiles(e.target.checked)}
+                />
+                <span>{t('releaseMatch.writeToFiles')}</span>
+              </label>
+            ) : null}
 
             <ul className="release-match-rows">
               {proposal.edits.map((edit) => (

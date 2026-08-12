@@ -628,7 +628,9 @@
       "discNumber": "Disc",
       "genre": "Genre",
       "albumArt": "Artwork"
-    }
+    },
+    "writeToFiles": "Write the tags into the files too",
+    "appliedWithFiles": "Updated {count} tracks, {files} files retagged"
   },
   "settings": {
     "controlPanel": "System Control Panel",
