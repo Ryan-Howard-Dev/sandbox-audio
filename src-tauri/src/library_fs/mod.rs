@@ -11,6 +11,7 @@ first. The three rules the whole manager rests on:
   - Deletes go to the recycle bin, and every applied move is written to an undo log.
 */
 
+pub mod ingest;
 pub mod media_server;
 pub mod plan;
 pub mod roots;
@@ -480,6 +481,35 @@ pub fn library_tags_write(
             })
         })
         .collect()
+}
+
+/// Everything sitting in the drop folder, with whatever each file says about itself.
+#[tauri::command]
+pub fn library_ingest_scan(
+    dir: String,
+    limit: Option<usize>,
+) -> Result<Vec<ingest::IngestCandidate>, String> {
+    ingest::scan_drop_folder(&PathBuf::from(dir), limit.unwrap_or(500))
+}
+
+/// Watch the drop folder and nudge the app when anything in it changes.
+#[tauri::command]
+pub fn library_ingest_watch(
+    app: AppHandle,
+    state: State<'_, ingest::IngestWatchState>,
+    dir: Option<String>,
+) -> Result<Option<String>, String> {
+    match dir {
+        Some(dir) => {
+            ingest::start_watching(&state, app, PathBuf::from(dir))?;
+            Ok(state.watching().map(|p| p.to_string_lossy().to_string()))
+        }
+        // No folder means stop, so one command covers both and they cannot disagree about state.
+        None => {
+            ingest::stop_watching(&state);
+            Ok(None)
+        }
+    }
 }
 
 /// Reverse the most recent applied run, where the files are still where it left them.

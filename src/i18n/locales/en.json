@@ -59,7 +59,8 @@
     "files": "Files",
     "browseFilesHint": "Browse and organise what is on disk",
     "reading": "Reading",
-    "browseReadingHint": "Read your books and documents"
+    "browseReadingHint": "Read your books and documents",
+    "incoming": "Incoming"
   },
   "shell": {
     "searchPlaceholder": {
@@ -2334,5 +2335,19 @@
   "inspector": {
     "one": "1 item selected",
     "many": "{count} items selected"
+  },
+  "incoming": {
+    "title": "Incoming",
+    "lead": "Files that have arrived. What can be placed is placed; what cannot is held here with the reason.",
+    "folderPlaceholder": "Folder to watch",
+    "rescan": "RESCAN",
+    "fileThem": "FILE {count}",
+    "counts": "{ready} ready, {held} held, {arriving} still arriving",
+    "heldTitle": "Held back",
+    "arriving": "{count} still copying in",
+    "filed": "Filed {count}, failed {failed}.",
+    "cannotPreview": "Cannot play a file that is not in a library folder yet",
+    "inspectorTitle": "Held files",
+    "inspectorWhy": "Why they are held"
   }
 }

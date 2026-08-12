@@ -11,7 +11,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Activity, ArrowDownCircle, BookAudio, BookOpen, Disc3, Menu, Podcast, Radio, Search, Server, FolderTree, Settings, Sliders, Stethoscope, User } from 'lucide-react';
+import { Activity, ArrowDownCircle, BookAudio, BookOpen, Disc3, FolderInput, Menu, Podcast, Radio, Search, Server, FolderTree, Settings, Sliders, Stethoscope, User } from 'lucide-react';
 import type { MobileNavMoreItem } from '../components/MobileNavMoreSheet';
 import { countDownloadSheetBadge } from '../components/DownloadActivitySheet';
 import { getDownloadJobs } from '../downloadQueue';
@@ -152,6 +152,7 @@ export function useShellNavConstruction({
      * layer to browse, so an entry there would open a screen that can only apologise.
      */
     if (isLibraryFsAvailable()) {
+      items.push({ id: 'incoming', label: t('nav.incoming'), icon: FolderInput });
       items.push({ id: 'files', label: t('nav.files'), icon: FolderTree });
     }
     items.push({ id: 'settings', label: t('nav.settings'), icon: Settings });
@@ -264,6 +265,7 @@ export function useShellNavConstruction({
     if (station === 'health') return 'health';
     if (station === 'files') return 'files';
     if (station === 'reading') return 'reading';
+    if (station === 'incoming') return 'incoming';
     if (station === 'insights') return 'insights';
     if (station === 'settings') return 'settings';
     return undefined;

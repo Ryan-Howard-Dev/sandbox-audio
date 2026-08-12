@@ -45,6 +45,8 @@ export type StationId =
    * and the translation pane only makes sense with your eyes on the page.
    */
   | 'reading'
+  /* Files that have arrived and not yet been filed. Desktop only, like the rest of the manager. */
+  | 'incoming'
   | 'library'
   | 'sonic-locker'
   | 'search'

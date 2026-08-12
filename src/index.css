@@ -24582,3 +24582,22 @@ input.shell-search:focus-visible {
   padding-top: 0.5rem;
   border-top: 1px solid var(--border);
 }
+
+/* Ready and held read differently at a glance: the held pile is the half that needs a person. */
+.files-row--ready {
+  border-left-color: var(--accent);
+}
+
+.files-row--held {
+  border-left-color: var(--text-dim);
+  opacity: 0.85;
+}
+
+.incoming-held-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  margin: 0.5rem 0 0;
+}

@@ -246,3 +246,42 @@ export async function writeTags(requests: TagWriteRequest[]): Promise<TagWriteRe
 export function canWriteTagsToFiles(): boolean {
   return isLibraryFsAvailable();
 }
+
+/** A file sitting in the drop folder, with whatever it says about itself. */
+export interface IngestCandidateFile {
+  path: string;
+  name: string;
+  extension: string;
+  size: number;
+  /** False while still growing — a file being copied in is visible long before it is complete. */
+  settled: boolean;
+  title?: string | null;
+  artist?: string | null;
+  albumArtist?: string | null;
+  album?: string | null;
+  releaseYear?: string | null;
+  trackNumber?: number | null;
+  discNumber?: number | null;
+}
+
+/** The event the watcher emits. Carries no detail: it is a nudge to rescan, not a fact about a file. */
+export const INGEST_CHANGED_EVENT = 'sandbox://ingest-changed';
+
+export async function scanDropFolder(dir: string, limit?: number): Promise<IngestCandidateFile[]> {
+  if (!isLibraryFsAvailable()) return [];
+  return invokeFs<IngestCandidateFile[]>('library_ingest_scan', { dir, limit: limit ?? null });
+}
+
+/** Start watching a folder, or pass nothing to stop. Returns what is being watched. */
+export async function watchDropFolder(dir: string | null): Promise<string | null> {
+  if (!isLibraryFsAvailable()) return null;
+  return invokeFs<string | null>('library_ingest_watch', { dir });
+}
+
+/** Subscribe to the watcher's nudge. Returns an unsubscribe. */
+export async function onIngestChanged(handler: () => void): Promise<() => void> {
+  if (!isLibraryFsAvailable()) return () => {};
+  const { listen } = await import('@tauri-apps/api/event');
+  const unlisten = await listen(INGEST_CHANGED_EVENT, () => handler());
+  return () => unlisten();
+}

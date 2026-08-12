@@ -16,6 +16,7 @@ export const LazyDiscoverStationView = lazy(
 export const LazyPhysicalCollectionView = lazy(
   () => import('../stations/PhysicalCollectionView'),
 );
+export const LazyIncomingView = lazy(() => import('../stations/IncomingView'));
 export const LazyReadingView = lazy(() => import('../stations/ReadingView'));
 export const LazyLibraryFilesView = lazy(
   () => import('../stations/LibraryFilesView'),

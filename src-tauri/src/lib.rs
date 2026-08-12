@@ -32,6 +32,7 @@ pub fn run() {
         .manage(cast_browser_server::CastBrowserServerState::new())
         .manage(library_fs::LibraryFsState::new())
         .manage(library_fs::media_server::MediaServerState::new())
+        .manage(library_fs::ingest::IngestWatchState::new())
         .invoke_handler(tauri::generate_handler![
             commands::list_audio_output_devices,
             commands::get_audiophile_settings,
@@ -60,6 +61,8 @@ pub fn run() {
             library_fs::library_media_url,
             library_fs::library_tags_plan,
             library_fs::library_tags_write,
+            library_fs::library_ingest_scan,
+            library_fs::library_ingest_watch,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
