@@ -6,24 +6,24 @@
  * person — so they are the larger half of this screen, each with the reason it is still sitting
  * there rather than a count.
  *
- * Nothing decides here. What a file is and where it goes is libraryIngest, filing it is the
- * ordinary plan-and-apply path, and this shows the answer and takes the choice.
+ * Nothing decides here. What a file is and where it goes is libraryIngest; carrying it there is the
+ * ingest move, which confines the source to this folder and the destination to a library root. This
+ * shows the answer and takes the choice.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, FolderInput, Loader2, Pause, Play, RefreshCw } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import {
-  applyLibraryPlan,
+  applyIngestMoves,
   isLibraryFsAvailable,
   libraryMediaUrl,
   listLibraryRoots,
   onIngestChanged,
-  planLibraryOperations,
   scanDropFolder,
   watchDropFolder,
   type IngestCandidateFile,
-  type LibraryOperation,
+  type IngestMove,
   type LibraryRoot,
 } from '../libraryFs';
 import {
@@ -151,32 +151,36 @@ export default function IncomingView() {
   const fileEverything = useCallback(async () => {
     setBusy(true);
     try {
-      const operations: LibraryOperation[] = [];
+      const moves: IngestMove[] = [];
       for (const file of fileable) {
         const decision = decisions.get(file.path);
         if (decision?.action !== 'file') continue;
         const root = roots.find((r) => r.kind === decision.kind);
         if (!root) continue;
-        const target = `${root.path.replace(/[\\/]+$/, '')}/${decision.relativePath}`;
-        const dirPart = target.slice(0, target.lastIndexOf('/'));
-        const namePart = target.slice(target.lastIndexOf('/') + 1);
-        operations.push({ kind: 'createDir', path: dirPart });
-        operations.push({ kind: 'move', path: file.path, toDir: dirPart, toName: namePart });
+        moves.push({
+          from: file.path,
+          // Either separator may end a root path — Windows stores backslashes, the scheme renders
+          // forward ones — and a doubled separator is a different string to the same folder.
+          to: root.path.replace(/[\\/]+$/, '') + '/' + decision.relativePath,
+        });
       }
-      if (operations.length === 0) return;
+      if (moves.length === 0) return;
 
-      // The same preview and the same confinement as every other write; nothing special because a
-      // file arrived from outside.
-      const plan = await planLibraryOperations(operations);
-      const result = await applyLibraryPlan(plan.id);
-      setNotice(t('incoming.filed', { count: result.applied, failed: result.failed }));
+      /*
+       * The ingest path rather than the ordinary apply. That one confines the source as well as the
+       * destination, and a drop folder is outside the library on purpose -- so every import was
+       * refused by the very rule that protects everything else.
+       */
+      const results = await applyIngestMoves(dir, moves);
+      const ok = results.filter((r) => r.ok).length;
+      setNotice(t('incoming.filed', { count: ok, failed: results.length - ok }));
       await rescan();
     } catch (err) {
       setNotice(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
-  }, [fileable, decisions, roots, rescan, t]);
+  }, [fileable, decisions, roots, rescan, t, dir]);
 
   const togglePlay = useCallback(
     async (path: string) => {

@@ -62,6 +62,7 @@ pub fn run() {
             library_fs::library_tags_plan,
             library_fs::library_tags_write,
             library_fs::library_ingest_scan,
+            library_fs::library_ingest_apply,
             library_fs::library_ingest_watch,
         ])
         .build(tauri::generate_context!())

@@ -118,6 +118,122 @@ pub fn scan_drop_folder(dir: &Path, limit: usize) -> Result<Vec<IngestCandidate>
     Ok(out)
 }
 
+/// One file to bring in: where it is now, and where under a library root it should land.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IngestMove {
+    pub from: PathBuf,
+    /// Absolute destination, already rendered by the naming scheme.
+    pub to: PathBuf,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IngestMoveResult {
+    pub from: PathBuf,
+    pub to: PathBuf,
+    pub ok: bool,
+    pub error: Option<String>,
+}
+
+/**
+ * Bring files in from the drop folder.
+ *
+ * Its own path rather than the ordinary move, because that one confines the source as well as the
+ * destination and a drop folder is deliberately outside the library. Refusing on that basis refuses
+ * the one operation whose entire job is importing from outside.
+ *
+ * Both ends are still confined, just to different places: the source must be inside the drop folder
+ * the caller declared, the destination inside a library root. Neither is a free path, and a request
+ * naming a source elsewhere on the disk is refused exactly as before. This widens what can be
+ * imported, not what can be reached.
+ */
+pub fn apply_ingest_moves(
+    moves: &[IngestMove],
+    drop_dir: &Path,
+    roots: &[PathBuf],
+) -> Vec<IngestMoveResult> {
+    let resolved_drop = std::fs::canonicalize(drop_dir).ok();
+
+    moves
+        .iter()
+        .map(|item| {
+            let fail = |message: &str| IngestMoveResult {
+                from: item.from.clone(),
+                to: item.to.clone(),
+                ok: false,
+                error: Some(message.to_string()),
+            };
+
+            let Some(drop_root) = resolved_drop.as_ref() else {
+                return fail("The drop folder could not be found");
+            };
+
+            // Source: inside the declared drop folder, symlinks resolved, the same rule everywhere.
+            let Ok(from) = std::fs::canonicalize(&item.from) else {
+                return fail("That file is no longer there");
+            };
+            if !from.starts_with(drop_root) {
+                return fail("That file is not in the drop folder");
+            }
+            if from.is_dir() {
+                return fail("That is a folder, not a file");
+            }
+
+            // Destination: inside a library root, whose parents may not exist yet.
+            let to = match super::roots::confine_new_path(&item.to, roots) {
+                Ok(path) => path,
+                Err(e) => return fail(e.message()),
+            };
+
+            /*
+             * Never overwrite. A drop folder is where two copies of one album end up, and the
+             * second silently replacing the first is a file lost with nothing said.
+             */
+            if to.exists() {
+                return fail("Something is already there");
+            }
+
+            if let Some(parent) = to.parent() {
+                if let Err(e) = std::fs::create_dir_all(parent) {
+                    return fail(&format!("Could not make the folder: {e}"));
+                }
+            }
+
+            /*
+             * Rename first, copy second. A drop folder is often on another drive -- downloads on
+             * one disk, library on a NAS -- and rename cannot cross a filesystem boundary. The copy
+             * removes the original only after the copy succeeds, so a failure halfway leaves the
+             * file where it was rather than nowhere.
+             */
+            match std::fs::rename(&from, &to) {
+                Ok(()) => IngestMoveResult {
+                    from: item.from.clone(),
+                    to: super::roots::tidy_display(&to),
+                    ok: true,
+                    error: None,
+                },
+                Err(_) => match std::fs::copy(&from, &to) {
+                    Ok(_) => {
+                        let _ = std::fs::remove_file(&from);
+                        IngestMoveResult {
+                            from: item.from.clone(),
+                            to: super::roots::tidy_display(&to),
+                            ok: true,
+                            error: None,
+                        }
+                    }
+                    Err(e) => {
+                        // Clear a partial copy, so a failed import leaves no stub behind.
+                        let _ = std::fs::remove_file(&to);
+                        fail(&format!("Could not move it: {e}"))
+                    }
+                },
+            }
+        })
+        .collect()
+}
+
 pub struct IngestWatchState {
     inner: Mutex<Option<WatchHandle>>,
 }
@@ -307,6 +423,125 @@ mod tests {
         fs::write(&file, b"x").unwrap();
         assert!(scan_drop_folder(&file, 10).is_err());
         assert!(scan_drop_folder(&t.0.join("nope"), 10).is_err());
+    }
+
+    fn library(t: &Temp) -> (PathBuf, PathBuf) {
+        let root = t.0.join("library");
+        let drop = t.0.join("drop");
+        fs::create_dir_all(&root).unwrap();
+        fs::create_dir_all(&drop).unwrap();
+        (root, drop)
+    }
+
+    #[test]
+    fn brings_a_file_in_from_outside_the_library() {
+        // The point of the whole path: the source is deliberately outside the roots, and this is
+        // the one operation allowed to read from there.
+        let t = Temp::new("bringin");
+        let (root, drop) = library(&t);
+        let from = drop.join("track.wav");
+        fs::write(&from, b"audio").unwrap();
+        let to = root.join("Radiohead").join("OK Computer").join("01 Airbag.wav");
+
+        let results = apply_ingest_moves(
+            &[IngestMove { from: from.clone(), to: to.clone() }],
+            &drop,
+            &[root.clone()],
+        );
+
+        assert!(results[0].ok, "{:?}", results[0].error);
+        assert!(!from.exists());
+        assert!(to.exists());
+        assert_eq!(fs::read(&to).unwrap(), b"audio");
+    }
+
+    #[test]
+    fn refuses_a_source_that_is_not_in_the_drop_folder() {
+        /*
+         * Widening what can be imported must not widen what can be reached. A request naming any
+         * other path on the disk is refused exactly as the ordinary move refuses it.
+         */
+        let t = Temp::new("elsewhere");
+        let (root, drop) = library(&t);
+        let stranger = t.0.join("secret.wav");
+        fs::write(&stranger, b"private").unwrap();
+
+        let results = apply_ingest_moves(
+            &[IngestMove { from: stranger.clone(), to: root.join("stolen.wav") }],
+            &drop,
+            &[root],
+        );
+
+        assert!(!results[0].ok);
+        assert!(stranger.exists());
+    }
+
+    #[test]
+    fn refuses_a_destination_outside_every_library_root() {
+        let t = Temp::new("destout");
+        let (root, drop) = library(&t);
+        let from = drop.join("track.wav");
+        fs::write(&from, b"x").unwrap();
+
+        let results = apply_ingest_moves(
+            &[IngestMove { from, to: t.0.join("elsewhere").join("track.wav") }],
+            &drop,
+            &[root],
+        );
+        assert!(!results[0].ok);
+    }
+
+    #[test]
+    fn never_overwrites_something_already_there() {
+        // A drop folder is where two copies of one album end up, and the second silently replacing
+        // the first is a file lost with nothing said.
+        let t = Temp::new("nooverwrite");
+        let (root, drop) = library(&t);
+        let from = drop.join("track.wav");
+        fs::write(&from, b"new").unwrap();
+        let to = root.join("track.wav");
+        fs::write(&to, b"existing").unwrap();
+
+        let results =
+            apply_ingest_moves(&[IngestMove { from: from.clone(), to: to.clone() }], &drop, &[root]);
+
+        assert!(!results[0].ok);
+        assert_eq!(fs::read(&to).unwrap(), b"existing");
+        assert!(from.exists());
+    }
+
+    #[test]
+    fn creates_the_folders_the_destination_needs() {
+        let t = Temp::new("mkdirs");
+        let (root, drop) = library(&t);
+        let from = drop.join("track.wav");
+        fs::write(&from, b"x").unwrap();
+        let to = root.join("A").join("B").join("C").join("track.wav");
+
+        let results = apply_ingest_moves(&[IngestMove { from, to: to.clone() }], &drop, &[root]);
+        assert!(results[0].ok, "{:?}", results[0].error);
+        assert!(to.exists());
+    }
+
+    #[test]
+    fn reports_a_source_that_has_gone_without_failing_the_batch() {
+        let t = Temp::new("vanished");
+        let (root, drop) = library(&t);
+        let real = drop.join("here.wav");
+        fs::write(&real, b"x").unwrap();
+
+        let results = apply_ingest_moves(
+            &[
+                IngestMove { from: drop.join("gone.wav"), to: root.join("gone.wav") },
+                IngestMove { from: real, to: root.join("here.wav") },
+            ],
+            &drop,
+            &[root.clone()],
+        );
+
+        assert!(!results[0].ok);
+        assert!(results[1].ok, "{:?}", results[1].error);
+        assert!(root.join("here.wav").exists());
     }
 
     #[test]

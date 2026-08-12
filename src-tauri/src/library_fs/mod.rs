@@ -492,6 +492,22 @@ pub fn library_ingest_scan(
     ingest::scan_drop_folder(&PathBuf::from(dir), limit.unwrap_or(500))
 }
 
+/**
+ * Bring files in from the drop folder into the library.
+ *
+ * Separate from library_apply because that confines the source too, and a drop folder is outside
+ * the library by design. Both ends are still confined here, to different places.
+ */
+#[tauri::command]
+pub fn library_ingest_apply(
+    app: AppHandle,
+    dir: String,
+    moves: Vec<ingest::IngestMove>,
+) -> Vec<ingest::IngestMoveResult> {
+    let store = load_roots(&app);
+    ingest::apply_ingest_moves(&moves, &PathBuf::from(dir), &root_paths(&store))
+}
+
 /// Watch the drop folder and nudge the app when anything in it changes.
 #[tauri::command]
 pub fn library_ingest_watch(

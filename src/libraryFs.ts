@@ -285,3 +285,31 @@ export async function onIngestChanged(handler: () => void): Promise<() => void> 
   const unlisten = await listen(INGEST_CHANGED_EVENT, () => handler());
   return () => unlisten();
 }
+
+/** One file to bring in: where it is now, and where under a library root it should land. */
+export interface IngestMove {
+  from: string;
+  to: string;
+}
+
+export interface IngestMoveResult {
+  from: string;
+  to: string;
+  ok: boolean;
+  error?: string | null;
+}
+
+/**
+ * Bring files in from the drop folder.
+ *
+ * Separate from applyLibraryPlan because that confines the source as well as the destination, and a
+ * drop folder is outside the library by design. Both ends are still confined here — source to the
+ * drop folder, destination to a root — so this widens what can be imported, not what can be reached.
+ */
+export async function applyIngestMoves(
+  dir: string,
+  moves: IngestMove[],
+): Promise<IngestMoveResult[]> {
+  if (!isLibraryFsAvailable()) return [];
+  return invokeFs<IngestMoveResult[]>('library_ingest_apply', { dir, moves });
+}
