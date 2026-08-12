@@ -38,6 +38,7 @@ import { getLockerEntries } from '../lockerStorage';
 import { loadOfflinePodcastEpisodes } from '../podcastOfflineEpisodes';
 import { listDocuments } from '../documentLibrary';
 import { loadPhysicalCopies } from '../physicalCollectionStore';
+import { useSelection } from '../hooks/useSelection';
 import type { PhysicalCopy } from '../physicalCollection';
 
 type LoadState = 'idle' | 'working' | 'done' | 'failed';
@@ -88,6 +89,24 @@ export default function LibraryHealthView() {
   useEffect(() => {
     void run();
   }, [run]);
+
+  /*
+   * One selection across every group, not one per card.
+   *
+   * "Fix these" rarely means one kind of problem: the same forty files are usually missing artwork
+   * and missing tags, and a selection that resets when a different group is expanded cannot express
+   * that. Keyed by kind and ref because the same item legitimately appears under two findings.
+   */
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const visibleFindingIds = useMemo(() => {
+    if (!report) return [] as string[];
+    return report.groups
+      .filter((group) => expanded.has(group.kind))
+      .flatMap((group) => group.examples.map((f) => `${f.kind}:${f.refs[0]}`));
+  }, [report, expanded]);
+
+  const selection = useSelection(visibleFindingIds);
 
   const stationRows = useMemo(() => {
     if (!report) return [];
@@ -167,9 +186,37 @@ export default function LibraryHealthView() {
                 </dl>
               ) : null}
 
+              {selection.count > 0 ? (
+                <div className="health-selectbar">
+                  <span className="ui-hint">
+                    {t('health.selectedCount', { count: selection.count })}
+                  </span>
+                  <button
+                    type="button"
+                    className="files-clearsel touch-manipulation"
+                    onClick={selection.clear}
+                  >
+                    {t('files.clearSelection')}
+                  </button>
+                </div>
+              ) : null}
+
               <ul className="health-groups">
                 {report.groups.map((group) => (
-                  <HealthGroupCard group={group} key={group.kind} />
+                  <HealthGroupCard
+                    group={group}
+                    key={group.kind}
+                    open={expanded.has(group.kind)}
+                    onToggle={() =>
+                      setExpanded((current) => {
+                        const next = new Set(current);
+                        if (next.has(group.kind)) next.delete(group.kind);
+                        else next.add(group.kind);
+                        return next;
+                      })
+                    }
+                    selection={selection}
+                  />
                 ))}
               </ul>
             </>
@@ -180,9 +227,18 @@ export default function LibraryHealthView() {
   );
 }
 
-function HealthGroupCard({ group }: { group: HealthGroup }) {
+function HealthGroupCard({
+  group,
+  open,
+  onToggle,
+  selection,
+}: {
+  group: HealthGroup;
+  open: boolean;
+  onToggle: () => void;
+  selection: ReturnType<typeof useSelection>;
+}) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
   const Icon = group.severity === 'problem' ? AlertTriangle : group.severity === 'gap' ? Activity : FileQuestion;
 
   return (
@@ -190,7 +246,7 @@ function HealthGroupCard({ group }: { group: HealthGroup }) {
       <button
         type="button"
         className="health-group-head touch-manipulation"
-        onClick={() => setOpen((v) => !v)}
+        onClick={onToggle}
         aria-expanded={open}
       >
         <Icon className="w-4 h-4 shrink-0" aria-hidden />
@@ -199,15 +255,31 @@ function HealthGroupCard({ group }: { group: HealthGroup }) {
 
       {open ? (
         <>
-          <ul className="health-examples">
-            {group.examples.map((finding) => (
-              <li className="health-example" key={`${finding.kind}-${finding.refs[0]}`}>
-                <span className="health-example-label">{finding.label}</span>
-                {finding.detail ? (
-                  <span className="health-example-detail ui-hint">{finding.detail}</span>
-                ) : null}
-              </li>
-            ))}
+          <ul
+            className="health-examples"
+            role="listbox"
+            aria-multiselectable
+            tabIndex={0}
+            onKeyDown={selection.onKeyDown}
+          >
+            {group.examples.map((finding) => {
+              const id = `${finding.kind}:${finding.refs[0]}`;
+              const chosen = selection.isSelected(id);
+              return (
+                <li
+                  className={`health-example${chosen ? ' health-example--on' : ''}`}
+                  key={id}
+                  role="option"
+                  aria-selected={chosen}
+                  onClick={(e) => selection.onRowClick(id, e)}
+                >
+                  <span className="health-example-label">{finding.label}</span>
+                  {finding.detail ? (
+                    <span className="health-example-detail ui-hint">{finding.detail}</span>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
           {/* The count is exact and the list is not, so a group with more than fits says how many
               it is not showing rather than quietly appearing complete. */}

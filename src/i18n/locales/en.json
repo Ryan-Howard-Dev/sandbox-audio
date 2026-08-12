@@ -556,7 +556,8 @@
     "stationPodcasts": "Podcasts",
     "stationAudiobooks": "Audiobooks",
     "stationDocuments": "Documents",
-    "stationCollection": "Collection"
+    "stationCollection": "Collection",
+    "selectedCount": "{count} selected"
   },
   "files": {
     "title": "Files",
