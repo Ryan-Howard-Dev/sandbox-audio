@@ -13,7 +13,7 @@ npm install
 npm run dev
 ```
 
-Open the app at `http://localhost:3002` (Vite dev server). In **Settings → Playback Engine**, set the Tier 3/4 backend URL to `http://localhost:3001`.
+Open the app at `http://localhost:5173` (Vite dev server). In **Settings → Playback Engine**, set the Tier 3/4 backend URL to `http://localhost:3001`.
 
 ## Services
 
@@ -21,7 +21,7 @@ Open the app at `http://localhost:3002` (Vite dev server). In **Settings → Pla
 |---------|------|------|
 | **tier34** | 3001 | Locker blobs, acquire worker, media graph, search proxy |
 | **meilisearch** | 7700 | Locker full-text index (optional but recommended) |
-| **UI** (`npm run dev`) | 3002 | React shell |
+| **UI** (`npm run dev`) | 5173 | React shell |
 
 ## Without Docker
 

@@ -15,7 +15,7 @@ import {
   type InterminableTideMode,
 } from './defenseProtocol.js';
 
-const CORS_ORIGIN = process.env.TIER34_CORS_ORIGIN ?? 'http://localhost:3002';
+const CORS_ORIGIN = process.env.TIER34_CORS_ORIGIN ?? 'http://localhost:5173';
 const RATE_WINDOW_MS = 60_000;
 const RATE_THRESHOLD = Number(process.env.TIER34_TIDE_RATE_THRESHOLD) || 40;
 const CHUNK_BYTES = Number(process.env.TIER34_TIDE_CHUNK_BYTES) || 65_536;

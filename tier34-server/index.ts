@@ -139,7 +139,7 @@ dotenv.config();
 bootDefenseProtocol();
 
 const PORT = Number(process.env.TIER34_PORT) || 3001;
-const CORS_ORIGIN = process.env.TIER34_CORS_ORIGIN ?? 'http://localhost:3002';
+const CORS_ORIGIN = process.env.TIER34_CORS_ORIGIN ?? 'http://localhost:5173';
 const app = express();
 app.use(express.json({ limit: '2mb' }));
 

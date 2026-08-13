@@ -6,7 +6,7 @@
   "identifier": "rd.sheepskin.sandboxmusic",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:3002",
+    "devUrl": "http://localhost:5173",
     "beforeBuildCommand": "npm run build:client:tauri && npm run build:tier34",
     "frontendDist": "../dist"
   },

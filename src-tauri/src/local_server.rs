@@ -157,7 +157,7 @@ fn spawn_tier34_bundled(entry_path: &Path) -> Result<Child, String> {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .env("TIER34_PORT", "3001")
-        .env("TIER34_CORS_ORIGIN", "http://localhost:3002");
+        .env("TIER34_CORS_ORIGIN", "http://localhost:5173");
 
     cmd.spawn().map_err(|e| {
         if bundled {
@@ -206,7 +206,7 @@ fn spawn_tier34(root: &Path) -> Result<Child, String> {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .env("TIER34_PORT", "3001")
-        .env("TIER34_CORS_ORIGIN", "http://localhost:3002");
+        .env("TIER34_CORS_ORIGIN", "http://localhost:5173");
 
     cmd.spawn().map_err(|e| {
         format!(

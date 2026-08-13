@@ -178,7 +178,7 @@ export function resolveCastBrowserUrlFromLocation(
   origin: string,
   protocol: string,
   hostname: string,
-  devFallback = 'http://localhost:3002',
+  devFallback = 'http://localhost:5173',
   packagedFallback = `http://127.0.0.1:${CAST_BROWSER_PORT_HINT}/`,
 ): string {
   if (origin && !isTauriEmbeddedOrigin(protocol, hostname)) {

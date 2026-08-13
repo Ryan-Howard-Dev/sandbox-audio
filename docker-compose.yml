@@ -22,7 +22,7 @@ services:
       - "3001:3001"
     environment:
       TIER34_PORT: "3001"
-      TIER34_CORS_ORIGIN: "http://localhost:3002"
+      TIER34_CORS_ORIGIN: "http://localhost:5173"
       MEILISEARCH_URL: "http://meilisearch:7700"
       TIER34_STORAGE_PATH: /data/storage
       TIER34_TMPFS_CACHE: /cache

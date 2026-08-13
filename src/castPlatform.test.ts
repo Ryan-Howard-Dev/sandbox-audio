@@ -19,8 +19,8 @@ describe('castPlatform URL resolution', () => {
 
   it('uses dev UI server during tauri dev', () => {
     expect(
-      resolveCastBrowserUrlFromLocation('http://localhost:3002', 'http:', 'localhost'),
-    ).toBe('http://localhost:3002');
+      resolveCastBrowserUrlFromLocation('http://localhost:5173', 'http:', 'localhost'),
+    ).toBe('http://localhost:5173');
   });
 
   it('uses embedded localhost server for packaged desktop', () => {

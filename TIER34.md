@@ -1,6 +1,6 @@
 # Tier 3 & 4 Backend
 
-The **Sovereign extraction node** runs separately from the Vite UI server (port **3002**).
+The **Sovereign extraction node** runs separately from the Vite UI server (port **5173**).
 
 ## Quick start
 
@@ -9,7 +9,7 @@ npm install
 npm run dev:all
 ```
 
-- UI: http://localhost:3002  
+- UI: http://localhost:5173  
 - Tier 3/4 API: http://localhost:3001  
 - Health: http://localhost:3001/health  
 
@@ -137,7 +137,7 @@ Multi-device **playback sync** (not locker file replication — see [LOCKER_SYNC
 
 ## Artist images
 
-Catalog and artist detail views resolve photos via `src/artistImage.ts` (TheAudioDB lookup, client cache). The main UI server proxies lookups at `GET /api/artist-image?name=` (`server.ts`, port **3002**) so the browser never calls TheAudioDB directly. Works for any artist name, not a single hard-coded profile.
+Catalog and artist detail views resolve photos via `src/artistImage.ts` (TheAudioDB lookup, client cache). The main UI server proxies lookups at `GET /api/artist-image?name=` (`server.ts`, port **5173**) so the browser never calls TheAudioDB directly. Works for any artist name, not a single hard-coded profile.
 
 ## Desktop build (Tauri)
 
@@ -148,7 +148,7 @@ npm run build:desktop
 
 Requires [Rust](https://rustup.rs/) and Windows build tools for `.exe` output under `src-tauri/target/release/`.
 
-`tauri.conf.json` already points `devPath` at `http://localhost:3002`.
+`tauri.conf.json` already points `devUrl` at `http://localhost:5173`.
 
 ## Real-Debrid (not a library mount)
 

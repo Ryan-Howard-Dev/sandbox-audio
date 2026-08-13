@@ -147,7 +147,7 @@ Catalog discovery uses an **iTunes metadata proxy plus your local locker** — n
 ## What the app does
 
 - **Local locker** — IndexedDB vault for imported audio; Android mirrors blobs to durable `filesDir` for native playback ([adr/002-native-filesdir-not-cache.md](./adr/002-native-filesdir-not-cache.md)).
-- **Catalog browse** — iTunes and related metadata via UI server (port 3002); full-track playback beyond previews requires Sandbox Server tier resolve.
+- **Catalog browse** — iTunes and related metadata via UI server (port 5173); full-track playback beyond previews requires Sandbox Server tier resolve.
 - **Sandbox Server (tier34)** — Self-hosted Node API on port **3001** for acquire, locker sync, search proxy, Feed, Connect, DLNA, and debrid resolve when configured.
 - **Playback** — Hybrid tier-ordered resolve (locker → cache → tier34 → mobile → preview); Android defaults to native ExoPlayer outside WebView ([adr/004-exoplayer-native-android-path.md](./adr/004-exoplayer-native-android-path.md)).
 - **Cross-device** — Phones connect to tier34 on LAN; desktop anchor mode can auto-start bundled tier34 ([adr/003-bundled-tier34-tauri-desktop.md](./adr/003-bundled-tier34-tauri-desktop.md)).
@@ -172,21 +172,27 @@ See [docs/sandbox-architecture.md](./docs/sandbox-architecture.md) (note: Pass 3
 
 ```bash
 npm install
-npm run dev          # UI on http://localhost:3002
+npm run dev          # UI on http://localhost:5173
 ```
 
 Full local stack (UI + Sandbox Server):
 
 ```bash
-npm run dev:all      # UI :3002 + tier34 :3001
+npm run dev:all      # UI :5173 + tier34 :3001
 ```
 
 Separate terminals:
 
 ```bash
 npm run dev:tier34   # Sandbox Server only (:3001)
-npm run dev          # UI only (:3002)
+npm run dev          # UI only (:5173)
 ```
+
+> **Port change:** the UI server moved from **3002 → 5173**. Port 3002 is
+> reserved for the Sandbox OS Home launcher (`launcher-server.mjs`), and 5173
+> is what the OS station catalog expects for Media. If you had pinned the old
+> origin, set `TIER34_CORS_ORIGIN=http://localhost:3002` and `PORT=3002`
+> explicitly — the defaults no longer point there.
 
 ### Production web (UI server only)
 
@@ -210,7 +216,7 @@ See [SELF_HOST.md](./SELF_HOST.md).
 
 ```bash
 npm install
-npm run tauri:dev    # Dev window → http://localhost:3002
+npm run tauri:dev    # Dev window → http://localhost:5173
 npm run build:desktop   # Installers + bundled tier34-server.mjs
 ```
 

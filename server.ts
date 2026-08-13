@@ -12,12 +12,12 @@ import {
 dotenv.config();
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3002;
+const PORT = Number(process.env.PORT) || 5173;
 
 app.use((_req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; media-src 'self' blob: https: http://localhost:3001; connect-src 'self' https: http://localhost:3001 ws://localhost:3001 ws://localhost:3002 ws://localhost:24678; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; media-src 'self' blob: https: http://localhost:3001; connect-src 'self' https: http://localhost:3001 ws://localhost:3001 ws://localhost:5173 ws://localhost:24678; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'",
   );
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
