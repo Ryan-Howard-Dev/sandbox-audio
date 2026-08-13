@@ -52,10 +52,19 @@ const STREAM_CACHE_PREFETCH_AHEAD_WIFI = 2;
  * How long one queue position may hold up the ones behind it before it is skipped.
  *
  * Ordering the enqueue means a position that never resolves would block everything after it, and
- * the cost of that is the lookahead for the rest of the window, which is heard as a gap between
- * every following track. Better to leave one hole than to stall the queue.
+ * the cost of that is the lookahead for the rest of the window, heard as a gap between every
+ * following track. So there is a limit. It just has to be longer than a resolve actually takes.
+ *
+ * This was six seconds, which is a locker figure. A streamed track is not read off the disk, it is
+ * extracted, and that was measured on a real phone at just under forty seconds for one track. So
+ * every streamed position was written off as a hole before it had any chance of arriving, its late
+ * result was dropped as stale, and nothing was ever queued ahead -- which is the gap between online
+ * tracks this was supposed to close, made worse.
+ *
+ * A minute is comfortably clear of the slowest resolve seen and still bounded, so a genuinely dead
+ * position costs one hole rather than the rest of the window.
  */
-const ORDERED_ENQUEUE_TIMEOUT_MS = 6000;
+const ORDERED_ENQUEUE_TIMEOUT_MS = 60000;
 
 /**
  * Which prefetch run may add to the native queue. Only the newest.
