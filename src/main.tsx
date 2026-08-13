@@ -12,6 +12,7 @@ import { initEngineTheme } from './engineTheme';
 import { preloadLocale } from './i18n';
 import { initLanguage } from './languageSettings';
 import { warmStreamCacheIndex } from './streamCache';
+import { STORAGE_TRIM_INTERVAL_MS, trimStorageToBudget } from './storageBudget';
 import { ensureBuiltinAddons, syncExperimentalAddons } from './addonStorage';
 import {
   ensureDesktopSandboxDefaults,
@@ -108,6 +109,30 @@ if (!rootEl) {
   );
   // Handed to React. Not painted, and not usable — the two marks below are those.
   markBoot('boot:render');
+}
+
+/*
+ * Keep the key/value store under budget, starting now rather than when somebody taps the screen.
+ *
+ * Deliberately not among the deferred boot tasks: those wait for the shell to become interactive,
+ * which means first input or a timeout, and a phone left playing in a pocket satisfies neither. A
+ * store at the ceiling refuses every write that follows, and the writes that follow are the queue
+ * and the play history, so this cannot be contingent on somebody being there to touch it.
+ *
+ * After render, so measuring the store never delays first paint, and then on a timer because
+ * caches grow while the app is used rather than while it starts.
+ */
+if (typeof window !== 'undefined') {
+  window.setTimeout(() => {
+    safeBoot('trimStorageToBudget', () => {
+      trimStorageToBudget();
+    });
+  }, 0);
+  window.setInterval(() => {
+    safeBoot('trimStorageToBudget', () => {
+      trimStorageToBudget();
+    });
+  }, STORAGE_TRIM_INTERVAL_MS);
 }
 
 /** Heavy storage / network warm-up after the shell can paint. */
