@@ -160,8 +160,23 @@ export function resolvePlaybackFidelityLabel(
     return format ? `${format} · ${bitrate} kbps` : `${bitrate} kbps`;
   }
 
-  return options.streamLabel?.trim() || null;
+  /*
+   * A transport word is not an answer to the question this badge asks.
+   *
+   * transportLabel returns LOCAL, HTTP, PROXY or DEBRID: which pipe the bytes came down. Under the
+   * title, where a listener is looking for how good this sounds, "HTTP" reads as though it were a
+   * format. It is the same objection already recorded above about "MOBILE" -- true, and useless.
+   *
+   * So when nothing is known about the audio, the badge says nothing. Anything else a caller
+   * passes is still shown, because a provider's own quality wording does answer the question.
+   */
+  const label = options.streamLabel?.trim();
+  if (!label || TRANSPORT_ONLY_LABELS.has(label.toUpperCase())) return null;
+  return label;
 }
+
+/** Plumbing words that describe the connection rather than the audio. */
+const TRANSPORT_ONLY_LABELS = new Set(['LOCAL', 'HTTP', 'HTTPS', 'PROXY', 'DEBRID', 'MOBILE']);
 
 const LOSSY_FORMAT_HINTS: Array<[RegExp, string]> = [
   [/opus/i, 'OPUS'],

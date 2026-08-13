@@ -85,9 +85,10 @@ describe('trackFidelityLabel', () => {
     });
     expect(isLosslessEnvelope(stream)).toBe(false);
     for (const policy of ['STANDARD', 'HIGH', 'LOSSLESS'] as const) {
-      expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'MOBILE', t, policy })).toBe(
-        'MOBILE',
-      );
+      // The point of this test is that the policy never leaks into the badge. It reads null now
+      // rather than 'MOBILE' only because the transport word is no longer offered either.
+      expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'MOBILE', t, policy })).toBeNull();
+      expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'HiFi', t, policy })).toBe('HiFi');
     }
   });
 
@@ -140,14 +141,32 @@ describe('resolvePlaybackFidelityLabel — bitrate over transport', () => {
     expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'MOBILE', t })).toBe('320 kbps');
   });
 
-  it('falls back to the transport only when no bitrate is known', () => {
+  it('says nothing rather than naming the transport when no bitrate is known', () => {
+    /*
+     * This used to fall back to the transport word, which put "HTTP" under the track title where
+     * a listener reads it as a format. Same objection as "MOBILE" above: it names the pipe, not
+     * the audio. Reported from the phone against a real track.
+     */
     const stream = env({
       envelopeId: 'b-3',
       provider: 'proxy',
       url: 'https://cdn.example/track.mp3',
       mimeType: 'audio/mpeg',
     });
-    expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'MOBILE', t })).toBe('MOBILE');
+    expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'MOBILE', t })).toBeNull();
+    expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'HTTP', t })).toBeNull();
+  });
+
+  it('still shows a label that describes the audio rather than the connection', () => {
+    // Only the plumbing words are suppressed. A provider's own quality wording answers the
+    // question the badge is asking, so it is left alone.
+    const stream = env({
+      envelopeId: 'b-3b',
+      provider: 'proxy',
+      url: 'https://cdn.example/track.mp3',
+      mimeType: 'audio/mpeg',
+    });
+    expect(resolvePlaybackFidelityLabel(stream, { streamLabel: 'HiFi', t })).toBe('HiFi');
   });
 
   /* Lossless still wins — a FLAC is not improved by quoting its bitrate. */
