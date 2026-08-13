@@ -15,7 +15,12 @@
  */
 
 import type { LanguagePair } from './translationProvider';
-import { BERGAMOT_PAIRS, loadInstalledPairs, saveInstalledPairs } from './bergamotEngine';
+import {
+  APPROX_PAIR_BYTES,
+  loadInstalledPairs,
+  OPUS_MT_PAIRS,
+  saveInstalledPairs,
+} from './onnxTranslationEngine';
 
 export interface LanguagePackInfo {
   pair: LanguagePair;
@@ -25,16 +30,16 @@ export interface LanguagePackInfo {
 }
 
 /**
- * Roughly what a small quantised pair weighs.
+ * Roughly what one pair weighs, measured rather than estimated.
  *
- * One number rather than a table because they cluster tightly and a table of guesses that drift
- * from reality is worse than an honest approximation somebody can round.
+ * One number rather than a table because pairs cluster within a few percent, and a table of guesses
+ * that drift from reality is worse than an honest approximation somebody can round.
  */
-export const APPROX_PACK_BYTES = 22 * 1024 * 1024;
+export const APPROX_PACK_BYTES = APPROX_PAIR_BYTES;
 
 export function listLanguagePacks(installed = loadInstalledPairs()): LanguagePackInfo[] {
   const have = new Set(installed);
-  return BERGAMOT_PAIRS.map((pair) => ({
+  return OPUS_MT_PAIRS.map((pair) => ({
     pair,
     approxBytes: APPROX_PACK_BYTES,
     installed: have.has(pair),
@@ -82,7 +87,7 @@ export async function installLanguagePack(
   deps: PackInstallDeps,
   onProgress?: (fraction: number) => void,
 ): Promise<PackInstallResult> {
-  if (!BERGAMOT_PAIRS.includes(pair as LanguagePair)) {
+  if (!OPUS_MT_PAIRS.includes(pair as LanguagePair)) {
     return { status: 'unknownPair', pair };
   }
   const typed = pair as LanguagePair;

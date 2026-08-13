@@ -42,7 +42,9 @@ describe('listing packs', () => {
 
 describe('formatPackSize', () => {
   it('says megabytes for a pack, because that is the unit of the decision', () => {
-    expect(formatPackSize(APPROX_PACK_BYTES)).toBe('22 MB');
+    // Measured from a real repository rather than estimated: an encoder, a merged decoder and a
+    // tokenizer. Somebody agreeing to this needs the real figure, not a hopeful one.
+    expect(formatPackSize(APPROX_PACK_BYTES)).toBe('110 MB');
   });
 
   it('scales down and up rather than printing a silly number', () => {

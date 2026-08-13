@@ -25,20 +25,20 @@ import SideBySideReader from '../components/SideBySideReader';
 import { chunkIndexForOffset } from '../translationLazy';
 import { normalizeLanguage, type TranslationEngine } from '../translationProvider';
 import {
-  createBergamotEngine,
+  createTranslationEngine,
   loadInstalledPairs,
   targetsForLanguage,
-} from '../bergamotEngine';
+} from '../onnxTranslationEngine';
 
 /**
- * The engine, built once and never given a runtime here.
+ * The engine, built once and not yet given a runtime.
  *
- * loadRuntime throws until a real Bergamot build is wired in, which the provider reports as a
- * retryable failure and the pane shows as a sentence. That is the honest state: the pairs are
- * listed, the plumbing works, and no model has been shipped yet.
+ * loadRuntime throws until the ONNX runtime is wired in, which the provider reports as a retryable
+ * failure and the pane shows as a sentence. That is the honest state: the pairs are listed, the
+ * plumbing works, and no model has been shipped.
  */
 function buildEngine(): TranslationEngine {
-  return createBergamotEngine({
+  return createTranslationEngine({
     loadRuntime: async () => {
       throw new Error('No language pack installed yet');
     },

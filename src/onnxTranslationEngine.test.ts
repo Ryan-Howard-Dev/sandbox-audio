@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  BERGAMOT_MODELS_KEY,
-  BERGAMOT_PAIRS,
-  createBergamotEngine,
+  TRANSLATION_MODELS_KEY,
+  OPUS_MT_PAIRS,
+  createTranslationEngine,
   loadInstalledPairs,
   pairsForLanguage,
   saveInstalledPairs,
   targetsForLanguage,
-  type BergamotRuntime,
-} from './bergamotEngine';
+  type TranslationRuntime,
+} from './onnxTranslationEngine';
 import { translatePassages } from './translationProvider';
 
-function runtime(over: Partial<BergamotRuntime> = {}): BergamotRuntime {
+function runtime(over: Partial<TranslationRuntime> = {}): TranslationRuntime {
   return {
     load: async () => undefined,
     translate: async (_pair, texts) => texts.map((t) => `>${t}`),
@@ -31,12 +31,12 @@ describe('installed pairs', () => {
 
   it('drops a pair that has no model behind it', () => {
     // A hand-edited pref must not make the app promise a pack that cannot exist.
-    localStorage.setItem(BERGAMOT_MODELS_KEY, JSON.stringify(['en-fr', 'en-klingon']));
+    localStorage.setItem(TRANSLATION_MODELS_KEY, JSON.stringify(['en-fr', 'en-klingon']));
     expect(loadInstalledPairs()).toEqual(['en-fr']);
   });
 
   it('survives a corrupt record', () => {
-    localStorage.setItem(BERGAMOT_MODELS_KEY, 'not json');
+    localStorage.setItem(TRANSLATION_MODELS_KEY, 'not json');
     expect(loadInstalledPairs()).toEqual([]);
   });
 
@@ -61,20 +61,22 @@ describe('what a document can be shown as', () => {
     expect(targetsForLanguage('')).toEqual([]);
   });
 
-  it('never offers a pivot through a third language', () => {
+  it('offers direct pairs that do not pass through English', () => {
     /*
-     * fr to de would have to go through English, and a translation of a translation compounds the
-     * first hop's mistakes into sentences that read fluently and say something else.
+     * The reason for opus-mt over Bergamot's set. fr to de as one translation rather than fr to en
+     * to de: a translation of a translation compounds the first hop's mistakes into sentences that
+     * read fluently and say something else.
      */
-    expect(pairsForLanguage('fr')).toEqual(['fr-en']);
-    expect(BERGAMOT_PAIRS.every((pair) => pair.includes('en'))).toBe(true);
+    expect(pairsForLanguage('fr')).toContain('fr-de');
+    expect(pairsForLanguage('es')).toContain('es-it');
+    expect(OPUS_MT_PAIRS.some((pair) => !pair.includes('en'))).toBe(true);
   });
 });
 
 describe('the engine', () => {
   it('loads no runtime until a translation is actually asked for', async () => {
     const loadRuntime = vi.fn(async () => runtime());
-    const engine = createBergamotEngine({ loadRuntime, readInstalled: () => ['en-fr'] });
+    const engine = createTranslationEngine({ loadRuntime, readInstalled: () => ['en-fr'] });
 
     await engine.supportedPairs();
     await engine.installedPairs();
@@ -86,7 +88,7 @@ describe('the engine', () => {
 
   it('loads a model once and reuses it', async () => {
     const load = vi.fn(async () => undefined);
-    const engine = createBergamotEngine({
+    const engine = createTranslationEngine({
       loadRuntime: async () => runtime({ load }),
       readInstalled: () => ['en-fr'],
     });
@@ -103,7 +105,7 @@ describe('the engine', () => {
     const translate = vi.fn(async (_pair: string, texts: readonly string[]) =>
       texts.map((t) => `>${t}`),
     );
-    const engine = createBergamotEngine({
+    const engine = createTranslationEngine({
       loadRuntime: async () => runtime({ translate }),
       readInstalled: () => ['en-fr'],
     });
@@ -120,7 +122,7 @@ describe('the engine', () => {
 
   it('asks for nothing when every passage is blank', async () => {
     const translate = vi.fn();
-    const engine = createBergamotEngine({
+    const engine = createTranslationEngine({
       loadRuntime: async () => runtime({ translate }),
       readInstalled: () => ['en-fr'],
     });
@@ -130,7 +132,7 @@ describe('the engine', () => {
   });
 
   it('refuses a reply that has lost the alignment', async () => {
-    const engine = createBergamotEngine({
+    const engine = createTranslationEngine({
       loadRuntime: async () => runtime({ translate: async () => ['only one'] }),
       readInstalled: () => ['en-fr'],
     });
@@ -142,7 +144,7 @@ describe('the engine', () => {
 
 describe('through the provider', () => {
   it('translates when the pair is installed', async () => {
-    const engine = createBergamotEngine({
+    const engine = createTranslationEngine({
       loadRuntime: async () => runtime(),
       readInstalled: () => ['en-fr'],
     });
@@ -151,7 +153,7 @@ describe('through the provider', () => {
   });
 
   it('asks for a download rather than failing when the pack is absent', async () => {
-    const engine = createBergamotEngine({
+    const engine = createTranslationEngine({
       loadRuntime: async () => runtime(),
       readInstalled: () => [],
     });
@@ -160,16 +162,21 @@ describe('through the provider', () => {
   });
 
   it('says plainly when no pack could ever exist', async () => {
-    const engine = createBergamotEngine({
+    /*
+     * ja-fr rather than fr-de, which used to be the example here. opus-mt publishes fr-de directly,
+     * so that pair went from impossible to merely not downloaded — which is the improvement the
+     * switch was for.
+     */
+    const engine = createTranslationEngine({
       loadRuntime: async () => runtime(),
       readInstalled: () => [],
     });
-    const result = await translatePassages({ texts: ['hello'], from: 'fr', to: 'de' }, engine);
-    expect(result).toEqual({ status: 'unsupported', pair: 'fr-de' });
+    const result = await translatePassages({ texts: ['hello'], from: 'ja', to: 'fr' }, engine);
+    expect(result).toEqual({ status: 'unsupported', pair: 'ja-fr' });
   });
 
   it('reports a runtime that will not load as retryable', async () => {
-    const engine = createBergamotEngine({
+    const engine = createTranslationEngine({
       loadRuntime: async () => {
         throw new Error('wasm missing');
       },
