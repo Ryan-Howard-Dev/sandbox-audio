@@ -272,9 +272,35 @@ export type PrefetchQueueInput = QueuePrefetchInput & {
 };
 
 /**
+ * Which priming run is allowed to enqueue. Only the newest one is.
+ *
+ * Module scope rather than per call because the whole point is that a later run invalidates an
+ * earlier one, and the two have no other way to know about each other.
+ */
+let primeRunGeneration = 0;
+
+/** Abandon any in-flight priming run, for a queue that is being replaced outright. */
+export function cancelLockerNativeQueuePriming(): void {
+  primeRunGeneration += 1;
+}
+
+/**
  * Enqueue the rest of a locker album into native Exo queue (content:// on Android).
  * Works with gapless on or off — native Exo auto-advances within its queue even when
  * the WebView is throttled (lock screen / pocket).
+ *
+ * Only one run may be enqueueing at a time, and a new run supersedes whatever was still going.
+ *
+ * This is called on every track advance and walks the whole remaining queue, so on a sixty track
+ * queue the run for track two was still resolving when the run for track three started. Both then
+ * appended to the same serialised enqueue chain, interleaved, and native Exo takes queue order
+ * from the order the calls arrive in. The result was a native queue in a different order to the
+ * JS one: measured on device, a radio queue played its JS positions 0, 2, 4, 60, 5, 1, 3 before
+ * settling, which is heard as the player wandering back to tracks it has already played.
+ *
+ * Ordering within a single run was never the problem, so the fix is only to stop two of them
+ * overlapping. Each resolve checks the generation both before enqueueing and after awaiting,
+ * because the await is where a newer run gets its chance to start.
  */
 export async function primeLockerNativeQueue(
   tracks: MediaEnvelope[],
@@ -283,7 +309,11 @@ export async function primeLockerNativeQueue(
   awaitNativeEnqueue?: () => Promise<void>,
 ): Promise<void> {
   if (fromIndex >= tracks.length - 1) return;
+  const generation = ++primeRunGeneration;
+  const superseded = () => generation !== primeRunGeneration;
+
   for (let i = fromIndex + 1; i < tracks.length; i++) {
+    if (superseded()) return;
     const track = tracks[i];
     if (!track || track.provider !== 'local-vault') continue;
     let resolved = await resolveLockerEnvelopeForPlayback(track);
@@ -292,9 +322,10 @@ export async function primeLockerNativeQueue(
     }
     if (!resolved?.url?.trim()) continue;
     const exoUrl = await resolveNativeExoStreamUrlAsync(resolved);
+    if (superseded()) return;
     if (exoUrl) onResolvedUrl(exoUrl, resolved);
   }
-  if (awaitNativeEnqueue) {
+  if (awaitNativeEnqueue && !superseded()) {
     await awaitNativeEnqueue();
   }
 }
@@ -345,17 +376,67 @@ export function prefetchQueueIndices(
   return indices;
 }
 
+/**
+ * Which prefetched positions may also be handed to the native queue.
+ *
+ * Native Exo's queue is linear and enqueueNext appends, so anything enqueued is something that
+ * will be played, in the position it was added at. The prefetch list is not a play order: it wraps
+ * around under repeat-all, and it deliberately ends with the previous track so that skipping back
+ * is quick. Both are the right things to resolve and the wrong things to enqueue.
+ *
+ * Enqueueing them is what put a track from the far end of the queue into the middle of playback.
+ * Measured on device: a radio queue playing its position 0 also enqueued position 60, because
+ * under repeat-all the track "before" the first one is the last one, and it was duly played sixth.
+ * From the listener's chair the player had wandered off to something already heard.
+ *
+ * Only the contiguous run forward from where playback is now is a play order, so only that is
+ * allowed through. Everything else is still resolved; it just warms the cache without joining the
+ * queue, which is all a back-skip needed from it in the first place.
+ */
+export function enqueueableQueueIndices(
+  queueIndex: number,
+  queueLength: number,
+  ahead = PREFETCH_AHEAD,
+): number[] {
+  const indices: number[] = [];
+  for (let offset = 1; offset <= ahead; offset++) {
+    const idx = queueIndex + offset;
+    // No wrap. Where the queue really does loop, the advance handles it and priming follows.
+    if (idx >= queueLength) break;
+    indices.push(idx);
+  }
+  return indices;
+}
+
 /** Prefetch the next N tracks in the play queue. */
 export function prefetchUpcomingQueueTracks(input: PrefetchQueueInput): void {
   const { playQueue, queueIndex, repeatMode, findCandidates, onResolvedUrl } = input;
   if (playQueue.length === 0) return;
 
   const indices = prefetchQueueIndices(queueIndex, playQueue.length, repeatMode);
+  /*
+   * One track, not a window, because these resolves finish in whatever order they finish in.
+   *
+   * prefetchPlayableEnvelope hands back a url whenever it has one: immediately for anything
+   * already cached, later for anything that has to be fetched. Enqueueing several from here
+   * therefore adds them to the native queue in completion order rather than queue order, and a
+   * cold track surrounded by warm ones lands after them. Measured on device: positions 2, 3, 4
+   * and 5 were cached and went straight in, position 1 was not and was played sixth.
+   *
+   * A single track cannot be out of order with itself, and it is the one that must be there for a
+   * gapless handover. Depth beyond it comes from primeLockerNativeQueue, which awaits each resolve
+   * before the next and so enqueues in exact queue order.
+   */
+  const enqueueable = new Set(enqueueableQueueIndices(queueIndex, playQueue.length, 1));
 
   for (const idx of indices) {
     const track = playQueue[idx];
     if (!track) continue;
-    prefetchPlayableEnvelope(track, findCandidates(track), onResolvedUrl);
+    prefetchPlayableEnvelope(
+      track,
+      findCandidates(track),
+      enqueueable.has(idx) ? onResolvedUrl : undefined,
+    );
   }
 
   prefetchUpcomingIntoStreamCache(input);
