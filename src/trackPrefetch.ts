@@ -44,6 +44,14 @@ import { tier34StagePlaybackQueue } from './tier34/client';
 const PREFETCH_AHEAD = 5;
 const STREAM_CACHE_PREFETCH_AHEAD_CELLULAR = 1;
 const STREAM_CACHE_PREFETCH_AHEAD_WIFI = 2;
+/**
+ * How long one queue position may hold up the ones behind it before it is skipped.
+ *
+ * Ordering the enqueue means a position that never resolves would block everything after it, and
+ * the cost of that is the lookahead for the rest of the window, which is heard as a gap between
+ * every following track. Better to leave one hole than to stall the queue.
+ */
+const ORDERED_ENQUEUE_TIMEOUT_MS = 6000;
 const inFlight = new Map<string, Promise<MediaEnvelope | null>>();
 const streamCachePrefetchInFlight = new Set<string>();
 
@@ -414,29 +422,57 @@ export function prefetchUpcomingQueueTracks(input: PrefetchQueueInput): void {
   if (playQueue.length === 0) return;
 
   const indices = prefetchQueueIndices(queueIndex, playQueue.length, repeatMode);
+  const forward = enqueueableQueueIndices(queueIndex, playQueue.length);
+  const forwardSet = new Set(forward);
+
   /*
-   * One track, not a window, because these resolves finish in whatever order they finish in.
+   * Resolve the window at once, hand it to the queue strictly in order.
    *
-   * prefetchPlayableEnvelope hands back a url whenever it has one: immediately for anything
-   * already cached, later for anything that has to be fetched. Enqueueing several from here
-   * therefore adds them to the native queue in completion order rather than queue order, and a
-   * cold track surrounded by warm ones lands after them. Measured on device: positions 2, 3, 4
-   * and 5 were cached and went straight in, position 1 was not and was played sixth.
+   * These resolves finish in whatever order they finish in: a cached track calls back immediately,
+   * a cold one calls back when the network is done. Passing each straight through added them to
+   * the native queue in completion order rather than queue order, and a cold track surrounded by
+   * warm ones landed after them. Measured on device: positions 2 to 5 were cached and went in at
+   * once, position 1 was not and was played sixth.
    *
-   * A single track cannot be out of order with itself, and it is the one that must be there for a
-   * gapless handover. Depth beyond it comes from primeLockerNativeQueue, which awaits each resolve
-   * before the next and so enqueues in exact queue order.
+   * Resolving them one after another would order them but would also serialise the network, and
+   * on streamed tracks that is the whole gap between songs. So they run together and the results
+   * are released through a cursor that only moves forward, which keeps order without making
+   * anything wait its turn to start.
    */
-  const enqueueable = new Set(enqueueableQueueIndices(queueIndex, playQueue.length, 1));
+  const slots = new Map<number, { url: string; envelope: MediaEnvelope } | null>();
+  let cursor = 0;
+  const release = () => {
+    while (cursor < forward.length) {
+      const idx = forward[cursor]!;
+      if (!slots.has(idx)) return;
+      const slot = slots.get(idx);
+      if (slot) onResolvedUrl(slot.url, slot.envelope);
+      cursor += 1;
+    }
+  };
+  const settle = (idx: number, value: { url: string; envelope: MediaEnvelope } | null) => {
+    if (slots.has(idx)) return;
+    slots.set(idx, value);
+    release();
+  };
 
   for (const idx of indices) {
     const track = playQueue[idx];
     if (!track) continue;
-    prefetchPlayableEnvelope(
-      track,
-      findCandidates(track),
-      enqueueable.has(idx) ? onResolvedUrl : undefined,
-    );
+    if (!forwardSet.has(idx)) {
+      // Wrapped positions and the previous track: warmed, never queued. See above.
+      prefetchPlayableEnvelope(track, findCandidates(track));
+      continue;
+    }
+    /*
+     * A track that never resolves must not hold the rest back, or one dead entry costs the
+     * lookahead for everything behind it and every following gap.
+     */
+    const timer = setTimeout(() => settle(idx, null), ORDERED_ENQUEUE_TIMEOUT_MS);
+    prefetchPlayableEnvelope(track, findCandidates(track), (url, envelope) => {
+      clearTimeout(timer);
+      settle(idx, { url, envelope });
+    });
   }
 
   prefetchUpcomingIntoStreamCache(input);
