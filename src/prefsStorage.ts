@@ -92,10 +92,38 @@ export function prefsGetItem(key: string): string | null {
   }
 }
 
-/** Prefixes of non-essential cached data that can be evicted to recover from a full store. */
-const EVICTABLE_KEY_PREFIXES = [
-  'sandbox_discovery_cache:',
+/**
+ * Prefixes of non-essential cached data that can be evicted to recover from a full store.
+ *
+ * This list had drifted from the caches it was meant to cover. It named sandbox_catalog_cache and
+ * sandbox_explore_cache while the real keys are sandbox_catalog_search_cache_v1 and
+ * sandbox_explore_cache_v2, so eviction scanned the store, matched nothing, and the retry failed
+ * exactly as the first attempt had.
+ *
+ * Found on a phone whose store had reached the ten megabyte ceiling, most of it rebuildable cache:
+ * about 1.8MB of artist discographies alone, plus chart and stream-resolution caches. Meanwhile
+ * the writes being refused were the queue, the play history and the listening sessions, so the app
+ * was discarding the things it cannot rebuild in order to keep the things it can.
+ *
+ * Everything here is refetched or recomputed on demand; nothing here is the only copy of anything.
+ * The names are duplicated rather than imported from responseCache because that module imports
+ * this one, and a test asserts this list still covers every key it defines.
+ */
+export const EVICTABLE_KEY_PREFIXES = [
+  // Response caches. See CACHE_KEYS in responseCache.ts.
+  'sandbox_followed_feed_cache_v1',
+  'sandbox_tier34_feed_cache_v1',
+  'sandbox_feed_fallback_cache_v1',
+  'sandbox_chart_tracks_cache_v1',
+  'sandbox_catalog_search_cache_v1',
+  'sandbox_artist_discography_cache_v',
   'sandbox_explore_cache',
+  'sandbox_lyrics_cache_v1',
+  'sandbox_mb_artist_feed_cache_v1',
+  'sandbox_sonic_dna_cache_v1',
+  // Resolved stream URLs, which carry their own expiry and are re-resolved when missing.
+  'sandbox_resolved_stream_cache_v1',
+  'sandbox_discovery_cache:',
   'sandbox_catalog_cache',
   'sandbox_last_queue',
 ];
