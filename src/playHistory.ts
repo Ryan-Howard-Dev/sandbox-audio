@@ -29,7 +29,25 @@ const LAST_QUEUE_KEY = 'sandbox_last_queue';
 export const ANALYTICS_SCHEMA_VERSION = 3;
 
 const MAX_HISTORY = 64;
-const MAX_SESSIONS = 8000;
+/**
+ * How many legacy session rows to keep in prefs.
+ *
+ * These are a mirror, not the record. Since v3 the play log lives in IndexedDB, append-only and
+ * uncapped, and these rows exist for the smart-playlist and analytics paths that still read them
+ * plus the devices where that migration could not run. Eight thousand of them came to 915KB in
+ * prefs, second only to the podcast library, in a store that had stopped accepting writes.
+ *
+ * Two thousand is the same figure the listening sessions beside them already use, and it is far
+ * more listening than any playlist rule looks back over. Nothing is lost from the log itself.
+ */
+const MAX_SESSIONS = 2000;
+/**
+ * The cap that actually binds, because rows vary in size and a count cannot say how much space
+ * they take. Measured at 991 bytes each on a real library, where 2000 rows would have been 1.9MB.
+ */
+const MAX_SESSIONS_BYTES = 400 * 1024;
+/** Never trim below this, however fat the rows are. Some history beats none. */
+const MIN_SESSIONS_KEPT = 200;
 const MAX_LISTENING_SESSIONS = 2000;
 const MIN_SESSION_SECONDS = 5;
 const SESSION_IDLE_MS = 30 * 60 * 1000;
@@ -289,8 +307,36 @@ function readSessions(): PlaySession[] {
   }
 }
 
+/**
+ * Keep the newest sessions that fit in the byte budget.
+ *
+ * A count is the wrong unit here. These rows measured 991 bytes each on a real phone, so the
+ * count cap that was meant to bound them still allowed nearly two megabytes, in a store with ten
+ * to spend. What a row costs depends on how long the title, artist and artwork url happen to be,
+ * and that is not something a number of rows can express.
+ *
+ * Trims proportionally rather than a row at a time: the serialised size is already known, so one
+ * or two passes lands it, instead of stringifying nine hundred rows individually on every play.
+ */
+export function capSessionsToBudget(
+  sessions: PlaySession[],
+  maxBytes = MAX_SESSIONS_BYTES,
+): { kept: PlaySession[]; json: string } {
+  let kept = sessions.slice(0, MAX_SESSIONS);
+  let json = JSON.stringify(kept);
+  // A floor, so a run of unusually fat rows cannot erase the history altogether.
+  while (json.length * 2 > maxBytes && kept.length > MIN_SESSIONS_KEPT) {
+    const ratio = maxBytes / (json.length * 2);
+    const next = Math.max(MIN_SESSIONS_KEPT, Math.floor(kept.length * ratio * 0.95));
+    if (next >= kept.length) break;
+    kept = kept.slice(0, next);
+    json = JSON.stringify(kept);
+  }
+  return { kept, json };
+}
+
 function writeSessions(sessions: PlaySession[]): void {
-  prefsSetItem(PLAY_SESSIONS_KEY, JSON.stringify(sessions.slice(0, MAX_SESSIONS)));
+  prefsSetItem(PLAY_SESSIONS_KEY, capSessionsToBudget(sessions).json);
   notifyPlayHistoryChange();
 }
 
