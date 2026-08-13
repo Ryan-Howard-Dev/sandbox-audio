@@ -21,7 +21,7 @@ import { seekIntervalsFor, seekTargetSeconds } from '../spokenSeekIntervals';
 import { resolveMediaPillar } from '../mediaPillar';
 import { loadPodcastSeekIntervalSeconds } from '../podcastSettings';
 import { computeSkipBackIndex, recordShuffleAdvance } from '../play/queueAdvancePolicy';
-import { resolveQueueTrackSeekTarget } from '../queueNavigation';
+import { resolveQueueTrackRestartSeconds, resolveQueueTrackSeekTarget } from '../queueNavigation';
 import { tryQueueInPlaceSeek } from '../play/playTapFastPath';
 import { computeNextQueueIndexWithUpNext, loadSovereignUpNextSettings } from '../sovereignUpNext';
 import { isPodcastEnvelopeId } from '../podcastStorage';
@@ -109,10 +109,14 @@ export function useShellSkipControls({
       currentTimeSeconds: audio.currentTimeSeconds,
     });
     if (back === 'seek-start') {
+      // Zero for an ordinary queue; the track's own offset only when the queue really is one
+      // shared stream. See resolveQueueTrackRestartSeconds.
       audio.seek(
-        playQueue.length > 0
-          ? resolveQueueTrackSeekTarget(playQueue, queueIndex)
-          : 0,
+        resolveQueueTrackRestartSeconds(
+          playQueue,
+          queueIndex,
+          audio.envelope?.url?.trim() ?? '',
+        ),
       );
       return;
     }
