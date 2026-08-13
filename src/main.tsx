@@ -13,6 +13,7 @@ import { preloadLocale } from './i18n';
 import { initLanguage } from './languageSettings';
 import { warmStreamCacheIndex } from './streamCache';
 import { STORAGE_TRIM_INTERVAL_MS, trimStorageToBudget } from './storageBudget';
+import { prunePodcastLibraryToBudget } from './podcastStorage';
 import { ensureBuiltinAddons, syncExperimentalAddons } from './addonStorage';
 import {
   ensureDesktopSandboxDefaults,
@@ -123,16 +124,18 @@ if (!rootEl) {
  * caches grow while the app is used rather than while it starts.
  */
 if (typeof window !== 'undefined') {
-  window.setTimeout(() => {
+  const keepStorageInBudget = () => {
+    // Caches first, since they are free to lose. The podcast library is real data and only gives
+    // up episode records, which come back with the next feed refresh.
     safeBoot('trimStorageToBudget', () => {
       trimStorageToBudget();
     });
-  }, 0);
-  window.setInterval(() => {
-    safeBoot('trimStorageToBudget', () => {
-      trimStorageToBudget();
+    safeBoot('prunePodcastLibraryToBudget', () => {
+      prunePodcastLibraryToBudget();
     });
-  }, STORAGE_TRIM_INTERVAL_MS);
+  };
+  window.setTimeout(keepStorageInBudget, 0);
+  window.setInterval(keepStorageInBudget, STORAGE_TRIM_INTERVAL_MS);
 }
 
 /** Heavy storage / network warm-up after the shell can paint. */

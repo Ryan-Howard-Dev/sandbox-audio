@@ -8,6 +8,45 @@ const PLAYBACK_STATE_KEY = 'sandbox_podcast_playback_state_v1';
 /** Avoid localStorage quota blow-ups on huge feeds (e.g. JRE). */
 export const MAX_EPISODES_PERSISTED_PER_FEED = 120;
 
+/**
+ * A ceiling for the library as a whole, not just for one feed.
+ *
+ * The per-feed cap bounds a single enormous show and nothing else, so the size of the library is
+ * really the number of subscriptions: forty shows at a hundred and twenty episodes each is the
+ * same problem arriving more slowly. On a real phone this key had reached 1.3MB, the largest
+ * single thing in a store that was refusing writes.
+ *
+ * Dropping an episode record costs nothing that cannot be fetched again. Titles, descriptions and
+ * audio urls come back with the next feed refresh, and the things that are genuinely yours are
+ * kept elsewhere: whether an episode was played lives in the playback state key, and how far in
+ * you got lives in the resume key. Neither is touched by any of this.
+ */
+export const MAX_EPISODES_PERSISTED_TOTAL = 1200;
+
+/**
+ * However many shows are subscribed, each keeps at least this many.
+ *
+ * A budget shared out strictly would give a hundred subscriptions twelve episodes each, which is
+ * not a podcast app any more. Past that point the total is allowed to drift over budget rather
+ * than gut every show, because somebody with a hundred subscriptions has said what they want.
+ */
+export const MIN_EPISODES_PERSISTED_PER_FEED = 25;
+
+/**
+ * How many episodes each feed may keep, given how many feeds there are.
+ *
+ * Pure so the awkward end of it can be asserted directly: one feed, no feeds, and enough feeds
+ * that the share falls under the floor.
+ */
+export function episodesPerFeedBudget(feedCount: number): number {
+  if (feedCount <= 1) return MAX_EPISODES_PERSISTED_PER_FEED;
+  const share = Math.floor(MAX_EPISODES_PERSISTED_TOTAL / feedCount);
+  return Math.max(
+    MIN_EPISODES_PERSISTED_PER_FEED,
+    Math.min(MAX_EPISODES_PERSISTED_PER_FEED, share),
+  );
+}
+
 /** Fraction of duration listened before auto-marking complete. */
 export const PODCAST_AUTO_COMPLETE_RATIO = 0.92;
 
@@ -185,18 +224,87 @@ export function removeSubscription(feedId: string): void {
   clearPlaybackStateForFeed(feedId);
 }
 
-function trimEpisodesForPersistence(episodes: PodcastEpisode[]): PodcastEpisode[] {
-  const cap = MAX_EPISODES_PERSISTED_PER_FEED;
-  if (episodes.length <= cap) return episodes;
-  return [...episodes]
-    .sort((a, b) => (b.publishedAt ?? 0) - (a.publishedAt ?? 0))
-    .slice(0, cap);
+/**
+ * How many of a show's newest episodes keep their full notes.
+ *
+ * Measured on a real library: an episode record is about 2.9KB and 2.4KB of that is the
+ * description, so show notes are five parts in six of the whole podcast library. Two
+ * subscriptions came to 1.3MB, which is why capping the number of episodes alone would not have
+ * helped -- there were only 240 of them.
+ *
+ * The newest keep everything, because those are the ones somebody opens. Older episodes keep
+ * their title, artwork, duration and audio url, which is all the list needs to show them and all
+ * playback needs to start them. The notes come back with the next feed refresh.
+ */
+export const EPISODES_WITH_FULL_NOTES_PER_FEED = 25;
+
+/** Everything except the long prose. */
+function withoutNotes(episode: PodcastEpisode): PodcastEpisode {
+  if (!episode.description) return episode;
+  const { description: _dropped, ...rest } = episode;
+  return rest;
+}
+
+/**
+ * Drop the notes from all but the newest episodes.
+ *
+ * Expects the list already sorted newest first, which is how it is stored and how it arrives.
+ */
+export function slimOlderEpisodeNotes(
+  episodes: PodcastEpisode[],
+  keepFull = EPISODES_WITH_FULL_NOTES_PER_FEED,
+): PodcastEpisode[] {
+  if (episodes.length <= keepFull) return episodes;
+  return episodes.map((episode, index) => (index < keepFull ? episode : withoutNotes(episode)));
+}
+
+function trimEpisodesForPersistence(
+  episodes: PodcastEpisode[],
+  cap = MAX_EPISODES_PERSISTED_PER_FEED,
+): PodcastEpisode[] {
+  const newestFirst = [...episodes].sort((a, b) => (b.publishedAt ?? 0) - (a.publishedAt ?? 0));
+  return slimOlderEpisodeNotes(newestFirst.slice(0, cap));
+}
+
+/**
+ * Bring the whole library back inside its budget, newest episodes kept.
+ *
+ * Subscriptions are never touched -- unsubscribing is a decision, and it is not this function's to
+ * make. Only the episode lists shrink, and only to what the current number of feeds affords.
+ *
+ * Returns how many episode records were dropped, and writes only when that is more than none, so
+ * it is safe to call on a schedule without rewriting a megabyte for nothing.
+ */
+export function prunePodcastLibraryToBudget(): number {
+  const lib = readLibrary();
+  const feedIds = Object.keys(lib.episodesByFeed);
+  if (feedIds.length === 0) return 0;
+
+  const cap = episodesPerFeedBudget(lib.subscriptions.length || feedIds.length);
+  let dropped = 0;
+  let notesDropped = 0;
+  for (const feedId of feedIds) {
+    const episodes = lib.episodesByFeed[feedId] ?? [];
+    const trimmed = trimEpisodesForPersistence(episodes, cap);
+    dropped += Math.max(0, episodes.length - trimmed.length);
+    // Counted separately: an existing library is usually within its episode budget already and
+    // still carrying a megabyte of show notes, so this is the part that actually reclaims.
+    notesDropped += trimmed.filter((ep, i) => episodes[i]?.description && !ep.description).length;
+    lib.episodesByFeed[feedId] = trimmed;
+  }
+  if (dropped > 0 || notesDropped > 0) writeLibrary(lib);
+  return dropped + notesDropped;
 }
 
 export function saveEpisodesForFeed(feedId: string, episodes: PodcastEpisode[]): void {
   const lib = readLibrary();
   const previous = lib.episodesByFeed[feedId] ?? [];
-  episodes = trimEpisodesForPersistence(episodes);
+  // The cap depends on how many shows are subscribed, so a library that has grown wide keeps
+  // fewer of each rather than more of everything.
+  episodes = trimEpisodesForPersistence(
+    episodes,
+    episodesPerFeedBudget(lib.subscriptions.length),
+  );
   const previousById = new Map(previous.map((ep) => [ep.id, ep]));
   const merged = episodes.map((ep) => {
     const old = previousById.get(ep.id);
