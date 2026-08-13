@@ -1017,6 +1017,42 @@ public class NativeExoPlaybackPlugin extends Plugin {
     }
 
     /**
+     * The player's queue, in order, as the envelope ids carried on each item.
+     *
+     * JS holds a queue and the player holds a queue, and they have disagreed twice: once because
+     * two priming runs interleaved their enqueues, once because prefetch was adding positions that
+     * were never ahead of the listener. Both were only visible as an odd play order, which meant
+     * inferring the player's list by sitting through several minutes of it.
+     *
+     * Reading it directly turns that into one call. Nothing here changes playback.
+     */
+    @PluginMethod
+    public void getQueue(PluginCall call) {
+        runOnMain(
+            call,
+            () -> {
+                ExoPlayer p = ensurePlayer();
+                JSArray items = new JSArray();
+                int count = p.getMediaItemCount();
+                for (int i = 0; i < count; i++) {
+                    MediaItem item = p.getMediaItemAt(i);
+                    JSObject entry = new JSObject();
+                    entry.put("index", i);
+                    entry.put("mediaId", item.mediaId);
+                    if (item.localConfiguration != null && item.localConfiguration.uri != null) {
+                        entry.put("uri", item.localConfiguration.uri.toString());
+                    }
+                    items.put(entry);
+                }
+                JSObject ret = new JSObject();
+                ret.put("items", items);
+                ret.put("currentIndex", p.getCurrentMediaItemIndex());
+                ret.put("count", count);
+                call.resolve(ret);
+            });
+    }
+
+    /**
      * Open the system picker for the waveform live wallpaper.
      *
      * Setting a wallpaper is the listener's decision to make, not the app's: Android has no API to
