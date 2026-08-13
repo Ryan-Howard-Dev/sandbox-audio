@@ -39,6 +39,7 @@ import {
   loadQueueState,
   persistableCurrentTrackId,
   rehydrateQueueState,
+  savePlaybackPositionSnapshot,
   saveQueueState,
   shouldAutoRestorePlayerOnLoad,
   shouldRestoreLastPlayIntentOnLoad,
@@ -58,6 +59,14 @@ type PlayEnvelopeFn = (
 ) => Promise<boolean> | boolean | void | Promise<void>;
 
 type QueueRestorePending = { seekTo: number; envelopeId: string };
+
+/**
+ * How often the playhead alone is written down.
+ *
+ * Matches the audiobook progress writer. Long enough that it costs nothing, short enough that
+ * resuming after a crash lands within a few seconds of where listening stopped.
+ */
+const POSITION_SAVE_INTERVAL_MS = 5000;
 
 export type ShellQueueRestoreArgs = {
   audio: UseAudioFSMResult;
@@ -276,9 +285,35 @@ export function useShellQueuePersistWrites({
       };
     });
   }, []);
+
+  /*
+   * The moving playhead, on a timer and off the render path.
+   *
+   * Reads the same lifecycle snapshot the pagehide flush uses, so there is one description of what
+   * a saved queue is rather than two that can drift.
+   */
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (isConnectRemoteRef.current) return;
+      if (audioStateRef.current !== 'Playing') return;
+      savePlaybackPositionSnapshot();
+    }, POSITION_SAVE_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, []);
 }
 
-/** Live saveQueueState. Call after the audiobook progress effect so registration order is unchanged. */
+/**
+ * Live saveQueueState. Call after the audiobook progress effect so registration order is unchanged.
+ *
+ * Deliberately not keyed on the position. This effect used to list audio.currentTimeSeconds among
+ * its dependencies, so it re-ran at the playback poll rate -- 450ms on the Android native path,
+ * against a 400ms save debounce, meaning the debounce always expired first and the whole queue was
+ * serialised and written to storage about twice a second for as long as anything was playing.
+ *
+ * What is saved here is the shape of the session: which queue, which position in it, which track,
+ * playing or not. Those change when somebody does something. The playhead is written separately on
+ * a timer, off the render path entirely.
+ */
 export function useShellQueueSave({
   audio,
   playQueue,
@@ -287,6 +322,7 @@ export function useShellQueueSave({
   repeatMode,
   queuePersistReady,
   isConnectRemoteRef,
+  audioCurrentTimeRef,
 }: {
   audio: UseAudioFSMResult;
   playQueue: MediaEnvelope[];
@@ -295,6 +331,7 @@ export function useShellQueueSave({
   repeatMode: RepeatMode;
   queuePersistReady: boolean;
   isConnectRemoteRef: MutableRefObject<boolean>;
+  audioCurrentTimeRef: MutableRefObject<number>;
 }) {
   useEffect(() => {
     if (!queuePersistReady || isConnectRemoteRef.current) return;
@@ -304,7 +341,9 @@ export function useShellQueueSave({
       shuffleOn,
       repeatMode,
       currentTrackId: persistableCurrentTrackId(audio.envelope?.envelopeId, audio.state),
-      currentTimeSeconds: audio.currentTimeSeconds,
+      // From the ref, so a save triggered by a real change still records a truthful position
+      // without the position itself being what triggers saves.
+      currentTimeSeconds: audioCurrentTimeRef.current,
       wasPlaying: audio.state === 'Playing',
     });
   }, [
@@ -314,7 +353,6 @@ export function useShellQueueSave({
     shuffleOn,
     repeatMode,
     audio.envelope?.envelopeId,
-    audio.currentTimeSeconds,
     audio.state,
   ]);
 }

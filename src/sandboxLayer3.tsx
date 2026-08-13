@@ -2141,6 +2141,7 @@ export default function SandboxShell() {
     repeatMode,
     queuePersistReady,
     isConnectRemoteRef,
+    audioCurrentTimeRef,
   });
 
   useEffect(() => {

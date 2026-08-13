@@ -547,6 +547,25 @@ export function initQueuePersistenceLifecycle(getState: () => QueueSaveInput | n
   };
 }
 
+/**
+ * Write where playback has reached, taken from the lifecycle snapshot rather than from React.
+ *
+ * The position moves several times a second. Making that drive a React effect meant the whole
+ * queue was serialised and written to storage at the poll rate for the entire session, which on a
+ * phone is a main-thread stall roughly twice a second and reads as the app freezing. The same
+ * reason the audiobook progress writer polls refs on a timer instead of rendering.
+ *
+ * Structural changes -- a different queue, a different track, play or pause -- still save the
+ * moment they happen. Only the moving playhead is on a timer, so the worst a crash can cost is
+ * the last few seconds of position.
+ */
+export function savePlaybackPositionSnapshot(): void {
+  if (!lifecycleGetState) return;
+  const snapshot = lifecycleGetState();
+  if (!snapshot || snapshot.playQueue.length === 0) return;
+  saveQueueState(snapshot);
+}
+
 /** Minimal queue for Home "Resume Queue" before full rehydrate completes. */
 export function loadPersistedQueueShell(): MediaEnvelope[] {
   const state = loadQueueState();
