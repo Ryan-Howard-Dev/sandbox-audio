@@ -121,3 +121,102 @@ describe('what may join the native queue', () => {
     expect(enqueueableQueueIndices(58, 61)).toEqual([59, 60]);
   });
 });
+
+describe('ordered release into the native queue', () => {
+  const env = (n: number) => ({ envelopeId: `t${n}` }) as MediaEnvelope;
+  const run = async () => {
+    const { createOrderedRelease } = await import('./trackPrefetch');
+    const seen: number[] = [];
+    const rel = createOrderedRelease([1, 2, 3, 4, 5], (url) => seen.push(Number(url)));
+    return { rel, seen };
+  };
+
+  it('holds a result back until the positions before it have settled', async () => {
+    const { rel, seen } = await run();
+    // Arrives backwards, which is what a warm track behind a cold one looks like.
+    rel.settle(3, { url: '3', envelope: env(3) });
+    rel.settle(2, { url: '2', envelope: env(2) });
+    expect(seen).toEqual([]);
+    rel.settle(1, { url: '1', envelope: env(1) });
+    expect(seen).toEqual([1, 2, 3]);
+  });
+
+  it('steps over a position that resolved to nothing', async () => {
+    // Otherwise one dead entry costs the lookahead for everything behind it.
+    const { rel, seen } = await run();
+    rel.settle(1, { url: '1', envelope: env(1) });
+    rel.settle(3, { url: '3', envelope: env(3) });
+    expect(seen).toEqual([1]);
+    rel.settle(2, null);
+    expect(seen).toEqual([1, 3]);
+  });
+
+  it('ignores a run that has been overtaken', async () => {
+    /*
+     * The skip case. A second skip starts a new window while the first is still resolving, and
+     * both released correctly into the same queue, interleaved. On device that left the player
+     * holding positions 2, 7, 4, 5, 6, 3 where it should have held 2 through 7.
+     */
+    const { createOrderedRelease } = await import('./trackPrefetch');
+    const seen: number[] = [];
+    let stale = false;
+    const rel = createOrderedRelease([1, 2, 3], (url) => seen.push(Number(url)), () => stale);
+    rel.settle(1, { url: '1', envelope: env(1) });
+    stale = true;
+    rel.settle(2, { url: '2', envelope: env(2) });
+    rel.settle(3, { url: '3', envelope: env(3) });
+    expect(seen).toEqual([1]);
+  });
+
+  it('never emits the same position twice', async () => {
+    const { rel, seen } = await run();
+    rel.settle(1, { url: '1', envelope: env(1) });
+    rel.settle(1, { url: '1', envelope: env(1) });
+    rel.settle(2, { url: '2', envelope: env(2) });
+    expect(seen).toEqual([1, 2]);
+  });
+});
+
+describe('a queue reset abandons work in flight', () => {
+  it('stops an ordered release that was writing to the old queue', async () => {
+    /*
+     * The skip case, end to end in miniature. Playing a track resets the native queue, and the
+     * prefetch run for the position just left is still resolving. Its results used to land after
+     * the reset, into a queue rebuilt at a different position, in completion order. On device that
+     * left the player holding positions 0, 4, 2, 5, 3, 1.
+     */
+    const { createOrderedRelease } = await import('./trackPrefetch');
+    const { abandonNativeQueueWrites, currentNativeQueueWriteGeneration, nativeQueueWritesSuperseded } =
+      await import('./nativeQueueWrites');
+
+    const token = currentNativeQueueWriteGeneration();
+    const seen: number[] = [];
+    const rel = createOrderedRelease([1, 2, 3], (url) => seen.push(Number(url)), () =>
+      nativeQueueWritesSuperseded(token),
+    );
+
+    rel.settle(1, { url: '1', envelope: { envelopeId: 't1' } as MediaEnvelope });
+    expect(seen).toEqual([1]);
+
+    abandonNativeQueueWrites();
+    rel.settle(2, { url: '2', envelope: { envelopeId: 't2' } as MediaEnvelope });
+    rel.settle(3, { url: '3', envelope: { envelopeId: 't3' } as MediaEnvelope });
+    expect(seen).toEqual([1]);
+  });
+
+  it('lets a run started after the reset write normally', async () => {
+    const { createOrderedRelease } = await import('./trackPrefetch');
+    const { abandonNativeQueueWrites, currentNativeQueueWriteGeneration, nativeQueueWritesSuperseded } =
+      await import('./nativeQueueWrites');
+
+    abandonNativeQueueWrites();
+    const token = currentNativeQueueWriteGeneration();
+    const seen: number[] = [];
+    const rel = createOrderedRelease([1, 2], (url) => seen.push(Number(url)), () =>
+      nativeQueueWritesSuperseded(token),
+    );
+    rel.settle(2, { url: '2', envelope: { envelopeId: 't2' } as MediaEnvelope });
+    rel.settle(1, { url: '1', envelope: { envelopeId: 't1' } as MediaEnvelope });
+    expect(seen).toEqual([1, 2]);
+  });
+});

@@ -39,6 +39,10 @@ import {
   silentPrefetchTrackIntoStreamCache,
 } from './streamCache';
 import { tier34StagePlaybackQueue } from './tier34/client';
+import {
+  currentNativeQueueWriteGeneration,
+  nativeQueueWritesSuperseded,
+} from './nativeQueueWrites';
 
 /** Rolling native/JS prefetch window — must exceed 2 so locked-screen playback survives OEM WebView throttle. */
 const PREFETCH_AHEAD = 5;
@@ -52,6 +56,20 @@ const STREAM_CACHE_PREFETCH_AHEAD_WIFI = 2;
  * every following track. Better to leave one hole than to stall the queue.
  */
 const ORDERED_ENQUEUE_TIMEOUT_MS = 6000;
+
+/**
+ * Which prefetch run may add to the native queue. Only the newest.
+ *
+ * Ordering the release within a run is not enough once a second run can start before the first has
+ * finished resolving, which is exactly what skipping does. Both runs then release in their own
+ * correct order, into the same queue, interleaved. Measured on device: two skips in quick
+ * succession left the player holding positions 2, 7, 4, 5, 6, 3 where it should have held 2 to 7.
+ *
+ * Separate from the priming generation on purpose. Priming is a long walk down the rest of the
+ * queue and prefetch fires on every index change, so sharing one token would have each advance
+ * cancel the run that provides the depth.
+ */
+let prefetchEnqueueGeneration = 0;
 const inFlight = new Map<string, Promise<MediaEnvelope | null>>();
 const streamCachePrefetchInFlight = new Set<string>();
 
@@ -287,11 +305,6 @@ export type PrefetchQueueInput = QueuePrefetchInput & {
  */
 let primeRunGeneration = 0;
 
-/** Abandon any in-flight priming run, for a queue that is being replaced outright. */
-export function cancelLockerNativeQueuePriming(): void {
-  primeRunGeneration += 1;
-}
-
 /**
  * Enqueue the rest of a locker album into native Exo queue (content:// on Android).
  * Works with gapless on or off — native Exo auto-advances within its queue even when
@@ -318,7 +331,10 @@ export async function primeLockerNativeQueue(
 ): Promise<void> {
   if (fromIndex >= tracks.length - 1) return;
   const generation = ++primeRunGeneration;
-  const superseded = () => generation !== primeRunGeneration;
+  const writeToken = currentNativeQueueWriteGeneration();
+  // Superseded by a newer priming run, or by the queue being reset out from under this one.
+  const superseded = () =>
+    generation !== primeRunGeneration || nativeQueueWritesSuperseded(writeToken);
 
   for (let i = fromIndex + 1; i < tracks.length; i++) {
     if (superseded()) return;
@@ -416,6 +432,47 @@ export function enqueueableQueueIndices(
   return indices;
 }
 
+/**
+ * Hold results back until every earlier position has been dealt with, then let them go.
+ *
+ * The queue positions are resolved together so nothing waits its turn to start, but native Exo
+ * takes queue order from the order calls arrive in, so they cannot be handed over as they land.
+ * A cursor walks the window and only moves past a position once that position has settled, either
+ * with a url or with nothing.
+ *
+ * Extracted so the awkward cases can be asserted directly: results arriving backwards, a position
+ * that never resolves, and a run that gets overtaken by a newer one. All three happened on a real
+ * phone and none of them are reachable from a test that has to go through a resolver.
+ */
+export function createOrderedRelease(
+  forward: readonly number[],
+  onResolvedUrl: (url: string, envelope: MediaEnvelope) => void,
+  isSuperseded: () => boolean = () => false,
+): { settle: (index: number, value: { url: string; envelope: MediaEnvelope } | null) => void } {
+  const slots = new Map<number, { url: string; envelope: MediaEnvelope } | null>();
+  let cursor = 0;
+
+  const release = () => {
+    while (cursor < forward.length) {
+      const idx = forward[cursor]!;
+      if (!slots.has(idx)) return;
+      const slot = slots.get(idx);
+      if (slot) onResolvedUrl(slot.url, slot.envelope);
+      cursor += 1;
+    }
+  };
+
+  return {
+    settle(index, value) {
+      // An overtaken run stops contributing. Its late arrivals describe a window the listener has
+      // already moved past, and adding them now is precisely what put them out of order.
+      if (isSuperseded() || slots.has(index)) return;
+      slots.set(index, value);
+      release();
+    },
+  };
+}
+
 /** Prefetch the next N tracks in the play queue. */
 export function prefetchUpcomingQueueTracks(input: PrefetchQueueInput): void {
   const { playQueue, queueIndex, repeatMode, findCandidates, onResolvedUrl } = input;
@@ -439,22 +496,14 @@ export function prefetchUpcomingQueueTracks(input: PrefetchQueueInput): void {
    * are released through a cursor that only moves forward, which keeps order without making
    * anything wait its turn to start.
    */
-  const slots = new Map<number, { url: string; envelope: MediaEnvelope } | null>();
-  let cursor = 0;
-  const release = () => {
-    while (cursor < forward.length) {
-      const idx = forward[cursor]!;
-      if (!slots.has(idx)) return;
-      const slot = slots.get(idx);
-      if (slot) onResolvedUrl(slot.url, slot.envelope);
-      cursor += 1;
-    }
-  };
-  const settle = (idx: number, value: { url: string; envelope: MediaEnvelope } | null) => {
-    if (slots.has(idx)) return;
-    slots.set(idx, value);
-    release();
-  };
+  const generation = ++prefetchEnqueueGeneration;
+  const writeToken = currentNativeQueueWriteGeneration();
+  const { settle } = createOrderedRelease(
+    forward,
+    onResolvedUrl,
+    () =>
+      generation !== prefetchEnqueueGeneration || nativeQueueWritesSuperseded(writeToken),
+  );
 
   for (const idx of indices) {
     const track = playQueue[idx];

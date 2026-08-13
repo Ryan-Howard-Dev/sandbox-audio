@@ -37,6 +37,7 @@ import {
   teardownNativeExoPlaybackEvents,
   type NativeExoPlayMetadata,
 } from './androidNativePlayback';
+import { abandonNativeQueueWrites } from './nativeQueueWrites';
 import {
   loadAndroidNativePlaybackEnabled,
   loadAndroidWebViewCrossfadeEnabled,
@@ -922,6 +923,14 @@ export function useAudioFSM(): UseAudioFSMResult {
   const resetNativeExoEnqueueChain = useCallback(() => {
     nativeExoEnqueueChainRef.current = Promise.resolve();
     nativeExoLastPrebufferRef.current = null;
+    /*
+     * Clearing the chain only stops work that has not been handed over yet. Prefetch and priming
+     * are still out there resolving, and when they finish they append to a queue that has just
+     * been rebuilt at a different position, in whatever order they happen to complete. That is
+     * what left the queue scrambled after a skip. The reset is the authority on what is still
+     * wanted, so it says so.
+     */
+    abandonNativeQueueWrites();
   }, []);
 
   const flushNativeExoEnqueueChain = useCallback(async (): Promise<void> => {
