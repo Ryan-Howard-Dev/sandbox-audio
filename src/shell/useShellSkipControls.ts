@@ -20,7 +20,7 @@ import { usesIntervalSeekTransport } from '../spokenWordPlayback';
 import { seekIntervalsFor, seekTargetSeconds } from '../spokenSeekIntervals';
 import { resolveMediaPillar } from '../mediaPillar';
 import { loadPodcastSeekIntervalSeconds } from '../podcastSettings';
-import { computeSkipBackIndex } from '../play/queueAdvancePolicy';
+import { computeSkipBackIndex, recordShuffleAdvance } from '../play/queueAdvancePolicy';
 import { resolveQueueTrackSeekTarget } from '../queueNavigation';
 import { tryQueueInPlaceSeek } from '../play/playTapFastPath';
 import { computeNextQueueIndexWithUpNext, loadSovereignUpNextSettings } from '../sovereignUpNext';
@@ -38,6 +38,8 @@ export type ShellSkipControlsArgs = {
   playQueue: MediaEnvelope[];
   repeatMode: RepeatMode;
   shuffleOn: boolean;
+  /** Shared with the ended-handler: skipping and finishing a track advance the same cycle. */
+  shufflePlayedRef: MutableRefObject<number[]>;
   syncThumbsFromFeedback: (envelopeId?: string) => void;
   adoptInPlaceQueueTrack: (track: MediaEnvelope, seekSeconds: number) => Promise<void>;
   handlePlayEnvelope: (
@@ -64,6 +66,7 @@ export function useShellSkipControls({
   playQueue,
   repeatMode,
   shuffleOn,
+  shufflePlayedRef,
   syncThumbsFromFeedback,
   adoptInPlaceQueueTrack,
   handlePlayEnvelope,
@@ -185,6 +188,7 @@ export function useShellSkipControls({
       queueLength: playQueue.length,
       repeatMode: repeatMode === 'one' ? 'none' : repeatMode,
       shuffleOn,
+      playedIndices: shufflePlayedRef.current,
       queue: playQueue,
       settings: upNextSettings,
     });
@@ -192,6 +196,11 @@ export function useShellSkipControls({
       lastSkipOutcomeRef.current = 'none';
       return;
     }
+    shufflePlayedRef.current = recordShuffleAdvance(
+      shufflePlayedRef.current,
+      queueIndex,
+      advance,
+    );
     const next =
       advance.action === 'repeat-one'
         ? queueIndex

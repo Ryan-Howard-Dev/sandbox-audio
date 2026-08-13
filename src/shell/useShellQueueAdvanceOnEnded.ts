@@ -20,6 +20,7 @@ import type { RepeatMode } from '../queuePersistence';
 import { handleSleepTimerTrackEnd } from '../sleepTimer';
 import { resolveNativeExoTransitionPrefs } from '../androidWiredDacPlayback';
 import { shouldSuppressJsAdvanceAfterNativeGapless, trackPlaybackMatureForAdvance } from '../play/queueAdvanceGate';
+import { recordShuffleAdvance } from '../play/queueAdvancePolicy';
 import { tryExtendMixRadioQueue } from '../play/queueAdvancePolicy';
 import { tryQueueInPlaceSeek } from '../play/playTapFastPath';
 import { startAutoSimilarRadioIfNeeded } from '../play/standaloneSimilarRadio';
@@ -37,6 +38,8 @@ export type ShellQueueAdvanceOnEndedArgs = {
   queueIndexRef: MutableRefObject<number>;
   repeatModeRef: MutableRefObject<RepeatMode>;
   shuffleOnRef: MutableRefObject<boolean>;
+  /** Queue positions the current shuffle cycle has used. Owned by the shell, reset with the queue. */
+  shufflePlayedRef: MutableRefObject<number[]>;
   audioCurrentTimeRef: MutableRefObject<number>;
   audioStreamDurationRef: MutableRefObject<number>;
   audioDurationRef: MutableRefObject<number>;
@@ -81,6 +84,7 @@ export function useShellQueueAdvanceOnEnded({
   queueIndexRef,
   repeatModeRef,
   shuffleOnRef,
+  shufflePlayedRef,
   audioCurrentTimeRef,
   audioStreamDurationRef,
   audioDurationRef,
@@ -176,9 +180,15 @@ export function useShellQueueAdvanceOnEnded({
         queueLength: q.length,
         repeatMode: repeatModeRef.current,
         shuffleOn: shuffleOnRef.current,
+        playedIndices: shufflePlayedRef.current,
         queue: q,
         settings: upNextSettings,
       });
+      shufflePlayedRef.current = recordShuffleAdvance(
+        shufflePlayedRef.current,
+        queueIndexRef.current,
+        advance,
+      );
       if (advance.action === 'none') {
         const mixExtend = tryExtendMixRadioQueue({
           mixSession: mixRadioSessionRef.current,

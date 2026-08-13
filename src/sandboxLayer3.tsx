@@ -1961,6 +1961,25 @@ export default function SandboxShell() {
 
   const shuffleOnRef = useRef(shuffleOn);
   const sovereignUpNextPodcastCountRef = useRef(0);
+
+  /*
+   * Which queue positions this shuffle cycle has already used, so every track plays once before any
+   * of them comes round again. Held across tracks because the advance itself is pure.
+   *
+   * The cycle starts over when the queue is no longer the same queue, or when shuffle is switched.
+   * Carrying positions from one queue into the next would mark tracks as heard that have never
+   * played, and shuffle would stop early on a queue it had barely started.
+   */
+  const shufflePlayedRef = useRef<number[]>([]);
+  const shuffleCycleKeyRef = useRef('');
+  const shuffleCycleKey = `${shuffleOn}|${playQueue.length}|${
+    playQueue[0]?.envelopeId ?? ''
+  }|${playQueue[playQueue.length - 1]?.envelopeId ?? ''}`;
+  if (shuffleCycleKeyRef.current !== shuffleCycleKey) {
+    shuffleCycleKeyRef.current = shuffleCycleKey;
+    shufflePlayedRef.current = [];
+  }
+
   playQueueRef.current = playQueue;
   queueIndexRef.current = queueIndex;
   repeatModeRef.current = repeatMode;
@@ -2139,6 +2158,7 @@ export default function SandboxShell() {
     queueIndexRef,
     repeatModeRef,
     shuffleOnRef,
+    shufflePlayedRef,
     audioCurrentTimeRef,
     audioStreamDurationRef,
     audioDurationRef,
@@ -2249,6 +2269,7 @@ export default function SandboxShell() {
     playQueue,
     repeatMode,
     shuffleOn,
+    shufflePlayedRef,
     syncThumbsFromFeedback,
     adoptInPlaceQueueTrack,
     handlePlayEnvelope,
