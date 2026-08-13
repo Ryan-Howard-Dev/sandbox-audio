@@ -6,7 +6,7 @@ Top-level directory classification for `sovereign-music-console` (Sandbox Music)
 |-----------|----------------|-----------|
 | `src/` | **Stable** | Primary React/TypeScript client (~400+ modules). Active development; `sandboxLayer3.tsx` remains central orchestrator per `CODEBASE_HEALTH.md`. |
 | `tier34-server/` | **Stable** | Production Sandbox Server (port 3001): locker blobs, search proxy, podcast/DLNA/subsonic routes, acquire workers. Shipped via Docker and desktop anchor mode. |
-| `server.ts` | **Stable** | Root UI server (port 3002): Vite dev, catalog proxy, Gemini playlist curation. Built to `dist/server.cjs`. |
+| `server.ts` | **Stable** | Root UI server (port 5173): Vite dev, catalog proxy, Gemini playlist curation. Built to `dist/server.cjs`. |
 | `android/` | **Stable** | Capacitor Android shell: ExoPlayer, Cast, yt-dlp-android natives, custom plugins. Version `0.53.0` / `versionCode 53`. |
 | `src-tauri/` | **Stable** | Tauri 2 desktop shell with native audio (symphonia/cpal/wasapi). Release bundles under `target/release/bundle/`. |
 | `public/` | **Stable** | Static web assets, PWA icons, community addon manifests (`addons/record-player/`). |

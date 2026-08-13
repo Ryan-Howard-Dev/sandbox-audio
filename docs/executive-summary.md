@@ -17,7 +17,7 @@ From `dependencies.md` (Pass 1, High confidence):
 | Layer | Technologies |
 |-------|----------------|
 | Client UI | React 19, Vite 6, Tailwind CSS 4, TypeScript 5.8 |
-| UI server | Express on port **3002** (`server.ts`) — catalog proxy, metadata, Gemini playlist curation |
+| UI server | Express on port **5173** (`server.ts`) — catalog proxy, metadata, Gemini playlist curation |
 | Sandbox Server | Node/Express + WebSocket on port **3001** (`tier34-server/`) |
 | Desktop | Tauri 2, symphonia/cpal/wasapi native audio |
 | Android | Capacitor 8, Media3 ExoPlayer, Google Cast, yt-dlp-android |
@@ -36,7 +36,7 @@ Three-layer client model (`docs/sandbox-architecture.md`, validated by Pass 2):
 | Layer 2 | `sandboxLayer2.ts` | Provider fleet, metadata, tier resolution orchestration |
 | Layer 3 | `sandboxLayer3.tsx` | Shell UI, stations, player, Connect, onboarding |
 
-**Sandbox Server** (tier34, port 3001) is the network hub for acquire, locker blob sync, Meilisearch proxy, Feed, Connect WebSocket, DLNA, and debrid resolve. **UI server** (port 3002) serves the React app and lightweight metadata proxies — not a substitute for tier34.
+**Sandbox Server** (tier34, port 3001) is the network hub for acquire, locker blob sync, Meilisearch proxy, Feed, Connect WebSocket, DLNA, and debrid resolve. **UI server** (port 5173) serves the React app and lightweight metadata proxies — not a substitute for tier34.
 
 Pass 3 notes documentation drift: packaged Tauri **does** bundle `tier34-server.mjs` (contrary to older `sandbox-architecture.md` sections). See [adr/003-bundled-tier34-tauri-desktop.md](../adr/003-bundled-tier34-tauri-desktop.md).
 

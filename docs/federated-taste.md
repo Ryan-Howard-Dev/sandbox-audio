@@ -124,7 +124,7 @@ npm install
 npm run dev:all
 ```
 
-1. Open `http://localhost:3002` → Settings → Vault → **Federated taste recipes**.
+1. Open `http://localhost:5173` → Settings → Vault → **Federated taste recipes**.
 2. **Export recipe** → **Copy JSON** → paste in second browser profile → **Merge recipe** → confirm “Shared by …”.
 3. Sonic Locker station → **Export recipe** → **Apply** → refresh picks (seed artist bias).
 4. With tier34 running: **LAN share** → copy id URL → **Fetch LAN id** on another device on same LAN.

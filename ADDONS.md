@@ -178,7 +178,7 @@ npm install
 npm run dev:all
 ```
 
-Open http://localhost:3002 → **Settings → Addons** → paste manifest URL → **Add addon**.
+Open http://localhost:5173 → **Settings → Addons** → paste manifest URL → **Add addon**.
 
 ### 2. What to verify
 

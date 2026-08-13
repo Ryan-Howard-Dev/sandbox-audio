@@ -4,9 +4,9 @@ Actionable verification steps referencing real Settings paths. Test in order: **
 
 ## Windows — Tauri desktop
 
-**Packaged `.exe` (no dev server on :3002)**
+**Packaged `.exe` (no dev server on :5173)**
 
-The installer ships the UI only — not `server.ts` (port **3002**) or `tier34-server` (port **3001**). Catalog **images** and **30s preview playback** use direct HTTPS to Apple iTunes / TheAudioDB from the app. Full-stream resolve, acquire, and locker search need a running Sandbox Server.
+The installer ships the UI only — not `server.ts` (port **5173**) or `tier34-server` (port **3001**). Catalog **images** and **30s preview playback** use direct HTTPS to Apple iTunes / TheAudioDB from the app. Full-stream resolve, acquire, and locker search need a running Sandbox Server.
 
 | Goal | What to do |
 | --- | --- | --- |

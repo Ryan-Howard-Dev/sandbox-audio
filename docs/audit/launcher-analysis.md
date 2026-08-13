@@ -22,7 +22,7 @@ Subsystem: **Node.js Station Launcher & Daemon** — processes and scripts that 
 | Out of scope | Reason |
 |--------------|--------|
 | `tier34-server/lib/*`, `routes/*` (beyond listen/health) | Backend business logic — separate subsystem |
-| `server.ts` | UI server (:3002); Tauri `devUrl` dependency, not tier34 launcher |
+| `server.ts` | UI server (:5173); Tauri `devUrl` dependency, not tier34 launcher |
 | `src-tauri/src/cast_browser_server.rs` | Separate localhost static server for cast browser |
 | `src/stations/*` (feature views) | UI “stations”, not server launcher |
 | `overlay/` | HTTP/3 reverse proxy to already-running tier34 |
@@ -324,7 +324,7 @@ counter_evidence:
 
 ## Architectural Interpretation
 
-The subsystem implements a **desktop sidecar pattern**: the Tauri shell remains the lifecycle owner of an optional Node daemon that exposes the Sandbox Server API on loopback (`127.0.0.1:3001` per `SANDBOX_SERVER_ANCHOR_URL`). The UI server on port 3002 (Vite dev or static `dist/`) is a **separate process** started by `npm run dev` / `start-prod.mjs` and is only coupled via `tauri.conf.json` `devUrl` and CSP `connect-src` to localhost:3001.
+The subsystem implements a **desktop sidecar pattern**: the Tauri shell remains the lifecycle owner of an optional Node daemon that exposes the Sandbox Server API on loopback (`127.0.0.1:3001` per `SANDBOX_SERVER_ANCHOR_URL`). The UI server on port 5173 (Vite dev or static `dist/`) is a **separate process** started by `npm run dev` / `start-prod.mjs` and is only coupled via `tauri.conf.json` `devUrl` and CSP `connect-src` to localhost:3001.
 
 Launch orchestration splits into **three deployment classes**:
 

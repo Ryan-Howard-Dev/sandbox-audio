@@ -109,7 +109,7 @@ The Sandbox product line is a **multi-repo ecosystem** centered on local-first, 
 | **sandbox-os-core** | `Downloads\sandbox-os-core` | Bootable Linux + Spread USB + shell launcher | ISO ~493 MB (`sandbox-os-0.1-amd64.iso`) | Early lab v0.1 | **Private** (no git on disk) |
 | **Sandbox Wrestling** | `Projects\wrestling-booker` | Territory wrestling booker — office loop + beat-sheet matches | Godot → Windows `.exe` | EA v0.5.0-ea, pre-Steam | **Policy split** — GPL slim clone vs “private until Steam” docs |
 
-**Ports (Music):** UI **3002**, Sandbox Server (tier34) **3001**. **Conduit:** UI **5174**.
+**Ports (Music):** UI **5173**, Sandbox Server (tier34) **3001**. **Conduit:** UI **5174**.
 
 **Strategic arc:** Music validates **server + locker**. Builder validates **creative stations**. os-core validates **boot + spread**. sandbox-os holds **story and decisions**. Wrestling is a **parallel indie simulation** aligned with Music's philosophy, not a Conduit module.
 
@@ -947,7 +947,7 @@ Store refresh tokens in platform secure storage (Keychain/Keystore), not `localS
 
 | Name | Path | Port | What it does | Status |
 |------|------|------|--------------|--------|
-| **UI Server** | `server.ts` → `dist/server.cjs` | **3002** | Vite dev, static PWA, catalog proxy, lyrics, Gemini curation (~954 LOC) | **Production** |
+| **UI Server** | `server.ts` → `dist/server.cjs` | **5173** | Vite dev, static PWA, catalog proxy, lyrics, Gemini curation (~954 LOC) | **Production** |
 | **Sandbox Server** | `tier34-server/` | **3001** | Locker blobs/sync, search proxy, acquire, podcasts, DLNA, Subsonic, addons, cast, stems | **Production** |
 | **tier34 entry** | `tier34-server/index.ts` | — | HTTP + WS hub, health, route registration | **Production** |
 | **tier34 routes** | `tier34-server/routes/` (11) | — | See route table below | **Production** |
@@ -1435,7 +1435,7 @@ npx vitest run
 **Dev stack:**
 
 ```bash
-npm run dev          # UI server :3002
+npm run dev          # UI server :5173
 npm run dev:tier34   # Sandbox Server :3001
 npm run dev:all      # Both
 ```

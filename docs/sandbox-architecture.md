@@ -12,7 +12,7 @@ Last updated: 2026-06-12.
 |------------------|-----------------|------------|
 | **Sandbox Server** | `tier34-server`, Tier 3/4 backend | Node/Express API on **port 3001** |
 | **Tier34** | `src/tier34/`, sovereign status | Same server; “tier” = extraction/search fidelity |
-| **UI server** | `server.ts` | Dev/prod shell + metadata proxies on **port 3002** |
+| **UI server** | `server.ts` | Dev/prod shell + metadata proxies on **port 5173** |
 | **Sandbox Builder** | Future station (scaffold only) | Not shipped in this repo |
 | **Sandbox OS** | Layer 1/2/3 + Tauri infrastructure | Client runtime, not a separate OS binary |
 
@@ -34,10 +34,16 @@ The **Sovereign extraction node** — a self-hosted Node server beside the React
 | Port | Service | Role |
 |------|---------|------|
 | **3001** | Sandbox Server (tier34) | Acquire, locker blobs, search proxy, Feed, Connect WS, DLNA, cast |
-| **3002** | `server.ts` | Vite UI + catalog/metadata proxies (iTunes, artist images, lyrics) |
+| **5173** | `server.ts` | Vite UI + catalog/metadata proxies (iTunes, artist images, lyrics) |
 | **7700** | Meilisearch (optional) | Full-text locker search; tier34 proxies via `/api/search` |
 | **9696** | Prowlarr (optional, external) | Tier 4 debrid indexer |
 | UDP 1900 | SSDP (when DLNA enabled) | LAN TV/receiver discovery |
+
+> The UI server moved **3002 → 5173**. Port 3002 belongs to the Sandbox OS Home
+> launcher (`os-core shell/launcher-server.mjs`), and the OS station catalog
+> declares Media at 5173. Override with `PORT` / `TIER34_CORS_ORIGIN` if you
+> need the old layout. Note `server.ts` is the listener — Vite runs in
+> middleware mode, so `vite.config.ts` `server.port` has no effect.
 
 ### API surface (grouped)
 
@@ -66,7 +72,7 @@ Full endpoint table: [TIER34.md](../TIER34.md).
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `TIER34_PORT` | `3001` | Listen port |
-| `TIER34_CORS_ORIGIN` | `http://localhost:3002` | Allowed UI origin when defense protocol on |
+| `TIER34_CORS_ORIGIN` | `http://localhost:5173` | Allowed UI origin when defense protocol on |
 | `TIER34_DEFENSE_PROTOCOL` | `true` | Restrict CORS and outbound proxy targets |
 | `TIER34_STORAGE_PATH` | `tier34-server/storage/` | Locker blob root on server |
 | `TIER34_WATCH_PATH` | — | Folder watch import path |
@@ -107,14 +113,14 @@ Implementation: `src/deviceSecretSync.ts`, `tier34-server/lib/deviceSecrets.ts`.
 
 All tier34 HTTP calls use `getTier34BaseUrl()` in `src/tier34/client.ts`, which reads **`sandbox_tier34_backend_url`** from prefs/localStorage.
 
-- **Web dev** (`npm run dev` on 3002): defaults to `http://localhost:3001` if URL empty.
+- **Web dev** (`npm run dev` on 5173): defaults to `http://localhost:3001` if URL empty.
 - **Tauri / Capacitor (Android)**: default is **empty** until user configures a URL (no bundled tier34 in the app package). iOS/macOS native targets are planned for a future release.
 
 ---
 
 ## 2. UI server (`server.ts`)
 
-Port **3002** — the Vite dev server and production shell. Serves the React app and lightweight metadata proxies. **Not** a substitute for Sandbox Server.
+Port **5173** — the Vite dev server and production shell. Serves the React app and lightweight metadata proxies. **Not** a substitute for Sandbox Server.
 
 | Route area | Role |
 |------------|------|
@@ -202,8 +208,8 @@ Actual HTTP/WebSocket traffic uses **`sandbox_tier34_backend_url`** (Settings �
 
 | Client | UI load | Tier34 connection | Typical setup |
 |--------|---------|-------------------|---------------|
-| **Web / PWA** | `npm run dev` → 3002 or `npm start` prod | Default `localhost:3001` if URL empty; catalog proxies on 3002 | `npm run dev:all` for full stack |
-| **Desktop (Tauri)** | Embedded `dist/`; dev → 3002 | Empty default; user sets URL or uses anchor on LAN | Run tier34 separately; `npm run tauri:dev` + `dev:tier34` |
+| **Web / PWA** | `npm run dev` → 5173 or `npm start` prod | Default `localhost:3001` if URL empty; catalog proxies on 5173 | `npm run dev:all` for full stack |
+| **Desktop (Tauri)** | Embedded `dist/`; dev → 5173 | Empty default; user sets URL or uses anchor on LAN | Run tier34 separately; `npm run tauri:dev` + `dev:tier34` |
 | **Android (Capacitor)** | WebView loads bundled `dist/` | **Must** set LAN URL (not `localhost`) | Phone → `http://192.168.1.10:3001` on home Wi‑Fi |
 
 ### Sandbox Connect (playback sync)
@@ -235,7 +241,7 @@ Separate path — Settings → Cross-device locker sync, provider `tier34` or We
 
 ### Requires network (not necessarily tier34)
 
-- Catalog browse (iTunes via 3002 proxy or direct on native)
+- Catalog browse (iTunes via 5173 proxy or direct on native)
 - Artist images (TheAudioDB via `server.ts`)
 - Charts, explore metadata
 
@@ -266,7 +272,7 @@ Platform-specific matrix: [offline-capability.md](./offline-capability.md).
 | Path | Role |
 |------|------|
 | `tier34-server/index.ts` | Sandbox Server HTTP + Connect WebSocket |
-| `server.ts` | UI server (3002): catalog, metadata, proxies |
+| `server.ts` | UI server (5173): catalog, metadata, proxies |
 | `src/tier34/client.ts` | Tier34 HTTP client; `getTier34BaseUrl()`, health, feed, cast, DLNA |
 | `src/tier34/connectProtocol.ts` | Connect command/sync_state wire format |
 | `src/tier34/peerSync.ts` | Connect WebSocket client |
@@ -292,12 +298,12 @@ Platform-specific matrix: [offline-capability.md](./offline-capability.md).
 ```mermaid
 flowchart TB
   subgraph clients [Client shells]
-    Web["Web / PWA port 3002"]
+    Web["Web / PWA port 5173"]
     Desktop["Tauri desktop"]
     Android["Capacitor Android"]
   end
 
-  subgraph ui_api [UI API server.ts port 3002]
+  subgraph ui_api [UI API server.ts port 5173]
     Catalog["/api/catalog/* iTunes proxy"]
     Meta["/api/metadata artist-image lyrics"]
     Proxies["/audio-proxy /cover-proxy"]
@@ -355,10 +361,10 @@ sequenceDiagram
 
 ```bash
 npm install
-npm run dev:all   # UI 3002 + tier34 3001
+npm run dev:all   # UI 5173 + tier34 3001
 ```
 
-- UI: http://localhost:3002
+- UI: http://localhost:5173
 - Sandbox Server: http://localhost:3001
 - Health: http://localhost:3001/health
 
@@ -390,7 +396,7 @@ npm run build:android:apk      # Android APK (configure LAN tier34 URL on device
 ## Mental model
 
 1. **Sandbox Server = tier34 on 3001** — the network/extraction/sync hub you self-host.
-2. **server.ts on 3002** — UI + lightweight metadata proxies; not a substitute for tier34.
+2. **server.ts on 5173** — UI + lightweight metadata proxies; not a substitute for tier34.
 3. **Sandbox Builder** — future WASM station; scaffolding only today.
 4. **Sandbox OS** — Layer 1/2/3 web client + planned Tauri infrastructure, not a separate OS image.
 5. **OFF / REMOTE / ANCHOR** — user preference and UI; **you must still set `sandbox_tier34_backend_url`** for real API connectivity (except web dev default localhost).

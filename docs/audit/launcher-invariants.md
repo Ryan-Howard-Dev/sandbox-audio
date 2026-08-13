@@ -2,7 +2,7 @@
 
 Subsystem scope: mechanisms that **start, stop, package, and health-gate** the Sandbox Server (`tier34-server`, port **3001**) — Tauri child-process launcher (`src-tauri/src/local_server.rs`), client bridge (`src/sandboxServerBridge.ts`), anchor/auto-start settings, dev npm scripts, desktop bundle pipeline, and container entry (`Dockerfile.tier34`). **Code-only audit — 2026-07-21.**
 
-**Out of scope:** tier34 route handlers, workers, locker graph logic; UI server (`server.ts`, port 3002); Android/Capacitor app launch; overlay reverse-proxy config.
+**Out of scope:** tier34 route handlers, workers, locker graph logic; UI server (`server.ts`, port 5173); Android/Capacitor app launch; overlay reverse-proxy config.
 
 ---
 
@@ -12,7 +12,7 @@ Subsystem scope: mechanisms that **start, stop, package, and health-gate** the S
 | Anchor sidecar spawn is Tauri-desktop-only | Mobile/web must not fork Node on device | `canHostSandboxServerAnchor()` → `isTauri()`; `sandboxServerBridge` throws `desktop-only` off Tauri | **Low** — mis-detection of Tauri globals would block or allow wrongly |
 | Auto-start runs only when mode is `anchor` and auto-start pref is true | Prevents unwanted Node fork in remote/off modes | `maybeAutoStartLocalSandboxServer`: checks `loadSandboxServerAutoStart()`, `loadSandboxServerMode() === 'anchor'`, skips if `tier34HealthOk()` | **Medium** — default auto-start is true when mode is anchor and key unset (`loadSandboxServerAutoStart`) |
 | Playback-triggered start (`ensureTier34ForPlayback`) requires anchor mode on desktop | Catalog resolve should not spawn server when user chose remote/off | `ensureTier34ForPlayback`: returns false unless `isSandboxServerDesktop()` and `loadSandboxServerMode() === 'anchor'` | **Low** |
-| Spawned tier34 must listen on port 3001 with CORS origin `http://localhost:3002` | Client anchor URL and UI dev server CSP expect fixed pairing | `spawn_tier34` / `spawn_tier34_bundled` set `TIER34_PORT=3001`, `TIER34_CORS_ORIGIN=http://localhost:3002` | **High** — env override in shell or conflicting external tier34 breaks health/sync |
+| Spawned tier34 must listen on port 3001 with CORS origin `http://localhost:5173` | Client anchor URL and UI dev server CSP expect fixed pairing | `spawn_tier34` / `spawn_tier34_bundled` set `TIER34_PORT=3001`, `TIER34_CORS_ORIGIN=http://localhost:5173` | **High** — env override in shell or conflicting external tier34 breaks health/sync |
 | Packaged spawn prefers bundled `tier34-server.mjs` over dev `npx tsx` tree | Release must not require npm/tsx on end-user machines | `spawn_tier34` calls `bundled_tier34_entry()` first; `build:tier34` writes `dist/tier34-server.mjs`; Tauri bundles `../dist/` | **Medium** — missing bundle artifact falls through to dev path and fails on clean installs |
 | Readiness is determined by HTTP `GET /health` with `{ ok: true }`, not child PID alone | Process may exit or hang before bind; UI must not mark ready early | `waitForTier34Health` polls `tier34HealthOk()` (3s timeout per probe); tier34 exposes `/health` returning `ok: true` | **High** — 20s default wait may expire on slow boot; stderr is discarded so bind errors are invisible |
 | App exit must stop managed tier34 child | Avoid orphan Node daemons after closing desktop app | `lib.rs` `RunEvent::Exit` → `stop_local_server`; `stop_local_server` calls `child.kill()` + `wait()` | **Medium** — crash/kill -9 on parent may orphan child; externally started tier34 unaffected |

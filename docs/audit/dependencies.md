@@ -29,7 +29,7 @@ Major first-party modules and their relationships. Paths are relative to repo ro
 | `src/addons/addonUrlValidation.ts` | `addonStorage` | — | HTTPS manifest URL validation |
 | `src/library/*` (3 files) | `stations/LibraryStationView` | `tier34/client` | Remote library server settings and browse API |
 | `src/i18n/*` | `main.tsx`, UI components | locale JSON (`locales/*.json`) | i18n loader and 18 locale files |
-| `server.ts` | `npm run dev`, `npm run build` | `express`, `vite`, `@google/genai`, `src/importPlatforms`, `src/playlistMetadataClient` | Port **3002**: Vite dev, catalog proxy, AI playlist curation, static `dist/` |
+| `server.ts` | `npm run dev`, `npm run build` | `express`, `vite`, `@google/genai`, `src/importPlatforms`, `src/playlistMetadataClient` | Port **5173**: Vite dev, catalog proxy, AI playlist curation, static `dist/` |
 | `tier34-server/index.ts` | `npm run dev:tier34`, Docker | `express`, `ws`, `./lib/*`, `./routes/*` | Port **3001**: Sandbox Server HTTP + WebSocket hub |
 | `tier34-server/routes/*` | `index.ts` | `lib/*` | Route handlers: subsonic, dlna, library, cast, stems, podcasts, platform |
 | `tier34-server/lib/*` (~50 modules) | routes, workers, `index.ts` | `music-metadata`, `node-ssdp`, storage | Locker blobs, search, acquire worker, podcast mirror, DLNA, acoustid, demucs |
@@ -160,7 +160,7 @@ These are not subdirectories but are heavily imported across the tree:
 ```
 Browser/WebView/Tauri
     └── src/ (React client)
-            ├── server.ts (:3002) ── catalog proxy, AI curation
+            ├── server.ts (:5173) ── catalog proxy, AI curation
             └── tier34-server (:3001) ── locker, search, acquire, DLNA, subsonic
                     ├── Meilisearch (:7700) [optional]
                     ├── Demucs [optional]
