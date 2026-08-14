@@ -96,7 +96,7 @@ export function prefsGetItem(key: string): string | null {
  * Prefixes of non-essential cached data that can be evicted to recover from a full store.
  *
  * This list had drifted from the caches it was meant to cover. It named sandbox_catalog_cache and
- * sandbox_explore_cache while the real keys are sandbox_catalog_search_cache_v1 and
+ * sandbox_explore_cache while the real keys are sandbox_catalog_search_cache_v2 and
  * sandbox_explore_cache_v2, so eviction scanned the store, matched nothing, and the retry failed
  * exactly as the first attempt had.
  *
@@ -115,7 +115,8 @@ export const EVICTABLE_KEY_PREFIXES = [
   'sandbox_tier34_feed_cache_v1',
   'sandbox_feed_fallback_cache_v1',
   'sandbox_chart_tracks_cache_v1',
-  'sandbox_catalog_search_cache_v1',
+  // Version-agnostic, so a retired version is evictable too rather than stranded on disk.
+  'sandbox_catalog_search_cache_v',
   'sandbox_artist_discography_cache_v',
   'sandbox_explore_cache',
   'sandbox_lyrics_cache_v1',

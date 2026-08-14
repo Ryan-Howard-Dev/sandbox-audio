@@ -24,6 +24,7 @@ import type {
 import {
   catalogAlbumVersionLabel,
   catalogDisplayArtistName,
+  catalogEntityArtistName,
   fetchArtistDiscography,
   fetchArtistTopTracks,
   resolveCatalogArtistByName,
@@ -271,7 +272,17 @@ export default function ArtistDetailView({
 }: ArtistDetailViewProps) {
   const { t } = useTranslation();
   const isMobileShell = useMobileShell();
-  const displayName = catalogDisplayArtistName(artist.name);
+  /*
+   * A catalog artist id means the catalog handed us an artist, and its name is a name: keep it
+   * whole, commas and all, or Tyler, The Creator becomes Tyler and loses his own search.
+   *
+   * Anything else may well be a credit line. A locker track credited "Armani White & Denzel Curry"
+   * has a field that is a billing, not an artist, and that still wants reducing to whoever it is
+   * mostly by before anything goes looking for a back catalogue.
+   */
+  const displayName = /^artist-\d+$/.test(artist.id)
+    ? catalogEntityArtistName(artist.name)
+    : catalogDisplayArtistName(artist.name);
   const [heroName, setHeroName] = useState(displayName);
   const [catalogArtistId, setCatalogArtistId] = useState(artist.id);
   const [loading, setLoading] = useState(true);
@@ -358,9 +369,21 @@ export default function ArtistDetailView({
     const loadDiscography = async () => {
       let nameForFetch = displayName;
       let idForFetch = artist.id;
+      /*
+       * A numeric catalog id already says exactly who this is, so there is nothing to resolve.
+       *
+       * This used to ask whether the splitter changed the name, using that as a test for "does
+       * this look like a credit line". A name with a comma in it fails that test for the wrong
+       * reason, so opening Tyler, The Creator threw away his id and went looking by name -- and
+       * came back with an Austrian rock band called Tyler, twenty albums of somebody else.
+       *
+       * Resolving is for the cases with no id to trust: a locker artist off a file tag, or a stub
+       * built from whatever somebody typed.
+       */
       const needsResolve =
-        catalogDisplayArtistName(artist.name) !== artist.name.trim() ||
-        (!/^artist-\d+$/.test(artist.id) && displayName.trim().split(/\s+/).length >= 2);
+        !/^artist-\d+$/.test(artist.id) &&
+        (catalogDisplayArtistName(artist.name) !== artist.name.trim() ||
+          displayName.trim().split(/\s+/).length >= 2);
       if (needsResolve) {
         const resolved = await resolveCatalogArtistByName(displayName);
         nameForFetch = catalogDisplayArtistName(resolved.name);

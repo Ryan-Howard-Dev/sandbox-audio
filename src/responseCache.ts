@@ -16,7 +16,13 @@ export const CACHE_KEYS = {
   TIER34_FEED: 'sandbox_tier34_feed_cache_v1',
   FEED_FALLBACK: 'sandbox_feed_fallback_cache_v1',
   CHART_TRACKS: 'sandbox_chart_tracks_cache_v1',
-  CATALOG_SEARCH: 'sandbox_catalog_search_cache_v1',
+  /*
+   * v2: v1 entries hold artist names that were cut at the first comma, so "Tyler, The Creator" is
+   * stored as "Tyler" and loses his own search to an impersonator. The names are inside the cached
+   * value rather than the key, so fixing the code fixes nothing until the cache turns over. This
+   * retires it at once, and costs a refetch of something that was always refetchable.
+   */
+  CATALOG_SEARCH: 'sandbox_catalog_search_cache_v2',
   ARTIST_DISCOGRAPHY: 'sandbox_artist_discography_cache_v3',
   EXPLORE: 'sandbox_explore_cache_v2',
   LYRICS: 'sandbox_lyrics_cache_v1',

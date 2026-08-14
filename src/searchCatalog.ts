@@ -2608,9 +2608,21 @@ function buildSuggestions(query: string, items: CatalogProviderItem[]): string[]
   return out.slice(0, 6);
 }
 
+/**
+ * Merge two records for the same artist, keeping the plainer billing.
+ *
+ * The shorter name wins because the same id turns up billed several ways across a result set:
+ * "Tyler, The Creator" on his own records and "Tyler, The Creator & Nigo" on a collaboration. The
+ * plain one is the artist; the longer one is that release's billing.
+ *
+ * Entity names, so they are kept whole. This used to reduce both through the credit-line splitter,
+ * which cut each at the first comma and merged them to "Tyler" -- undoing at the merge exactly what
+ * the upsert had just been fixed to preserve. His id appears thirty-seven times in a single search
+ * response, so the merge ran on nearly every one of them.
+ */
 function preferCatalogArtistRecord(a: CatalogArtist, b: CatalogArtist): CatalogArtist {
-  const aName = catalogDisplayArtistName(a.name);
-  const bName = catalogDisplayArtistName(b.name);
+  const aName = catalogEntityArtistName(a.name);
+  const bName = catalogEntityArtistName(b.name);
   const name =
     aName.length <= bName.length
       ? aName
@@ -2630,7 +2642,8 @@ function upsertCatalogArtist(
 ): void {
   const normalized: CatalogArtist = {
     ...artist,
-    name: catalogDisplayArtistName(artist.name),
+    // An entity, so the name is kept whole. See catalogEntityArtistName.
+    name: catalogEntityArtistName(artist.name),
   };
   const numericId = normalized.id.match(/^artist-(\d+)$/)?.[1];
   const key = numericId
@@ -4796,6 +4809,28 @@ export function catalogDisplayArtistName(name: string): string {
     return 'Kanye West';
   }
   return primary || name.trim();
+}
+
+/**
+ * The name of an artist the catalog returned as an artist, kept whole.
+ *
+ * catalogPrimaryArtistName exists to reduce a credit line to whoever it is mostly by, and a credit
+ * line is a track's property: "Kali Uchis feat. Tyler, The Creator" is two artists. An artist
+ * entity is not a credit line. It is somebody's name, and some names contain a comma.
+ *
+ * Running the splitter over entities stored Tyler, The Creator as "Tyler". A search for "tyler the
+ * creator" then scored him at 100, one word out of three, while an impersonator calling himself
+ * "Tyler Durden The Creator" matched all three and scored 700 -- so the app opened the wrong
+ * artist, with three thirty-second previews and no albums, and was ranking them correctly by the
+ * only names it had. Earth, Wind & Fire loses the same way.
+ *
+ * Alias canonicalisation stays, because that fixes billing duplicates rather than cutting names.
+ */
+export function catalogEntityArtistName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return trimmed;
+  if (artistNamesEquivalent(trimmed, 'Kanye West')) return 'Kanye West';
+  return trimmed;
 }
 
 const ARTIST_NAME_PARTICLE_WORDS = new Set(['the', 'and', 'of', 'van', 'von', 'de', 'del', 'mc', 'mac']);
