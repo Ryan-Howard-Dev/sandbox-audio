@@ -386,7 +386,10 @@ export default function ArtistDetailView({
           displayName.trim().split(/\s+/).length >= 2);
       if (needsResolve) {
         const resolved = await resolveCatalogArtistByName(displayName);
-        nameForFetch = catalogDisplayArtistName(resolved.name);
+        // What came back is an artist the catalog named, so it keeps its name. Reducing it here
+        // was what left the header reading "Tyler" while holding the right artist id: the resolve
+        // found him correctly and the splitter cut the answer on the way out.
+        nameForFetch = catalogEntityArtistName(resolved.name);
         idForFetch = resolved.id;
         if (!cancelled) {
           setHeroName(nameForFetch);

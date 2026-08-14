@@ -5574,7 +5574,8 @@ export async function resolveCatalogArtistByName(artistName: string): Promise<Ca
     return {
       kind: 'artist',
       id: `artist-${composite.artistId}`,
-      name: catalogDisplayArtistName(composite.artistName),
+      // An artist inferred from a composite query is still an artist, not a credit line.
+      name: catalogEntityArtistName(composite.artistName),
     };
   }
 
