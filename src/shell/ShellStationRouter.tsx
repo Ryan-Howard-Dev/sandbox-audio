@@ -439,6 +439,7 @@ export function ShellStationRouter(p: Record<string, any>) {
                 drillBackRef={audiobooksDrillBackRef}
                 onOpenDownloads={() => openStationDownloads('audiobook')}
                 downloadAttentionCount={audiobookDownloadBadge}
+                onOpenReading={() => setStation('reading')}
               />,
               'audiobooks',
             )}

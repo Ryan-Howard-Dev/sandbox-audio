@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Play } from 'lucide-react';
+import { ArrowLeft, BookOpen, Play } from 'lucide-react';
 import type { DocumentSummary } from '../../documentLibrary';
 import { documentDisplayName } from '../../documentLibrary';
 import { formatTime } from '../../stations/theme';
@@ -11,6 +11,13 @@ export interface BookDetailViewProps {
   onBack: () => void;
   /** Start at a chapter. Index 0 is "read from the beginning". */
   onOpenChapter: (index: number) => void;
+  /**
+   * Open this book in the reader.
+   *
+   * Absent where reading is not available, in which case the action is not offered rather than
+   * offered and inert.
+   */
+  onRead?: () => void;
 }
 
 /**
@@ -25,7 +32,7 @@ export interface BookDetailViewProps {
  * tabs apart in one station, and a book that opens differently depending on whether someone
  * recorded it reads as two apps.
  */
-export default function BookDetailView({ book, onBack, onOpenChapter }: BookDetailViewProps) {
+export default function BookDetailView({ book, onBack, onOpenChapter, onRead }: BookDetailViewProps) {
   const { t } = useTranslation();
   const title = documentDisplayName(book.name);
   const chapters = book.chapterTitles ?? [];
@@ -72,8 +79,23 @@ export default function BookDetailView({ book, onBack, onOpenChapter }: BookDeta
                 aria-label={t('audiobooks.playAlbum', { title })}
               >
                 <Play className="w-3.5 h-3.5 shrink-0" />
-                {resumeChapter > 0 ? t('audiobooks.bookContinue') : t('audiobooks.bookRead')}
+                {/*
+                  * This button narrates. It said "Read", which is what somebody wanting to read
+                  * the book would tap, and it then read the book aloud to them.
+                  */}
+                {resumeChapter > 0 ? t('audiobooks.bookContinue') : t('audiobooks.bookListen')}
               </button>
+              {onRead ? (
+                <button
+                  type="button"
+                  className="podcasts-show-detail-secondary touch-manipulation h-10 px-4 rounded-lg font-mono text-[10px] uppercase tracking-wider inline-flex items-center gap-2"
+                  onClick={onRead}
+                  aria-label={t('audiobooks.bookRead')}
+                >
+                  <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                  {t('audiobooks.bookRead')}
+                </button>
+              ) : null}
             </div>
           </div>
         </header>

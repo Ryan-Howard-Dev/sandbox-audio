@@ -56,6 +56,8 @@ export interface AudiobooksViewProps {
   onOpenDownloads?: () => void;
   /** Queued/failed audiobook downloads — surfaced on the overflow menu entry. */
   downloadAttentionCount?: number;
+  /** Open the reader on the book that was tapped. Reading lives with the books, not in More. */
+  onOpenReading?: () => void;
 }
 
 type Phase = 'idle' | 'permission' | 'scanning' | 'enriching' | 'ready' | 'error';
@@ -76,6 +78,7 @@ export default function AudiobooksView({
   drillBackRef,
   onOpenDownloads,
   downloadAttentionCount = 0,
+  onOpenReading,
 }: AudiobooksViewProps) {
   const { t } = useTranslation();
   // Pillar spine, matching Music (Library/Discover) and Podcasts (Library/Discover):
@@ -740,7 +743,7 @@ export default function AudiobooksView({
       ) : tab === 'documents' ? (
         <DocumentShelf onError={onError} />
       ) : tab === 'ebooks' ? (
-        <BookShelf onError={onError} onSuccess={onSuccess} />
+        <BookShelf onError={onError} onSuccess={onSuccess} onOpenReading={onOpenReading} />
       ) : (
         <>
       {phase === 'scanning' && (

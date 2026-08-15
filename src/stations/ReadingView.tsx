@@ -21,6 +21,7 @@ import {
   type SavedDocument,
 } from '../documentLibrary';
 import { documentToNarration } from '../documentNarration';
+import { takeDocumentToRead } from '../readingHandoff';
 import SideBySideReader from '../components/SideBySideReader';
 import { chunkIndexForOffset } from '../translationLazy';
 import { normalizeLanguage, type TranslationEngine } from '../translationProvider';
@@ -58,6 +59,20 @@ export default function ReadingView() {
 
   useEffect(() => {
     void (async () => setBooks(await listDocuments()))();
+  }, []);
+
+  /*
+   * A book tapped in Audiobooks opens here directly, rather than landing on a shelf and asking
+   * somebody to find again what they had just chosen.
+   *
+   * Taken once, so coming back to the reader later opens the shelf as normal instead of silently
+   * reopening whatever was last read.
+   */
+  useEffect(() => {
+    const handed = takeDocumentToRead();
+    if (handed) void openBook(handed);
+    // openBook is stable and this must run once, on the way in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const passages = useMemo(() => {

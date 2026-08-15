@@ -2315,7 +2315,8 @@
     "webUrlPlaceholder": "https://example.com/article",
     "yourBooks": "Your audiobooks",
     "yourBooksUploaded": "Your uploaded books",
-    "yourDocuments": "Your documents"
+    "yourDocuments": "Your documents",
+    "bookListen": "Listen"
   },
   "reader": {
     "sideBySide": "Original and translation"

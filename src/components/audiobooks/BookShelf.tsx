@@ -69,6 +69,7 @@ import { useNarrationVoices } from './useNarrationVoices';
 import { seedGradient } from '../../seedGradient';
 import { useTranslation } from '../../i18n';
 import { resolveNarrationLocation, savedOffsetFor } from '../../narrationLocation';
+import { setDocumentToRead } from '../../readingHandoff';
 import {
   flushNarrationListen,
   narrationListenPaused,
@@ -139,6 +140,12 @@ export interface BookShelfProps {
   onError?: (message: string) => void;
   /** Needed because a library import is the one action here whose success is not self-evident. */
   onSuccess?: (message: string) => void;
+  /**
+   * Go to the reader. The book itself is handed over separately, so this only has to navigate.
+   *
+   * Optional: where reading is unavailable the detail view simply does not offer it.
+   */
+  onOpenReading?: () => void;
 }
 
 /**
@@ -153,7 +160,7 @@ export interface BookShelfProps {
  * library is picked as a folder, planned, and shown to the listener before anything is written —
  * a shelf that silently does something to four thousand books is not a shelf anyone can trust.
  */
-export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
+export default function BookShelf({ onError, onSuccess, onOpenReading }: BookShelfProps) {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
@@ -749,6 +756,15 @@ export default function BookShelf({ onError, onSuccess }: BookShelfProps) {
       <BookDetailView
         book={detailBook}
         onBack={() => setDetailBook(null)}
+        onRead={
+          onOpenReading
+            ? () => {
+                // The reader opens the book that was tapped, rather than its own shelf.
+                setDocumentToRead(detailBook.id);
+                onOpenReading();
+              }
+            : undefined
+        }
         onOpenChapter={(index) => {
           const at = detailBook.position;
           void playChapter(detailBook, index, at?.chunkIndex ?? 0, {

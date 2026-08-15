@@ -143,8 +143,11 @@ export function useShellNavConstruction({
     if (collectionStationEnabled) {
       items.push({ id: 'collection', label: t('nav.collection'), icon: Disc3 });
     }
-    // Reading is an activity of its own, not a way of browsing, so it is always offered.
-    items.push({ id: 'reading', label: t('nav.reading'), icon: BookOpen });
+    /*
+     * Reading is not offered here. It is not a place, it is something you do to a book, and the
+     * books live in Audiobooks: opening one there offers Read beside Listen. An entry in More
+     * meant a book sat in one station while the way to read it sat in another.
+     */
     // Read-only and diagnostic, so it is always here — there is no content to switch off.
     items.push({ id: 'health', label: t('nav.health'), icon: Stethoscope });
     /*
@@ -213,14 +216,6 @@ export function useShellNavConstruction({
             },
           ]
         : []),
-      {
-        // Reading is its own activity, not a way of browsing, so it sits with the tools.
-        id: 'reading',
-        label: t('nav.reading'),
-        subtitle: t('nav.browseReadingHint'),
-        icon: BookOpen,
-        tone: 'accent',
-      },
       {
         /*
          * Beside Insights because they are the same kind of thing: one tells you what you listened
