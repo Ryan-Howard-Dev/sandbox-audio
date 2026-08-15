@@ -3,7 +3,7 @@
  */
 
 import type { CatalogAlbum, CatalogArtist, CatalogTrack } from './searchCatalog';
-import { catalogDisplayArtistName } from './searchCatalog';
+import { catalogEntityArtistName } from './searchCatalog';
 import { prefsGetItem, prefsSetItem } from './prefsStorage';
 
 export const SEARCH_HISTORY_KEY = 'sandbox_search_history_v2';
@@ -203,7 +203,10 @@ export function recordSearchQuery(query: string): void {
 }
 
 export function recordSearchArtist(artist: CatalogArtist): void {
-  const name = catalogDisplayArtistName(artist.name);
+  // Recent searches remember an artist, not a credit line, so the name is kept whole. Storing it
+  // reduced meant reopening a recent search reintroduced the truncation the rest of the app had
+  // just been fixed to avoid.
+  const name = catalogEntityArtistName(artist.name);
   if (!name) return;
   prependEntry({
     kind: 'artist',
@@ -295,7 +298,7 @@ export function historyEntryToArtist(entry: SearchHistoryArtistEntry): CatalogAr
   return {
     kind: 'artist',
     id: entry.id,
-    name: catalogDisplayArtistName(entry.name),
+    name: catalogEntityArtistName(entry.name),
     artworkUrl: entry.artworkUrl,
   };
 }

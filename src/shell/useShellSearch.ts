@@ -52,6 +52,7 @@ import {
   resolveCatalogArtistByName,
   buildCatalogArtistStub,
   catalogDisplayArtistName,
+  catalogEntityArtistName,
   findCatalogArtistByName,
   isLikelyArtistNameQuery,
   isLikelyTrackTitleQuery,
@@ -910,8 +911,11 @@ export function useShellSearchDrillNav({
       finishMobileSearchNavigation();
     }
     setSelectedArtist({
+      // The artist the catalog matched, opened as they are. Reducing the name here is what put
+      // "Tyler" on the page while holding Tyler, The Creator's id: the search picked the right
+      // artist and this cut his name on the way to the station.
       ...artist,
-      name: catalogDisplayArtistName(artist.name),
+      name: catalogEntityArtistName(artist.name),
     });
     if (!options?.skipStationTransition) {
       setStation('search');
