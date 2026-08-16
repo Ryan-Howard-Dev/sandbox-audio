@@ -10,6 +10,7 @@
 
 import {
   useCallback,
+  useEffect,
   useRef,
   type Dispatch,
   type MutableRefObject,
@@ -36,6 +37,7 @@ import {
 } from '../trackPrefetch';
 import { isAndroid } from '../platformEnv';
 import { currentPlayGeneration } from '../playIntent';
+import { auditPlayingDuration } from '../lockerDurationAudit';
 import { computeSkipped, recordPlaySession } from '../playHistory';
 import { scrobbleTrack } from '../scrobble';
 import type { ResolvedSearchHit } from '../sandboxLayer2';
@@ -165,6 +167,38 @@ export function useShellQueuePlaybackFoundation({
   audioDurationRef.current = audio.durationSeconds;
   const audioStreamDurationRef = useRef(audio.streamDurationSeconds);
   audioStreamDurationRef.current = audio.streamDurationSeconds;
+
+  /*
+   * Hear whether the file is the length the library claims it is.
+   *
+   * Acquisition on the phone stamps the catalog's duration onto the locker row instead of
+   * measuring the audio, so the row and the catalog always agree and the existing suspect check
+   * compares a number with a copy of itself. The player is the first thing that ever learns the
+   * truth: streamDurationSeconds is what the decoder found in the file.
+   *
+   * Measured on a device: a row titled Vultures stated 276 seconds and ran 3945.
+   *
+   * Only while actually playing, because a duration read before the stream opens is zero or the
+   * previous track's, and only for locker files, since a stream that reports its length badly is
+   * a different problem from a wrong file on disk.
+   */
+  useEffect(() => {
+    if (audio.state !== 'Playing') return;
+    const envelope = audio.envelope;
+    if (!envelope || envelope.provider !== 'local-vault') return;
+    const found = auditPlayingDuration({
+      envelopeId: envelope.envelopeId,
+      title: envelope.title,
+      artist: envelope.artist,
+      statedSeconds: envelope.durationSeconds,
+      actualSeconds: audio.streamDurationSeconds,
+    });
+    if (found) {
+      console.warn(
+        `[LockerAudit] "${found.title}" states ${found.statedSeconds}s and runs ${found.actualSeconds}s — the file is not the track`,
+      );
+    }
+  }, [audio.state, audio.envelope, audio.streamDurationSeconds]);
   /** True once the current track reaches Playing — gates gapless auto-advance. */
   const trackReachedPlayingRef = useRef(false);
   /** Wall-clock ms timestamp of the false->true edge above — see trackPlaybackMatureForAdvance. */
