@@ -78,9 +78,35 @@ export function computePlayQueueSeed(
   }
 
   let index = queue.findIndex((e) => e.envelopeId === tappedId);
-  if (index < 0 && isSeededQueueEnvelope(env)) {
-    queue.unshift(env);
-    index = 0;
+  if (index < 0) {
+    /*
+     * The same row can arrive with a different envelope than the one the list holds -- a locker
+     * copy found for a catalog row, a stream resolved on the way to playing it. Matching on what
+     * the track is, rather than which envelope carried it, keeps the rest of the list queued
+     * behind a row the listener plainly tapped.
+     */
+    index = queue.findIndex((e) => sameTrackIdentity(e, env));
+    if (index >= 0) queue[index] = env;
   }
-  return { queue, index: index >= 0 ? index : 0 };
+  if (index < 0) {
+    /*
+     * The tapped track is not in this list at all, which means the list is not where the tap came
+     * from. Measured on a phone: tapping one online search result queued it in front of fifteen
+     * unrelated tracks that were never on screen -- so it played the right song and then walked
+     * off into somebody else's records.
+     *
+     * Prepending was making a queue up. A tap on its own is a queue of one, which is what was
+     * asked for, and the caller collapses repeat to none when it sees a queue that short.
+     */
+    return { queue: [env], index: 0 };
+  }
+  return { queue, index };
+}
+
+/** Two envelopes naming the same recording, whatever id each is carrying. */
+function sameTrackIdentity(a: MediaEnvelope, b: MediaEnvelope): boolean {
+  const key = (env: MediaEnvelope) =>
+    `${env.title ?? ''}␟${env.artist ?? ''}`.toLowerCase().replace(/\s+/g, ' ').trim();
+  const ka = key(a);
+  return ka.length > 1 && ka === key(b);
 }
