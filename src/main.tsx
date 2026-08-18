@@ -13,6 +13,7 @@ import { preloadLocale } from './i18n';
 import { initLanguage } from './languageSettings';
 import { warmStreamCacheIndex } from './streamCache';
 import { STORAGE_TRIM_INTERVAL_MS, trimStorageToBudget } from './storageBudget';
+import { startMainThreadStallWatch } from './mainThreadStallWatch';
 import { prunePodcastLibraryToBudget } from './podcastStorage';
 import { ensureBuiltinAddons, syncExperimentalAddons } from './addonStorage';
 import {
@@ -123,6 +124,19 @@ if (!rootEl) {
  * After render, so measuring the store never delays first paint, and then on a timer because
  * caches grow while the app is used rather than while it starts.
  */
+/*
+ * Watch for the app going unresponsive, from before it can happen.
+ *
+ * Started here rather than among the deferred tasks for the same reason as the storage trim: a
+ * freeze arrives without warning and takes the instrument with it, so the instrument has to be
+ * running already. One quarter-second timer, which is affordable enough to leave on for good.
+ */
+if (typeof window !== 'undefined') {
+  safeBoot('startMainThreadStallWatch', () => {
+    startMainThreadStallWatch();
+  });
+}
+
 if (typeof window !== 'undefined') {
   const keepStorageInBudget = () => {
     // Caches first, since they are free to lose. The podcast library is real data and only gives
