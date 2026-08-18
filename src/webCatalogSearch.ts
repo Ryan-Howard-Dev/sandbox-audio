@@ -8,6 +8,7 @@ import { searchProxy } from './addons/searchProviders';
 import type { CandidateSource, MediaEnvelope } from './sandboxLayer1';
 import type { CatalogSearchResult, CatalogTrack } from './searchCatalog';
 import { expandFuzzyQueryCorrections, needsWebTrackSupplement, parseCombinedTrackQuery } from './searchCatalog';
+import { WEB_SUPPLEMENT_ID_PREFIX } from './webSupplementId';
 import { getTier34BaseUrl } from './tier34/client';
 import { searchViaYoutubeWebMobile } from './pipedMobile';
 import { raceTimeout } from './fetchWithTimeout';
@@ -261,13 +262,13 @@ function hitToCatalogTrack(
 
   return {
     kind: 'track',
-    id: `youtube-${videoId}`,
+    id: `${WEB_SUPPLEMENT_ID_PREFIX}${videoId}`,
     title,
     artist,
     artworkUrl: youtubeThumb(videoId),
     durationSeconds: hit.durationSeconds,
     envelope: {
-      envelopeId: `youtube-${videoId}`,
+      envelopeId: `${WEB_SUPPLEMENT_ID_PREFIX}${videoId}`,
       title,
       artist,
       url: watchUrl,

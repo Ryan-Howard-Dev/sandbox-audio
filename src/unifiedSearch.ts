@@ -12,6 +12,7 @@ import {
 } from './artistImage';
 import { groupLockerSearchHits } from './collectionIntelligence';
 import { displayPlaylistName } from './importPlatforms';
+import { isWebSupplementId } from './webSupplementId';
 import { hitToEnvelope, processLockerSearchHits } from './lockerSearch';
 import { getLockerEntries, getLockerEntriesSnapshot, type LockerEntry } from './lockerStorage';
 import { isSmartPlaylist, loadPlaylists } from './playlistStorage';
@@ -535,7 +536,7 @@ export async function runUnifiedSearch(
   }
 
   const tracks = mergeRankedTracks(trackRows, q).filter((track) =>
-    track.id.startsWith('youtube-')
+    isWebSupplementId(track.id)
       ? webCatalogTrackMatchesQuery(track, q)
       : catalogFieldsMatchSearchQuery(
           { artist: track.artist, album: track.album, title: track.title },
@@ -615,8 +616,8 @@ export function applyWebSupplementToUnified(
   if (!webTracks.length) return unified;
 
   const catalog = mergeWebCatalogResults(unified.catalog, webTracks, query);
-  const existingNonWeb = unified.tracks.filter((t) => !t.id.startsWith('youtube-'));
-  const webFromCatalog = catalog.tracks.filter((t) => t.id.startsWith('youtube-'));
+  const existingNonWeb = unified.tracks.filter((t) => !isWebSupplementId(t.id));
+  const webFromCatalog = catalog.tracks.filter((t) => isWebSupplementId(t.id));
 
   // These two lists are ranked by algorithms that know nothing about each other — the catalog by
   // mergeRankedTracks, the web supplement by whatever order yt-dlp came back in — so their scores

@@ -10,6 +10,7 @@
 import type { CatalogTrack } from './searchCatalog';
 import type { MediaEnvelope } from './sandboxLayer1';
 import { searchYtDlpMobile, type YtDlpMobileSearchHit } from './ytDlpMobile';
+import { WEB_SUPPLEMENT_ID_PREFIX } from './webSupplementId';
 
 /** i.ytimg.com thumbnail for a YouTube video id (no API key needed). */
 function youtubeThumb(watchUrl: string): string | undefined {
@@ -24,7 +25,7 @@ function hitToCatalogTrack(hit: YtDlpMobileSearchHit): CatalogTrack {
   // Same envelope shape as an iTunes catalog track (provider 'https', resolved via yt-dlp on
   // Android) but seeded with the YouTube watch URL so resolution can use it directly.
   const envelope: MediaEnvelope = {
-    envelopeId: `yt-${hit.id}`,
+    envelopeId: `${WEB_SUPPLEMENT_ID_PREFIX}${hit.id}`,
     title,
     artist,
     url: hit.watchUrl,
@@ -36,7 +37,7 @@ function hitToCatalogTrack(hit: YtDlpMobileSearchHit): CatalogTrack {
   };
   return {
     kind: 'track',
-    id: `yt-${hit.id}`,
+    id: `${WEB_SUPPLEMENT_ID_PREFIX}${hit.id}`,
     title,
     artist,
     artworkUrl,

@@ -22,6 +22,7 @@ import CatalogArtThumb from '../components/CatalogArtThumb';
 import AlbumArtistCreditsSection from '../components/AlbumArtistCreditsSection';
 import LockerMoreMenu, { type LockerMenuAction } from '../components/LockerMoreMenu';
 import MobileShellBackButton from '../components/MobileShellBackButton';
+import { isWebSupplementId } from '../webSupplementId';
 import MobileTrackActionSheet from '../mobile/MobileTrackActionSheet';
 import TrackRowSources from '../components/TrackRowSources';
 import { useMobileShell } from '../hooks/useMobileShell';
@@ -1032,12 +1033,12 @@ export default function SearchResultsView({
     (unified?.playlists.length ?? 0);
 
   const webSupplementTracks = useMemo(
-    () => (unified?.tracks ?? []).filter((t) => t.id.startsWith('youtube-')),
+    () => (unified?.tracks ?? []).filter((t) => isWebSupplementId(t.id)),
     [unified?.tracks],
   );
 
   const catalogTrackRows = useMemo(
-    () => (unified?.tracks ?? []).filter((t) => !t.id.startsWith('youtube-')),
+    () => (unified?.tracks ?? []).filter((t) => !isWebSupplementId(t.id)),
     [unified?.tracks],
   );
 

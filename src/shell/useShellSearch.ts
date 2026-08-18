@@ -90,6 +90,7 @@ import {
 } from '../unifiedSearch';
 import { fetchWebCatalogTracks, WEB_LEAK_SEARCH_MAX_WAIT_MS } from '../webCatalogSearch';
 import { searchYouTubeTracks } from '../youtubeSearch';
+import { isWebSupplementId } from '../webSupplementId';
 import { exploreDisplayQuery, type ExploreGroup } from '../exploreCatalog';
 import { isNewMusicQuery, newMusicSearchLabel } from '../newMusicQuery';
 import { searchPodcastsUnified } from '../podcastCatalog';
@@ -334,7 +335,7 @@ export function useShellSearchRunner({
               return;
             }
             const hasWeb = unifiedSearchResultRef.current.tracks.some((t) =>
-              t.id.startsWith('youtube-'),
+              isWebSupplementId(t.id),
             );
             if (!hasWeb) setWebSupplementError(t('searchResults.onlineSearchTimedOut'));
           })

@@ -7,6 +7,7 @@
 
 import { isAirGapEnabled } from './airGapMode';
 import { memoizeStringFn } from './memoizeStringFn';
+import { isWebSupplementId } from './webSupplementId';
 import type { MediaEnvelope } from './sandboxLayer1';
 import {
   applyCachedArtistImages,
@@ -5034,6 +5035,17 @@ export function isLikelyTrackTitleQuery(query: string): boolean {
 /** True when iTunes is unlikely to have results — force YouTube/web supplement. */
 export function needsWebTrackSupplement(query: string): boolean {
   if (parseCoverTrackQuery(query)) return true;
+  /*
+   * Somebody who writes "ARTIST - TITLE" is naming one recording, not browsing, and the
+   * recordings named that precisely are the ones iTunes is most likely to be missing: mixtape
+   * cuts, loose singles, remixes. Checked against the live API, the reported track returns zero
+   * results under every spelling of its title.
+   *
+   * This was a list of hardcoded tokens left over from an earlier bug, so the supplement fired
+   * for one artist's catalogue and for nobody else at all.
+   */
+  const separated = splitQueryAtSeparator(query);
+  if (separated && scoreArtistQueryPart(separated.left) >= 500) return true;
   const combined = parseCombinedTrackQuery(query);
   if (combined && /kany|ye|melrose|dress|backstreet/i.test(`${combined.title} ${query}`)) {
     return true;
@@ -5066,7 +5078,7 @@ export function webCatalogTrackMatchesQuery(
   track: Pick<CatalogTrack, 'title' | 'artist' | 'id'>,
   query: string,
 ): boolean {
-  if (!track.id.startsWith('youtube-')) {
+  if (!isWebSupplementId(track.id)) {
     return catalogFieldsMatchSearchQuery(
       { artist: track.artist, title: track.title },
       query,
@@ -5121,8 +5133,24 @@ function scoreArtistQueryPart(part: string): number {
   return 0;
 }
 
+/**
+ * Drop a guest credit from a title.
+ *
+ * A pasted name lists every guest; the upload that actually carries the track usually names one
+ * or none. Counting the guests as title words meant the more completely somebody wrote out what
+ * they wanted, the less could match it.
+ */
+function stripFeatureCredit(title: string): string {
+  const stripped = title
+    .replace(/[([{]\s*(?:feat|ft|featuring|with)\.?[^)\]}]*[)\]}]?/gi, ' ')
+    .replace(/\s+(?:feat|ft|featuring)\.?\s.*$/i, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return stripped || title;
+}
+
 function titleTokensMatchHay(titlePart: string, hay: string): boolean {
-  const titleTokens = queryRelevantTokens(titlePart).filter(
+  const titleTokens = queryRelevantTokens(stripFeatureCredit(titlePart)).filter(
     (t) => !TRACK_QUERY_STOP_WORDS.has(t),
   );
   if (!titleTokens.length) return false;
@@ -5135,10 +5163,37 @@ function titleTokensMatchHay(titlePart: string, hay: string): boolean {
 const TRACK_QUERY_STOP_WORDS = new Set(['the', 'and', 'a', 'an', 'your', 'my', 'to', 'of', 'in', 'on', 'at']);
 
 /**
+ * A spaced dash in a query, where the writer said which half is which.
+ *
+ * "DENZEL CURRY - 13LOOD 1N + 13LOOD OUT MIXX (FT. ...)" is how a track is written everywhere it
+ * is published, and pasting it whole is the obvious thing to do. Guessing the split by scoring
+ * runs of tokens landed on artist "ak)" for that one, because the guesser saw commas in the guest
+ * list and split at the last one.
+ *
+ * Only spaces around the dash count, so "Jay-Z" stays one name. The first separator wins, leaving
+ * any trailing "- Remastered" inside the title where it belongs.
+ */
+function splitQueryAtSeparator(query: string): { left: string; right: string } | null {
+  const match = query.match(/^(.+?)\s+[-‒-―−]\s+(.+)$/);
+  if (!match) return null;
+  const left = match[1]!.trim();
+  const right = match[2]!.trim();
+  if (!left || !right) return null;
+  return { left, right };
+}
+
+/**
  * Split "Title Artist" / "Artist Title" track queries (e.g. "Take off your dress Kanye").
  * Requires at least three tokens so two-word album intents ("Future Zone") stay intact.
  */
 export function parseCombinedTrackQuery(query: string): CombinedTrackQuery | null {
+  const separated = splitQueryAtSeparator(query);
+  if (separated && scoreArtistQueryPart(separated.left) >= 500) {
+    const artist = normalizeName(separated.left);
+    const title = normalizeName(separated.right);
+    if (artist && title) return { title, artist };
+  }
+
   const normalized = stripCoverMarkersFromQuery(query) || collapseQueryAliases(query);
   const tokens = queryRelevantTokens(normalized);
   if (tokens.length < 2) return null;
