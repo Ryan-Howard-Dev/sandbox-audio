@@ -25,6 +25,7 @@ import {
   catalogAlbumVersionLabel,
   catalogDisplayArtistName,
   catalogEntityArtistName,
+  catalogTrackPlayEnvelope,
   fetchArtistDiscography,
   fetchArtistTopTracks,
   resolveCatalogArtistByName,
@@ -962,12 +963,8 @@ export default function ArtistDetailView({
                   >
                     <button
                       type="button"
-                      onClick={() => {
-                        if (!track.envelope) return;
-                        handleTitleTap(track.envelope);
-                      }}
-                      disabled={!track.envelope}
-                      className="flex items-center gap-3 min-w-0 flex-1 touch-manipulation disabled:opacity-40"
+                      onClick={() => handleTitleTap(catalogTrackPlayEnvelope(track))}
+                      className="flex items-center gap-3 min-w-0 flex-1 touch-manipulation"
                     >
                       {track.artworkUrl ? (
                         <img
@@ -1000,14 +997,8 @@ export default function ArtistDetailView({
                         showAlbumOptions={false}
                         alwaysVisible={isMobileShell}
                         streamLabel={t('player.play')}
-                        onStream={
-                          track.envelope ? () => onPlayTrack(track.envelope!) : undefined
-                        }
-                        onCache={
-                          onCacheTrack && track.envelope
-                            ? () => onCacheTrack(track)
-                            : undefined
-                        }
+                        onStream={() => onPlayTrack(catalogTrackPlayEnvelope(track))}
+                        onCache={onCacheTrack ? () => onCacheTrack(track) : undefined}
                         onDownload={(mode) => onDownloadTrack(track, mode)}
                       />
                     ) : null}

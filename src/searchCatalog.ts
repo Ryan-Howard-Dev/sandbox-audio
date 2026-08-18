@@ -3554,12 +3554,63 @@ async function matchMbSingleToCatalog(
     };
   }
 
-  return {
+  return unmatchedDiscographySingle(title, artistName, releaseGroupId, releaseYear);
+}
+
+/**
+ * A single MusicBrainz lists that the catalog could not match.
+ *
+ * It used to come back with no envelope, and the artist page reads a missing envelope as proof
+ * the track cannot be had: the row is dimmed, Play and Cache disappear from its menu, and the
+ * label reads "unavailable". Nothing had been tried at that point. MusicBrainz saying the record
+ * exists while iTunes does not stock it is the ordinary case for a mixtape cut or a loose single,
+ * and those are the ones the resolvers are for.
+ *
+ * The envelope carries no URL, which is exactly what every catalog track carries -- the play URL
+ * is empty until something resolves it by title and artist at the moment of the tap. So this is
+ * the same promise the rest of the catalog makes: press it and the app goes and looks. If the
+ * look fails the listener is told, which is a truthful answer where a greyed row was a guess.
+ */
+export function unmatchedDiscographySingle(
+  title: string,
+  artistName: string,
+  releaseGroupId: string,
+  releaseYear?: string,
+): CatalogTrack {
+  const track: CatalogTrack = {
     kind: 'track',
     id: `mb-single-${releaseGroupId}`,
     title,
     artist: artistName,
     releaseYear,
+  };
+  return { ...track, envelope: catalogTrackPlayEnvelope(track) };
+}
+
+/**
+ * Something to play for any named catalog row.
+ *
+ * A row that arrived without an envelope is not a row that cannot be played; it is a row nothing
+ * has looked for yet. The envelope carries no URL, which is what a catalog envelope always
+ * carries, because the play URL is found by title and artist at the moment of the tap.
+ *
+ * So callers never have to decide in advance whether a track is reachable, and no listener is
+ * shown a track dimmed out on a guess.
+ */
+export function catalogTrackPlayEnvelope(track: CatalogTrack): MediaEnvelope {
+  if (track.envelope) return track.envelope;
+  return {
+    envelopeId: track.id,
+    title: track.title,
+    artist: track.artist,
+    url: '',
+    durationSeconds: track.durationSeconds ?? 0,
+    provider: 'https',
+    transport: 'element-src',
+    sourceId: track.id,
+    album: track.album,
+    artworkUrl: track.artworkUrl,
+    releaseYear: track.releaseYear,
   };
 }
 
