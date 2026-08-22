@@ -28,6 +28,14 @@ export type StandaloneSimilarRadioContext = {
   albumTitle?: string;
   expectedTrackCount?: number;
   seedSearchQueue?: boolean;
+  /**
+   * The tap came from a page of search results the listener was reading.
+   *
+   * Distinct from seedSearchQueue, which also marks the end-of-queue continuation and means only
+   * "play this one thing, ignore any stale album listing". This means somebody typed a name and
+   * pressed the row that came back.
+   */
+  fromSearchResults?: boolean;
   seamlessQueueAdvance?: boolean;
   /**
    * Only block when already mid-radio with a multi-track queue that includes this seed.
@@ -39,6 +47,15 @@ export type StandaloneSimilarRadioContext = {
 export function shouldAutoStartSimilarRadio(ctx: StandaloneSimilarRadioContext): boolean {
   if (ctx.seamlessQueueAdvance) return false;
   if (isPodcastEnvelopeId(ctx.envelope.envelopeId)) return false;
+  /*
+   * Somebody who types a name and taps the row that comes back has named one record. Answering
+   * that with fifteen other artists overrides what was asked for, and on the phone those fifteen
+   * were never on screen at all -- the queue did not match the page being read.
+   *
+   * Radio still fills the silence after a single tapped in the locker or off an artist page,
+   * where there was no list to choose from and continuing is the useful thing to do.
+   */
+  if (ctx.fromSearchResults) return false;
 
   // Explicit single/seed play always builds radio — ignore stale album-drill listings.
   if (!ctx.seedSearchQueue && ctx.albumTracks && ctx.albumTracks.length > 1) {

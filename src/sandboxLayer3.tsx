@@ -898,6 +898,7 @@ export default function SandboxShell() {
       playable: MediaEnvelope,
       opts?: {
         seedSearchQueue?: boolean;
+        fromSearchResults?: boolean;
         seamless?: boolean;
         playQueueOverride?: MediaEnvelope[];
       },
@@ -1736,7 +1737,10 @@ export default function SandboxShell() {
         Boolean(audio.envelope?.url?.trim());
       const ok =
         sameTrack ||
-        (await handlePlayEnvelope(env, candidates, { seedSearchQueue: true }));
+        (await handlePlayEnvelope(env, candidates, {
+          seedSearchQueue: true,
+          fromSearchResults: true,
+        }));
       void ok;
     },
     [
@@ -1794,7 +1798,10 @@ export default function SandboxShell() {
       void acquireAndPlayHit(hit, {
         tier: downloadTierPreference,
         onPlay: (env, candidates) =>
-          handlePlayEnvelope(env, candidates ?? hit.sources, { seedSearchQueue: true }),
+          handlePlayEnvelope(env, candidates ?? hit.sources, {
+            seedSearchQueue: true,
+            fromSearchResults: true,
+          }),
         onToast: showAppToast,
       });
     },

@@ -33,6 +33,7 @@ type PlayEnvelopeFn = (
   options?: {
     autoPlay?: boolean;
     seedSearchQueue?: boolean;
+    fromSearchResults?: boolean;
     seedSearchEnvelope?: MediaEnvelope;
     seamless?: boolean;
     preservePlayQueue?: boolean;
@@ -43,6 +44,7 @@ type ScheduleAutoSimilarRadioFn = (
   playable: MediaEnvelope,
   opts?: {
     seedSearchQueue?: boolean;
+    fromSearchResults?: boolean;
     seamless?: boolean;
     playQueueOverride?: MediaEnvelope[];
   },
@@ -117,7 +119,12 @@ export function useShellPlayTriggers({
   const scheduleAutoSimilarRadio = useCallback(
     (
       playable: MediaEnvelope,
-      opts?: { seedSearchQueue?: boolean; seamless?: boolean; playQueueOverride?: MediaEnvelope[] },
+      opts?: {
+        seedSearchQueue?: boolean;
+        fromSearchResults?: boolean;
+        seamless?: boolean;
+        playQueueOverride?: MediaEnvelope[];
+      },
     ) => {
       if (opts?.seamless) return;
 
@@ -185,6 +192,7 @@ export function useShellPlayTriggers({
             ? undefined
             : albumDrillAlbumRef.current?.trackCount,
           seedSearchQueue: opts?.seedSearchQueue,
+          fromSearchResults: opts?.fromSearchResults,
           hasMixRadioSession: midRadio,
         },
         {
@@ -273,7 +281,10 @@ export function useShellPlayTriggers({
         `[handleSearchPlay] play requested track="${env.artist} — ${env.title}" ` +
           `provider=${env.provider} sources=${candidates?.length ?? 0}`,
       );
-      void handlePlayEnvelope(env, candidates, { seedSearchQueue: true }).catch((err) => {
+      void handlePlayEnvelope(env, candidates, {
+        seedSearchQueue: true,
+        fromSearchResults: true,
+      }).catch((err) => {
         console.warn('[handleSearchPlay] playback failed:', err);
         showAppToast(t('artist.playbackHybridUnavailable'), 3800);
         setMobilePlayerPending(false);

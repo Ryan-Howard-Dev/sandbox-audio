@@ -53,6 +53,7 @@ export type UseAndroidShellBridgesOptions = {
       options?: {
         autoPlay?: boolean;
         seedSearchQueue?: boolean;
+        fromSearchResults?: boolean;
         seedSearchEnvelope?: MediaEnvelope;
         seamless?: boolean;
         preservePlayQueue?: boolean;

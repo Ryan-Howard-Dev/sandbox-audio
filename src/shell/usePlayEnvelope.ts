@@ -157,6 +157,7 @@ export type UsePlayEnvelopeArgs = {
       playable: MediaEnvelope,
       opts?: {
         seedSearchQueue?: boolean;
+        fromSearchResults?: boolean;
         seamless?: boolean;
         playQueueOverride?: MediaEnvelope[];
       },
@@ -261,6 +262,7 @@ export function usePlayEnvelope({
       options?: {
         autoPlay?: boolean;
         seedSearchQueue?: boolean;
+        fromSearchResults?: boolean;
         seedSearchEnvelope?: MediaEnvelope;
         seamless?: boolean;
         /** Keep multi-track album queue when resolving the next track after end/skip. */
@@ -693,6 +695,7 @@ export function usePlayEnvelope({
           setMobilePlayerPending(false);
           scheduleAutoSimilarRadioRef.current(syncedPlayable, {
             seedSearchQueue: options?.seedSearchQueue,
+            fromSearchResults: options?.fromSearchResults,
             seamless: queueAdvanceSeamless,
             playQueueOverride: activePlayQueue,
           });
@@ -743,6 +746,7 @@ export function usePlayEnvelope({
           setMobilePlayerPending(false);
           scheduleAutoSimilarRadioRef.current(syncedPlayable, {
             seedSearchQueue: options?.seedSearchQueue,
+            fromSearchResults: options?.fromSearchResults,
             seamless: queueAdvanceSeamless,
             playQueueOverride: activePlayQueue,
           });
@@ -806,6 +810,7 @@ export function usePlayEnvelope({
           setMobilePlayerPending(false);
           scheduleAutoSimilarRadioRef.current(syncedPlayable, {
             seedSearchQueue: options?.seedSearchQueue,
+            fromSearchResults: options?.fromSearchResults,
             seamless: queueAdvanceSeamless,
             playQueueOverride: activePlayQueue,
           });
@@ -1231,6 +1236,7 @@ export function usePlayEnvelope({
         setMobilePlayerPending(false);
         scheduleAutoSimilarRadioRef.current(syncedPlayable, {
           seedSearchQueue: options?.seedSearchQueue,
+          fromSearchResults: options?.fromSearchResults,
           seamless: queueAdvanceSeamless,
           playQueueOverride: activePlayQueue,
         });

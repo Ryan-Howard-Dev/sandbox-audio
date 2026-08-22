@@ -195,4 +195,34 @@ describe('the album that replaced itself', () => {
       }),
     ).toBe(true);
   });
+
+  /*
+   * Somebody typed the whole name of one record and tapped the row that came back. On the phone
+   * that queued fifteen tracks by other artists which had never been on screen, so when the track
+   * stopped they were listening to somebody else entirely.
+   */
+  it('does not build radio behind a track tapped in search results', () => {
+    expect(
+      shouldAutoStartSimilarRadio({
+        envelope: env('youtube-JlnSGO10IlM', '13LOOD 1N + 13LOOD OUT MIXX'),
+        playQueue: [env('youtube-JlnSGO10IlM', '13LOOD 1N + 13LOOD OUT MIXX')],
+        searchHits: [],
+        seedSearchQueue: true,
+        fromSearchResults: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('still builds radio behind a single tapped anywhere else', () => {
+    // No list was being read, so there is nothing for a queue to contradict and continuing is the
+    // useful thing to do.
+    expect(
+      shouldAutoStartSimilarRadio({
+        envelope: env('local-locker-1', 'Nee Nah'),
+        playQueue: [env('local-locker-1', 'Nee Nah')],
+        searchHits: [],
+        seedSearchQueue: true,
+      }),
+    ).toBe(true);
+  });
 });
