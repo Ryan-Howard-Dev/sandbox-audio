@@ -237,39 +237,104 @@ function recomputeProgress(job: AcquireJob): void {
   job.progress = Math.min(100, Math.round(weighted / states.length));
 }
 
-async function resolveCandidatesForTier(
+type ResolveStage = { name: string; resolve: () => Promise<ResolveRow[]> };
+
+/**
+ * Sources to try for a track, in fallback order.
+ *
+ * Kept as a list of stages rather than one function returning one array, because the caller must
+ * be able to run identity verification after each stage and only then decide whether to move on.
+ * Stopping at the first non-empty source used to mean stopping at the first source at all, which
+ * is not the same thing.
+ */
+function candidateResolveStages(
   query: string,
   tier: AcquireTier,
   opts: Pick<AcquireJob, 'prowlarrUrl' | 'prowlarrApiKey' | 'realDebridApiKey'>,
-): Promise<ResolveRow[]> {
-  let rows: ResolveRow[] = [];
+): ResolveStage[] {
+  const stages: ResolveStage[] = [];
 
   if (tier === 'proxy' || tier === 'best') {
-    rows = await resolveProxyCandidates(query);
+    stages.push({ name: 'proxy', resolve: () => resolveProxyCandidates(query) });
   }
-  if ((tier === 'debrid' || tier === 'best') && rows.length === 0) {
-    rows = await resolveDebridCandidates({
-      query,
-      prowlarrUrl: opts.prowlarrUrl ?? process.env.PROWLARR_URL ?? '',
-      prowlarrApiKey: opts.prowlarrApiKey ?? process.env.PROWLARR_API_KEY ?? '',
-      realDebridApiKey: opts.realDebridApiKey ?? process.env.REALDEBRID_API_KEY ?? '',
+  if (tier === 'debrid' || tier === 'best') {
+    stages.push({
+      name: 'debrid',
+      resolve: () =>
+        resolveDebridCandidates({
+          query,
+          prowlarrUrl: opts.prowlarrUrl ?? process.env.PROWLARR_URL ?? '',
+          prowlarrApiKey: opts.prowlarrApiKey ?? process.env.PROWLARR_API_KEY ?? '',
+          realDebridApiKey: opts.realDebridApiKey ?? process.env.REALDEBRID_API_KEY ?? '',
+        }),
     });
   }
-  if (rows.length === 0 && (tier === 'best' || tier === 'debrid') && isSoulseekConfigured()) {
-    const soulseek = await resolveSoulseekCandidate(query);
-    if (soulseek?.url) rows = [soulseek];
+  if ((tier === 'best' || tier === 'debrid') && isSoulseekConfigured()) {
+    stages.push({
+      name: 'soulseek',
+      resolve: async () => {
+        const soulseek = await resolveSoulseekCandidate(query);
+        return soulseek?.url ? [soulseek] : [];
+      },
+    });
   }
-  if (rows.length === 0 && tier === 'best') {
-    const fallback = await searchProxyTier(query);
-    rows = fallback.map((r) => ({
-      url: r.url,
-      title: r.title,
-      artist: r.artist,
-      durationSeconds: r.durationSeconds,
-    }));
+  if (tier === 'best') {
+    stages.push({
+      name: 'catalog-fallback',
+      resolve: async () => {
+        const fallback = await searchProxyTier(query);
+        return fallback.map((r) => ({
+          url: r.url,
+          title: r.title,
+          artist: r.artist,
+          durationSeconds: r.durationSeconds,
+        }));
+      },
+    });
   }
 
-  return rows.filter((r) => r.url?.trim());
+  return stages;
+}
+
+/**
+ * Find a candidate that passes identity verification, trying each source in order.
+ *
+ * A source that answers with rows used to end the search outright, whether or not any of those
+ * rows were the right track. The proxy tier (YouTube) is the first source tried and answers for
+ * almost anything by title, but its top hits for one specific song are often a reaction video, a
+ * sped-up reupload, or a live set -- exactly what the identity gate exists to reject. Those
+ * candidates being wrong is not evidence that no correct file exists; it is evidence that this
+ * one source did not have it. Debrid and Soulseek, which index actual audio files rather than
+ * video reuploads, were never being asked.
+ *
+ * Reproduced from a real album download where two or three tracks out of a run consistently
+ * failed with "Identity check blocked store" -- the ones where the proxy tier's top YouTube
+ * results all happened to be renditions, while the rest of the album had a clean official upload
+ * to lead with.
+ */
+/** @internal test seam — exported so the fallthrough can be exercised without a live network. */
+export async function resolveVerifiedCandidate(
+  query: string,
+  tier: AcquireTier,
+  opts: Pick<AcquireJob, 'prowlarrUrl' | 'prowlarrApiKey' | 'realDebridApiKey'>,
+  verify: (candidate: ResolveRow) => string | null,
+): Promise<{ hit: ResolveRow | null; sawAnyCandidate: boolean; rejectReasons: string[] }> {
+  const rejectReasons: string[] = [];
+  let sawAnyCandidate = false;
+
+  for (const stage of candidateResolveStages(query, tier, opts)) {
+    const rows = (await stage.resolve()).filter((r) => r.url?.trim());
+    if (rows.length === 0) continue;
+    sawAnyCandidate = true;
+
+    for (const candidate of rows) {
+      const reason = verify(candidate);
+      if (reason === null) return { hit: candidate, sawAnyCandidate, rejectReasons };
+      rejectReasons.push(`${candidate.title ?? candidate.url ?? 'candidate'}: ${reason}`);
+    }
+  }
+
+  return { hit: null, sawAnyCandidate, rejectReasons };
 }
 
 function extractProxyTarget(url: string): string | null {
@@ -406,36 +471,36 @@ async function runAcquireJob(job: AcquireJob): Promise<void> {
        * Gated here (acquireWorker) rather than inside proxyResolve/debridResolve/sandboxIndexer
        * so every tier that writes via this worker shares one check. Those resolver modules
        * themselves are not gated.
+       *
+       * One source answering is not the same as one source answering correctly, so a source whose
+       * candidates all fail identity falls through to the next source rather than failing the
+       * track. See resolveVerifiedCandidate.
        */
-      const candidates = await resolveCandidatesForTier(query, job.tier, job);
-      if (candidates.length === 0) {
+      const { hit, sawAnyCandidate, rejectReasons } = await resolveVerifiedCandidate(
+        query,
+        job.tier,
+        job,
+        (candidate) => {
+          const verdict = verifyAcquisitionCandidate(
+            {
+              title: track.title,
+              artist: track.artist,
+              album: job.albumTitle ?? track.albumName,
+              durationSeconds: track.durationSeconds,
+            },
+            {
+              title: candidate.title,
+              artist: candidate.artist,
+              durationSeconds: candidate.durationSeconds,
+              url: candidate.url,
+            },
+          );
+          if (verdict.ok === false) return verdict.reason;
+          return null;
+        },
+      );
+      if (!sawAnyCandidate) {
         throw new Error(`No source for "${track.title}"`);
-      }
-
-      let hit: ResolveRow | null = null;
-      const rejectReasons: string[] = [];
-      for (const candidate of candidates) {
-        const verdict = verifyAcquisitionCandidate(
-          {
-            title: track.title,
-            artist: track.artist,
-            album: job.albumTitle ?? track.albumName,
-            durationSeconds: track.durationSeconds,
-          },
-          {
-            title: candidate.title,
-            artist: candidate.artist,
-            durationSeconds: candidate.durationSeconds,
-            url: candidate.url,
-          },
-        );
-        if (verdict.ok === true) {
-          hit = candidate;
-          break;
-        }
-        rejectReasons.push(
-          `${candidate.title ?? candidate.url ?? 'candidate'}: ${verdict.reason}`,
-        );
       }
       if (!hit?.url?.trim()) {
         throw new Error(
